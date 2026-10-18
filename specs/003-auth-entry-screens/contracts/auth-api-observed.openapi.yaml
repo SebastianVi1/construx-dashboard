@@ -1,0 +1,112 @@
+openapi: 3.1.0
+info:
+  title: Observed authentication API for frontend planning
+  version: 0.1.0
+  description: >-
+    Frontend-side mirror of the current backend source, approved by the user on 2026-10-17 as
+    the integration contract for the Login and Registration frontend slice. It is not a
+    backend-owned publication and must be reconciled if the backend contract changes.
+servers:
+  - url: /
+paths:
+  /api/auth/csrf:
+    get:
+      summary: Obtain request-forgery proof
+      responses:
+        '200':
+          description: Header name and token for subsequent unsafe requests
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [headerName, token]
+                properties:
+                  headerName: { type: string }
+                  token: { type: string }
+  /api/auth/register:
+    post:
+      summary: Request account registration
+      description: A duplicate address receives the same accepted status as a new one.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registration'
+      responses:
+        '202':
+          description: Accepted; verify email separately. No response body.
+        '400':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+  /api/auth/login:
+    post:
+      summary: Sign in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '204':
+          description: Signed in; HttpOnly cookies are set. No response body.
+          headers:
+            Set-Cookie:
+              description: Browser-managed access and refresh cookies
+              schema: { type: string }
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+  /api/auth/me:
+    get:
+      summary: Read the authenticated account
+      security:
+        - accessCookie: []
+      responses:
+        '200':
+          description: Current account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, email]
+                properties:
+                  id: { type: string, format: uuid }
+                  email: { type: string, format: email }
+        '401':
+          $ref: '#/components/responses/Problem'
+components:
+  securitySchemes:
+    accessCookie:
+      type: apiKey
+      in: cookie
+      name: access_token
+  schemas:
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    Registration:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 12 }
+  responses:
+    Problem:
+      description: JSON problem response; exact fields require contract confirmation
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              title: { type: string }
+              detail: { type: string }
+              status: { type: integer }

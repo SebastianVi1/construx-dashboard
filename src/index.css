@@ -1,4 +1,18 @@
 :root {
+  --cx-canvas: #f5f8fc;
+  --cx-surface: #fff;
+  --cx-ink: #14263d;
+  --cx-muted: #52657a;
+  --cx-border: #d7e1ec;
+  --cx-primary: #175cd3;
+  --cx-primary-hover: #1248a8;
+  --cx-primary-subtle: #eaf2ff;
+  --cx-success: #176b4d;
+  --cx-danger: #b42332;
+  --cx-radius-md: 0.5rem;
+  --cx-radius-lg: 0.75rem;
+  --cx-font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
