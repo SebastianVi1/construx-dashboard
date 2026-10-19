@@ -1,13 +1,22 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, createAuthApi } from './authApi'
+import { AuthApiError, configureAuthApi, login, logout, register } from './authApi'
 import { loginSchema, registrationSchema } from './schemas'
 
 type PostCall = [
   url: string,
-  data: unknown,
+  data?: unknown,
   config?: { withCredentials?: boolean; headers?: Record<string, string> },
 ]
+
+function stubApi(getImpl: () => unknown, postImpl: () => unknown) {
+  const get = mock(async () => getImpl())
+  const post = mock(async () => postImpl())
+  configureAuthApi({ client: { get, post } as unknown as AxiosInstance, baseUrl: '/api' })
+  return { get, post }
+}
+
+const csrfOk = () => ({ data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } })
 
 describe('auth input validation', () => {
   it('trims a valid email and requires a login password', () => {
@@ -27,12 +36,9 @@ describe('auth input validation', () => {
 describe('auth API', () => {
   afterEach(() => mock.restore())
 
-  it('obtains CSRF proof and sends credentials with cookies for login', async () => {
-    const get = mock(async () => ({ data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }))
-    const post = mock(async () => ({ status: 204 }))
-    const client = { get, post } as unknown as AxiosInstance
-
-    await createAuthApi('/api', client).login({ email: 'person@example.com', password: 'secret' })
+  it('login: obtains CSRF proof and posts credentials with cookies', async () => {
+    const { get, post } = stubApi(csrfOk, () => ({ status: 204 }))
+    await login({ email: 'person@example.com', password: 'secret' })
 
     expect(get).toHaveBeenCalledTimes(1)
     expect(post).toHaveBeenCalledTimes(1)
@@ -44,39 +50,46 @@ describe('auth API', () => {
     expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof')
   })
 
-  it('accepts a successful registration and rejects malformed CSRF proof before POST', async () => {
-    const get = mock(async () => ({ data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }))
-    const post = mock(async () => ({ status: 202 }))
-    const client = { get, post } as unknown as AxiosInstance
+  it('register: posts registration to the register endpoint', async () => {
+    const { post } = stubApi(csrfOk, () => ({ status: 202 }))
+    await register({ email: 'person@example.com', password: '123456789012' })
 
-    await createAuthApi('/api', client).register({ email: 'person@example.com', password: '123456789012' })
-    expect(get).toHaveBeenCalledTimes(1)
     expect(post).toHaveBeenCalledTimes(1)
+    const [url, data] = post.mock.calls[0] as unknown as PostCall
+    expect(url).toBe('/api/auth/register')
+    expect(data).toEqual({ email: 'person@example.com', password: '123456789012' })
+  })
 
-    const badGet = mock(async () => ({ data: { headerName: 'Bad Header', token: 'proof' } }))
-    const badPost = mock(async () => ({ status: 204 }))
-    const badClient = { get: badGet, post: badPost } as unknown as AxiosInstance
+  it('logout: posts an empty body to the logout endpoint', async () => {
+    const { post } = stubApi(csrfOk, () => ({ status: 204 }))
+    await logout()
 
-    await expect(createAuthApi('/api', badClient).login({ email: 'person@example.com', password: 'secret' })).rejects.toThrow(AuthApiError)
-    expect(badGet).toHaveBeenCalledTimes(1)
-    expect(badPost).toHaveBeenCalledTimes(0)
+    expect(post).toHaveBeenCalledTimes(1)
+    const [url, data, config] = post.mock.calls[0] as unknown as PostCall
+    expect(url).toBe('/api/auth/logout')
+    expect(data).toBeUndefined()
+    expect(config?.withCredentials).toBe(true)
+    expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof')
+  })
+
+  it('rejects malformed CSRF proof before POST', async () => {
+    const { get, post } = stubApi(() => ({ data: { headerName: 'Bad Header', token: 'proof' } }), () => ({ status: 204 }))
+    await expect(login({ email: 'person@example.com', password: 'secret' })).rejects.toThrow(AuthApiError)
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(post).toHaveBeenCalledTimes(0)
   })
 
   it('does not treat an unexpected success status as authenticated', async () => {
-    const get = mock(async () => ({ data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }))
-    const post = mock(async () => ({ status: 200 }))
-    const client = { get, post } as unknown as AxiosInstance
-
-    await expect(createAuthApi('/api', client).login({ email: 'person@example.com', password: 'secret' })).rejects.toThrow(AuthApiError)
+    stubApi(csrfOk, () => ({ status: 200 }))
+    await expect(login({ email: 'person@example.com', password: 'secret' })).rejects.toThrow(AuthApiError)
   })
 
   it('maps request failures to AuthApiError', async () => {
-    const get = mock(async () => {
+    const { get } = stubApi(() => {
       throw new Error('network down')
-    })
-    const client = { get, post: mock(async () => ({ status: 204 })) } as unknown as AxiosInstance
+    }, () => ({ status: 204 }))
 
-    await expect(createAuthApi('/api', client).login({ email: 'person@example.com', password: 'secret' })).rejects.toThrow(AuthApiError)
+    await expect(login({ email: 'person@example.com', password: 'secret' })).rejects.toThrow(AuthApiError)
     expect(get).toHaveBeenCalledTimes(1)
   })
 })

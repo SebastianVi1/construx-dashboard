@@ -21,7 +21,7 @@ reusable on its own.
 
 ```tsx
 import { Form, useForm, type FieldConfig } from '../../components/form'
-import { authApi } from './authApi'
+import { login } from './authApi'
 import { loginSchema } from './schemas'
 
 const fields: FieldConfig[] = [
@@ -34,7 +34,7 @@ function Login() {
     initialValues: { email: '', password: '' },
     schema: loginSchema,
     onSubmit: async (values) => {
-      await authApi.login(values)
+      await login(values)
     },
   })
 

@@ -9,42 +9,68 @@ export class AuthApiError extends Error {
   }
 }
 
-export function createAuthApi(baseUrl = getApiBaseUrl(), client: AxiosInstance = axios.create()) {
-  async function csrfProof() {
-    try {
-      const response = await client.get(`${baseUrl}/auth/csrf`, {
-        withCredentials: true,
-        headers: { Accept: 'application/json' },
-      })
-      return csrfSchema.parse(response.data)
-    } catch {
-      throw new AuthApiError()
-    }
-  }
+let client: AxiosInstance = axios.create()
+let baseUrl = getApiBaseUrl()
 
-  async function submit(path: '/auth/login' | '/auth/register', input: LoginInput | RegistrationInput, successStatus: number) {
-    const proof = await csrfProof()
-    let status: number
-    try {
-      status = (
-        await client.post(`${baseUrl}${path}`, input, {
-          withCredentials: true,
-          headers: {
-            Accept: 'application/problem+json, application/json',
-            [proof.headerName]: proof.token,
-          },
-        })
-      ).status
-    } catch {
-      throw new AuthApiError()
-    }
-    if (status !== successStatus) throw new AuthApiError()
-  }
+/** Override the HTTP client and base URL — used by tests. */
+export function configureAuthApi(options: { client?: AxiosInstance; baseUrl?: string }): void {
+  if (options.client) client = options.client
+  if (options.baseUrl) baseUrl = options.baseUrl
+}
 
-  return {
-    login: (input: LoginInput) => submit('/auth/login', input, 204),
-    register: (input: RegistrationInput) => submit('/auth/register', input, 202),
+type CsrfProof = { headerName: string; token: string }
+
+async function getCsrfProof(): Promise<CsrfProof> {
+  try {
+    const response = await client.get(`${baseUrl}/auth/csrf`, {
+      withCredentials: true,
+      headers: { Accept: 'application/json' },
+    })
+    return csrfSchema.parse(response.data)
+  } catch {
+    throw new AuthApiError()
   }
 }
 
-export const authApi = createAuthApi()
+function csrfConfig(proof: CsrfProof) {
+  return {
+    withCredentials: true,
+    headers: {
+      Accept: 'application/problem+json, application/json',
+      [proof.headerName]: proof.token,
+    },
+  }
+}
+
+/** Sign in with email and password. Resolves after the session cookie is set. */
+export async function login(input: LoginInput): Promise<void> {
+  const proof = await getCsrfProof()
+  try {
+    const response = await client.post(`${baseUrl}/auth/login`, input, csrfConfig(proof))
+    if (response.status !== 204) throw new AuthApiError()
+  } catch {
+    throw new AuthApiError()
+  }
+}
+
+/** Request account registration. A duplicate address receives the same accepted status. */
+export async function register(input: RegistrationInput): Promise<void> {
+  const proof = await getCsrfProof()
+  try {
+    const response = await client.post(`${baseUrl}/auth/register`, input, csrfConfig(proof))
+    if (response.status !== 202) throw new AuthApiError()
+  } catch {
+    throw new AuthApiError()
+  }
+}
+
+/** End the current session. */
+export async function logout(): Promise<void> {
+  const proof = await getCsrfProof()
+  try {
+    const response = await client.post(`${baseUrl}/auth/logout`, undefined, csrfConfig(proof))
+    if (response.status !== 204) throw new AuthApiError()
+  } catch {
+    throw new AuthApiError()
+  }
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { authApi } from './authApi'
+import { login, register } from './authApi'
 import { AuthLayout } from './AuthLayout'
 import { Form, useForm, type FieldConfig } from '../../components/form'
 import { loginSchema, registrationSchema } from './schemas'
@@ -17,10 +17,10 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     schema: isRegistration ? registrationSchema : loginSchema,
     onSubmit: async (data) => {
       if (isRegistration) {
-        await authApi.register(data)
+        await register(data)
         setAccepted(true)
       } else {
-        await authApi.login(data)
+        await login(data)
         navigate('/', { replace: true })
       }
     },
