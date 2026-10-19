@@ -1,0 +1,120 @@
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.form-field {
+  display: grid;
+  gap: 7px;
+}
+
+.form-field__label {
+  color: var(--cx-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-field__control {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  color: var(--cx-ink);
+  font: inherit;
+  line-height: 22px;
+  caret-color: var(--cx-primary);
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.form-field__control::placeholder {
+  color: color-mix(in srgb, var(--cx-muted) 60%, transparent);
+}
+
+.form-field__control:hover:not(:disabled):not(:focus-visible) {
+  border-color: color-mix(in srgb, var(--cx-primary) 55%, var(--cx-border));
+}
+
+.form-field__control:focus-visible {
+  outline: none;
+  border-color: var(--cx-primary);
+  box-shadow: 0 0 0 3px var(--cx-primary-subtle);
+}
+
+.form-field__control[aria-invalid='true'] {
+  border-color: var(--cx-danger);
+}
+
+.form-field__control[aria-invalid='true']:focus-visible {
+  border-color: var(--cx-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cx-danger) 16%, transparent);
+}
+
+.form-field__control:disabled {
+  background: var(--cx-canvas);
+  cursor: wait;
+}
+
+.form-field__hint,
+.form-field__error {
+  font-size: 13px;
+  line-height: 18px;
+  margin: 0;
+}
+
+.form-field__hint {
+  color: var(--cx-muted);
+}
+
+.form-field__error {
+  color: var(--cx-danger);
+}
+
+.form-feedback {
+  min-height: 20px;
+  margin-top: -2px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.form-error {
+  color: var(--cx-danger);
+  margin: 0;
+}
+
+.form-submit {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--cx-primary);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-primary);
+  color: white;
+  font: 600 15px/22px var(--cx-font-sans);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    box-shadow 150ms ease-out,
+    transform 150ms ease-out;
+}
+
+.form-submit:hover:not(:disabled) {
+  background: var(--cx-primary-hover);
+  border-color: var(--cx-primary-hover);
+}
+
+.form-submit:active:not(:disabled) {
+  background: var(--cx-primary-hover);
+  transform: translateY(1px);
+}
+
+.form-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--cx-primary-subtle);
+}
+
+.form-submit:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}

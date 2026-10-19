@@ -1,79 +1,59 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { authApi } from './authApi'
 import { AuthLayout } from './AuthLayout'
+import { Form, useForm, type FieldConfig } from '../../components/form'
 import { loginSchema, registrationSchema } from './schemas'
 
 type AuthMode = 'login' | 'register'
-type FieldName = 'email' | 'password'
-type FieldErrors = Partial<Record<FieldName, string>>
 
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const isRegistration = mode === 'register'
   const navigate = useNavigate()
-  const emailRef = useRef<HTMLInputElement>(null)
-  const passwordRef = useRef<HTMLInputElement>(null)
-  const submittingRef = useRef(false)
-  const mountedRef = useRef(true)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState<FieldErrors>({})
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'error' | 'accepted'>('idle')
+  const [accepted, setAccepted] = useState(false)
 
-  useEffect(() => {
-    mountedRef.current = true
-    return () => { mountedRef.current = false }
-  }, [])
-
-  useEffect(() => {
-    document.title = `${status === 'accepted' ? 'Check your email' : isRegistration ? 'Create an account' : 'Sign in'} | Construx`
-  }, [isRegistration, status])
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (submittingRef.current) return
-
-    const parsed = (isRegistration ? registrationSchema : loginSchema).safeParse({ email, password })
-    if (!parsed.success) {
-      const nextErrors: FieldErrors = {}
-      for (const issue of parsed.error.issues) {
-        const field = issue.path[0]
-        if ((field === 'email' || field === 'password') && !nextErrors[field]) {
-          nextErrors[field] = issue.message
-        }
-      }
-      setErrors(nextErrors)
-      setStatus('idle')
-      if (nextErrors.email) emailRef.current?.focus()
-      else passwordRef.current?.focus()
-      return
-    }
-
-    submittingRef.current = true
-    setErrors({})
-    setStatus('submitting')
-    try {
+  const form = useForm({
+    initialValues: { email: '', password: '' },
+    schema: isRegistration ? registrationSchema : loginSchema,
+    onSubmit: async (data) => {
       if (isRegistration) {
-        await authApi.register(parsed.data)
-        if (mountedRef.current) {
-          setPassword('')
-          setStatus('accepted')
-        }
+        await authApi.register(data)
+        setAccepted(true)
       } else {
-        await authApi.login(parsed.data)
-        if (mountedRef.current) {
-          setPassword('')
-          navigate('/', { replace: true })
-        }
+        await authApi.login(data)
+        navigate('/', { replace: true })
       }
-    } catch {
-      if (mountedRef.current) setStatus('error')
-    } finally {
-      submittingRef.current = false
-    }
-  }
+    },
+    onInvalid: (errors) => {
+      const firstError = ['email', 'password'].find((name) => errors[name])
+      if (firstError) document.getElementById(`field-${firstError}`)?.focus()
+    },
+  })
 
-  if (status === 'accepted') {
+  useEffect(() => {
+    document.title = `${accepted ? 'Check your email' : isRegistration ? 'Create an account' : 'Sign in'} | Construx`
+  }, [accepted, isRegistration])
+
+  const fields: FieldConfig[] = [
+    {
+      name: 'email',
+      label: 'Email address',
+      type: 'email',
+      placeholder: 'you@example.com',
+      autoComplete: 'email',
+      inputMode: 'email',
+      spellCheck: false,
+    },
+    {
+      name: 'password',
+      label: 'Password',
+      type: 'password',
+      autoComplete: isRegistration ? 'new-password' : 'current-password',
+      hint: isRegistration ? 'Use at least 12 characters.' : undefined,
+    },
+  ]
+
+  if (accepted) {
     return (
       <AuthLayout
         title="Check your email"
@@ -82,12 +62,11 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         <div className="auth-accepted" role="status">
           <p>You can return to sign in after verifying your email.</p>
         </div>
-        <p className="auth-switch"><Link to="/login">Sign in</Link></p>
+        <p className="auth-switch"><Link to="/">Sign in</Link></p>
       </AuthLayout>
     )
   }
 
-  const pending = status === 'submitting'
   return (
     <AuthLayout
       title={isRegistration ? 'Create an account' : 'Sign in'}
@@ -95,69 +74,26 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         ? 'Enter your details to request an account. You will verify your email before signing in.'
         : 'Enter your account details to return to your workspace.'}
     >
-      <form className="auth-form" noValidate onSubmit={handleSubmit} aria-busy={pending}>
-        <div className="auth-field">
-          <label htmlFor={`${mode}-email`}>Email address</label>
-          <input
-            id={`${mode}-email`}
-            ref={emailRef}
-            type="email"
-            name="email"
-            autoComplete="email"
-            inputMode="email"
-            spellCheck={false}
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value)
-              setErrors((current) => ({ ...current, email: undefined }))
-            }}
-            aria-invalid={Boolean(errors.email)}
-            aria-describedby={errors.email ? `${mode}-email-error` : undefined}
-            disabled={pending}
-          />
-          {errors.email && <p className="auth-field-error" id={`${mode}-email-error`}>{errors.email}</p>}
-        </div>
-
-        <div className="auth-field">
-          <label htmlFor={`${mode}-password`}>Password</label>
-          <input
-            id={`${mode}-password`}
-            ref={passwordRef}
-            type="password"
-            name="password"
-            autoComplete={isRegistration ? 'new-password' : 'current-password'}
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value)
-              setErrors((current) => ({ ...current, password: undefined }))
-            }}
-            aria-invalid={Boolean(errors.password)}
-            aria-describedby={errors.password ? `${mode}-password-error` : isRegistration ? `${mode}-password-hint` : undefined}
-            disabled={pending}
-          />
-          {isRegistration && !errors.password && <p className="auth-field-hint" id={`${mode}-password-hint`}>Use at least 12 characters.</p>}
-          {errors.password && <p className="auth-field-error" id={`${mode}-password-error`}>{errors.password}</p>}
-        </div>
-
-        <div className="auth-feedback" aria-live="polite" aria-atomic="true">
-          {status === 'error' && (
-            <p className="auth-request-error" role="alert">
+      <Form
+        controller={form}
+        fields={fields}
+        submitLabel={isRegistration ? 'Create account' : 'Sign in'}
+        pendingLabel={isRegistration ? 'Creating your account…' : 'Signing you in…'}
+      >
+        <div className="form-feedback" aria-live="polite" aria-atomic="true">
+          {form.submitError && (
+            <p className="form-error" role="alert">
               {isRegistration
                 ? 'We could not complete your request. Please try again.'
                 : 'We could not sign you in. Check your details and try again.'}
             </p>
           )}
-          {pending && <p className="auth-progress">{isRegistration ? 'Creating your account…' : 'Signing you in…'}</p>}
         </div>
-
-        <button className="auth-submit" type="submit" disabled={pending}>
-          {isRegistration ? 'Create account' : 'Sign in'}
-        </button>
-      </form>
+      </Form>
 
       <p className="auth-switch">
         {isRegistration ? 'Already have an account?' : 'New to Construx?'}{' '}
-        <Link to={isRegistration ? '/login' : '/register'}>
+        <Link to={isRegistration ? '/' : '/register'}>
           {isRegistration ? 'Sign in' : 'Create an account'}
         </Link>
       </p>
