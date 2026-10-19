@@ -1,5 +1,6 @@
+import axios, { type AxiosInstance } from 'axios'
 import { getApiBaseUrl } from '../../config/env'
-import { csrfSchema, problemSchema, type LoginInput, type RegistrationInput } from './schemas'
+import { csrfSchema, type LoginInput, type RegistrationInput } from './schemas'
 
 export class AuthApiError extends Error {
   constructor() {
@@ -8,35 +9,14 @@ export class AuthApiError extends Error {
   }
 }
 
-async function inspectError(response: Response) {
-  if (response.headers.get('content-type')?.includes('json')) {
-    try {
-      problemSchema.safeParse(await response.json())
-    } catch {
-      // Malformed backend data never becomes user-facing copy.
-    }
-  }
-  throw new AuthApiError()
-}
-
-type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
-
-export function createAuthApi(baseUrl = getApiBaseUrl(), fetcher: Fetcher = fetch) {
+export function createAuthApi(baseUrl = getApiBaseUrl(), client: AxiosInstance = axios.create()) {
   async function csrfProof() {
-    let response: Response
     try {
-      response = await fetcher(`${baseUrl}/auth/csrf`, {
-        method: 'GET',
-        credentials: 'include',
+      const response = await client.get(`${baseUrl}/auth/csrf`, {
+        withCredentials: true,
         headers: { Accept: 'application/json' },
       })
-    } catch {
-      throw new AuthApiError()
-    }
-    if (!response.ok) await inspectError(response)
-
-    try {
-      return csrfSchema.parse(await response.json())
+      return csrfSchema.parse(response.data)
     } catch {
       throw new AuthApiError()
     }
@@ -44,22 +24,21 @@ export function createAuthApi(baseUrl = getApiBaseUrl(), fetcher: Fetcher = fetc
 
   async function submit(path: '/auth/login' | '/auth/register', input: LoginInput | RegistrationInput, successStatus: number) {
     const proof = await csrfProof()
-    let response: Response
+    let status: number
     try {
-      response = await fetcher(`${baseUrl}${path}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          Accept: 'application/problem+json, application/json',
-          'Content-Type': 'application/json',
-          [proof.headerName]: proof.token,
-        },
-        body: JSON.stringify(input),
-      })
+      status = (
+        await client.post(`${baseUrl}${path}`, input, {
+          withCredentials: true,
+          headers: {
+            Accept: 'application/problem+json, application/json',
+            [proof.headerName]: proof.token,
+          },
+        })
+      ).status
     } catch {
       throw new AuthApiError()
     }
-    if (response.status !== successStatus) await inspectError(response)
+    if (status !== successStatus) throw new AuthApiError()
   }
 
   return {
