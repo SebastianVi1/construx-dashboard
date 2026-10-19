@@ -24,8 +24,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-# Local AI runtime state
+# AI tooling artifacts
 .atl/
-
 .agents/*
 .specify/*
+AGENTS.md
+skills-lock.json
+specs/
