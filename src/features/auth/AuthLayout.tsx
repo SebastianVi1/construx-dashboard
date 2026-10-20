@@ -25,7 +25,7 @@ export function AuthLayout({ title, description, children }: AuthLayoutProps) {
           {children}
         </section>
 
-        <Link className="auth-back" to="/">Back to app</Link>
+        <Link className="auth-back" to="/account">Back to app</Link>
       </div>
     </main>
   )

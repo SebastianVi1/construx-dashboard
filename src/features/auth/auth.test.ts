@@ -1,6 +1,16 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi, login, logout, register } from './authApi'
+import {
+  AuthApiError,
+  configureAuthApi,
+  getCurrentUser,
+  login,
+  logout,
+  refresh,
+  register,
+  resendVerification,
+  verifyEmail,
+} from './authApi'
 import { loginSchema, registrationSchema } from './schemas'
 
 type PostCall = [
@@ -8,6 +18,8 @@ type PostCall = [
   data?: unknown,
   config?: { withCredentials?: boolean; headers?: Record<string, string> },
 ]
+
+type GetCall = [url: string, config?: { withCredentials?: boolean; headers?: Record<string, string> }]
 
 function stubApi(getImpl: () => unknown, postImpl: () => unknown) {
   const get = mock(async () => getImpl())
@@ -91,5 +103,60 @@ describe('auth API', () => {
 
     await expect(login({ email: 'person@example.com', password: 'secret' })).rejects.toThrow(AuthApiError)
     expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it('getCurrentUser: fetches /me with credentials and parses the user', async () => {
+    const { get } = stubApi(
+      () => ({ data: { id: 1, email: 'person@example.com' }, status: 200 }),
+      () => ({ status: 204 }),
+    )
+    const user = await getCurrentUser()
+
+    expect(user).toEqual({ id: 1, email: 'person@example.com' })
+    expect(get).toHaveBeenCalledTimes(1)
+    const [url, config] = get.mock.calls[0] as unknown as GetCall
+    expect(url).toBe('/api/auth/me')
+    expect(config?.withCredentials).toBe(true)
+  })
+
+  it('getCurrentUser: exposes the HTTP status on failure', async () => {
+    const error = Object.assign(new Error('Unauthorized'), { isAxiosError: true, response: { status: 401 } })
+    stubApi(() => {
+      throw error
+    }, () => ({ status: 204 }))
+
+    await expect(getCurrentUser()).rejects.toMatchObject({ status: 401 })
+  })
+
+  it('refresh: posts an empty body to the refresh endpoint', async () => {
+    const { post } = stubApi(csrfOk, () => ({ status: 204 }))
+    await refresh()
+
+    expect(post).toHaveBeenCalledTimes(1)
+    const [url, data, config] = post.mock.calls[0] as unknown as PostCall
+    expect(url).toBe('/api/auth/refresh')
+    expect(data).toBeUndefined()
+    expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof')
+  })
+
+  it('verifyEmail: posts the one-time token', async () => {
+    const { post } = stubApi(csrfOk, () => ({ status: 204 }))
+    await verifyEmail('abc123')
+
+    expect(post).toHaveBeenCalledTimes(1)
+    const [url, data, config] = post.mock.calls[0] as unknown as PostCall
+    expect(url).toBe('/api/auth/verify')
+    expect(data).toEqual({ token: 'abc123' })
+    expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof')
+  })
+
+  it('resendVerification: posts the email', async () => {
+    const { post } = stubApi(csrfOk, () => ({ status: 202 }))
+    await resendVerification('person@example.com')
+
+    expect(post).toHaveBeenCalledTimes(1)
+    const [url, data] = post.mock.calls[0] as unknown as PostCall
+    expect(url).toBe('/api/auth/resend')
+    expect(data).toEqual({ email: 'person@example.com' })
   })
 })

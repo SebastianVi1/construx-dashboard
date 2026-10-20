@@ -23,5 +23,11 @@ export const problemSchema = z.object({
   status: z.number().int().optional(),
 })
 
+export const userSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  email: z.string().email(),
+})
+
 export type LoginInput = z.infer<typeof loginSchema>
 export type RegistrationInput = z.infer<typeof registrationSchema>
+export type CurrentUser = z.infer<typeof userSchema>
