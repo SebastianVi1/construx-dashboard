@@ -10,8 +10,17 @@ export default defineConfig(({ mode }) => {
       react(),
       babel({ presets: [reactCompilerPreset()] }),
     ],
-    server: env.VITE_API_PROXY_TARGET ? {
-      proxy: { '/api': { target: env.VITE_API_PROXY_TARGET, changeOrigin: true } },
-    } : undefined,
+    // Dev reverse proxy. This is NOT a CORS config: CORS headers are a backend
+    // responsibility and a frontend change alone cannot produce them. Proxying
+    // keeps the browser on one origin (Vite) and forwards /api server-to-server,
+    // so the cross-origin check never happens. Defaults to the local backend.
+    server: {
+      proxy: {
+        '/api': {
+          target: env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
+          changeOrigin: true,
+        },
+      },
+    },
   }
 })
