@@ -11,7 +11,8 @@ import {
   resendVerification,
   verifyEmail,
 } from './authApi'
-import { loginSchema, registrationSchema } from './schemas'
+import { makeLoginSchema, makeRegistrationSchema } from './schemas'
+import { messages } from '../../i18n/messages'
 
 type PostCall = [
   url: string,
@@ -31,6 +32,9 @@ function stubApi(getImpl: () => unknown, postImpl: () => unknown) {
 const csrfOk = () => ({ data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } })
 
 describe('auth input validation', () => {
+  const loginSchema = makeLoginSchema(messages.en.validation)
+  const registrationSchema = makeRegistrationSchema(messages.en.validation)
+
   it('trims a valid email and requires a login password', () => {
     expect(loginSchema.parse({ email: ' person@example.com ', password: 'secret' })).toEqual({
       email: 'person@example.com',

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { verifyEmail } from './authApi'
 import { AuthLayout } from './AuthLayout'
+import { useLocale } from '../../i18n'
 
 type VerifyState = 'submitting' | 'success' | 'error'
 
@@ -10,10 +11,11 @@ export function VerifyEmailPage() {
   const token = (searchParams.get('token') ?? '').trim()
   const [state, setState] = useState<VerifyState>(token ? 'submitting' : 'error')
   const submittedRef = useRef(false)
+  const { messages: m } = useLocale()
 
   useEffect(() => {
-    document.title = 'Verify your email | Construx'
-  }, [])
+    document.title = `${m.auth.title.verify} | Construx`
+  }, [m])
 
   useEffect(() => {
     // A one-time token must be sent exactly once, even under StrictMode's
@@ -27,10 +29,10 @@ export function VerifyEmailPage() {
 
   if (state === 'submitting') {
     return (
-      <AuthLayout title="Verify your email" description="Confirming your verification link…">
+      <AuthLayout title={m.auth.title.verify} description={m.auth.description.verify}>
         <div className="auth-loading" role="status">
           <span className="auth-loading__spinner" aria-hidden="true" />
-          <span>Verifying your email…</span>
+          <span>{m.auth.pending.verify}</span>
         </div>
       </AuthLayout>
     )
@@ -38,30 +40,24 @@ export function VerifyEmailPage() {
 
   if (state === 'success') {
     return (
-      <AuthLayout title="Email verified" description="Your email address is confirmed. You can now sign in.">
+      <AuthLayout title={m.auth.title.verifySuccess} description={m.auth.description.verifySuccess}>
         <div className="auth-status">
-          <p role="status">Verification successful.</p>
+          <p role="status">{m.auth.verifyStatus}</p>
         </div>
-        <p className="auth-switch"><Link to="/login">Sign in</Link></p>
+        <p className="auth-switch"><Link to="/login">{m.auth.switch.loginLink}</Link></p>
       </AuthLayout>
     )
   }
 
   return (
-    <AuthLayout
-      title="Verification failed"
-      description="This link is invalid or has already been used."
-    >
+    <AuthLayout title={m.auth.title.verifyFailed} description={m.auth.description.verifyFailed}>
       <div className="auth-status">
-        <p role="alert">
-          The verification link is expired or was already used. Verification links work once and
-          expire after 24 hours.
-        </p>
+        <p role="alert">{m.auth.verifyFailedBody}</p>
       </div>
       <p className="auth-switch">
-        <Link to="/register">Create an account</Link>
+        <Link to="/register">{m.auth.verifyRegisterLink}</Link>
         {' · '}
-        <Link to="/login">Sign in</Link>
+        <Link to="/login">{m.auth.switch.loginLink}</Link>
       </p>
     </AuthLayout>
   )

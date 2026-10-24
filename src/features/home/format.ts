@@ -30,6 +30,16 @@ export function formatDate(isoDate: string, locale = 'en-US'): string {
   return date.toLocaleDateString(locale, DATE_OPTIONS)
 }
 
+/**
+ * Formats an ISO month (yyyy-mm) as a long month and year, independent of the
+ * machine's timezone so tests and renders are deterministic.
+ */
+export function formatMonthYear(isoMonth: string, locale = 'en-US'): string {
+  const [year, month] = isoMonth.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, 1))
+  return date.toLocaleDateString(locale, { year: 'numeric', month: 'long', timeZone: 'UTC' })
+}
+
 export type Variance =
   | { status: 'savings'; amount: number }
   | { status: 'overrun'; amount: number }

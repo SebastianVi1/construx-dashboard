@@ -1,0 +1,123 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--cx-ink) 40%, transparent);
+}
+
+.modal {
+  box-sizing: border-box;
+  width: min(100%, 480px);
+  max-height: calc(100svh - 48px);
+  overflow: auto;
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  padding: 24px;
+  box-shadow: 0 16px 40px -16px rgba(20, 38, 61, 0.24);
+  animation: modal-in 180ms ease-out;
+}
+
+.modal:focus {
+  outline: none;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modal__header {
+  margin-bottom: 20px;
+}
+
+.modal__header h2 {
+  font: 600 20px/28px var(--cx-font-sans);
+  letter-spacing: -0.01em;
+  color: var(--cx-ink);
+  margin: 0 0 6px;
+}
+
+.modal__header p {
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.question-modal__options {
+  display: grid;
+  gap: 8px;
+}
+
+.question-modal__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--cx-ink);
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.question-modal__option:hover {
+  border-color: var(--cx-primary);
+}
+
+.question-modal__option:has(input:checked) {
+  border-color: var(--cx-primary);
+  background: var(--cx-primary-subtle);
+}
+
+.question-modal__option input {
+  accent-color: var(--cx-primary);
+}
+
+.question-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.question-modal__submit {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--cx-primary);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-primary);
+  color: white;
+  font: 600 14px/22px var(--cx-font-sans);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.question-modal__submit:hover:not(:disabled) {
+  background: var(--cx-primary-hover);
+  border-color: var(--cx-primary-hover);
+}
+
+.question-modal__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay *,
+  .modal-overlay *::before,
+  .modal-overlay *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

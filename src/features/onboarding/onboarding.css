@@ -1,0 +1,45 @@
+.onboarding-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 40;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--cx-primary);
+  color: white;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 20px -8px rgba(20, 38, 61, 0.4);
+  animation: onboarding-fab-float 3s ease-in-out infinite;
+  transition: background-color 150ms ease-out;
+}
+
+.onboarding-fab:hover {
+  background: var(--cx-primary-hover);
+}
+
+.onboarding-fab:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--cx-primary-subtle),
+    0 8px 20px -8px rgba(20, 38, 61, 0.4);
+}
+
+@keyframes onboarding-fab-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-fab {
+    animation: none;
+  }
+}
