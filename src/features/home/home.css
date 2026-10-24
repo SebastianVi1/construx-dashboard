@@ -71,6 +71,12 @@
   font-weight: 600;
 }
 
+.home-sidebar__footer {
+  margin-top: auto;
+  padding: 16px 12px 0;
+  border-top: 1px solid var(--cx-border);
+}
+
 /* Body */
 
 .home-body {

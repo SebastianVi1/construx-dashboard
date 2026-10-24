@@ -1,4 +1,5 @@
-import { budgetVariance, formatCurrency, formatDate } from './format'
+import { LocaleSwitcher, formatMessage, intlLocales, useLocale } from '../../i18n'
+import { budgetVariance, formatCurrency, formatDate, formatMonthYear } from './format'
 import './home.css'
 
 type SiteStatus = 'on-schedule' | 'at-risk'
@@ -10,44 +11,31 @@ type Site = {
   status: SiteStatus
 }
 
-type FinanceSummary = {
-  budget: number
-  cost: number
-  period: string
-  currency: 'USD' | 'EUR' | 'ARS'
-}
-
 type ActivityItem = {
   id: string
   text: string
   when: string
 }
 
-const navItems = [
-  { label: 'Home', active: true },
-  { label: 'Sites' },
-  { label: 'People' },
-  { label: 'Products' },
-  { label: 'Finance' },
-  { label: 'CRM' },
+type NavId = 'home' | 'sites' | 'people' | 'products' | 'finance' | 'crm'
+
+const navItems: { id: NavId; active?: boolean }[] = [
+  { id: 'home', active: true },
+  { id: 'sites' },
+  { id: 'people' },
+  { id: 'products' },
+  { id: 'finance' },
+  { id: 'crm' },
 ]
 
 // Static, UI-only data. Real data and routing arrive in later features.
 const company = 'Construx Holdings'
-const reportingPeriod = 'October 2026'
 
 const sites: Site[] = [
   { id: 'S-1042', name: 'Riverside Tower', location: 'Austin, TX', status: 'on-schedule' },
   { id: 'S-1098', name: 'Maple District', location: 'Denver, CO', status: 'at-risk' },
   { id: 'S-1107', name: 'Harbor Point', location: 'Seattle, WA', status: 'on-schedule' },
 ]
-
-const finance: FinanceSummary = {
-  budget: 1_400_000,
-  cost: 1_052_000,
-  period: reportingPeriod,
-  currency: 'USD',
-}
 
 const activity: ActivityItem[] = [
   { id: 'a1', text: 'M. Chen assigned to Riverside Tower', when: '2h ago' },
@@ -58,6 +46,15 @@ const activity: ActivityItem[] = [
 const people = { members: 42, assignedThisWeek: 12 }
 
 export function HomePage() {
+  const { locale, messages: m } = useLocale()
+  const intlLocale = intlLocales[locale]
+  const reportingPeriod = formatMonthYear('2026-10', intlLocale)
+  const finance = {
+    budget: 1_400_000,
+    cost: 1_052_000,
+    period: reportingPeriod,
+    currency: 'USD' as const,
+  }
   const variance = budgetVariance(finance.budget, finance.cost)
   const costRatio = finance.budget > 0 ? Math.min(finance.cost / finance.budget, 1) : 0
 
@@ -68,21 +65,24 @@ export function HomePage() {
           <span className="home-brand-mark" aria-hidden="true">C</span>
           <span>Construx</span>
         </div>
-        <nav className="home-nav" aria-label="Workspace">
+        <nav className="home-nav" aria-label={m.home.navLabel}>
           <ul>
             {navItems.map((item) => (
-              <li key={item.label}>
+              <li key={item.id}>
                 <a
-                  href={`#${item.label.toLowerCase()}`}
+                  href={`#${item.id}`}
                   className={item.active ? 'is-active' : undefined}
                   aria-current={item.active ? 'page' : undefined}
                 >
-                  {item.label}
+                  {m.home.nav[item.id]}
                 </a>
               </li>
             ))}
           </ul>
         </nav>
+        <div className="home-sidebar__footer">
+          <LocaleSwitcher />
+        </div>
       </aside>
 
       <div className="home-body">
@@ -90,55 +90,55 @@ export function HomePage() {
           <div className="home-context__scope">
             <strong>{company}</strong>
             <span className="home-context__dot" aria-hidden="true">·</span>
-            <span>All sites</span>
+            <span>{m.home.allSites}</span>
             <span className="home-context__dot" aria-hidden="true">·</span>
             <span>{reportingPeriod}</span>
           </div>
-          <span>Data as of {formatDate('2026-10-19')}</span>
+          <span>{formatMessage(m.home.dataAsOf, { date: formatDate('2026-10-19', intlLocale) })}</span>
         </header>
 
         <main className="home-main">
           <div className="home-header">
             <div>
-              <h1>Workspace overview</h1>
-              <p>Your company&apos;s sites, team, and financial position at a glance.</p>
+              <h1>{m.home.overviewTitle}</h1>
+              <p>{m.home.overviewDescription}</p>
             </div>
-            <button className="home-button--primary" type="button">Add site</button>
+            <button className="home-button--primary" type="button">{m.home.addSite}</button>
           </div>
 
           <div className="home-grid">
             <section className="home-card home-card--finance" aria-labelledby="finance-heading">
               <header className="home-card__header">
-                <h2 id="finance-heading">Finance</h2>
+                <h2 id="finance-heading">{m.home.finance}</h2>
                 <span className="home-badge home-badge--muted">{finance.period}</span>
               </header>
 
               {variance.status === 'no-data' ? (
                 <p className="home-finance__delta home-finance__delta--no-data">
-                  <span>No data</span>
+                  <span>{m.home.noData}</span>
                 </p>
               ) : (
                 <p className={`home-finance__delta home-finance__delta--${variance.status}`}>
-                  {variance.status === 'savings' ? 'Savings' : 'Overrun'}{' '}
-                  <span>{formatCurrency(variance.amount, finance.currency)}</span>
+                  {variance.status === 'savings' ? m.home.savings : m.home.overrun}{' '}
+                  <span>{formatCurrency(variance.amount, finance.currency, intlLocale)}</span>
                 </p>
               )}
 
               <dl className="home-finance__stats">
                 <div>
-                  <dt>Budget</dt>
-                  <dd>{formatCurrency(finance.budget, finance.currency)}</dd>
+                  <dt>{m.home.budget}</dt>
+                  <dd>{formatCurrency(finance.budget, finance.currency, intlLocale)}</dd>
                 </div>
                 <div>
-                  <dt>Recorded cost</dt>
-                  <dd>{formatCurrency(finance.cost, finance.currency)}</dd>
+                  <dt>{m.home.recordedCost}</dt>
+                  <dd>{formatCurrency(finance.cost, finance.currency, intlLocale)}</dd>
                 </div>
               </dl>
 
               <div
                 className="home-finance__bar"
                 role="img"
-                aria-label={`${Math.round(costRatio * 100)}% of budget recorded`}
+                aria-label={formatMessage(m.home.budgetRecorded, { percent: Math.round(costRatio * 100) })}
               >
                 <span
                   className="home-finance__bar-fill"
@@ -149,18 +149,23 @@ export function HomePage() {
 
             <section className="home-card home-card--people" aria-labelledby="people-heading">
               <header className="home-card__header">
-                <h2 id="people-heading">People</h2>
+                <h2 id="people-heading">{m.home.people}</h2>
               </header>
               <p className="home-people__count">{people.members}</p>
               <p className="home-people__caption">
-                team members · {people.assignedThisWeek} assigned this week
+                {formatMessage(m.home.peopleCaption, {
+                  count: people.members,
+                  assigned: people.assignedThisWeek,
+                })}
               </p>
             </section>
 
             <section className="home-card home-card--sites" aria-labelledby="sites-heading">
               <header className="home-card__header">
-                <h2 id="sites-heading">Sites</h2>
-                <span className="home-badge home-badge--muted">{sites.length} active</span>
+                <h2 id="sites-heading">{m.home.sites}</h2>
+                <span className="home-badge home-badge--muted">
+                  {formatMessage(m.home.sitesActive, { count: sites.length })}
+                </span>
               </header>
               <ul className="home-sites">
                 {sites.map((site) => (
@@ -172,7 +177,7 @@ export function HomePage() {
                     <span
                       className={`home-badge ${site.status === 'at-risk' ? 'home-badge--warning' : 'home-badge--success'}`}
                     >
-                      {site.status === 'at-risk' ? 'At risk' : 'On schedule'}
+                      {site.status === 'at-risk' ? m.home.atRisk : m.home.onSchedule}
                     </span>
                   </li>
                 ))}
@@ -181,7 +186,7 @@ export function HomePage() {
 
             <section className="home-card home-card--activity" aria-labelledby="activity-heading">
               <header className="home-card__header">
-                <h2 id="activity-heading">Recent activity</h2>
+                <h2 id="activity-heading">{m.home.recentActivity}</h2>
               </header>
               <ul className="home-activity">
                 {activity.map((item) => (
