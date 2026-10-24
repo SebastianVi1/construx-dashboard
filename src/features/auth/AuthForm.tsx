@@ -7,8 +7,7 @@ import { Form, useForm, type FieldConfig } from '../../components/form'
 import { makeLoginSchema, makeRegistrationSchema } from './schemas'
 import { getOAuth2AuthorizationUrl } from '../../config/env'
 import { useLocale } from '../../i18n'
-import { QuestionModal } from '../../components/modal'
-import { onboardingQuestion } from './onboarding'
+import { useOnboarding } from '../onboarding'
 
 type AuthMode = 'login' | 'register'
 type ResendStatus = 'idle' | 'sending' | 'sent' | 'error'
@@ -19,8 +18,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const [searchParams] = useSearchParams()
   const { signIn } = useAuth()
   const { messages: m } = useLocale()
+  const { open: openOnboarding } = useOnboarding()
   const [accepted, setAccepted] = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState('')
   const [resendStatus, setResendStatus] = useState<ResendStatus>('idle')
 
@@ -34,7 +33,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       if (isRegistration) {
         await register(data)
         setRegisteredEmail(data.email)
-        setShowOnboarding(true)
+        setAccepted(true)
+        openOnboarding()
       } else {
         await login(data)
         await signIn()
@@ -59,19 +59,6 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     } catch {
       setResendStatus('error')
     }
-  }
-
-  function handleOnboardingSubmit(optionId: string) {
-    // The additional-information endpoint isn't defined yet; log for now and
-    // wire the selected answer to the backend here once the contract exists.
-    console.info('Onboarding answer:', optionId)
-    setShowOnboarding(false)
-    setAccepted(true)
-  }
-
-  function handleOnboardingSkip() {
-    setShowOnboarding(false)
-    setAccepted(true)
   }
 
   const fields: FieldConfig[] = [
@@ -129,15 +116,6 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       title={isRegistration ? m.auth.title.register : m.auth.title.signIn}
       description={isRegistration ? m.auth.description.register : m.auth.description.signIn}
     >
-      {showOnboarding && (
-        <QuestionModal
-          question={onboardingQuestion}
-          submitLabel={m.onboarding.continue}
-          onSubmit={handleOnboardingSubmit}
-          onClose={handleOnboardingSkip}
-        />
-      )}
-
       {googleError && (
         <p className="form-error auth-google-error" role="alert">
           {m.auth.error.google}

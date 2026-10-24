@@ -84,6 +84,7 @@ const en = {
   },
   onboarding: {
     continue: 'Continue',
+    openProfile: 'Complete your profile',
   },
   home: {
     navLabel: 'Workspace',
@@ -207,6 +208,7 @@ const es: Messages = {
   },
   onboarding: {
     continue: 'Continuar',
+    openProfile: 'Completa tu perfil',
   },
   home: {
     navLabel: 'Espacio de trabajo',

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import './modal.css'
 
 type ModalProps = {
@@ -27,7 +28,7 @@ export function Modal({ title, description, children, onClose }: ModalProps) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div
         ref={dialogRef}
@@ -45,6 +46,7 @@ export function Modal({ title, description, children, onClose }: ModalProps) {
         </header>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
