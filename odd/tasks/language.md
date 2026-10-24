@@ -17,12 +17,14 @@ Test runner: `bun test`
 
 ## Tasks
 
-- T1 — i18n foundation: `Locale` type + `resolveLocale`, en/es message dictionaries, `formatMessage`, `LocaleProvider`, `LocaleSwitcher`, tests — inline — S2/S3/S4/S5
-- T2 — auth feature string migration + `LocaleProvider` wiring in `main.tsx` — inline — S1/S6
-- T3 — home feature string migration + locale-aware date/currency/month formatting — inline — S1/S6
+- T1 — i18n foundation: `Locale` type + `resolveLocale`, en/es message dictionaries, `formatMessage`, `LocaleProvider`, `LocaleSwitcher`, tests — inline — S2/S3/S4/S5 — done — `4bed675`
+- T2 — auth feature string migration + `LocaleProvider` wiring in `main.tsx` — inline — S1/S6 — done — `e264a00`
+- T3 — home feature string migration + locale-aware date/currency/month formatting — inline — S1/S6 — done — `8a30e52`
 
 ## Log
 
 - L1 (2026-10-23): "Cambia la arquitectura para que use un idioma u otro segun su region, crea un branch llamado language y empieza a cambiar todas las variables por ese locale language"
 - L2 (2026-10-23): "Español (neutro) + Inglés"
 - L3 (2026-10-23): Prior register work (`name` field mapping) stashed as `stash@{0}` so the `language` branch starts clean.
+- L4 (2026-10-23): Locale switcher placed in the top-right corner of the auth screen only (`.auth-locale`); Home keeps its own placement in the sidebar footer.
+- L5 (2026-10-23): T1 → `4bed675`, T2 → `e264a00`, T3 → `8a30e52`. `bun test` (36 pass), lint, and build all green.
