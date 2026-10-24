@@ -82,6 +82,9 @@ const en = {
     passwordRequired: 'Enter your password',
     passwordMin: 'Use at least 12 characters',
   },
+  onboarding: {
+    continue: 'Continue',
+  },
   home: {
     navLabel: 'Workspace',
     nav: {
@@ -201,6 +204,9 @@ const es: Messages = {
     emailInvalid: 'Ingresa un correo electrónico válido',
     passwordRequired: 'Ingresa tu contraseña',
     passwordMin: 'Usa al menos 12 caracteres',
+  },
+  onboarding: {
+    continue: 'Continuar',
   },
   home: {
     navLabel: 'Espacio de trabajo',
