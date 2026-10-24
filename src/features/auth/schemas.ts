@@ -1,16 +1,28 @@
 import { z } from 'zod'
 
-const email = z.string().trim().min(1, 'Enter your email address').email('Enter a valid email address')
+export type ValidationMessages = {
+  emailRequired: string
+  emailInvalid: string
+  passwordRequired: string
+  passwordMin: string
+}
 
-export const loginSchema = z.object({
-  email,
-  password: z.string().min(1, 'Enter your password'),
-})
+export type LoginInput = { email: string; password: string }
+export type RegistrationInput = { email: string; password: string }
 
-export const registrationSchema = z.object({
-  email,
-  password: z.string().min(12, 'Use at least 12 characters'),
-})
+export function makeLoginSchema(messages: ValidationMessages) {
+  return z.object({
+    email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
+    password: z.string().min(1, messages.passwordRequired),
+  })
+}
+
+export function makeRegistrationSchema(messages: ValidationMessages) {
+  return z.object({
+    email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
+    password: z.string().min(12, messages.passwordMin),
+  })
+}
 
 export const csrfSchema = z.object({
   headerName: z.string().regex(/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/),
@@ -28,6 +40,4 @@ export const userSchema = z.object({
   email: z.string().email(),
 })
 
-export type LoginInput = z.infer<typeof loginSchema>
-export type RegistrationInput = z.infer<typeof registrationSchema>
 export type CurrentUser = z.infer<typeof userSchema>

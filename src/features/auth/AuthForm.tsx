@@ -4,8 +4,9 @@ import { login, register, resendVerification } from './authApi'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
 import { Form, useForm, type FieldConfig } from '../../components/form'
-import { loginSchema, registrationSchema } from './schemas'
+import { makeLoginSchema, makeRegistrationSchema } from './schemas'
 import { getOAuth2AuthorizationUrl } from '../../config/env'
+import { useLocale } from '../../i18n'
 
 type AuthMode = 'login' | 'register'
 type ResendStatus = 'idle' | 'sending' | 'sent' | 'error'
@@ -15,6 +16,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { signIn } = useAuth()
+  const { messages: m } = useLocale()
   const [accepted, setAccepted] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState('')
   const [resendStatus, setResendStatus] = useState<ResendStatus>('idle')
@@ -24,7 +26,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
 
   const form = useForm({
     initialValues: { email: '', password: '' },
-    schema: isRegistration ? registrationSchema : loginSchema,
+    schema: isRegistration ? makeRegistrationSchema(m.validation) : makeLoginSchema(m.validation),
     onSubmit: async (data) => {
       if (isRegistration) {
         await register(data)
@@ -43,8 +45,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   })
 
   useEffect(() => {
-    document.title = `${accepted ? 'Check your email' : isRegistration ? 'Create an account' : 'Sign in'} | Construx`
-  }, [accepted, isRegistration])
+    document.title = `${accepted ? m.auth.title.checkEmail : isRegistration ? m.auth.title.register : m.auth.title.signIn} | Construx`
+  }, [accepted, isRegistration, m])
 
   async function handleResend() {
     setResendStatus('sending')
@@ -59,81 +61,74 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const fields: FieldConfig[] = [
     {
       name: 'email',
-      label: 'Email address',
+      label: m.auth.field.emailLabel,
       type: 'email',
-      placeholder: 'you@example.com',
+      placeholder: m.auth.field.emailPlaceholder,
       autoComplete: 'email',
       inputMode: 'email',
       spellCheck: false,
     },
     {
       name: 'password',
-      label: 'Password',
+      label: m.auth.field.passwordLabel,
       type: 'password',
       autoComplete: isRegistration ? 'new-password' : 'current-password',
-      hint: isRegistration ? 'Use at least 12 characters.' : undefined,
+      hint: isRegistration ? m.auth.field.passwordHint : undefined,
     },
   ]
 
   if (accepted) {
     return (
-      <AuthLayout
-        title="Check your email"
-        description="If this address can receive a verification email, follow the instructions there to finish creating your account."
-      >
+      <AuthLayout title={m.auth.title.checkEmail} description={m.auth.description.checkEmail}>
         <div className="auth-accepted" role="status">
-          <p>You can return to sign in after verifying your email.</p>
+          <p>{m.auth.accepted.body}</p>
         </div>
         <div className="auth-resend">
           {resendStatus === 'sent' ? (
-            <p className="auth-resend__sent" role="status">Verification email sent. Check your inbox.</p>
+            <p className="auth-resend__sent" role="status">{m.auth.accepted.sent}</p>
           ) : (
             <>
-              <p className="auth-resend__hint">Didn&apos;t receive the email?</p>
+              <p className="auth-resend__hint">{m.auth.accepted.resendHint}</p>
               <button
                 type="button"
                 className="auth-resend__button"
                 onClick={handleResend}
                 disabled={resendStatus === 'sending'}
               >
-                {resendStatus === 'sending' ? 'Sending…' : 'Resend verification email'}
+                {resendStatus === 'sending' ? m.auth.accepted.resendSending : m.auth.accepted.resendButton}
               </button>
               {resendStatus === 'error' && (
-                <p className="form-error" role="alert">We could not resend the email. Please try again.</p>
+                <p className="form-error" role="alert">{m.auth.error.resend}</p>
               )}
             </>
           )}
         </div>
-        <p className="auth-switch"><Link to="/login">Sign in</Link></p>
+        <p className="auth-switch"><Link to="/login">{m.auth.accepted.signInLink}</Link></p>
       </AuthLayout>
     )
   }
 
   return (
     <AuthLayout
-      title={isRegistration ? 'Create an account' : 'Sign in'}
-      description={isRegistration
-        ? 'Enter your details to request an account. You will verify your email before signing in.'
-        : 'Enter your account details to return to your workspace.'}
+      title={isRegistration ? m.auth.title.register : m.auth.title.signIn}
+      description={isRegistration ? m.auth.description.register : m.auth.description.signIn}
     >
       {googleError && (
         <p className="form-error auth-google-error" role="alert">
-          Google sign-in failed. Please try again or use your email and password.
+          {m.auth.error.google}
         </p>
       )}
 
       <Form
         controller={form}
         fields={fields}
-        submitLabel={isRegistration ? 'Create account' : 'Sign in'}
-        pendingLabel={isRegistration ? 'Creating your account…' : 'Signing you in…'}
+        submitLabel={isRegistration ? m.auth.submit.register : m.auth.submit.signIn}
+        pendingLabel={isRegistration ? m.auth.pending.register : m.auth.pending.signIn}
       >
         <div className="form-feedback" aria-live="polite" aria-atomic="true">
           {form.submitError && (
             <p className="form-error" role="alert">
-              {isRegistration
-                ? 'We could not complete your request. Please try again.'
-                : 'We could not sign you in. Check your details and try again.'}
+              {isRegistration ? m.auth.error.register : m.auth.error.signIn}
             </p>
           )}
         </div>
@@ -141,7 +136,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
 
       {googleAuthorizationUrl && (
         <>
-          <div className="auth-divider" role="separator"><span>or</span></div>
+          <div className="auth-divider" role="separator"><span>{m.auth.divider}</span></div>
           <a className="auth-google" href={googleAuthorizationUrl}>
             <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
               <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62Z" />
@@ -149,15 +144,15 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
               <path fill="#FBBC05" d="M3.94 10.7a5.4 5.4 0 0 1 0-3.42V4.96H.86a9 9 0 0 0 0 8.08l3.08-2.34Z" />
               <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .86 4.96L3.94 7.3A5.4 5.4 0 0 1 9 3.58Z" />
             </svg>
-            Continue with Google
+            {m.auth.google}
           </a>
         </>
       )}
 
       <p className="auth-switch">
-        {isRegistration ? 'Already have an account?' : 'New to Construx?'}{' '}
+        {isRegistration ? m.auth.switch.toLogin : m.auth.switch.toRegister}{' '}
         <Link to={isRegistration ? '/login' : '/register'}>
-          {isRegistration ? 'Sign in' : 'Create an account'}
+          {isRegistration ? m.auth.switch.loginLink : m.auth.switch.registerLink}
         </Link>
       </p>
     </AuthLayout>

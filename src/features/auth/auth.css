@@ -8,6 +8,7 @@
 
 .auth-page {
   box-sizing: border-box;
+  position: relative;
   min-height: 100svh;
   width: 100%;
   background: var(--cx-canvas);
@@ -32,6 +33,12 @@
 
 .auth-shell {
   width: min(100%, 440px);
+}
+
+.auth-locale {
+  position: absolute;
+  top: 24px;
+  right: 24px;
 }
 
 .auth-brand {

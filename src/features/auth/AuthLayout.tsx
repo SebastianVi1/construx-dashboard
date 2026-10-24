@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
+import { LocaleSwitcher, useLocale } from '../../i18n'
 import './auth.css'
 
 type AuthLayoutProps = {
@@ -9,10 +10,15 @@ type AuthLayoutProps = {
 }
 
 export function AuthLayout({ title, description, children }: AuthLayoutProps) {
+  const { messages: m } = useLocale()
+
   return (
     <main className="auth-page">
+      <div className="auth-locale">
+        <LocaleSwitcher />
+      </div>
       <div className="auth-shell">
-        <Link className="auth-brand" to="/" aria-label="Construx home">
+        <Link className="auth-brand" to="/" aria-label={m.auth.brandHome}>
           <span className="auth-brand-mark" aria-hidden="true">C</span>
           <span>Construx</span>
         </Link>
@@ -25,7 +31,7 @@ export function AuthLayout({ title, description, children }: AuthLayoutProps) {
           {children}
         </section>
 
-        <Link className="auth-back" to="/account">Back to app</Link>
+        <Link className="auth-back" to="/account">{m.auth.backToApp}</Link>
       </div>
     </main>
   )

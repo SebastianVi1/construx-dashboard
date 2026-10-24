@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
+import { useLocale } from '../../i18n'
 
 /**
  * Landing page after a successful Google OAuth redirect. The backend sets the
@@ -11,10 +12,11 @@ import { AuthLayout } from './AuthLayout'
 export function AuthCompletePage() {
   const { status } = useAuth()
   const navigate = useNavigate()
+  const { messages: m } = useLocale()
 
   useEffect(() => {
-    document.title = 'Completing sign in | Construx'
-  }, [])
+    document.title = `${m.auth.title.complete} | Construx`
+  }, [m])
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -25,10 +27,10 @@ export function AuthCompletePage() {
   }, [status, navigate])
 
   return (
-    <AuthLayout title="Completing sign in" description="Finishing your sign-in…">
+    <AuthLayout title={m.auth.title.complete} description={m.auth.description.complete}>
       <div className="auth-loading" role="status">
         <span className="auth-loading__spinner" aria-hidden="true" />
-        <span>Signing you in…</span>
+        <span>{m.auth.pending.signIn}</span>
       </div>
     </AuthLayout>
   )

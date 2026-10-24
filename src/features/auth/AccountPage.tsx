@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
+import { useLocale } from '../../i18n'
 
 /**
  * Minimal post-login landing. HomePage stays unrouted; this page is the only
@@ -9,17 +10,18 @@ import { AuthLayout } from './AuthLayout'
  */
 export function AccountPage() {
   const { status, user, signOut } = useAuth()
+  const { messages: m } = useLocale()
 
   useEffect(() => {
-    document.title = 'Your account | Construx'
-  }, [])
+    document.title = `${m.auth.title.account} | Construx`
+  }, [m])
 
   if (status === 'loading') {
     return (
-      <AuthLayout title="Your account" description="Checking your session…">
+      <AuthLayout title={m.auth.title.account} description={m.auth.account.checking}>
         <div className="auth-loading" role="status">
           <span className="auth-loading__spinner" aria-hidden="true" />
-          <span>Loading…</span>
+          <span>{m.auth.account.loading}</span>
         </div>
       </AuthLayout>
     )
@@ -30,13 +32,13 @@ export function AccountPage() {
   }
 
   return (
-    <AuthLayout title="Your account" description="You are signed in to Construx.">
+    <AuthLayout title={m.auth.title.account} description={m.auth.description.account}>
       <div className="auth-account">
         <p>
-          Signed in as <span className="auth-account__email">{user.email}</span>
+          {m.auth.account.signedInAs} <span className="auth-account__email">{user.email}</span>
         </p>
         <button type="button" className="auth-signout" onClick={() => void signOut()}>
-          Sign out
+          {m.auth.account.signOut}
         </button>
       </div>
     </AuthLayout>
