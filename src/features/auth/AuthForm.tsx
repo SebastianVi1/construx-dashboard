@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { login, register, resendVerification } from './authApi'
+import { AuthApiError, login, register, resendVerification } from './authApi'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
 import { Form, useForm, type FieldConfig } from '../../components/form'
@@ -22,6 +22,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const [accepted, setAccepted] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState('')
   const [resendStatus, setResendStatus] = useState<ResendStatus>('idle')
+  const [rateLimited, setRateLimited] = useState(false)
 
   const googleError = !isRegistration && searchParams.get('error') === 'google'
   const googleAuthorizationUrl = isRegistration ? '' : getOAuth2AuthorizationUrl()
@@ -30,15 +31,21 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     initialValues: { email: '', password: '' },
     schema: isRegistration ? makeRegistrationSchema(m.validation) : makeLoginSchema(m.validation),
     onSubmit: async (data) => {
-      if (isRegistration) {
-        await register(data)
-        setRegisteredEmail(data.email)
-        setAccepted(true)
-        openOnboarding()
-      } else {
-        await login(data)
-        await signIn()
-        navigate('/account', { replace: true })
+      setRateLimited(false)
+      try {
+        if (isRegistration) {
+          await register(data)
+          setRegisteredEmail(data.email)
+          setAccepted(true)
+          openOnboarding()
+        } else {
+          await login(data)
+          await signIn()
+          navigate('/account', { replace: true })
+        }
+      } catch (error) {
+        setRateLimited(error instanceof AuthApiError && error.status === 429)
+        throw error
       }
     },
     onInvalid: (errors) => {
@@ -131,7 +138,11 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         <div className="form-feedback" aria-live="polite" aria-atomic="true">
           {form.submitError && (
             <p className="form-error" role="alert">
-              {isRegistration ? m.auth.error.register : m.auth.error.signIn}
+              {rateLimited
+                ? m.auth.error.rateLimited
+                : isRegistration
+                  ? m.auth.error.register
+                  : m.auth.error.signIn}
             </p>
           )}
         </div>

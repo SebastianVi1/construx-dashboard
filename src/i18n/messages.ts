@@ -48,6 +48,7 @@ const en = {
       signIn: 'We could not sign you in. Check your details and try again.',
       register: 'We could not complete your request. Please try again.',
       resend: 'We could not resend the email. Please try again.',
+      rateLimited: 'Too many attempts. Please wait a moment and try again.',
     },
     accepted: {
       body: 'You can return to sign in after verifying your email.',
@@ -173,6 +174,7 @@ const es: Messages = {
       signIn: 'No pudimos iniciar tu sesión. Revisa tus datos e inténtalo de nuevo.',
       register: 'No pudimos completar tu solicitud. Inténtalo de nuevo.',
       resend: 'No pudimos reenviar el correo. Inténtalo de nuevo.',
+      rateLimited: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
     },
     accepted: {
       body: 'Puedes volver a iniciar sesión después de verificar tu correo.',
