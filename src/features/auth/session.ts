@@ -1,6 +1,20 @@
 import { AuthApiError, getCurrentUser, refresh } from './authApi'
 import type { CurrentUser } from './schemas'
 
+/** Share one in-flight call between concurrent callers; a new call starts once it settles. */
+export function shareInFlight(task: () => Promise<void>): () => Promise<void> {
+  let inFlight: Promise<void> | undefined
+  return () => {
+    inFlight ??= task().finally(() => {
+      inFlight = undefined
+    })
+    return inFlight
+  }
+}
+
+/** Refresh the session, sharing a single request between concurrent callers. */
+export const sharedRefresh = shareInFlight(refresh)
+
 export type RestoreResult =
   | { status: 'authenticated'; user: CurrentUser }
   | { status: 'unauthenticated' }
@@ -12,7 +26,7 @@ export type RestoreResult =
  */
 export async function restoreSession(
   getCurrentUserFn: () => Promise<CurrentUser> = getCurrentUser,
-  refreshFn: () => Promise<void> = refresh,
+  refreshFn: () => Promise<void> = sharedRefresh,
 ): Promise<RestoreResult> {
   try {
     const user = await getCurrentUserFn()

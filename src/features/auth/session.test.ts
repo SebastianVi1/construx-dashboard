@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from 'bun:test'
 import { AuthApiError } from './authApi'
-import { restoreSession } from './session'
+import { restoreSession, shareInFlight } from './session'
 
 const user = { id: 1, email: 'person@example.com' }
 
@@ -66,5 +66,40 @@ describe('restoreSession', () => {
     expect(result).toEqual({ status: 'unauthenticated' })
     expect(getCurrentUser).toHaveBeenCalledTimes(1)
     expect(refresh).toHaveBeenCalledTimes(0)
+  })
+})
+
+describe('shareInFlight', () => {
+  it('runs one call for concurrent callers and allows a new one afterwards', async () => {
+    let release: () => void = () => {}
+    const task = mock(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve
+        }),
+    )
+    const shared = shareInFlight(task)
+
+    const first = shared()
+    const second = shared()
+    expect(task).toHaveBeenCalledTimes(1)
+    release()
+    await Promise.all([first, second])
+
+    const third = shared()
+    expect(task).toHaveBeenCalledTimes(2)
+    release()
+    await third
+  })
+
+  it('clears the in-flight call when it fails', async () => {
+    const task = mock(async () => {
+      throw new AuthApiError(401)
+    })
+    const shared = shareInFlight(task)
+
+    await expect(shared()).rejects.toBeInstanceOf(AuthApiError)
+    await expect(shared()).rejects.toBeInstanceOf(AuthApiError)
+    expect(task).toHaveBeenCalledTimes(2)
   })
 })
