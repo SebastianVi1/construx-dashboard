@@ -1,27 +1,30 @@
 ---
 version: alpha
 name: Construx Dashboard
-description: A precise, blue-led operations workspace for construction companies.
+description: A dark blueprint-style operations workspace for construction companies, sharing the Construx landing page palette.
 colors:
-  canvas: "#F5F8FC"
-  surface: "#FFFFFF"
-  ink: "#14263D"
-  muted: "#52657A"
-  border: "#D7E1EC"
-  primary: "#175CD3"
-  primary-hover: "#1248A8"
-  primary-subtle: "#EAF2FF"
-  success: "#176B4D"
-  warning: "#8B5600"
-  danger: "#B42332"
-  chart-teal: "#0F766E"
-  chart-amber: "#A96909"
-  chart-violet: "#6E56CF"
+  ink-950: "#060D1A"
+  ink-900: "#0A1628"
+  ink-800: "#102039"
+  ink-700: "#1A2F52"
+  ink-600: "#2A4373"
+  blueprint-400: "#6FA8FF"
+  blueprint-300: "#9CC2FF"
+  paper: "#F3F6FB"
+  paper-dim: "#C4CFE0"
+  safety-600: "#E5640A"
+  safety-500: "#FF7A1A"
+  safety-400: "#FF9446"
+  success: "#3DDC97"
+  warning: "#FFC24A"
+  danger: "#FF7B8A"
 typography:
+  display:
+    fontFamily: "Space Grotesk Variable, system-ui, sans-serif"
   sans:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
+    fontFamily: "Inter Variable, system-ui, sans-serif"
   data:
-    fontFamily: "IBM Plex Mono, ui-monospace, monospace"
+    fontFamily: "JetBrains Mono Variable, ui-monospace, monospace"
 rounded:
   sm: "0.375rem"
   md: "0.5rem"
@@ -32,9 +35,9 @@ spacing:
   section-gap: "2rem"
 components:
   button:
-    minHeight: "2.75rem"
+    minHeight: "2.875rem"
   input:
-    minHeight: "2.75rem"
+    minHeight: "2.875rem"
   card:
     radius: "0.75rem"
   table:
@@ -43,7 +46,7 @@ components:
 
 # Construx Dashboard design guide
 
-**Status:** The Login and Registration screens now map this proposed system to semantic CSS variables in `src/index.css` and consume them in `src/features/auth/auth.css`. The existing landing route remains the Vite starter; its purple accent and automatic dark mode are not evidence of an established Construx identity. Other dashboard screens have not yet implemented this guide.
+**Status:** Login, registration, password recovery and account screens use this system through semantic `--cx-*` variables in `src/index.css`. The palette, fonts, and logo assets come from the Construx landing page (`construx-landing-page/src/styles/global.css`) so both products read as one brand. Other dashboard screens have not yet been restyled; they inherit the new tokens but need a pass.
 
 ## Overview
 
@@ -61,25 +64,28 @@ This direction implements the [dashboard constitution](.specify/memory/constitut
 
 ## Colors
 
-| Role | Token | Use |
-| --- | --- | --- |
-| App canvas | `canvas` | Quiet page background, never chart data. |
-| Surface | `surface` | Forms, tables, cards, and dialogs. |
-| Main / secondary text | `ink` / `muted` | Primary reading hierarchy and supporting labels. |
-| Structural line | `border` | Dividers and input outlines; grouping starts with spacing. |
-| Action | `primary` / `primary-hover` | Primary button, link, active navigation, and selection. |
-| Soft action surface | `primary-subtle` | Selected row or low-emphasis information, with dark text. |
-| Status | `success` / `warning` / `danger` | Confirmed outcomes, caution, and errors or overruns. |
-| Chart series | `primary`, `chart-teal`, `chart-amber`, `chart-violet` | Distinct series only when the chart needs them. |
+The raw landing-page scale lives in `src/index.css` (`--cx-ink-*`, `--cx-blueprint-*`, `--cx-safety-*`, `--cx-paper*`). Components use only the semantic roles below.
 
-Use a light theme for the first release; dark mode is not specified. Never infer financial health from hue alone: label **Savings**, **Overrun**, or **No data** and show the actual amount, period, and currency. Missing values are not zero. Keep status colors out of decorative chrome. The main text and action/status text tokens above have at least 4.5:1 contrast against white; recheck every composed state, especially muted text on tinted surfaces and chart marks.
+| Role | Token | Value | Use |
+| --- | --- | --- | --- |
+| App canvas | `--cx-canvas` | ink-950 | Page background and input fill. |
+| Surface | `--cx-surface` / `--cx-surface-raised` | ink-900 / ink-800 | Panels, dialogs, raised items. |
+| Text | `--cx-ink` / `--cx-muted` | paper / paper-dim | Primary reading and supporting text. |
+| Structural line | `--cx-border` / `--cx-border-strong` | ink-700 / ink-600 | Panel dividers and input outlines. |
+| Action | `--cx-primary` (+ `-hover`, `-pressed`, `-subtle`) | safety-500 / 400 / 600 | One primary button per view. Text on it uses `--cx-on-primary` (ink-950), never white. |
+| Structure and focus | `--cx-accent` / `--cx-accent-subtle` | blueprint-400 | Links, input hover and focus ring, loaders. |
+| Status | `--cx-success` / `--cx-warning` / `--cx-danger` (+ `-subtle`) | green / amber / rose | Confirmed outcomes, caution, errors. |
+
+Orange means "act", blue means "structure and focus"; never swap them. Errors use a rose `danger` rather than orange so they cannot be confused with the primary action. Dark only for now. Do not infer financial health from hue alone: label **Savings**, **Overrun**, or **No data** and show the amount, period, and currency. Contrast is expected to be at least 4.5:1 for `paper`, `paper-dim`, `blueprint-400`, `success`, `danger`, and ink-950 text on `safety-500`, but it has not been measured in the rendered UI yet; recheck every composed state, especially tinted error and success fills.
 
 ## Typography
 
-- **Primary:** IBM Plex Sans for headings, controls, forms, and prose; weights 400, 500, and 600. Self-host only the necessary WOFF2 subsets when implemented. Until those assets exist, use the listed system fallback without blocking content or fetching a font at runtime.
-- **Data:** IBM Plex Mono for amounts, IDs, dates, and compact metadata; use sparingly, not for paragraphs. Enable tabular numerals in financial columns so changing values do not shift alignment.
-- **Scale:** Page title 28/36 px at desktop and 24/32 px on mobile; section title 20/28 px; body and controls 14/20 or 16/24 px; supporting text 13/18 px. Financial headline values may reach 32/40 px when accompanied by a clear label.
-- **Copy:** Sentence case, specific nouns, and direct verbs: “Add site,” “Assign employee,” “Record cost.” Avoid “Submit,” unexplained abbreviations, decorative all-caps, and color-only labels.
+- **Display:** Space Grotesk for headings (h1-h3) and button labels. Tight tracking (-0.02em) on headings.
+- **Body:** Inter for forms, tables, and prose; weights 400, 500, and 600.
+- **Data:** JetBrains Mono for amounts, IDs, dates, and compact metadata, sparingly. Enable tabular numerals in financial columns.
+- All three are self-hosted through `@fontsource-variable/*` (the same packages as the landing page), imported at the top of `src/index.css`. No font service is fetched at runtime.
+- **Scale:** Page title 28/36 px desktop and 24/32 px mobile; section title 20/28 px; body and controls 14/20 or 16/24 px; supporting text 13/18 px.
+- **Copy:** Sentence case, specific nouns, and direct verbs: "Add site," "Assign employee." Avoid "Submit," unexplained abbreviations, and decorative all-caps.
 
 ## Layout
 
@@ -91,7 +97,9 @@ Use a light theme for the first release; dark mode is not specified. Never infer
 
 ## Elevation & depth
 
-Prefer spacing and a 1 px `border` to separate regions. Use a soft shadow only for floating menus, dialogs, or a surface that must visibly sit above another. Do not shadow every card. Keep chart plot areas flat so marks and axes remain legible.
+Prefer spacing and a 1 px `border` to separate regions. On the dark canvas, use a deep black shadow only for floating menus, dialogs, and the auth panel.
+
+The signature device from the landing page is the **plan-sheet corner mark**: four small safety-orange L-shaped ticks inset in a panel's corners. Use it on the auth panel and on cards the user can open; never on every container. Auth screens also sit on the faint blueprint grid (48 px, blueprint-400 at 7%); keep that grid out of data views. Do not shadow every card. Keep chart plot areas flat so marks and axes remain legible.
 
 ## Shapes
 
@@ -108,10 +116,14 @@ Use `sm` for compact badges, `md` for inputs and buttons, and `lg` for cards and
 
 ### Forms and feedback
 
-- Labels remain visible above fields; placeholder text is an example, not a label. Put validation beside the affected field and preserve entered non-secret values on recoverable errors.
-- Buttons have default, hover, pressed, focus-visible, disabled, and busy states. Keep button width stable while busy and prevent duplicate submissions.
-- Use an app-owned accessible dialog for consequential confirmations, with clear action and cancellation. Use inline feedback for field errors and a short status message for completed actions; never rely on color alone.
-- Login and registration use the same blue type, controls, and spacing, but a narrower single-column layout. Their success/error states must not reveal credentials, token values, or whether a registration email is already in use. Registration acceptance means “check your email,” not “signed in.”
+- Labels remain visible above fields; placeholder text is an example, not a label. Preserve entered non-secret values on recoverable errors.
+- **Validation is reactive and schema-driven.** Each form has one Zod schema; `useForm` re-parses the values on every render. A field shows no state until it is blurred or a submit was attempted; from then on its error, or its valid mark, follows the current value on every keystroke. Rules that span fields (such as password confirmation) update when either field changes. The first failed submit focuses the first invalid field.
+- Field states are driven by `data-state="idle|invalid|valid"` on the field wrapper: an invalid field gets a rose border, a faint rose fill, an exclamation glyph, and a message below (`role="alert"`); a valid field gets a green border and a tick. The glyph means colour is never the only cue. A hint turns green once its rule is met.
+- Password fields have a show/hide toggle with localized accessible names (`revealLabels`).
+- Server errors appear in a bordered, tinted `form-error` block above the submit button, not under a field, and clear as soon as the user edits.
+- Buttons have default, hover, pressed, focus-visible, disabled, and busy states. Keep width stable while busy and prevent duplicate submissions.
+- Use an app-owned accessible dialog for consequential confirmations. Use inline feedback for field errors and a short status message for completed actions.
+- Login and registration share controls and spacing in a narrow single-column panel. Their states must not reveal credentials, token values, or whether a registration email is already in use. Registration acceptance means "check your email," not "signed in."
 
 ### Finance and charts
 
@@ -122,11 +134,27 @@ Use `sm` for compact badges, `md` for inputs and buttons, and `lg` for cards and
 ### Motion and accessibility
 
 - Motion should confirm an interaction, not delay access: roughly 120–180 ms for hover/press and up to 220 ms for a small panel transition. Avoid entrance choreography on routine dashboard loads.
-- Respect `prefers-reduced-motion` by removing nonessential transitions. Keep focus indicators visible, keyboard order logical, and state changes announced where appropriate. Target WCAG 2.2 AA when implementing and verify contrast, focus, touch targets, and chart alternatives in the rendered UI.
+- Respect `prefers-reduced-motion` by removing nonessential transitions. Focus indicators are a 2 px `safety-400` outline (or the blue accent ring on inputs) and must stay visible, keyboard order logical, and state changes announced where appropriate. Target WCAG 2.2 AA when implementing and verify contrast, focus, touch targets, and chart alternatives in the rendered UI.
+
+## Brand assets
+
+Logo files are kept in `src/assets/logo` (not committed). Usage:
+
+| Need | File |
+| --- | --- |
+| Main brand on dark UI (auth header) | `lockup-horizontal-on-dark.svg`, imported by `AuthLayout` |
+| Browser tab, bookmarks | `public/favicon.svg`, `favicon.ico`, `favicon-16/32.png` |
+| iOS home screen | `public/apple-touch-icon.png` |
+| Install / PWA | `public/site.webmanifest`, `icon-192.png`, `icon-512.png`, `maskable-512.png` |
+| Narrow spaces (collapsed nav) | `symbol-on-dark.svg` |
+| Light backgrounds (emails, print) | `lockup-horizontal.svg` |
+
+Browser chrome colour is `#0A1628` (`ink-900`).
 
 ## Do's and Don'ts
 
 - **Do** make company/site scope and data freshness obvious before optimizing decoration.
 - **Do** reuse one semantic token and component vocabulary across Sites, People, Products, Finance, CRM, and auth.
+- **Don't** use `white` or raw hex in component CSS; use the `--cx-*` roles.
 - **Don't** turn the Products catalogue into an inventory or purchasing interface; that is outside the current spec.
 - **Don't** add chart libraries, animation packages, or font services merely to match a mockup; speed and KISS are product requirements.
