@@ -132,6 +132,9 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         submitLabel={isRegistration ? m.auth.submit.register : m.auth.submit.signIn}
         pendingLabel={isRegistration ? m.auth.pending.register : m.auth.pending.signIn}
       >
+        {!isRegistration && (
+          <p className="auth-forgot"><Link to="/forgot-password">{m.auth.recovery.forgotLink}</Link></p>
+        )}
         <div className="form-feedback" aria-live="polite" aria-atomic="true">
           {form.submitError && (
             <p className="form-error" role="alert">

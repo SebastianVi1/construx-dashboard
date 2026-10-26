@@ -138,6 +138,16 @@
   font-weight: 600;
 }
 
+.auth-forgot {
+  margin-top: -10px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.auth-forgot a:hover {
+  color: var(--cx-primary-hover);
+}
+
 .auth-back {
   display: inline-block;
   margin-top: 24px;
