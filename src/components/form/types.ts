@@ -34,6 +34,8 @@ export type FieldConfig = {
   spellCheck?: boolean
   /** Helper text shown under the control while it is valid. */
   hint?: string
+  /** Accessible names for the show/hide toggle. Only used by `password` fields. */
+  revealLabels?: { show: string; hide: string }
 }
 
 export type FieldErrors = Record<string, string | undefined>
@@ -45,10 +47,14 @@ export type FieldErrors = Record<string, string | undefined>
  */
 export type FormController = {
   values: Record<string, string>
+  /** Errors visible to the user: only fields already touched or submitted. */
   errors: FieldErrors
+  /** Fields that were visited (or submitted) and currently satisfy the schema. */
+  valid: Record<string, boolean>
   isSubmitting: boolean
   submitError: boolean
   onChange: (name: string, value: string) => void
+  onBlur: (name: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
 

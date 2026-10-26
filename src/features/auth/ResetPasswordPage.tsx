@@ -95,6 +95,7 @@ export function ResetPasswordPage() {
       label: m.auth.recovery.newPasswordLabel,
       type: 'password',
       autoComplete: 'new-password',
+      revealLabels: { show: m.auth.field.showPassword, hide: m.auth.field.hidePassword },
       hint: m.auth.field.passwordHint,
     },
     {
@@ -102,6 +103,7 @@ export function ResetPasswordPage() {
       label: m.auth.recovery.confirmPasswordLabel,
       type: 'password',
       autoComplete: 'new-password',
+      revealLabels: { show: m.auth.field.showPassword, hide: m.auth.field.hidePassword },
     },
   ]
 

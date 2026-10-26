@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react'
 import type { ZodType } from 'zod'
-import { collectErrors } from './validation'
+import { collectErrors, visibleFieldState } from './validation'
 import type { FieldErrors, FormController } from './types'
 
 type UseFormOptions<Values extends Record<string, string>> = {
@@ -23,30 +23,40 @@ export function useForm<Values extends Record<string, string>>({
   onInvalid,
 }: UseFormOptions<Values>): FormController {
   const [values, setValues] = useState<Values>(initialValues)
-  const [errors, setErrors] = useState<FieldErrors>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [submitAttempted, setSubmitAttempted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(false)
   const submittingRef = useRef(false)
 
+  // Derived on every render, so a rule that depends on another field (such as
+  // "passwords match") reacts as soon as either value changes.
+  const result = schema.safeParse(values)
+  const allErrors: FieldErrors = result.success ? {} : collectErrors(result.error)
+
+  const { errors, valid } = visibleFieldState(values, allErrors, touched, submitAttempted)
+
   function onChange(name: string, value: string) {
     setValues((current) => ({ ...current, [name]: value }))
-    setErrors((current) => ({ ...current, [name]: undefined }))
+    setSubmitError(false)
+  }
+
+  function onBlur(name: string) {
+    setTouched((current) => (current[name] ? current : { ...current, [name]: true }))
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submittingRef.current) return
 
+    setSubmitAttempted(true)
     const parsed = schema.safeParse(values)
     if (!parsed.success) {
-      const nextErrors = collectErrors(parsed.error)
-      setErrors(nextErrors)
-      onInvalid?.(nextErrors)
+      onInvalid?.(collectErrors(parsed.error))
       return
     }
 
     submittingRef.current = true
-    setErrors({})
     setSubmitError(false)
     setIsSubmitting(true)
     try {
@@ -59,5 +69,5 @@ export function useForm<Values extends Record<string, string>>({
     }
   }
 
-  return { values, errors, isSubmitting, submitError, onChange, onSubmit: handleSubmit }
+  return { values, errors, valid, isSubmitting, submitError, onChange, onBlur, onSubmit: handleSubmit }
 }

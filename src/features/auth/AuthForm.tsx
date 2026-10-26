@@ -80,6 +80,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       label: m.auth.field.passwordLabel,
       type: 'password',
       autoComplete: isRegistration ? 'new-password' : 'current-password',
+      revealLabels: { show: m.auth.field.showPassword, hide: m.auth.field.hidePassword },
       hint: isRegistration ? m.auth.field.passwordHint : undefined,
     },
   ]

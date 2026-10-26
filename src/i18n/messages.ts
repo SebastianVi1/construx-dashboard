@@ -33,6 +33,8 @@ const en = {
       emailPlaceholder: 'you@example.com',
       passwordLabel: 'Password',
       passwordHint: 'Use at least 12 characters.',
+      showPassword: 'Show password',
+      hidePassword: 'Hide password',
     },
     submit: {
       signIn: 'Sign in',
@@ -193,6 +195,8 @@ const es: Messages = {
       emailPlaceholder: 'tu@ejemplo.com',
       passwordLabel: 'Contraseña',
       passwordHint: 'Usa al menos 12 caracteres.',
+      showPassword: 'Mostrar contraseña',
+      hidePassword: 'Ocultar contraseña',
     },
     submit: {
       signIn: 'Iniciar sesión',

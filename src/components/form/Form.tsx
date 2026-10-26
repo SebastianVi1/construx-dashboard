@@ -8,7 +8,7 @@ import './form.css'
  * injected status/alerts, and the submit button.
  */
 export function Form({ controller, fields, submitLabel, pendingLabel, children }: FormProps) {
-  const { values, errors, isSubmitting, onChange, onSubmit } = controller
+  const { values, errors, valid, isSubmitting, onChange, onBlur, onSubmit } = controller
 
   return (
     <form className="form" noValidate onSubmit={onSubmit} aria-busy={isSubmitting}>
@@ -18,8 +18,10 @@ export function Form({ controller, fields, submitLabel, pendingLabel, children }
           config={field}
           value={values[field.name] ?? ''}
           error={errors[field.name]}
+          valid={valid[field.name]}
           disabled={isSubmitting}
           onChange={(value) => onChange(field.name, value)}
+          onBlur={() => onBlur(field.name)}
         />
       ))}
 
