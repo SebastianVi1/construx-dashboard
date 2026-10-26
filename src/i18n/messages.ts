@@ -81,6 +81,7 @@ const en = {
     emailInvalid: 'Enter a valid email address',
     passwordRequired: 'Enter your password',
     passwordMin: 'Use at least 12 characters',
+    passwordMax: 'Use at most 72 characters',
   },
   onboarding: {
     continue: 'Continue',
@@ -205,6 +206,7 @@ const es: Messages = {
     emailInvalid: 'Ingresa un correo electrónico válido',
     passwordRequired: 'Ingresa tu contraseña',
     passwordMin: 'Usa al menos 12 caracteres',
+    passwordMax: 'Usa como máximo 72 caracteres',
   },
   onboarding: {
     continue: 'Continuar',

@@ -47,6 +47,11 @@ describe('auth input validation', () => {
     expect(registrationSchema.safeParse({ email: 'person@example.com', password: '12345678901' }).success).toBe(false)
     expect(registrationSchema.safeParse({ email: 'person@example.com', password: '123456789012' }).success).toBe(true)
   })
+
+  it('rejects a registration password longer than 72 characters', () => {
+    expect(registrationSchema.safeParse({ email: 'person@example.com', password: 'a'.repeat(72) }).success).toBe(true)
+    expect(registrationSchema.safeParse({ email: 'person@example.com', password: 'a'.repeat(73) }).success).toBe(false)
+  })
 })
 
 describe('auth API', () => {
@@ -163,4 +168,5 @@ describe('auth API', () => {
     expect(url).toBe('/api/auth/resend')
     expect(data).toEqual({ email: 'person@example.com' })
   })
+
 })

@@ -5,6 +5,7 @@ export type ValidationMessages = {
   emailInvalid: string
   passwordRequired: string
   passwordMin: string
+  passwordMax: string
 }
 
 export type LoginInput = { email: string; password: string }
@@ -20,7 +21,7 @@ export function makeLoginSchema(messages: ValidationMessages) {
 export function makeRegistrationSchema(messages: ValidationMessages) {
   return z.object({
     email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
-    password: z.string().min(12, messages.passwordMin),
+    password: z.string().min(12, messages.passwordMin).max(72, messages.passwordMax),
   })
 }
 
