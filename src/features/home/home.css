@@ -35,7 +35,7 @@
   display: grid;
   place-items: center;
   background: var(--cx-primary);
-  color: white;
+  color: var(--cx-on-primary);
   border-radius: var(--cx-radius-sm);
   font-weight: 600;
   line-height: 1;
@@ -151,7 +151,7 @@
   border: 1px solid var(--cx-primary);
   border-radius: var(--cx-radius-md);
   background: var(--cx-primary);
-  color: white;
+  color: var(--cx-on-primary);
   font: 600 14px/22px var(--cx-font-sans);
   cursor: pointer;
   transition: background-color 150ms ease-out, border-color 150ms ease-out;
@@ -230,12 +230,12 @@
 }
 
 .home-badge--success {
-  background: color-mix(in srgb, var(--cx-success) 12%, white);
+  background: color-mix(in srgb, var(--cx-success) 12%, var(--cx-surface));
   color: var(--cx-success);
 }
 
 .home-badge--warning {
-  background: color-mix(in srgb, var(--cx-warning) 12%, white);
+  background: color-mix(in srgb, var(--cx-warning) 12%, var(--cx-surface));
   color: var(--cx-warning);
 }
 

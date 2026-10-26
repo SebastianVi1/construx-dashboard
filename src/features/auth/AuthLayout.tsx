@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { LocaleSwitcher, useLocale } from '../../i18n'
+import lockup from '../../assets/logo/lockup-horizontal-on-dark.svg'
 import './auth.css'
 
 type AuthLayoutProps = {
@@ -19,8 +20,7 @@ export function AuthLayout({ title, description, children }: AuthLayoutProps) {
       </div>
       <div className="auth-shell">
         <Link className="auth-brand" to="/" aria-label={m.auth.brandHome}>
-          <span className="auth-brand-mark" aria-hidden="true">C</span>
-          <span>Construx</span>
+          <img className="auth-brand-logo" src={lockup} alt="Construx" height="32" />
         </Link>
 
         <section className="auth-panel" aria-labelledby="auth-title">

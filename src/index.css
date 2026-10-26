@@ -1,24 +1,52 @@
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
 :root {
-  --cx-canvas: #f5f8fc;
-  --cx-surface: #fff;
-  --cx-ink: #14263d;
-  --cx-muted: #52657a;
-  --cx-border: #d7e1ec;
-  --cx-primary: #175cd3;
-  --cx-primary-hover: #1248a8;
-  --cx-primary-subtle: #eaf2ff;
-  --cx-success: #176b4d;
-  --cx-warning: #8b5600;
-  --cx-danger: #b42332;
+  /* Blueprint palette, mirrored from construx-landing-page/src/styles/global.css */
+  --cx-ink-950: #060d1a;
+  --cx-ink-900: #0a1628;
+  --cx-ink-800: #102039;
+  --cx-ink-700: #1a2f52;
+  --cx-ink-600: #2a4373;
+  --cx-blueprint-400: #6fa8ff;
+  --cx-blueprint-300: #9cc2ff;
+  --cx-paper: #f3f6fb;
+  --cx-paper-dim: #c4cfe0;
+  --cx-safety-600: #e5640a;
+  --cx-safety-500: #ff7a1a;
+  --cx-safety-400: #ff9446;
+
+  /* Semantic roles consumed by components */
+  --cx-canvas: var(--cx-ink-950);
+  --cx-surface: var(--cx-ink-900);
+  --cx-surface-raised: var(--cx-ink-800);
+  --cx-ink: var(--cx-paper);
+  --cx-muted: var(--cx-paper-dim);
+  --cx-border: var(--cx-ink-700);
+  --cx-border-strong: var(--cx-ink-600);
+  --cx-primary: var(--cx-safety-500);
+  --cx-primary-hover: var(--cx-safety-400);
+  --cx-primary-pressed: var(--cx-safety-600);
+  --cx-primary-subtle: rgb(255 122 26 / 0.14);
+  --cx-on-primary: var(--cx-ink-950);
+  --cx-accent: var(--cx-blueprint-400);
+  --cx-accent-subtle: rgb(111 168 255 / 0.14);
+  --cx-success: #3ddc97;
+  --cx-success-subtle: rgb(61 220 151 / 0.12);
+  --cx-warning: #ffc24a;
+  --cx-danger: #ff7b8a;
+  --cx-danger-subtle: rgb(255 123 138 / 0.12);
   --cx-radius-sm: 0.375rem;
   --cx-radius-md: 0.5rem;
   --cx-radius-lg: 0.75rem;
-  --cx-font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --cx-font-data: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --cx-font-display: 'Space Grotesk Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --cx-font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --cx-font-data: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --cx-page-gutter: 1.5rem;
   --cx-section-gap: 2rem;
 
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 *,
@@ -42,6 +70,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+:focus-visible {
+  outline: 2px solid var(--cx-safety-400);
+  outline-offset: 3px;
+}
+
 button,
 input,
 select,
@@ -55,4 +88,10 @@ h2,
 h3,
 p {
   margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--cx-font-display);
 }

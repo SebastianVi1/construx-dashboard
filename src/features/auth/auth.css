@@ -18,6 +18,12 @@
   display: grid;
   place-items: center;
   padding: 48px 24px;
+  background-image:
+    linear-gradient(to right, rgb(111 168 255 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(111 168 255 / 0.07) 1px, transparent 1px),
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgb(111 168 255 / 0.1), transparent 70%);
+  background-size: 48px 48px, 48px 48px, auto;
+  background-color: var(--cx-canvas);
 }
 
 .auth-page *,
@@ -49,24 +55,17 @@
   font-weight: 600;
   font-size: 17px;
   text-decoration: none;
-  margin-bottom: 38px;
+  margin-bottom: 32px;
 }
 
 .auth-page .auth-brand {
   color: var(--cx-ink);
 }
 
-.auth-brand-mark {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  background: var(--cx-primary);
-  color: white;
-  border-radius: var(--cx-radius-md);
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1;
+.auth-brand-logo {
+  display: block;
+  height: 32px;
+  width: auto;
 }
 
 .auth-panel {
@@ -74,10 +73,29 @@
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-lg);
   padding: 32px;
-  box-shadow:
-    0 1px 2px rgba(20, 38, 61, 0.05),
-    0 16px 40px -16px rgba(20, 38, 61, 0.16);
+  position: relative;
+  box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.6);
   animation: auth-panel-in 180ms ease-out;
+}
+
+/* Plan-sheet corner marks, the same device the landing page uses on cards. */
+.auth-panel::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  pointer-events: none;
+  --c: var(--cx-safety-500);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 12px 1px,
+    linear-gradient(var(--c), var(--c)) top left / 1px 12px,
+    linear-gradient(var(--c), var(--c)) top right / 12px 1px,
+    linear-gradient(var(--c), var(--c)) top right / 1px 12px,
+    linear-gradient(var(--c), var(--c)) bottom left / 12px 1px,
+    linear-gradient(var(--c), var(--c)) bottom left / 1px 12px,
+    linear-gradient(var(--c), var(--c)) bottom right / 12px 1px,
+    linear-gradient(var(--c), var(--c)) bottom right / 1px 12px;
+  background-repeat: no-repeat;
+  opacity: 0.8;
 }
 
 @keyframes auth-panel-in {
@@ -98,7 +116,7 @@
 }
 
 .auth-panel-header h1 {
-  font: 600 28px/36px var(--cx-font-sans);
+  font: 600 28px/36px var(--cx-font-display);
   letter-spacing: -0.02em;
   color: var(--cx-ink);
   margin: 0 0 8px;
@@ -112,19 +130,20 @@
 }
 
 .auth-page a {
-  color: var(--cx-primary);
+  color: var(--cx-accent);
   text-underline-offset: 3px;
 }
 
 .auth-page .auth-brand:hover,
 .auth-switch a:hover,
 .auth-back:hover {
-  color: var(--cx-primary-hover);
+  color: var(--cx-blueprint-300);
 }
 
 .auth-page a:focus-visible {
-  outline: 3px solid var(--cx-primary);
+  outline: 2px solid var(--cx-safety-400);
   outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .auth-switch {
@@ -145,7 +164,7 @@
 }
 
 .auth-forgot a:hover {
-  color: var(--cx-primary-hover);
+  color: var(--cx-blueprint-300);
 }
 
 .auth-back {
@@ -219,21 +238,21 @@
   min-height: 44px;
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-md);
-  background: var(--cx-surface);
+  background: var(--cx-canvas);
   color: var(--cx-ink);
-  font: 600 15px/22px var(--cx-font-sans);
+  font: 500 15px/22px var(--cx-font-sans);
   text-decoration: none;
   transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
 }
 
 .auth-google:hover {
-  border-color: var(--cx-primary);
+  border-color: var(--cx-accent);
 }
 
 .auth-google:focus-visible {
   outline: none;
-  border-color: var(--cx-primary);
-  box-shadow: 0 0 0 3px var(--cx-primary-subtle);
+  border-color: var(--cx-accent);
+  box-shadow: 0 0 0 3px var(--cx-accent-subtle);
 }
 
 .auth-resend {
@@ -267,8 +286,8 @@
 }
 
 .auth-resend__button:hover:not(:disabled) {
-  border-color: var(--cx-primary);
-  color: var(--cx-primary);
+  border-color: var(--cx-accent);
+  color: var(--cx-accent);
 }
 
 .auth-resend__button:disabled {
@@ -293,7 +312,7 @@
   width: 16px;
   height: 16px;
   border: 2px solid var(--cx-border);
-  border-top-color: var(--cx-primary);
+  border-top-color: var(--cx-accent);
   border-radius: 50%;
   animation: auth-spin 600ms linear infinite;
 }
@@ -330,7 +349,7 @@
 
 .auth-signout:hover:not(:disabled) {
   background: var(--cx-danger);
-  color: white;
+  color: var(--cx-on-primary);
 }
 
 .auth-signout:disabled {
