@@ -7,7 +7,6 @@ import { Form, useForm, type FieldConfig } from '../../components/form'
 import { makeLoginSchema, makeRegistrationSchema } from './schemas'
 import { getOAuth2AuthorizationUrl } from '../../config/env'
 import { useLocale } from '../../i18n'
-import { useOnboarding } from '../onboarding'
 
 type AuthMode = 'login' | 'register'
 type ResendStatus = 'idle' | 'sending' | 'sent' | 'error'
@@ -18,7 +17,6 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const [searchParams] = useSearchParams()
   const { signIn } = useAuth()
   const { messages: m } = useLocale()
-  const { open: openOnboarding } = useOnboarding()
   const [accepted, setAccepted] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState('')
   const [resendStatus, setResendStatus] = useState<ResendStatus>('idle')
@@ -37,7 +35,6 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           await register(data)
           setRegisteredEmail(data.email)
           setAccepted(true)
-          openOnboarding()
         } else {
           await login(data)
           await signIn()
