@@ -10,11 +10,14 @@ import {
 
 export class AuthApiError extends Error {
   readonly status: number | undefined
+  /** Seconds to wait before retrying, from the `Retry-After` header of a 429. */
+  readonly retryAfterSeconds: number | undefined
 
-  constructor(status?: number) {
+  constructor(status?: number, retryAfterSeconds?: number) {
     super('Authentication request failed')
     this.name = 'AuthApiError'
     this.status = status
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
@@ -30,8 +33,15 @@ export function configureAuthApi(options: { client?: AxiosInstance; baseUrl?: st
 /** Map an unknown thrown value to an AuthApiError, preserving the HTTP status. */
 function toAuthApiError(error: unknown): AuthApiError {
   if (error instanceof AuthApiError) return error
-  if (axios.isAxiosError(error)) return new AuthApiError(error.response?.status)
+  if (axios.isAxiosError(error)) {
+    return new AuthApiError(error.response?.status, parseRetryAfter(error.response?.headers?.['retry-after']))
+  }
   return new AuthApiError()
+}
+
+function parseRetryAfter(value: unknown): number | undefined {
+  const seconds = Number(value)
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : undefined
 }
 
 type CsrfProof = { headerName: string; token: string }
@@ -58,37 +68,38 @@ function csrfConfig(proof: CsrfProof) {
   }
 }
 
+/**
+ * POST with a fresh CSRF proof. A 403 may mean the proof was missing or
+ * rejected, so refetch it and retry exactly once.
+ */
+async function postWithCsrf(path: string, body: unknown, expectedStatus: number): Promise<void> {
+  for (let attempt = 0; ; attempt += 1) {
+    const proof = await getCsrfProof()
+    try {
+      const response = await client.post(`${baseUrl}${path}`, body, csrfConfig(proof))
+      if (response.status !== expectedStatus) throw new AuthApiError(response.status)
+      return
+    } catch (error) {
+      const apiError = toAuthApiError(error)
+      if (attempt === 0 && apiError.status === 403) continue
+      throw apiError
+    }
+  }
+}
+
 /** Sign in with email and password. Resolves after the session cookie is set. */
 export async function login(input: LoginInput): Promise<void> {
-  const proof = await getCsrfProof()
-  try {
-    const response = await client.post(`${baseUrl}/auth/login`, input, csrfConfig(proof))
-    if (response.status !== 204) throw new AuthApiError(response.status)
-  } catch (error) {
-    throw toAuthApiError(error)
-  }
+  await postWithCsrf('/auth/login', input, 204)
 }
 
 /** Request account registration. A duplicate address receives the same accepted status. */
 export async function register(input: RegistrationInput): Promise<void> {
-  const proof = await getCsrfProof()
-  try {
-    const response = await client.post(`${baseUrl}/auth/register`, input, csrfConfig(proof))
-    if (response.status !== 202) throw new AuthApiError(response.status)
-  } catch (error) {
-    throw toAuthApiError(error)
-  }
+  await postWithCsrf('/auth/register', input, 202)
 }
 
 /** End the current session. */
 export async function logout(): Promise<void> {
-  const proof = await getCsrfProof()
-  try {
-    const response = await client.post(`${baseUrl}/auth/logout`, undefined, csrfConfig(proof))
-    if (response.status !== 204) throw new AuthApiError(response.status)
-  } catch (error) {
-    throw toAuthApiError(error)
-  }
+  await postWithCsrf('/auth/logout', undefined, 204)
 }
 
 /** Fetch the authenticated user. Throws AuthApiError with `status` 401 when unauthenticated. */
@@ -107,33 +118,15 @@ export async function getCurrentUser(): Promise<CurrentUser> {
 
 /** Rotate the session and receive replacement auth cookies. */
 export async function refresh(): Promise<void> {
-  const proof = await getCsrfProof()
-  try {
-    const response = await client.post(`${baseUrl}/auth/refresh`, undefined, csrfConfig(proof))
-    if (response.status !== 204) throw new AuthApiError(response.status)
-  } catch (error) {
-    throw toAuthApiError(error)
-  }
+  await postWithCsrf('/auth/refresh', undefined, 204)
 }
 
 /** Submit a one-time email verification token. */
 export async function verifyEmail(token: string): Promise<void> {
-  const proof = await getCsrfProof()
-  try {
-    const response = await client.post(`${baseUrl}/auth/verify`, { token }, csrfConfig(proof))
-    if (response.status !== 204) throw new AuthApiError(response.status)
-  } catch (error) {
-    throw toAuthApiError(error)
-  }
+  await postWithCsrf('/auth/verify', { token }, 204)
 }
 
 /** Request a fresh verification email. */
 export async function resendVerification(email: string): Promise<void> {
-  const proof = await getCsrfProof()
-  try {
-    const response = await client.post(`${baseUrl}/auth/resend`, { email }, csrfConfig(proof))
-    if (response.status !== 202) throw new AuthApiError(response.status)
-  } catch (error) {
-    throw toAuthApiError(error)
-  }
+  await postWithCsrf('/auth/resend', { email }, 202)
 }
