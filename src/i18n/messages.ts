@@ -50,6 +50,11 @@ const en = {
       resend: 'We could not resend the email. Please try again.',
       rateLimited: 'Too many attempts. Please wait a moment and try again.',
     },
+    notFound: {
+      title: 'Page not found',
+      description: 'The page you are looking for does not exist.',
+      back: 'Go to sign in',
+    },
     accepted: {
       body: 'You can return to sign in after verifying your email.',
       sent: 'Verification email sent. Check your inbox.',
@@ -175,6 +180,11 @@ const es: Messages = {
       register: 'No pudimos completar tu solicitud. Inténtalo de nuevo.',
       resend: 'No pudimos reenviar el correo. Inténtalo de nuevo.',
       rateLimited: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+    },
+    notFound: {
+      title: 'Página no encontrada',
+      description: 'La página que buscas no existe.',
+      back: 'Ir a iniciar sesión',
     },
     accepted: {
       body: 'Puedes volver a iniciar sesión después de verificar tu correo.',
