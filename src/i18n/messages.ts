@@ -88,6 +88,7 @@ const en = {
     passwordRequired: 'Enter your password',
     passwordMin: 'Use at least 12 characters',
     passwordMax: 'Use at most 72 characters',
+    passwordMismatch: 'The passwords do not match',
   },
   onboarding: {
     continue: 'Continue',
@@ -219,6 +220,7 @@ const es: Messages = {
     passwordRequired: 'Ingresa tu contraseña',
     passwordMin: 'Usa al menos 12 caracteres',
     passwordMax: 'Usa como máximo 72 caracteres',
+    passwordMismatch: 'Las contraseñas no coinciden',
   },
   onboarding: {
     continue: 'Continuar',

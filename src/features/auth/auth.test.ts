@@ -3,15 +3,22 @@ import type { AxiosInstance } from 'axios'
 import {
   AuthApiError,
   configureAuthApi,
+  forgotPassword,
   getCurrentUser,
   login,
   logout,
   refresh,
   register,
   resendVerification,
+  resetPassword,
   verifyEmail,
 } from './authApi'
-import { makeLoginSchema, makeRegistrationSchema } from './schemas'
+import {
+  makeForgotPasswordSchema,
+  makeLoginSchema,
+  makeRegistrationSchema,
+  makeResetPasswordSchema,
+} from './schemas'
 import { messages } from '../../i18n/messages'
 
 type PostCall = [
@@ -51,6 +58,33 @@ describe('auth input validation', () => {
   it('rejects a registration password longer than 72 characters', () => {
     expect(registrationSchema.safeParse({ email: 'person@example.com', password: 'a'.repeat(72) }).success).toBe(true)
     expect(registrationSchema.safeParse({ email: 'person@example.com', password: 'a'.repeat(73) }).success).toBe(false)
+  })
+})
+
+describe('password recovery validation', () => {
+  const forgotSchema = makeForgotPasswordSchema(messages.en.validation)
+  const resetSchema = makeResetPasswordSchema(messages.en.validation)
+  const reset = (newPassword: string, confirmPassword = newPassword) =>
+    resetSchema.safeParse({ newPassword, confirmPassword })
+
+  it('trims a valid email and rejects a bad one', () => {
+    expect(forgotSchema.parse({ email: ' person@example.com ' })).toEqual({ email: 'person@example.com' })
+    expect(forgotSchema.safeParse({ email: 'bad' }).success).toBe(false)
+    expect(forgotSchema.safeParse({ email: '' }).success).toBe(false)
+  })
+
+  it('accepts a new password of 12 to 72 characters', () => {
+    expect(reset('a'.repeat(11)).success).toBe(false)
+    expect(reset('a'.repeat(12)).success).toBe(true)
+    expect(reset('a'.repeat(72)).success).toBe(true)
+    expect(reset('a'.repeat(73)).success).toBe(false)
+  })
+
+  it('rejects a confirmation that does not match, on the confirm field', () => {
+    const result = reset('a'.repeat(12), 'b'.repeat(12))
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.path).toEqual(['confirmPassword'])
+    expect(result.error?.issues[0]?.message).toBe(messages.en.validation.passwordMismatch)
   })
 })
 
@@ -167,6 +201,69 @@ describe('auth API', () => {
     const [url, data] = post.mock.calls[0] as unknown as PostCall
     expect(url).toBe('/api/auth/resend')
     expect(data).toEqual({ email: 'person@example.com' })
+  })
+
+  it('forgotPassword: posts the email with cookies and CSRF and expects 202', async () => {
+    const { get, post } = stubApi(csrfOk, () => ({ status: 202 }))
+    await forgotPassword('person@example.com')
+
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(post).toHaveBeenCalledTimes(1)
+    const [url, data, config] = post.mock.calls[0] as unknown as PostCall
+    expect(url).toBe('/api/auth/password/forgot')
+    expect(data).toEqual({ email: 'person@example.com' })
+    expect(config?.withCredentials).toBe(true)
+    expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof')
+  })
+
+  it('forgotPassword: exposes Retry-After seconds on a 429', async () => {
+    stubApi(csrfOk, () => {
+      throw Object.assign(new Error('Too many'), {
+        isAxiosError: true,
+        response: { status: 429, headers: { 'retry-after': '30' } },
+      })
+    })
+
+    await expect(forgotPassword('person@example.com')).rejects.toMatchObject({ status: 429, retryAfterSeconds: 30 })
+  })
+
+  it('resetPassword: posts the token and new password with CSRF and expects 204', async () => {
+    const { post } = stubApi(csrfOk, () => ({ status: 204 }))
+    await resetPassword('reset-token', 'new-password-123')
+
+    expect(post).toHaveBeenCalledTimes(1)
+    const [url, data, config] = post.mock.calls[0] as unknown as PostCall
+    expect(url).toBe('/api/auth/password/reset')
+    expect(data).toEqual({ token: 'reset-token', newPassword: 'new-password-123' })
+    expect(config?.withCredentials).toBe(true)
+    expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof')
+  })
+
+  it('resetPassword: rejects a 200 instead of 204', async () => {
+    stubApi(csrfOk, () => ({ status: 200 }))
+    await expect(resetPassword('reset-token', 'new-password-123')).rejects.toMatchObject({ status: 200 })
+  })
+
+  it('resetPassword: exposes status 401 for an unusable link', async () => {
+    stubApi(csrfOk, () => {
+      throw Object.assign(new Error('Unauthorized'), { isAxiosError: true, response: { status: 401 } })
+    })
+    const result = resetPassword('reset-token', 'new-password-123')
+    await expect(result).rejects.toThrow(AuthApiError)
+    await expect(result).rejects.toMatchObject({ status: 401 })
+  })
+
+  it('resetPassword: exposes Retry-After seconds on a 429', async () => {
+    stubApi(csrfOk, () => {
+      throw Object.assign(new Error('Too many'), {
+        isAxiosError: true,
+        response: { status: 429, headers: { 'retry-after': '15' } },
+      })
+    })
+    await expect(resetPassword('reset-token', 'new-password-123')).rejects.toMatchObject({
+      status: 429,
+      retryAfterSeconds: 15,
+    })
   })
 
   it('exposes Retry-After seconds on a 429 response', async () => {

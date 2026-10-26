@@ -130,3 +130,16 @@ export async function verifyEmail(token: string): Promise<void> {
 export async function resendVerification(email: string): Promise<void> {
   await postWithCsrf('/auth/resend', { email }, 202)
 }
+
+/** Request a password reset link. Every address receives the same accepted status. */
+export async function forgotPassword(email: string): Promise<void> {
+  await postWithCsrf('/auth/password/forgot', { email }, 202)
+}
+
+/**
+ * Choose a new password with a one-time reset token. Does not sign in: the
+ * backend revokes every session, so the user signs in with the new password.
+ */
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  await postWithCsrf('/auth/password/reset', { token, newPassword }, 204)
+}
