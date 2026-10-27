@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import { useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
 import { FilterTabs } from '../../components/filter'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import type { Goal } from '../goals/goalsApi'
@@ -37,6 +37,8 @@ type GanttChartProps = {
   onOpen: (row: GanttRow) => void
   /** Saves the new dates; the bar holds its preview until it settles, then follows the data. */
   onReschedule: (change: Reschedule) => Promise<void>
+  /** The page's primary action, shown at the end of the toolbar. */
+  action?: ReactNode
 }
 
 type Mode = 'move' | Edge
@@ -72,7 +74,17 @@ function previewDates(row: GanttRow, drag: Drag | null): Dated {
  * from start day to due day. Managers drag a bar to move it and its ends to
  * change one date, snapped to days; a click (or Enter) opens its dialog.
  */
-export function GanttChart({ rows, site, today, canAddTask, canOpen, onAddTask, onOpen, onReschedule }: GanttChartProps) {
+export function GanttChart({
+  rows,
+  site,
+  today,
+  canAddTask,
+  canOpen,
+  onAddTask,
+  onOpen,
+  onReschedule,
+  action,
+}: GanttChartProps) {
   const { messages: m, locale } = useLocale()
   const t = m.gantt
   const intl = intlLocales[locale]
@@ -218,7 +230,7 @@ export function GanttChart({ rows, site, today, canAddTask, canOpen, onAddTask, 
           value={zoom}
           onChange={setZoom}
         />
-        <p className="gantt__hint">{canDragAny ? t.manageHint : t.viewHint}</p>
+        {action}
       </div>
 
       <ul className="gantt__legend" aria-label={t.legendLabel}>
@@ -245,6 +257,7 @@ export function GanttChart({ rows, site, today, canAddTask, canOpen, onAddTask, 
           {t.today}
         </li>
       </ul>
+      <p className="gantt__hint">{canDragAny ? t.manageHint : t.viewHint}</p>
 
       <div className="gantt__scroll">
         <div className="gantt__sheet" style={sheetStyle}>

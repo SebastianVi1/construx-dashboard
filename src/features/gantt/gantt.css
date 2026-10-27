@@ -23,7 +23,7 @@
 }
 
 .gantt__hint {
-  margin: 0;
+  margin: -4px 0 0;
   max-width: 60ch;
   color: var(--cx-muted);
   font-size: 13px;
@@ -156,7 +156,6 @@
 
 .gantt__flag[data-edge='today'] {
   transform: translateX(-50%);
-  top: 22px;
   background: var(--cx-ink);
   color: var(--cx-canvas);
 }

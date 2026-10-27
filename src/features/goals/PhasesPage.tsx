@@ -269,6 +269,20 @@ function PhaseSchedule({ organizationId, site, people, onSite }: PhaseSchedulePr
           }}
           onOpen={open}
           onReschedule={reschedule}
+          action={
+            canManageGoal ? (
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => {
+                  setToast(null)
+                  setDialog({ kind: 'createPhase' })
+                }}
+              >
+                + {m.goals.add}
+              </button>
+            ) : null
+          }
         />
       </>
     )
@@ -278,21 +292,6 @@ function PhaseSchedule({ organizationId, site, people, onSite }: PhaseSchedulePr
 
   return (
     <section className="page-section phases-schedule" aria-label={m.phasesPage.view.schedule}>
-      {canManageGoal && goals.data && goals.data.length > 0 ? (
-        <div className="button-row button-row--end">
-          <button
-            type="button"
-            className="button button--primary"
-            onClick={() => {
-              setToast(null)
-              setDialog({ kind: 'createPhase' })
-            }}
-          >
-            + {m.goals.add}
-          </button>
-        </div>
-      ) : null}
-
       {body}
 
       {dialog?.kind === 'createPhase' || dialog?.kind === 'editPhase' ? (
