@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance } from 'axios'
+import type { ZodType } from 'zod'
 import { getApiBaseUrl } from '../../config/env'
 import {
   csrfSchema,
@@ -8,16 +9,23 @@ import {
   type RegistrationInput,
 } from './schemas'
 
+/**
+ * Failure of any backend request made through this client (auth and business
+ * endpoints alike). `code` is the `ProblemDetail` code, e.g. `VALIDATION_FAILED`.
+ */
 export class AuthApiError extends Error {
   readonly status: number | undefined
   /** Seconds to wait before retrying, from the `Retry-After` header of a 429. */
   readonly retryAfterSeconds: number | undefined
+  /** `code` property of the RFC 7807 problem body, when present. */
+  readonly code: string | undefined
 
-  constructor(status?: number, retryAfterSeconds?: number) {
+  constructor(status?: number, retryAfterSeconds?: number, code?: string) {
     super('Authentication request failed')
     this.name = 'AuthApiError'
     this.status = status
     this.retryAfterSeconds = retryAfterSeconds
+    this.code = code
   }
 }
 
@@ -34,9 +42,26 @@ export function configureAuthApi(options: { client?: AxiosInstance; baseUrl?: st
 function toAuthApiError(error: unknown): AuthApiError {
   if (error instanceof AuthApiError) return error
   if (axios.isAxiosError(error)) {
-    return new AuthApiError(error.response?.status, parseRetryAfter(error.response?.headers?.['retry-after']))
+    return new AuthApiError(
+      error.response?.status,
+      parseRetryAfter(error.response?.headers?.['retry-after']),
+      parseProblemCode(error.response?.data),
+    )
   }
   return new AuthApiError()
+}
+
+function parseProblemCode(data: unknown): string | undefined {
+  if (typeof data !== 'object' || data === null) return undefined
+  const code = (data as { code?: unknown }).code
+  return typeof code === 'string' ? code : undefined
+}
+
+/** Parse a response body, turning a shape mismatch into an AuthApiError. */
+function parseBody<T>(schema: ZodType<T>, data: unknown, status: number): T {
+  const result = schema.safeParse(data)
+  if (!result.success) throw new AuthApiError(status)
+  return result.data
 }
 
 function parseRetryAfter(value: unknown): number | undefined {
@@ -68,23 +93,64 @@ function csrfConfig(proof: CsrfProof) {
   }
 }
 
+type UnsafeMethod = 'post' | 'put' | 'patch'
+
 /**
- * POST with a fresh CSRF proof. A 403 may mean the proof was missing or
- * rejected, so refetch it and retry exactly once.
+ * Send an unsafe request with a fresh CSRF proof. A 403 may mean the proof was
+ * missing or rejected, so refetch it and retry exactly once. Resolves with the
+ * response body.
  */
-async function postWithCsrf(path: string, body: unknown, expectedStatus: number): Promise<void> {
+async function sendWithCsrf(
+  method: UnsafeMethod,
+  path: string,
+  body: unknown,
+  expectedStatus: number,
+): Promise<unknown> {
   for (let attempt = 0; ; attempt += 1) {
     const proof = await getCsrfProof()
     try {
-      const response = await client.post(`${baseUrl}${path}`, body, csrfConfig(proof))
+      const response = await client[method](`${baseUrl}${path}`, body, csrfConfig(proof))
       if (response.status !== expectedStatus) throw new AuthApiError(response.status)
-      return
+      return response.data
     } catch (error) {
       const apiError = toAuthApiError(error)
       if (attempt === 0 && apiError.status === 403) continue
       throw apiError
     }
   }
+}
+
+async function postWithCsrf(path: string, body: unknown, expectedStatus: number): Promise<void> {
+  await sendWithCsrf('post', path, body, expectedStatus)
+}
+
+/**
+ * GET a JSON resource under the API base URL with the session cookies and
+ * parse it. Shared by every feature so they all use this one HTTP client.
+ */
+export async function getJson<T>(path: string, schema: ZodType<T>): Promise<T> {
+  try {
+    const response = await client.get(`${baseUrl}${path}`, {
+      withCredentials: true,
+      headers: { Accept: 'application/json' },
+    })
+    if (response.status !== 200) throw new AuthApiError(response.status)
+    return parseBody(schema, response.data, response.status)
+  } catch (error) {
+    throw toAuthApiError(error)
+  }
+}
+
+/** POST/PUT/PATCH JSON with CSRF proof, expect `expectedStatus` and parse the body. */
+export async function sendJson<T>(
+  method: UnsafeMethod,
+  path: string,
+  body: unknown,
+  expectedStatus: number,
+  schema: ZodType<T>,
+): Promise<T> {
+  const data = await sendWithCsrf(method, path, body, expectedStatus)
+  return parseBody(schema, data, expectedStatus)
 }
 
 /** Sign in with email and password. Resolves after the session cookie is set. */
