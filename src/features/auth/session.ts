@@ -1,19 +1,9 @@
-import { AuthApiError, getCurrentUser, refresh } from './authApi'
+import { AuthApiError, getCurrentUser, sharedRefresh } from './authApi'
 import type { CurrentUser } from './schemas'
 
-/** Share one in-flight call between concurrent callers; a new call starts once it settles. */
-export function shareInFlight(task: () => Promise<void>): () => Promise<void> {
-  let inFlight: Promise<void> | undefined
-  return () => {
-    inFlight ??= task().finally(() => {
-      inFlight = undefined
-    })
-    return inFlight
-  }
-}
-
-/** Refresh the session, sharing a single request between concurrent callers. */
-export const sharedRefresh = shareInFlight(refresh)
+// The app-load restore and the business-call 401 handling share this one
+// in-flight refresh, so they never rotate the refresh token twice in parallel.
+export { shareInFlight, sharedRefresh } from './authApi'
 
 export type RestoreResult =
   | { status: 'authenticated'; user: CurrentUser }

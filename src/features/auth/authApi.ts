@@ -95,10 +95,62 @@ function csrfConfig(proof: CsrfProof) {
 
 type UnsafeMethod = 'post' | 'put' | 'patch'
 
+/** Share one in-flight call between concurrent callers; a new call starts once it settles. */
+export function shareInFlight(task: () => Promise<void>): () => Promise<void> {
+  let inFlight: Promise<void> | undefined
+  return () => {
+    inFlight ??= task().finally(() => {
+      inFlight = undefined
+    })
+    return inFlight
+  }
+}
+
+/**
+ * Refresh the session, sharing a single request between concurrent callers.
+ * Refresh rotates the refresh token, so a second parallel refresh would send
+ * the old token and the backend would revoke the session as reuse.
+ */
+export const sharedRefresh = shareInFlight(() => refresh())
+
+const sessionExpiredListeners = new Set<() => void>()
+
+/** Be told when a business call found the session gone and refresh failed. Returns an unsubscribe. */
+export function onSessionExpired(listener: () => void): () => void {
+  sessionExpiredListeners.add(listener)
+  return () => {
+    sessionExpiredListeners.delete(listener)
+  }
+}
+
+/**
+ * Business calls only: the auth endpoints report their own 401s (wrong
+ * password, unusable link) and refreshing for them would loop or rotate the
+ * session for nothing.
+ */
+function refreshesOnUnauthorized(path: string): boolean {
+  return !path.startsWith('/auth/')
+}
+
+/**
+ * After a 401 on a business call: refresh once (shared) so the caller can
+ * retry. When the refresh fails the session is over: tell the listeners and
+ * rethrow the original 401.
+ */
+async function refreshAfterUnauthorized(unauthorized: AuthApiError): Promise<void> {
+  try {
+    await sharedRefresh()
+  } catch {
+    for (const listener of sessionExpiredListeners) listener()
+    throw unauthorized
+  }
+}
+
 /**
  * Send an unsafe request with a fresh CSRF proof. A 403 may mean the proof was
- * missing or rejected, so refetch it and retry exactly once. Resolves with the
- * response body.
+ * missing or rejected, so refetch it and retry exactly once. A 401 on a
+ * business path refreshes the session and retries exactly once. Resolves with
+ * the response body.
  */
 async function sendWithCsrf(
   method: UnsafeMethod | 'delete',
@@ -106,7 +158,9 @@ async function sendWithCsrf(
   body: unknown,
   expectedStatus: number,
 ): Promise<unknown> {
-  for (let attempt = 0; ; attempt += 1) {
+  let csrfRetried = false
+  let refreshed = !refreshesOnUnauthorized(path)
+  for (;;) {
     const proof = await getCsrfProof()
     try {
       const url = `${baseUrl}${path}`
@@ -118,7 +172,15 @@ async function sendWithCsrf(
       return response.data
     } catch (error) {
       const apiError = toAuthApiError(error)
-      if (attempt === 0 && apiError.status === 403) continue
+      if (apiError.status === 403 && !csrfRetried) {
+        csrfRetried = true
+        continue
+      }
+      if (apiError.status === 401 && !refreshed) {
+        refreshed = true
+        await refreshAfterUnauthorized(apiError)
+        continue
+      }
       throw apiError
     }
   }
@@ -130,18 +192,28 @@ async function postWithCsrf(path: string, body: unknown, expectedStatus: number)
 
 /**
  * GET a JSON resource under the API base URL with the session cookies and
- * parse it. Shared by every feature so they all use this one HTTP client.
+ * parse it. Shared by every feature so they all use this one HTTP client. A
+ * 401 refreshes the session and retries exactly once.
  */
 export async function getJson<T>(path: string, schema: ZodType<T>): Promise<T> {
-  try {
-    const response = await client.get(`${baseUrl}${path}`, {
-      withCredentials: true,
-      headers: { Accept: 'application/json' },
-    })
-    if (response.status !== 200) throw new AuthApiError(response.status)
-    return parseBody(schema, response.data, response.status)
-  } catch (error) {
-    throw toAuthApiError(error)
+  let refreshed = !refreshesOnUnauthorized(path)
+  for (;;) {
+    try {
+      const response = await client.get(`${baseUrl}${path}`, {
+        withCredentials: true,
+        headers: { Accept: 'application/json' },
+      })
+      if (response.status !== 200) throw new AuthApiError(response.status)
+      return parseBody(schema, response.data, response.status)
+    } catch (error) {
+      const apiError = toAuthApiError(error)
+      if (apiError.status === 401 && !refreshed) {
+        refreshed = true
+        await refreshAfterUnauthorized(apiError)
+        continue
+      }
+      throw apiError
+    }
   }
 }
 
@@ -157,7 +229,7 @@ export async function sendJson<T>(
   return parseBody(schema, data, expectedStatus)
 }
 
-/** DELETE with CSRF proof (same single retry after a 403); expects 204 by default. */
+/** DELETE with CSRF proof (same single retry after a 403 or a 401); expects 204 by default. */
 export async function deleteJson(path: string, expectedStatus = 204): Promise<void> {
   await sendWithCsrf('delete', path, undefined, expectedStatus)
 }

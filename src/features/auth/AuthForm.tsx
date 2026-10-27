@@ -7,7 +7,13 @@ import { Form, useForm, type FieldConfig } from '../../components/form'
 import { makeLoginSchema, makeRegistrationSchema } from './schemas'
 import { getOAuth2AuthorizationUrl } from '../../config/env'
 import { useLocale } from '../../i18n'
-import { forgetReturnPath, rememberReturnPath, safeReturnPath, withReturnPath } from '../../components/navigation/returnPath'
+import {
+  forgetReturnPath,
+  rememberAcrossVerification,
+  rememberReturnPath,
+  safeReturnPath,
+  withReturnPath,
+} from '../../components/navigation/returnPath'
 
 type AuthMode = 'login' | 'register'
 type ResendStatus = 'idle' | 'sending' | 'sent' | 'error'
@@ -39,12 +45,15 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         if (isRegistration) {
           const { name, email, password } = data
           await register({ name, email, password })
+          // The verification link may open in a new tab: keep `next` there too.
+          rememberAcrossVerification(localStorage, next)
           setRegisteredEmail(email)
           setAccepted(true)
         } else {
           await login({ email: data.email, password: data.password })
           await signIn()
           forgetReturnPath(sessionStorage)
+          forgetReturnPath(localStorage)
           navigate(next ?? '/', { replace: true })
         }
       } catch (error) {

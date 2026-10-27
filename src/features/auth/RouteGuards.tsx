@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { Navigate, useSearchParams } from 'react-router'
-import { safeReturnPath } from '../../components/navigation/returnPath'
+import { Navigate, useLocation, useSearchParams } from 'react-router'
+import { loginRedirect, safeReturnPath } from '../../components/navigation/returnPath'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
 import { useLocale } from '../../i18n'
@@ -18,12 +18,16 @@ function SessionLoading() {
   )
 }
 
-/** Render children only for a signed-in user; otherwise send them to login. */
+/**
+ * Render children only for a signed-in user; otherwise send them to login.
+ * After an expired session they come back to this page once signed in.
+ */
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { status } = useAuth()
+  const { status, sessionExpired } = useAuth()
+  const { pathname, search } = useLocation()
 
   if (status === 'loading') return <SessionLoading />
-  if (status === 'unauthenticated') return <Navigate to="/login" replace />
+  if (status === 'unauthenticated') return <Navigate to={loginRedirect(`${pathname}${search}`, sessionExpired)} replace />
   return children
 }
 

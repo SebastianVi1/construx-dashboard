@@ -6,6 +6,8 @@ export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
 export type AuthContextValue = {
   status: AuthStatus
   user: CurrentUser | null
+  /** True after a business call found the session expired and refresh failed. */
+  sessionExpired: boolean
   signIn: () => Promise<void>
   signOut: () => Promise<void>
 }

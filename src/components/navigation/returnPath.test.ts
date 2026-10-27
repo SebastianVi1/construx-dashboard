@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'bun:test'
-import { forgetReturnPath, readReturnPath, rememberReturnPath, safeReturnPath, withReturnPath } from './returnPath'
+import {
+  forgetReturnPath,
+  loginRedirect,
+  readReturnPath,
+  rememberAcrossVerification,
+  rememberReturnPath,
+  safeReturnPath,
+  verifiedSignInPath,
+  withReturnPath,
+} from './returnPath'
 
 function memoryStorage() {
   const items = new Map<string, string>()
@@ -55,5 +64,43 @@ describe('return path', () => {
     storage.setItem('construx.returnTo', '//evil.example')
 
     expect(readReturnPath(storage)).toBeNull()
+  })
+
+  it('keeps the return path from registration through email verification, then clears it after sign-in', () => {
+    // The verification link may open in a new tab, so this is localStorage in the app.
+    const storage = memoryStorage()
+    rememberAcrossVerification(storage, acceptLink)
+
+    // Verified: the sign-in link carries the remembered path as `?next=`.
+    expect(verifiedSignInPath(storage)).toBe(`/login?next=${encodeURIComponent(acceptLink)}`)
+
+    // Signed in and sent there: forgotten, so a later verification lands as usual.
+    forgetReturnPath(storage)
+    expect(verifiedSignInPath(storage)).toBe('/login')
+    expect(storage.size()).toBe(0)
+  })
+
+  it('registration without a return path leaves the verified sign-in link unchanged and clears a stale one', () => {
+    const storage = memoryStorage()
+    expect(verifiedSignInPath(storage)).toBe('/login')
+
+    rememberReturnPath(storage, acceptLink)
+    rememberAcrossVerification(storage, null)
+    expect(verifiedSignInPath(storage)).toBe('/login')
+    expect(storage.size()).toBe(0)
+  })
+
+  it('never remembers an unsafe path for after verification', () => {
+    const storage = memoryStorage()
+    rememberAcrossVerification(storage, '//evil.example')
+    expect(verifiedSignInPath(storage)).toBe('/login')
+  })
+
+  it('sends an expired session to sign in with the current page as `next`', () => {
+    expect(loginRedirect('/sites/7?tab=people', true)).toBe(`/login?next=${encodeURIComponent('/sites/7?tab=people')}`)
+  })
+
+  it('keeps the plain login redirect for a visitor who was never signed in', () => {
+    expect(loginRedirect('/sites/7', false)).toBe('/login')
   })
 })

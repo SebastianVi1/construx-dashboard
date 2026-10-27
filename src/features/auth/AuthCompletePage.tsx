@@ -24,6 +24,7 @@ export function AuthCompletePage() {
   useEffect(() => {
     if (status === 'authenticated') {
       forgetReturnPath(sessionStorage)
+      forgetReturnPath(localStorage)
       navigate(returnTo ?? '/', { replace: true })
     } else if (status === 'unauthenticated') {
       navigate(returnTo ? `/login?error=google&next=${encodeURIComponent(returnTo)}` : '/login?error=google', {

@@ -52,3 +52,27 @@ export function forgetReturnPath(storage: Storage): void {
     // Nothing to clean up without storage.
   }
 }
+
+/**
+ * At registration: keep a valid `next` (an invitation link) until the user has
+ * verified their email and signed in, or clear a stale one. Pass localStorage,
+ * because the verification link may open in a new tab.
+ */
+export function rememberAcrossVerification(storage: Storage, next: string | null): void {
+  const path = safeReturnPath(next)
+  if (path) rememberReturnPath(storage, path)
+  else forgetReturnPath(storage)
+}
+
+/** Sign-in link shown after a successful verification, carrying the remembered path. */
+export function verifiedSignInPath(storage: Storage): string {
+  return withReturnPath('/login', readReturnPath(storage))
+}
+
+/**
+ * Where a signed-out user on a protected page goes. After an expired session
+ * they come back to the page they were on; a fresh visitor gets plain login.
+ */
+export function loginRedirect(currentPath: string, sessionExpired: boolean): string {
+  return sessionExpired ? withReturnPath('/login', currentPath) : '/login'
+}
