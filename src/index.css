@@ -45,6 +45,8 @@
   --cx-font-data: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --cx-page-gutter: 1.5rem;
   --cx-section-gap: 2rem;
+  --cx-header-height: 56px;
+  --cx-tabbar-height: 64px;
 
   color-scheme: dark;
 }
@@ -73,6 +75,38 @@ body {
 :focus-visible {
   outline: 2px solid var(--cx-safety-400);
   outline-offset: 3px;
+}
+
+/* Read by assistive technology, not shown. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* First stop for keyboard users; appears only while focused. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-primary);
+  color: var(--cx-on-primary);
+  font: 600 14px/20px var(--cx-font-sans);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
 }
 
 button,

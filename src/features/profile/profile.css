@@ -1,0 +1,204 @@
+/* Avatar, sidebar account link and profile page. Tokens only. */
+
+.avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--cx-accent);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-accent-subtle);
+  color: var(--cx-accent);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.avatar[data-size='large'] {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--cx-radius-lg);
+  font-size: 26px;
+}
+
+.account-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px;
+  border-radius: var(--cx-radius-md);
+  color: var(--cx-ink);
+  text-decoration: none;
+  transition: background-color 150ms ease-out;
+}
+
+.account-link:hover,
+.account-link.active {
+  background: var(--cx-surface-raised);
+}
+
+.account-link__text {
+  display: grid;
+  min-width: 0;
+}
+
+.account-link__name,
+.account-link__email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-link__name {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.account-link__email {
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.profile-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.profile-hero__text {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.profile-hero__text h1 {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.profile-hero__text p {
+  color: var(--cx-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.profile-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 4px;
+  color: var(--cx-muted);
+  font-size: 14px;
+}
+
+.profile-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-border);
+  overflow: hidden;
+}
+
+/* The 1px grid gap over a border-colored background draws the cell rules. */
+.profile-details__row {
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
+  background: var(--cx-surface);
+}
+
+.profile-details dt {
+  color: var(--cx-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profile-details dd {
+  margin: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.profile-details dd[data-empty] {
+  color: var(--cx-muted);
+  font-style: italic;
+}
+
+.profile-sites {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  overflow: hidden;
+}
+
+.profile-sites li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--cx-surface);
+}
+
+.profile-sites li + li {
+  border-top: 1px solid var(--cx-border);
+}
+
+.profile-sites__link {
+  display: grid;
+  min-width: 0;
+  color: var(--cx-ink);
+  text-decoration: none;
+}
+
+.profile-sites__link:hover .profile-sites__name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.profile-sites__name {
+  font-weight: 500;
+}
+
+.profile-sites__address {
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .account-link {
+    min-height: 44px;
+    padding: 4px 8px 4px 4px;
+  }
+
+  .account-link__text {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-link {
+    transition: none;
+  }
+}

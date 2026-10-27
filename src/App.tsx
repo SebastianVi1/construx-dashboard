@@ -6,7 +6,6 @@ import { VerifyEmailPage } from './features/auth/VerifyEmailPage'
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { AuthCompletePage } from './features/auth/AuthCompletePage'
-import { AccountPage } from './features/auth/AccountPage'
 import { NotFoundPage } from './features/auth/NotFoundPage'
 import { GuestOnly, RequireAuth } from './features/auth/RouteGuards'
 import { CreateOrganizationPage, OrganizationGate, WorkspaceHome, WorkspaceLayout } from './features/organizations'
@@ -18,6 +17,7 @@ const SiteDetailPage = lazy(() =>
 )
 const MembersPage = lazy(() => import('./features/members/MembersPage').then((module) => ({ default: module.MembersPage })))
 const MyTasksPage = lazy(() => import('./features/tasks/MyTasksPage').then((module) => ({ default: module.MyTasksPage })))
+const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })))
 const AcceptInvitationPage = lazy(() =>
   import('./features/invitations/AcceptInvitationPage').then((module) => ({ default: module.AcceptInvitationPage })),
 )
@@ -32,7 +32,6 @@ function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/auth/complete" element={<AuthCompletePage />} />
-      <Route path="/account" element={<RequireAuth><OrganizationGate><AccountPage /></OrganizationGate></RequireAuth>} />
       <Route path="/organizations/new" element={<RequireAuth><CreateOrganizationPage /></RequireAuth>} />
       {/* Public: a signed-out visitor is sent to sign in and brought back with the token. */}
       <Route path="/invitations/accept" element={<Suspense fallback={null}><AcceptInvitationPage /></Suspense>} />
@@ -43,6 +42,7 @@ function App() {
         <Route path="/sites/:siteId" element={<SiteDetailPage />} />
         <Route path="/tasks" element={<MyTasksPage />} />
         <Route path="/members" element={<MembersPage />} />
+        <Route path="/account" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

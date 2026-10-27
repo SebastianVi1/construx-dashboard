@@ -1,67 +1,90 @@
-import { Suspense } from 'react'
-import { Link, NavLink, Outlet } from 'react-router'
+import { Suspense, useEffect, useRef, type MouseEvent } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router'
+import { SitesIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { LoadingState, Notice } from '../../components/page'
-import { LocaleSwitcher, useLocale } from '../../i18n'
+import { useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
 import { hasPermission } from '../permissions/landing'
 import { useCurrentOrganization } from './organizations-context'
+import { WorkspaceHeader } from './WorkspaceHeader'
+import { workspaceNavItems, type WorkspaceNavItem } from './workspaceNav'
 import './workspace.css'
 
+const MAIN_ID = 'workspace-main'
+
+const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
+  sites: SitesIcon,
+  myTasks: TasksIcon,
+  members: TeamIcon,
+}
+
 /**
- * Frame of the company workspace: navigation beside the routed page. Sits
- * inside `OrganizationGate`, which already renders the company strip, and
- * loads the caller's permissions for the selected company.
+ * Frame of the company workspace: header across the top, navigation beside
+ * the routed page (a bottom tab bar on phones). Sits inside `OrganizationGate`.
+ * The header stays mounted across a company switch; everything below it
+ * reloads the caller's permissions for the selected company.
  */
 export function WorkspaceLayout() {
   const organization = useCurrentOrganization()
-
-  return (
-    <PermissionsProvider key={organization.id} organizationId={organization.id}>
-      <WorkspaceShell />
-    </PermissionsProvider>
-  )
-}
-
-function WorkspaceShell() {
   const { messages: m } = useLocale()
-  const t = m.workspace
-  const { status, access, can, reload } = usePermissions()
-  const seesOwnTasks = hasPermission(access, 'VIEW_ACTIVITY') || hasPermission(access, 'MANAGE_ACTIVITY')
+
+  const skipToMain = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    document.getElementById(MAIN_ID)?.focus()
+  }
 
   return (
     <div className="workspace">
+      <a className="skip-link" href={`#${MAIN_ID}`} onClick={skipToMain}>
+        {m.workspace.skipToContent}
+      </a>
+      <WorkspaceHeader />
+      <PermissionsProvider key={organization.id} organizationId={organization.id}>
+        <WorkspaceBody />
+      </PermissionsProvider>
+    </div>
+  )
+}
+
+function WorkspaceBody() {
+  const { messages: m } = useLocale()
+  const t = m.workspace
+  const { status, access, can, reload } = usePermissions()
+  const { pathname } = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
+  const lastPath = useRef(pathname)
+
+  // Move focus to the new page so keyboard and screen reader users land on it.
+  useEffect(() => {
+    if (lastPath.current === pathname) return
+    lastPath.current = pathname
+    mainRef.current?.focus()
+  }, [pathname])
+
+  const items = workspaceNavItems({
+    seesOwnTasks: hasPermission(access, 'VIEW_ACTIVITY') || hasPermission(access, 'MANAGE_ACTIVITY'),
+    managesMembers: can('MANAGE_MEMBERS'),
+  })
+
+  const links = (prefix: 'workspace-nav' | 'workspace-tabbar') =>
+    items.map((item) => {
+      const Icon = navIcons[item.key]
+      return (
+        <li key={item.key}>
+          <NavLink className={`${prefix}__link`} to={item.to}>
+            <Icon className={`${prefix}__icon`} />
+            <span className={`${prefix}__label`}>{t[item.key]}</span>
+          </NavLink>
+        </li>
+      )
+    })
+
+  return (
+    <>
       <nav className="workspace-nav" aria-label={t.navLabel}>
-        <ul className="workspace-nav__list">
-          <li>
-            <NavLink className="workspace-nav__link" to="/sites">
-              {t.sites}
-            </NavLink>
-          </li>
-          {seesOwnTasks ? (
-            <li>
-              <NavLink className="workspace-nav__link" to="/tasks">
-                {t.myTasks}
-              </NavLink>
-            </li>
-          ) : null}
-          {can('MANAGE_MEMBERS') ? (
-            <li>
-              <NavLink className="workspace-nav__link" to="/members">
-                {t.members}
-              </NavLink>
-            </li>
-          ) : null}
-          <li>
-            <Link className="workspace-nav__link" to="/account">
-              {t.account}
-            </Link>
-          </li>
-        </ul>
-        <div className="workspace-nav__footer">
-          <LocaleSwitcher />
-        </div>
+        <ul className="workspace-nav__list">{links('workspace-nav')}</ul>
       </nav>
-      <main className="workspace-main">
+      <main id={MAIN_ID} ref={mainRef} tabIndex={-1} className="workspace-main">
         {status === 'ready' ? (
           <Suspense
             fallback={
@@ -84,6 +107,9 @@ function WorkspaceShell() {
           </div>
         )}
       </main>
-    </div>
+      <nav className="workspace-tabbar" aria-label={t.navLabel}>
+        <ul className="workspace-tabbar__list">{links('workspace-tabbar')}</ul>
+      </nav>
+    </>
   )
 }
