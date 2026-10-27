@@ -1,0 +1,72 @@
+/* Underlined text tabs on a hairline, left aligned; scrolls sideways when they do not fit. */
+.filter-tabs {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.filter-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-tabs__tab {
+  display: inline-flex;
+  flex: none;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: -1px;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--cx-muted);
+  font: 500 14px/20px var(--cx-font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.filter-tabs__tab:hover:not([aria-pressed='true']) {
+  color: var(--cx-ink);
+}
+
+.filter-tabs__tab[aria-pressed='true'] {
+  border-bottom-color: var(--cx-accent);
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.filter-tabs__tab:focus-visible {
+  outline: 2px solid var(--cx-accent);
+  outline-offset: -2px;
+  border-radius: var(--cx-radius-sm);
+}
+
+.filter-tabs__count {
+  color: color-mix(in srgb, var(--cx-muted) 75%, transparent);
+  font: 500 13px/20px var(--cx-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.filter-tabs__tab[aria-pressed='true'] .filter-tabs__count {
+  color: var(--cx-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-tabs__tab {
+    transition: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-tabs {
+    gap: 12px;
+  }
+
+  .filter-tabs__tab {
+    gap: 6px;
+  }
+}

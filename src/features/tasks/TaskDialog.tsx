@@ -15,6 +15,7 @@ import {
   type Task,
   type TaskErrorKind,
 } from './tasksApi'
+import { BarColorPicker } from '../gantt/BarColorPicker'
 
 type TaskDialogProps = {
   at: PhaseRef
@@ -23,6 +24,9 @@ type TaskDialogProps = {
   people: SiteAccess[]
   /** The task to edit; absent to add one. */
   task?: Task
+  /** Dates a new task starts with; default to the whole phase. */
+  initialStartAt?: string
+  initialDueAt?: string
   /** On edit: which parts the role may change. Creating needs both. */
   canEdit?: boolean
   canReassign?: boolean
@@ -33,14 +37,16 @@ type TaskDialogProps = {
 }
 
 /**
- * Add a task (name, due, assignee) or edit one: name and due go to PATCH,
- * a new assignee to PUT `.../assignee`.
+ * Add a task (name, start, due, assignee) or edit one: name and dates go to
+ * PATCH, a new assignee to PUT `.../assignee`.
  */
 export function TaskDialog({
   at,
   goal,
   people,
   task,
+  initialStartAt,
+  initialDueAt,
   canEdit = true,
   canReassign = true,
   onSaved,
@@ -54,17 +60,20 @@ export function TaskDialog({
 
   const form = useForm({
     initialValues: {
+      color: task?.color ?? '',
       name: task?.name ?? '',
-      dueAt: instantToLocalInput(task?.dueAt ?? goal.dueAt),
+      startAt: instantToLocalInput(task?.startAt ?? initialStartAt ?? goal.startAt),
+      dueAt: instantToLocalInput(task?.dueAt ?? initialDueAt ?? goal.dueAt),
       assigneeAccessId: task?.assignee.accessId ?? '',
     },
-    schema: makeTaskSchema(t.validation, goal.dueAt),
+    schema: makeTaskSchema(t.validation, goal, m.gantt.invalidColor),
     onSubmit: async (values) => {
       let latest = task
       try {
         if (!task) {
+          const startAt = localInputToInstant(values.startAt) ?? ''
           const dueAt = localInputToInstant(values.dueAt) ?? ''
-          onSaved(await createTask(at, { ...values, dueAt }), true)
+          onSaved(await createTask(at, { ...values, startAt, dueAt }), true)
           return
         }
         const changes = buildTaskChanges(task, values)
@@ -79,7 +88,7 @@ export function TaskDialog({
       }
     },
     onInvalid: (errors) => {
-      const first = ['name', 'dueAt', 'assigneeAccessId'].find((name) => errors[name])
+      const first = ['name', 'startAt', 'dueAt', 'assigneeAccessId', 'color'].find((name) => errors[name])
       if (first) document.getElementById(`field-${first}`)?.focus()
     },
   })
@@ -92,6 +101,12 @@ export function TaskDialog({
     ...(canEdit
       ? ([
           { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
+          {
+            name: 'startAt',
+            label: t.field.startAt,
+            type: 'datetime-local',
+            hint: formatMessage(t.field.startHint, { date: dueText(goal.startAt, intlLocales[locale]) }),
+          },
           {
             name: 'dueAt',
             label: t.field.dueAt,
@@ -112,6 +127,15 @@ export function TaskDialog({
       onClose={onClose}
     >
       <Form controller={form} fields={fields} submitLabel={copy.submit} pendingLabel={copy.pending}>
+        {canEdit ? (
+          <BarColorPicker
+            value={form.values.color}
+            disabled={form.isSubmitting}
+            error={form.errors.color}
+            onChange={(color) => form.onChange('color', color)}
+            onBlur={() => form.onBlur('color')}
+          />
+        ) : null}
         {form.submitError ? (
           <p className="form-error" role="alert">
             {t.error[errorKind]}

@@ -22,6 +22,7 @@ const task: Task = {
   goalId: 'g-1',
   projectId: 'p-1',
   name: 'Pour slab level 1',
+  startAt: '2026-11-20T08:00:00Z',
   dueAt: '2026-12-01T18:00:00Z',
   status: 'TODO',
   completedAt: null,
@@ -41,6 +42,31 @@ const at = { organizationId: 'org-1', siteId: 'p-1', goalId: 'g-1' }
 
 describe('tasks API', () => {
   afterEach(() => mock.restore())
+
+  it('includes an optional color when creating a record from the dialog', async () => {
+    const { send } = stubApi({ send: () => ({ status: 201, data: { ...task, color: '#3b82f6' } }) })
+    expect((await createTask(at, { name: task.name, startAt: task.startAt, dueAt: task.dueAt, assigneeAccessId: 'a-1', color: '#3b82f6' })).color).toBe('#3b82f6')
+    expect((send.mock.calls[0] as unknown as [string, { color: string }])[1].color).toBe('#3b82f6')
+  })
+
+  it('reloads independent colors and resets only the selected bar', async () => {
+    const colored = { ...task, color: '#123abc' }
+    const other = { ...task, id: 'other', color: '#abcdef' }
+    const { send } = stubApi({
+      get: () => ({ status: 200, data: [colored, other] }),
+      send: () => ({ status: 200, data: { ...task, color: null } }),
+    })
+    expect(await listTasks(at)).toEqual([colored, other])
+    expect((await updateTask(at, 't-1', { color: '' })).color).toBeNull()
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ color: '' })
+  })
+
+  it('persists an individual bar color and reads it from the response', async () => {
+    const colored = { ...task, color: '#123abc' }
+    const { send } = stubApi({ send: () => ({ status: 200, data: colored }) })
+    expect(await updateTask(at, 't-1', { color: '#123abc' })).toEqual(colored)
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ color: '#123abc' })
+  })
 
   it('listTasks: gets the tasks of a phase without filters', async () => {
     const { get } = stubApi({ get: () => ({ status: 200, data: [task] }) })
@@ -63,13 +89,23 @@ describe('tasks API', () => {
     expect(await listTasks(at)).toEqual([done as Task])
   })
 
-  it('createTask: posts name, due instant and assignee with CSRF and expects 201', async () => {
+  it('createTask: posts name, start and due instants and assignee with CSRF and expects 201', async () => {
     const { send } = stubApi({ send: () => ({ status: 201, data: task }) })
-    await createTask(at, { name: ' Pour slab ', dueAt: '2026-12-01T18:00:00.000Z', assigneeAccessId: 'a-1' })
+    await createTask(at, {
+      name: ' Pour slab ',
+      startAt: '2026-11-20T08:00:00.000Z',
+      dueAt: '2026-12-01T18:00:00.000Z',
+      assigneeAccessId: 'a-1',
+    })
 
     const [url, body, config] = send.mock.calls[0] as unknown as [string, unknown, Config]
     expect(url).toBe(base)
-    expect(body).toEqual({ name: 'Pour slab', dueAt: '2026-12-01T18:00:00.000Z', assigneeAccessId: 'a-1' })
+    expect(body).toEqual({
+      name: 'Pour slab',
+      startAt: '2026-11-20T08:00:00.000Z',
+      dueAt: '2026-12-01T18:00:00.000Z',
+      assigneeAccessId: 'a-1',
+    })
     expect(config.headers?.['X-XSRF-TOKEN']).toBe('proof')
   })
 
@@ -80,6 +116,16 @@ describe('tasks API', () => {
     const [url, body] = send.mock.calls[0] as unknown as [string, unknown]
     expect(url).toBe(`${base}/t-1`)
     expect(body).toEqual({ dueAt: '2026-12-02T18:00:00.000Z' })
+  })
+
+  it('updateTask: moves start and due together in one patch', async () => {
+    const { send } = stubApi({ send: () => ({ status: 200, data: task }) })
+    await updateTask(at, 't-1', { startAt: '2026-11-21T08:00:00.000Z', dueAt: '2026-12-02T18:00:00.000Z' })
+
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({
+      startAt: '2026-11-21T08:00:00.000Z',
+      dueAt: '2026-12-02T18:00:00.000Z',
+    })
   })
 
   it('reassignTask: puts the new assignee access id', async () => {

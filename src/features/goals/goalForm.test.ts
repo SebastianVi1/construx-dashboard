@@ -3,11 +3,12 @@ import { buildGoalPatch, makeGoalSchema } from './goalForm'
 import { instantToLocalInput } from './dueAt'
 import type { Goal } from './goalsApi'
 
-const messages = { nameRequired: 'name', nameMax: 'max', dueRequired: 'due' }
+const messages = { nameRequired: 'name', nameMax: 'max', startRequired: 'start', dueRequired: 'due', startAfterDue: 'order' }
 const goal: Goal = {
   id: 'g-1',
   projectId: 'p-1',
   name: 'Foundations',
+  startAt: '2026-11-01T08:00:00Z',
   dueAt: '2026-12-15T23:59:00Z',
   activityCount: 0,
   doneCount: 0,
@@ -15,22 +16,37 @@ const goal: Goal = {
 }
 
 describe('phase form', () => {
-  it('requires a name of 1 to 160 characters and a due date and time', () => {
-    const schema = makeGoalSchema(messages)
-    const issues = (values: { name: string; dueAt: string }) =>
-      schema.safeParse(values).error?.issues.map((issue) => issue.message) ?? []
+  const schema = makeGoalSchema(messages)
+  const issues = (values: { name: string; startAt: string; dueAt: string }) =>
+    schema.safeParse(values).error?.issues.map((issue) => issue.message) ?? []
 
-    expect(issues({ name: '  ', dueAt: '' })).toEqual(['name', 'due'])
-    expect(issues({ name: 'x'.repeat(161), dueAt: '2026-12-15T18:00' })).toEqual(['max'])
-    expect(issues({ name: 'Slab', dueAt: '2026-12-15' })).toEqual(['due'])
-    expect(issues({ name: 'Slab', dueAt: '2026-12-15T18:00' })).toEqual([])
+  it('requires a name of 1 to 160 characters, a start and a due date and time', () => {
+    expect(issues({ name: '  ', startAt: '', dueAt: '' })).toEqual(['name', 'start', 'due'])
+    expect(issues({ name: 'x'.repeat(161), startAt: '2026-12-01T08:00', dueAt: '2026-12-15T18:00' })).toEqual(['max'])
+    expect(issues({ name: 'Slab', startAt: '2026-12-01T08:00', dueAt: '2026-12-15' })).toEqual(['due'])
+    expect(issues({ name: 'Slab', startAt: '2026-12-01T08:00', dueAt: '2026-12-15T18:00' })).toEqual([])
+  })
+
+  it('rejects a start after the due, accepting the same instant', () => {
+    expect(issues({ name: 'Slab', startAt: '2026-12-15T18:01', dueAt: '2026-12-15T18:00' })).toEqual(['order'])
+    expect(issues({ name: 'Slab', startAt: '2026-12-15T18:00', dueAt: '2026-12-15T18:00' })).toEqual([])
   })
 
   it('patches only what changed', () => {
-    const same = { name: 'Foundations ', dueAt: instantToLocalInput(goal.dueAt) }
+    const same = { name: 'Foundations ', startAt: instantToLocalInput(goal.startAt), dueAt: instantToLocalInput(goal.dueAt) }
     expect(buildGoalPatch(goal, same)).toEqual({})
 
-    const patch = buildGoalPatch(goal, { name: 'Slab', dueAt: '2027-01-10T08:00' })
+    const patch = buildGoalPatch(goal, { ...same, name: 'Slab', dueAt: '2027-01-10T08:00' })
     expect(patch).toEqual({ name: 'Slab', dueAt: new Date(2027, 0, 10, 8, 0).toISOString() })
+    expect(buildGoalPatch(goal, { ...same, startAt: '2026-11-03T08:00' })).toEqual({
+      startAt: new Date(2026, 10, 3, 8, 0).toISOString(),
+    })
+  })
+
+  it('patches a changed color, sends an empty color to reset it, and skips an unchanged one', () => {
+    const same = { name: goal.name, startAt: instantToLocalInput(goal.startAt), dueAt: instantToLocalInput(goal.dueAt) }
+    expect(buildGoalPatch(goal, { ...same, color: '#3b82f6' })).toEqual({ color: '#3b82f6' })
+    expect(buildGoalPatch({ ...goal, color: '#3b82f6' }, { ...same, color: '' })).toEqual({ color: '' })
+    expect(buildGoalPatch({ ...goal, color: '#3b82f6' }, { ...same, color: '#3b82f6' })).toEqual({})
   })
 })

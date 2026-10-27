@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { MyAccess } from '../permissions'
-import { groupByStatus, taskActions } from './taskRules'
+import { filterByStatus, groupByStatus, taskActions } from './taskRules'
 import type { Task } from './tasksApi'
 
 const task: Task = {
@@ -8,6 +8,7 @@ const task: Task = {
   goalId: 'g-1',
   projectId: 'p-1',
   name: 'Pour slab',
+  startAt: '2026-11-20T08:00:00Z',
   dueAt: '2026-12-01T18:00:00Z',
   status: 'TODO',
   completedAt: null,
@@ -91,5 +92,24 @@ describe('groupByStatus', () => {
 
   it('keeps empty groups so the board layout stays stable', () => {
     expect(groupByStatus([]).map((group) => group.tasks.length)).toEqual([0, 0, 0])
+  })
+})
+
+describe('filterByStatus', () => {
+  const todo = { ...task, id: 't-todo' }
+  const doing = { ...task, id: 't-doing', status: 'IN_PROGRESS' as const }
+  const done = { ...task, id: 't-done', status: 'DONE' as const }
+  const tasks = [todo, doing, done, { ...done, id: 't-done-2' }]
+
+  it('counts every status and keeps all tasks without a filter', () => {
+    expect(filterByStatus(tasks, '')).toEqual({ counts: { all: 4, TODO: 1, IN_PROGRESS: 1, DONE: 2 }, visible: tasks })
+  })
+
+  it('shows only the chosen status, in the original order', () => {
+    expect(filterByStatus(tasks, 'DONE').visible.map((item) => item.id)).toEqual(['t-done', 't-done-2'])
+    expect(filterByStatus([todo], 'IN_PROGRESS')).toEqual({
+      counts: { all: 1, TODO: 1, IN_PROGRESS: 0, DONE: 0 },
+      visible: [],
+    })
   })
 })

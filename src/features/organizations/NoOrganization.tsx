@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { formatMessage, useLocale } from '../../i18n'
 import { useAuth } from '../auth/auth-context'
@@ -15,6 +16,16 @@ export function NoOrganization() {
   const { messages: m } = useLocale()
   const t = m.organizations.empty
   const worker = intent === 'WORKER_OR_INVITED'
+  const [signingOut, setSigningOut] = useState(false)
+
+  const leave = async () => {
+    setSigningOut(true)
+    try {
+      await signOut()
+    } finally {
+      setSigningOut(false)
+    }
+  }
 
   return (
     <AuthLayout title={t.title} description={worker ? t.workerHeading : t.ownerHeading}>
@@ -35,8 +46,8 @@ export function NoOrganization() {
             <p className="org-empty__hint">{t.inviteHint}</p>
           </>
         )}
-        <button type="button" className="auth-signout" onClick={() => void signOut()}>
-          {m.auth.account.signOut}
+        <button type="button" className="auth-signout" disabled={signingOut} onClick={() => void leave()}>
+          {signingOut ? m.auth.account.signingOut : m.auth.account.signOut}
         </button>
       </div>
     </AuthLayout>

@@ -1,6 +1,7 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { FilterTabs, filterCounts, type FilterOption } from '../../components/filter'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -12,16 +13,30 @@ import { siteProgress } from './siteHelpers'
 import { listSites, siteErrorKind, siteStatuses, type Site, type SiteStatus } from './sitesApi'
 import './sites.css'
 
-/** Sites of the selected company. Archived sites appear only through the status filter. */
+/**
+ * Sites of the selected company. Open sites load once and the status tabs filter them
+ * here; archived sites are fetched only when their tab is chosen.
+ */
 export function SitesPage() {
   const { messages: m, locale } = useLocale()
   const t = m.sites
   const organization = useCurrentOrganization()
   const { can } = usePermissions()
-  const filterId = useId()
   const [filter, setFilter] = useState<SiteStatus | ''>('')
   const [creating, setCreating] = useState(false)
-  const sites = useRemoteData(`${organization.id}:${filter}`, () => listSites(organization.id, filter || undefined))
+  const open = useRemoteData(`${organization.id}:sites`, () => listSites(organization.id))
+  const archived = useRemoteData(filter === 'ARCHIVED' ? `${organization.id}:sites:ARCHIVED` : null, () =>
+    listSites(organization.id, 'ARCHIVED'),
+  )
+  const sites = filter === 'ARCHIVED' ? archived : open
+  const openStatuses = siteStatuses.filter((status) => status !== 'ARCHIVED')
+  const { counts, visible } = filterCounts(open.data ?? [], (site) => site.status, openStatuses, filter === 'ARCHIVED' ? '' : filter)
+  const shown = filter === 'ARCHIVED' ? archived.data : open.data ? visible : undefined
+  const filters: FilterOption<SiteStatus | ''>[] = [
+    { value: '', label: t.filterAll, count: open.data ? counts.all : undefined },
+    ...openStatuses.map((status) => ({ value: status, label: t.status[status], count: open.data ? counts[status] : undefined })),
+    { value: 'ARCHIVED', label: t.status.ARCHIVED, count: archived.data?.length },
+  ]
   const canCreate = can('MANAGE_PROJECT')
 
   useEffect(() => {
@@ -43,29 +58,11 @@ export function SitesPage() {
       </header>
 
       <section className="page-section" aria-label={t.title}>
-        <div className="sites-toolbar">
-          <label className="sites-toolbar__label" htmlFor={filterId}>
-            {t.filterLabel}
-          </label>
-          <span className="filter-select">
-            <select
-              id={filterId}
-              value={filter}
-              onChange={(event) => setFilter(event.target.value as SiteStatus | '')}
-            >
-              <option value="">{t.filterOpen}</option>
-              {siteStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {t.status[status]}
-                </option>
-              ))}
-            </select>
-          </span>
-        </div>
+        <FilterTabs label={t.filterLabel} options={filters} value={filter} onChange={setFilter} />
 
-        {sites.data ? (
-          sites.data.length > 0 ? (
-            <SitesTable sites={sites.data} t={t} locale={locale} />
+        {shown ? (
+          shown.length > 0 ? (
+            <SitesTable sites={shown} t={t} locale={locale} />
           ) : filter ? (
             <div className="empty-state">
               <p>{t.noResults}</p>

@@ -2,15 +2,13 @@ import type { ReactNode } from 'react'
 import { useLocale } from '../../i18n'
 import { AuthLayout } from '../auth/AuthLayout'
 import { NoOrganization } from './NoOrganization'
-import { OrganizationContextStrip } from './OrganizationContextStrip'
 import { useOrganizations } from './organizations-context'
 import './organizations.css'
 
 /**
  * Wraps protected screens that need a company. It never renders the screen
- * before the organization list is known, shows the empty state when the user
- * has none, and otherwise puts the company context strip above the screen.
- * Use inside `RequireAuth`.
+ * before the organization list is known and shows the empty state when the
+ * user has none. Use inside `RequireAuth`.
  */
 export function OrganizationGate({ children }: { children: ReactNode }) {
   const { status, organizations, reload } = useOrganizations()
@@ -27,11 +25,11 @@ export function OrganizationGate({ children }: { children: ReactNode }) {
   }
 
   if (status !== 'ready') {
+    // The description already says what is loading; the spinner is decoration.
     return (
       <AuthLayout title={m.organizations.empty.title} description={m.organizations.loading}>
-        <div className="auth-loading" role="status">
-          <span className="auth-loading__spinner" aria-hidden="true" />
-          <span>{m.auth.account.loading}</span>
+        <div className="auth-loading" aria-hidden="true">
+          <span className="auth-loading__spinner" />
         </div>
       </AuthLayout>
     )
@@ -39,10 +37,5 @@ export function OrganizationGate({ children }: { children: ReactNode }) {
 
   if (organizations.length === 0) return <NoOrganization />
 
-  return (
-    <div className="org-frame">
-      <OrganizationContextStrip />
-      {children}
-    </div>
-  )
+  return <div className="org-frame">{children}</div>
 }

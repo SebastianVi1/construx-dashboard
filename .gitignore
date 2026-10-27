@@ -24,10 +24,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-# AI tooling artifacts
+# Agent tooling: skills, AGENTS.md and CLAUDE.md are tracked; plans, specs,
+# local settings and the skill registry are not.
 .atl/
-.agents/*
 .specify/*
-AGENTS.md
-skills-lock.json
 specs/
+.claude/settings.local.json

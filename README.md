@@ -76,3 +76,12 @@ export default defineConfig([
 ])
 
 ```
+
+### Individual Gantt colors
+
+Bars in Phases & schedule glow blue by default. Managers can open a phase or task
+dialog and pick a quick swatch, any color from the native color picker, or a hex
+value; **Use default blue** clears it. The color is saved on the phase or task, so
+everyone on the site sees it, and status still shows on any color (hollow to do,
+solid in progress, faded done). The API field is `color` (`#rrggbb`, `""` resets;
+backend migration `V10__bar_colors.sql`).
