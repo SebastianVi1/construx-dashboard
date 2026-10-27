@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
+import { SitePhases } from '../goals/SitePhases'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { ArchiveSiteDialog } from './ArchiveSiteDialog'
@@ -14,7 +15,7 @@ import { siteProgress } from './siteHelpers'
 import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import './sites.css'
 
-/** One site: its details (editable with MANAGE_PROJECT), progress and people. */
+/** One site: its details (editable with MANAGE_PROJECT), progress, people, and its phases with their tasks. */
 export function SiteDetailPage() {
   const { siteId = '' } = useParams()
   const { messages: m, locale } = useLocale()
@@ -157,6 +158,14 @@ export function SiteDetailPage() {
           myMembershipId={myMembershipId}
         />
       </div>
+
+      <SitePhases
+        organizationId={organization.id}
+        siteId={current.id}
+        people={people.data}
+        onSite={onSite}
+        onProgressChanged={site.reload}
+      />
 
       {archiveOpen ? (
         <ArchiveSiteDialog

@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
 import { useLocale } from '../../i18n'
+import { forgetReturnPath, readReturnPath } from '../../components/navigation/returnPath'
 
 /**
  * Landing page after a successful Google OAuth redirect. The backend sets the
@@ -13,6 +14,8 @@ export function AuthCompletePage() {
   const { status } = useAuth()
   const navigate = useNavigate()
   const { messages: m } = useLocale()
+  // Set before leaving for Google when sign-in started from an invitation link.
+  const [returnTo] = useState(() => readReturnPath(sessionStorage))
 
   useEffect(() => {
     document.title = `${m.auth.title.complete} | Construx`
@@ -20,11 +23,14 @@ export function AuthCompletePage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      navigate('/sites', { replace: true })
+      forgetReturnPath(sessionStorage)
+      navigate(returnTo ?? '/', { replace: true })
     } else if (status === 'unauthenticated') {
-      navigate('/login?error=google', { replace: true })
+      navigate(returnTo ? `/login?error=google&next=${encodeURIComponent(returnTo)}` : '/login?error=google', {
+        replace: true,
+      })
     }
-  }, [status, navigate])
+  }, [status, navigate, returnTo])
 
   return (
     <AuthLayout title={m.auth.title.complete} description={m.auth.description.complete}>

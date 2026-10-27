@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router'
+import { Navigate, useSearchParams } from 'react-router'
+import { safeReturnPath } from '../../components/navigation/returnPath'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
 import { useLocale } from '../../i18n'
@@ -26,11 +27,16 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return children
 }
 
-/** Render children only for a visitor; a signed-in user goes to the sites list. */
+/**
+ * Render children only for a visitor. A signed-in user goes to the `?next=`
+ * page when it is an in-app path (an invitation link), else to the workspace
+ * home, which picks the landing screen for their role.
+ */
 export function GuestOnly({ children }: { children: ReactNode }) {
   const { status } = useAuth()
+  const [searchParams] = useSearchParams()
 
   if (status === 'loading') return <SessionLoading />
-  if (status === 'authenticated') return <Navigate to="/sites" replace />
+  if (status === 'authenticated') return <Navigate to={safeReturnPath(searchParams.get('next')) ?? '/'} replace />
   return children
 }

@@ -7,6 +7,7 @@ import { Form, useForm, type FieldConfig } from '../../components/form'
 import { makeLoginSchema, makeRegistrationSchema } from './schemas'
 import { getOAuth2AuthorizationUrl } from '../../config/env'
 import { useLocale } from '../../i18n'
+import { forgetReturnPath, rememberReturnPath, safeReturnPath, withReturnPath } from '../../components/navigation/returnPath'
 
 type AuthMode = 'login' | 'register'
 type ResendStatus = 'idle' | 'sending' | 'sent' | 'error'
@@ -23,6 +24,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const [rateLimited, setRateLimited] = useState(false)
 
   const googleError = !isRegistration && searchParams.get('error') === 'google'
+  // In-app page to open after signing in (an invitation link), carried as `?next=`.
+  const next = safeReturnPath(searchParams.get('next'))
   const googleAuthorizationUrl = isRegistration ? '' : getOAuth2AuthorizationUrl()
 
   const form = useForm({
@@ -41,7 +44,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         } else {
           await login({ email: data.email, password: data.password })
           await signIn()
-          navigate('/sites', { replace: true })
+          forgetReturnPath(sessionStorage)
+          navigate(next ?? '/', { replace: true })
         }
       } catch (error) {
         setRateLimited(error instanceof AuthApiError && error.status === 429)
@@ -135,7 +139,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
             </>
           )}
         </div>
-        <p className="auth-switch"><Link to="/login">{m.auth.accepted.signInLink}</Link></p>
+        <p className="auth-switch"><Link to={withReturnPath('/login', next)}>{m.auth.accepted.signInLink}</Link></p>
       </AuthLayout>
     )
   }
@@ -176,7 +180,15 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       {googleAuthorizationUrl && (
         <>
           <div className="auth-divider" role="separator"><span>{m.auth.divider}</span></div>
-          <a className="auth-google" href={googleAuthorizationUrl}>
+          <a
+            className="auth-google"
+            href={googleAuthorizationUrl}
+            onClick={() => {
+              // The OAuth round trip leaves the app; /auth/complete reads this back.
+              if (next) rememberReturnPath(sessionStorage, next)
+              else forgetReturnPath(sessionStorage)
+            }}
+          >
             <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
               <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62Z" />
               <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26a5.43 5.43 0 0 1-8.1-2.85H.86v2.33A9 9 0 0 0 9 18Z" />
@@ -190,7 +202,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
 
       <p className="auth-switch">
         {isRegistration ? m.auth.switch.toLogin : m.auth.switch.toRegister}{' '}
-        <Link to={isRegistration ? '/login' : '/register'}>
+        <Link to={withReturnPath(isRegistration ? '/login' : '/register', next)}>
           {isRegistration ? m.auth.switch.loginLink : m.auth.switch.registerLink}
         </Link>
       </p>

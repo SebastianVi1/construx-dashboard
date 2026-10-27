@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from 'react-router'
 import { LoadingState, Notice } from '../../components/page'
 import { LocaleSwitcher, useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
+import { hasPermission } from '../permissions/landing'
 import { useCurrentOrganization } from './organizations-context'
 import './workspace.css'
 
@@ -24,7 +25,8 @@ export function WorkspaceLayout() {
 function WorkspaceShell() {
   const { messages: m } = useLocale()
   const t = m.workspace
-  const { status, can, reload } = usePermissions()
+  const { status, access, can, reload } = usePermissions()
+  const seesOwnTasks = hasPermission(access, 'VIEW_ACTIVITY') || hasPermission(access, 'MANAGE_ACTIVITY')
 
   return (
     <div className="workspace">
@@ -35,6 +37,13 @@ function WorkspaceShell() {
               {t.sites}
             </NavLink>
           </li>
+          {seesOwnTasks ? (
+            <li>
+              <NavLink className="workspace-nav__link" to="/tasks">
+                {t.myTasks}
+              </NavLink>
+            </li>
+          ) : null}
           {can('MANAGE_MEMBERS') ? (
             <li>
               <NavLink className="workspace-nav__link" to="/members">
