@@ -136,6 +136,40 @@
   padding-right: 76px;
 }
 
+/* Select: own chevron, and the status glyph moves left of it. */
+.form-field[data-type='select'] .form-field__control {
+  appearance: none;
+  padding-right: 64px;
+  cursor: pointer;
+}
+
+.form-field[data-type='select'] .form-field__box::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--cx-muted);
+  border-bottom: 1.5px solid var(--cx-muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+.form-field[data-type='select'] .form-field__status,
+.form-field[data-type='date'] .form-field__status {
+  right: 40px;
+}
+
+.form-field[data-type='date'] .form-field__control {
+  padding-right: 64px;
+}
+
+.form-field__control option {
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+}
+
 .form-field__hint,
 .form-field__error {
   font-size: 13px;

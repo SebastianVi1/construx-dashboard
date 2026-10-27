@@ -52,12 +52,13 @@ function Login() {
 | --- | --- | --- |
 | `name` | `string` | Unique field key; used as the input `name` and to key values/errors. |
 | `label` | `string` | Label text rendered above the control. |
-| `type` | `FieldType` | `text` \| `email` \| `password` \| `tel` \| `number` \| `url` \| `search`. Default `text`. |
+| `type` | `FieldType` | `text` \| `email` \| `password` \| `tel` \| `number` \| `url` \| `search` \| `date` \| `select`. Default `text`. |
 | `placeholder` | `string` | Placeholder shown while the field is empty. |
 | `autoComplete` | `string` | Native autocomplete hint (`email`, `current-password`, …). |
 | `inputMode` | `InputMode` | On-screen keyboard hint (`email`, `numeric`, …). |
 | `spellCheck` | `boolean` | Force spell-check on/off for the control. |
 | `hint` | `string` | Helper text shown while the field is valid. |
+| `options` | `FieldOption[]` | Choices of a `select` field (`{ value, label }`); use `value: ''` for "none". |
 
 ## `useForm` options
 

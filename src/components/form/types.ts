@@ -8,6 +8,10 @@ export type FieldType =
   | 'number'
   | 'url'
   | 'search'
+  | 'date'
+  | 'select'
+
+export type FieldOption = { value: string; label: string }
 
 export type InputMode = 'text' | 'email' | 'numeric' | 'tel' | 'url' | 'search'
 
@@ -36,6 +40,8 @@ export type FieldConfig = {
   hint?: string
   /** Accessible names for the show/hide toggle. Only used by `password` fields. */
   revealLabels?: { show: string; hide: string }
+  /** Choices of a `select` field, in display order. Use `value: ''` for "none". */
+  options?: FieldOption[]
 }
 
 export type FieldErrors = Record<string, string | undefined>

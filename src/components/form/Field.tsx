@@ -22,6 +22,7 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
     spellCheck,
     hint,
     revealLabels,
+    options = [],
   } = config
 
   const [revealed, setRevealed] = useState(false)
@@ -30,13 +31,33 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
   const hintId = `${controlId}-hint`
   const errorId = `${controlId}-error`
   const state = error ? 'invalid' : valid ? 'valid' : 'idle'
+  const describedBy = error ? errorId : hint ? hintId : undefined
 
   return (
-    <div className="form-field" data-state={state}>
+    <div className="form-field" data-state={state} data-type={type}>
       <label className="form-field__label" htmlFor={controlId}>
         {label}
       </label>
       <div className="form-field__box">
+        {type === 'select' ? (
+          <select
+            className="form-field__control"
+            id={controlId}
+            name={name}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            onBlur={onBlur}
+            aria-invalid={Boolean(error)}
+            aria-describedby={describedBy}
+            disabled={disabled}
+          >
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : (
         <input
           className="form-field__control"
           id={controlId}
@@ -50,9 +71,10 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
           onChange={(event) => onChange(event.target.value)}
           onBlur={onBlur}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? errorId : hint ? hintId : undefined}
+          aria-describedby={describedBy}
           disabled={disabled}
         />
+        )}
         {canReveal && revealLabels ? (
           <button
             type="button"

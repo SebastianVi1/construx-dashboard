@@ -5,6 +5,7 @@ export { collectErrors } from './validation'
 export type {
   FieldConfig,
   FieldErrors,
+  FieldOption,
   FieldType,
   FormController,
   FormProps,

@@ -101,7 +101,7 @@ type UnsafeMethod = 'post' | 'put' | 'patch'
  * response body.
  */
 async function sendWithCsrf(
-  method: UnsafeMethod,
+  method: UnsafeMethod | 'delete',
   path: string,
   body: unknown,
   expectedStatus: number,
@@ -109,7 +109,11 @@ async function sendWithCsrf(
   for (let attempt = 0; ; attempt += 1) {
     const proof = await getCsrfProof()
     try {
-      const response = await client[method](`${baseUrl}${path}`, body, csrfConfig(proof))
+      const url = `${baseUrl}${path}`
+      const response =
+        method === 'delete'
+          ? await client.delete(url, csrfConfig(proof))
+          : await client[method](url, body, csrfConfig(proof))
       if (response.status !== expectedStatus) throw new AuthApiError(response.status)
       return response.data
     } catch (error) {
@@ -151,6 +155,11 @@ export async function sendJson<T>(
 ): Promise<T> {
   const data = await sendWithCsrf(method, path, body, expectedStatus)
   return parseBody(schema, data, expectedStatus)
+}
+
+/** DELETE with CSRF proof (same single retry after a 403); expects 204 by default. */
+export async function deleteJson(path: string, expectedStatus = 204): Promise<void> {
+  await sendWithCsrf('delete', path, undefined, expectedStatus)
 }
 
 /** Sign in with email and password. Resolves after the session cookie is set. */
