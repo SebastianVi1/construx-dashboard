@@ -9,6 +9,7 @@ export type FieldType =
   | 'url'
   | 'search'
   | 'date'
+  | 'datetime-local'
   | 'select'
 
 export type FieldOption = { value: string; label: string }

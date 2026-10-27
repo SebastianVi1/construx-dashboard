@@ -52,7 +52,7 @@ function Login() {
 | --- | --- | --- |
 | `name` | `string` | Unique field key; used as the input `name` and to key values/errors. |
 | `label` | `string` | Label text rendered above the control. |
-| `type` | `FieldType` | `text` \| `email` \| `password` \| `tel` \| `number` \| `url` \| `search` \| `date` \| `select`. Default `text`. |
+| `type` | `FieldType` | `text` \| `email` \| `password` \| `tel` \| `number` \| `url` \| `search` \| `date` \| `datetime-local` \| `select`. Default `text`. `datetime-local` values are wall-clock `YYYY-MM-DDTHH:mm` strings; convert them to instants before sending. |
 | `placeholder` | `string` | Placeholder shown while the field is empty. |
 | `autoComplete` | `string` | Native autocomplete hint (`email`, `current-password`, …). |
 | `inputMode` | `InputMode` | On-screen keyboard hint (`email`, `numeric`, …). |

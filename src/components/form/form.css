@@ -157,11 +157,13 @@
 }
 
 .form-field[data-type='select'] .form-field__status,
-.form-field[data-type='date'] .form-field__status {
+.form-field[data-type='date'] .form-field__status,
+.form-field[data-type='datetime-local'] .form-field__status {
   right: 40px;
 }
 
-.form-field[data-type='date'] .form-field__control {
+.form-field[data-type='date'] .form-field__control,
+.form-field[data-type='datetime-local'] .form-field__control {
   padding-right: 64px;
 }
 

@@ -1,3 +1,4 @@
 export { Modal } from './Modal'
+export { ConfirmDialog } from './ConfirmDialog'
 export { QuestionModal } from './QuestionModal'
 export { questionSchema, type Question, type QuestionOption } from './question'

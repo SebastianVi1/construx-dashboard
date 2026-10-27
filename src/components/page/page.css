@@ -200,6 +200,11 @@
   border-color: color-mix(in srgb, var(--cx-accent) 45%, transparent);
 }
 
+.badge[data-tone='danger'] {
+  color: var(--cx-danger);
+  border-color: color-mix(in srgb, var(--cx-danger) 45%, transparent);
+}
+
 .badge[data-tone='muted'] {
   border-style: dashed;
 }
