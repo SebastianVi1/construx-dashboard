@@ -1,13 +1,14 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { FilterTabs, type FilterOption } from '../../components/filter'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { listSites } from '../sites/sitesApi'
 import { TaskDue, TaskMoveButtons, TaskStatusBadge } from './TaskBits'
-import { taskActions } from './taskRules'
+import { filterByStatus, taskActions } from './taskRules'
 import { listMyTasks, phaseOf, taskStatuses, type Task, type TaskStatus } from './tasksApi'
 import { useTaskMove } from './useTaskMove'
 import '../sites/sites.css'
@@ -22,23 +23,25 @@ export function MyTasksPage() {
   const t = m.tasks
   const organization = useCurrentOrganization()
   const { access } = usePermissions()
-  const filterId = useId()
   const [status, setStatus] = useState<TaskStatus | ''>('')
-  // Both requests start together; site names only label the rows.
-  const tasks = useRemoteData(`${organization.id}:mine:${status}`, () => listMyTasks(organization.id, status || undefined))
+  // Both requests start together; site names only label the rows. All tasks load once and the
+  // status buttons filter them here, so switching is instant and each button shows its count.
+  const tasks = useRemoteData(`${organization.id}:mine`, () => listMyTasks(organization.id))
   const sites = useRemoteData(`${organization.id}:mine:sites`, () => listSites(organization.id))
   const [now] = useState(() => new Date())
   const moves = useTaskMove((moved) =>
-    tasks.update((list) =>
-      list
-        .map((item) => (item.id === moved.id ? moved : item))
-        .filter((item) => !status || item.status === status),
-    ),
+    tasks.update((list) => list.map((item) => (item.id === moved.id ? moved : item))),
   )
 
   useEffect(() => {
     document.title = `${t.mine.title} | Construx`
   }, [t.mine.title])
+
+  const { counts, visible } = filterByStatus(tasks.data ?? [], status)
+  const filters: FilterOption<TaskStatus | ''>[] = [
+    { value: '', label: t.filter.all, count: tasks.data ? counts.all : undefined },
+    ...taskStatuses.map((value) => ({ value, label: t.status[value], count: tasks.data ? counts[value] : undefined })),
+  ]
 
   const siteNames = new Map((sites.data ?? []).map((site) => [site.id, site.name]))
 
@@ -52,28 +55,15 @@ export function MyTasksPage() {
       </header>
 
       <section className="page-section" aria-label={t.mine.title}>
-        <div className="sites-toolbar">
-          <label className="sites-toolbar__label" htmlFor={filterId}>
-            {t.filter.status}
-          </label>
-          <span className="filter-select">
-            <select
-              id={filterId}
-              value={status}
-              onChange={(event) => {
-                moves.clear()
-                setStatus(event.target.value as TaskStatus | '')
-              }}
-            >
-              <option value="">{t.filter.allStatuses}</option>
-              {taskStatuses.map((value) => (
-                <option key={value} value={value}>
-                  {t.status[value]}
-                </option>
-              ))}
-            </select>
-          </span>
-        </div>
+        <FilterTabs
+          label={t.filter.status}
+          options={filters}
+          value={status}
+          onChange={(value) => {
+            moves.clear()
+            setStatus(value)
+          }}
+        />
 
         {moves.outcome?.kind === 'error' ? (
           <Notice tone="error">{t.error[moves.outcome.error]}</Notice>
@@ -84,7 +74,7 @@ export function MyTasksPage() {
         ) : null}
 
         {tasks.data ? (
-          tasks.data.length > 0 ? (
+          visible.length > 0 ? (
             <div className="table-scroll">
               <table className="data-table">
                 <thead>
@@ -99,7 +89,7 @@ export function MyTasksPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {tasks.data.map((task) => (
+                  {visible.map((task) => (
                     <MyTaskRow
                       key={task.id}
                       task={task}

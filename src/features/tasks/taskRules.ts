@@ -1,3 +1,4 @@
+import { filterCounts } from '../../components/filter'
 import { canPerform, type MyAccess } from '../permissions/can'
 import { taskStatuses, type Task, type TaskStatus } from './tasksApi'
 
@@ -35,4 +36,9 @@ export type StatusGroup = { status: TaskStatus; tasks: Task[] }
 export function groupByStatus(tasks: Task[]): StatusGroup[] {
   const byDue = tasks.toSorted((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))
   return taskStatuses.map((status) => ({ status, tasks: byDue.filter((task) => task.status === status) }))
+}
+
+/** Tasks for the chosen status (`''` keeps all) and how many each filter tab would show. */
+export function filterByStatus(tasks: Task[], status: TaskStatus | '') {
+  return filterCounts(tasks, (task) => task.status, taskStatuses, status)
 }

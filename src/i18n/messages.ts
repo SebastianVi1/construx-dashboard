@@ -519,6 +519,7 @@ const en = {
     filter: {
       status: 'Status',
       allStatuses: 'All statuses',
+      all: 'All',
       assignee: 'Assignee',
       everyone: 'Everyone',
     },
@@ -1180,6 +1181,7 @@ const es: Messages = {
     filter: {
       status: 'Estado',
       allStatuses: 'Todos los estados',
+      all: 'Todos',
       assignee: 'Responsable',
       everyone: 'Todos',
     },
