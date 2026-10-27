@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 export type ValidationMessages = {
+  nameRequired: string
+  nameMax: string
   emailRequired: string
   emailInvalid: string
   passwordRequired: string
@@ -10,7 +12,7 @@ export type ValidationMessages = {
 }
 
 export type LoginInput = { email: string; password: string }
-export type RegistrationInput = { email: string; password: string }
+export type RegistrationInput = { name: string; email: string; password: string }
 
 export function makeLoginSchema(messages: ValidationMessages) {
   return z.object({
@@ -20,10 +22,17 @@ export function makeLoginSchema(messages: ValidationMessages) {
 }
 
 export function makeRegistrationSchema(messages: ValidationMessages) {
-  return z.object({
-    email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
-    password: z.string().min(12, messages.passwordMin).max(72, messages.passwordMax),
-  })
+  return z
+    .object({
+      name: z.string().trim().min(1, messages.nameRequired).max(100, messages.nameMax),
+      email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
+      password: z.string().min(12, messages.passwordMin).max(72, messages.passwordMax),
+      confirmPassword: z.string(),
+    })
+    .refine((values) => values.confirmPassword === values.password, {
+      message: messages.passwordMismatch,
+      path: ['confirmPassword'],
+    })
 }
 
 export function makeForgotPasswordSchema(messages: ValidationMessages) {

@@ -50,14 +50,33 @@ describe('auth input validation', () => {
     expect(loginSchema.safeParse({ email: 'bad', password: '' }).success).toBe(false)
   })
 
+  const registration = (password: string, extra: Record<string, string> = {}) => ({
+    name: 'Person',
+    email: 'person@example.com',
+    password,
+    confirmPassword: password,
+    ...extra,
+  })
+
   it('requires a registration password of at least 12 characters', () => {
-    expect(registrationSchema.safeParse({ email: 'person@example.com', password: '12345678901' }).success).toBe(false)
-    expect(registrationSchema.safeParse({ email: 'person@example.com', password: '123456789012' }).success).toBe(true)
+    expect(registrationSchema.safeParse(registration('12345678901')).success).toBe(false)
+    expect(registrationSchema.safeParse(registration('123456789012')).success).toBe(true)
   })
 
   it('rejects a registration password longer than 72 characters', () => {
-    expect(registrationSchema.safeParse({ email: 'person@example.com', password: 'a'.repeat(72) }).success).toBe(true)
-    expect(registrationSchema.safeParse({ email: 'person@example.com', password: 'a'.repeat(73) }).success).toBe(false)
+    expect(registrationSchema.safeParse(registration('a'.repeat(72))).success).toBe(true)
+    expect(registrationSchema.safeParse(registration('a'.repeat(73))).success).toBe(false)
+  })
+
+  it('requires a registration name and trims it', () => {
+    expect(registrationSchema.safeParse(registration('123456789012', { name: '  ' })).success).toBe(false)
+    expect(registrationSchema.parse(registration('123456789012', { name: ' Person ' })).name).toBe('Person')
+  })
+
+  it('requires the registration confirmation to match the password', () => {
+    const result = registrationSchema.safeParse(registration('123456789012', { confirmPassword: 'different-pass' }))
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.message).toBe(messages.en.validation.passwordMismatch)
   })
 })
 
@@ -107,12 +126,12 @@ describe('auth API', () => {
 
   it('register: posts registration to the register endpoint', async () => {
     const { post } = stubApi(csrfOk, () => ({ status: 202 }))
-    await register({ email: 'person@example.com', password: '123456789012' })
+    await register({ name: 'Person', email: 'person@example.com', password: '123456789012' })
 
     expect(post).toHaveBeenCalledTimes(1)
     const [url, data] = post.mock.calls[0] as unknown as PostCall
     expect(url).toBe('/api/auth/register')
-    expect(data).toEqual({ email: 'person@example.com', password: '123456789012' })
+    expect(data).toEqual({ name: 'Person', email: 'person@example.com', password: '123456789012' })
   })
 
   it('logout: posts an empty body to the logout endpoint', async () => {

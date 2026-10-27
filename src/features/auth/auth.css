@@ -135,8 +135,7 @@
 }
 
 .auth-page .auth-brand:hover,
-.auth-switch a:hover,
-.auth-back:hover {
+.auth-switch a:hover {
   color: var(--cx-blueprint-300);
 }
 
@@ -165,12 +164,6 @@
 
 .auth-forgot a:hover {
   color: var(--cx-blueprint-300);
-}
-
-.auth-back {
-  display: inline-block;
-  margin-top: 24px;
-  font-size: 14px;
 }
 
 .auth-accepted {

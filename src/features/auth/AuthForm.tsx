@@ -26,17 +26,20 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const googleAuthorizationUrl = isRegistration ? '' : getOAuth2AuthorizationUrl()
 
   const form = useForm({
-    initialValues: { email: '', password: '' },
+    initialValues: isRegistration
+      ? { name: '', email: '', password: '', confirmPassword: '' }
+      : { email: '', password: '' },
     schema: isRegistration ? makeRegistrationSchema(m.validation) : makeLoginSchema(m.validation),
     onSubmit: async (data) => {
       setRateLimited(false)
       try {
         if (isRegistration) {
-          await register(data)
-          setRegisteredEmail(data.email)
+          const { name, email, password } = data
+          await register({ name, email, password })
+          setRegisteredEmail(email)
           setAccepted(true)
         } else {
-          await login(data)
+          await login({ email: data.email, password: data.password })
           await signIn()
           navigate('/account', { replace: true })
         }
@@ -46,7 +49,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       }
     },
     onInvalid: (errors) => {
-      const firstError = ['email', 'password'].find((name) => errors[name])
+      const firstError = ['name', 'email', 'password', 'confirmPassword'].find((name) => errors[name])
       if (firstError) document.getElementById(`field-${firstError}`)?.focus()
     },
   })
@@ -66,6 +69,16 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   }
 
   const fields: FieldConfig[] = [
+    ...(isRegistration
+      ? [
+          {
+            name: 'name',
+            label: m.auth.field.nameLabel,
+            type: 'text',
+            autoComplete: 'name',
+          } satisfies FieldConfig,
+        ]
+      : []),
     {
       name: 'email',
       label: m.auth.field.emailLabel,
@@ -83,6 +96,17 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       revealLabels: { show: m.auth.field.showPassword, hide: m.auth.field.hidePassword },
       hint: isRegistration ? m.auth.field.passwordHint : undefined,
     },
+    ...(isRegistration
+      ? [
+          {
+            name: 'confirmPassword',
+            label: m.auth.field.confirmPasswordLabel,
+            type: 'password',
+            autoComplete: 'new-password',
+            revealLabels: { show: m.auth.field.showPassword, hide: m.auth.field.hidePassword },
+          } satisfies FieldConfig,
+        ]
+      : []),
   ]
 
   if (accepted) {

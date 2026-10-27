@@ -6,7 +6,6 @@ const en = {
   },
   auth: {
     brandHome: 'Construx home',
-    backToApp: 'Back to app',
     title: {
       signIn: 'Sign in',
       register: 'Create an account',
@@ -31,6 +30,8 @@ const en = {
     field: {
       emailLabel: 'Email address',
       emailPlaceholder: 'you@example.com',
+      nameLabel: 'Name',
+      confirmPasswordLabel: 'Confirm password',
       passwordLabel: 'Password',
       passwordHint: 'Use at least 12 characters.',
       showPassword: 'Show password',
@@ -113,6 +114,8 @@ const en = {
     google: 'Continue with Google',
   },
   validation: {
+    nameRequired: 'Enter your name',
+    nameMax: 'Use at most 100 characters',
     emailRequired: 'Enter your email address',
     emailInvalid: 'Enter a valid email address',
     passwordRequired: 'Enter your password',
@@ -168,7 +171,6 @@ const es: Messages = {
   },
   auth: {
     brandHome: 'Inicio de Construx',
-    backToApp: 'Volver a la aplicación',
     title: {
       signIn: 'Iniciar sesión',
       register: 'Crear una cuenta',
@@ -193,6 +195,8 @@ const es: Messages = {
     field: {
       emailLabel: 'Correo electrónico',
       emailPlaceholder: 'tu@ejemplo.com',
+      nameLabel: 'Nombre',
+      confirmPasswordLabel: 'Confirma la contraseña',
       passwordLabel: 'Contraseña',
       passwordHint: 'Usa al menos 12 caracteres.',
       showPassword: 'Mostrar contraseña',
@@ -275,6 +279,8 @@ const es: Messages = {
     google: 'Continuar con Google',
   },
   validation: {
+    nameRequired: 'Ingresa tu nombre',
+    nameMax: 'Usa como máximo 100 caracteres',
     emailRequired: 'Ingresa tu correo electrónico',
     emailInvalid: 'Ingresa un correo electrónico válido',
     passwordRequired: 'Ingresa tu contraseña',
