@@ -270,6 +270,7 @@ const en = {
     addFirst: 'Add first site',
     filterLabel: 'Show',
     filterOpen: 'All except archived',
+    filterAll: 'All',
     status: {
       PLANNED: 'Planned',
       ACTIVE: 'Active',
@@ -932,6 +933,7 @@ const es: Messages = {
     addFirst: 'Agregar la primera obra',
     filterLabel: 'Mostrar',
     filterOpen: 'Todas menos archivadas',
+    filterAll: 'Todas',
     status: {
       PLANNED: 'Planificada',
       ACTIVE: 'Activa',
