@@ -1,0 +1,160 @@
+/*
+ * Phases of a site read as a schedule: one rail on the left, a node per
+ * phase in due order. The node is the only state cue besides the badge text:
+ * hollow while open, filled green when completed, rose when overdue.
+ */
+
+.phases {
+  margin-top: var(--cx-section-gap);
+}
+
+.phases__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.phases__filters .sites-toolbar__label:not(:first-child) {
+  margin-left: 8px;
+}
+
+.phase-timeline {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phase {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 0 16px;
+}
+
+.phase__rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* The rail runs through every phase and stops at the last node. */
+.phase__rail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--cx-border-strong);
+}
+
+.phase:first-child .phase__rail::before {
+  top: 22px;
+}
+
+.phase:last-child .phase__rail::before {
+  bottom: auto;
+  height: 22px;
+}
+
+.phase:only-child .phase__rail::before {
+  display: none;
+}
+
+.phase__node {
+  position: relative;
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  margin-top: 16px;
+  border: 2px solid var(--cx-accent);
+  border-radius: 2px;
+  background: var(--cx-canvas);
+}
+
+.phase[data-state='completed'] .phase__node {
+  border-color: var(--cx-success);
+  background: var(--cx-success);
+}
+
+.phase[data-state='late'] .phase__node {
+  border-color: var(--cx-danger);
+}
+
+.phase__body {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin-bottom: 24px;
+  padding: 16px 20px 20px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+}
+
+.phase:last-child .phase__body {
+  margin-bottom: 0;
+}
+
+.phase__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.phase__title {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.phase__due {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.phase[data-state='late'] .phase__due {
+  color: var(--cx-danger);
+}
+
+.phase__title h3 {
+  font-family: var(--cx-font-display);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.phase__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.phase__muted {
+  color: var(--cx-muted);
+}
+
+.phase__actions {
+  display: flex;
+  gap: 4px;
+}
+
+@media (max-width: 560px) {
+  .phase {
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 0 10px;
+  }
+
+  .phase__body {
+    padding: 14px 14px 16px;
+  }
+}

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import { verifyEmail } from './authApi'
 import { AuthLayout } from './AuthLayout'
 import { useLocale } from '../../i18n'
+import { verifiedSignInPath } from '../../components/navigation/returnPath'
 
 type VerifyState = 'submitting' | 'success' | 'error'
 
@@ -44,7 +45,7 @@ export function VerifyEmailPage() {
         <div className="auth-status">
           <p role="status">{m.auth.verifyStatus}</p>
         </div>
-        <p className="auth-switch"><Link to="/login">{m.auth.switch.loginLink}</Link></p>
+        <p className="auth-switch"><Link to={verifiedSignInPath(localStorage)}>{m.auth.switch.loginLink}</Link></p>
       </AuthLayout>
     )
   }

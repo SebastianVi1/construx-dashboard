@@ -1,0 +1,405 @@
+/* Workspace page vocabulary: header, sections, tables, badges, buttons, notices. Tokens only. */
+
+.page {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--cx-section-gap) var(--cx-page-gutter) 48px;
+  display: grid;
+  gap: var(--cx-section-gap);
+  align-content: start;
+  color: var(--cx-ink);
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+
+.page-header__text {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.page-header p {
+  max-width: 60ch;
+  color: var(--cx-muted);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.page-back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  color: var(--cx-accent);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.page-back::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-left: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.page-back:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.page-section {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.page-section__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.page-section__header h2 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.page-section__header p {
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* Tables scroll on their own at narrow widths instead of squeezing columns. */
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+}
+
+.data-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.data-table--compact {
+  min-width: 480px;
+}
+
+.data-table th {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--cx-border);
+  color: var(--cx-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table td {
+  height: 52px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--cx-border);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table .cell-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-table .cell-muted {
+  color: var(--cx-muted);
+}
+
+.data-mono {
+  font-family: var(--cx-font-data);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.table-link {
+  color: var(--cx-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.table-link:hover {
+  color: var(--cx-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Status badge: text plus a tinted border, so colour is never the only cue. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 8px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.badge[data-tone='success'] {
+  color: var(--cx-success);
+  border-color: color-mix(in srgb, var(--cx-success) 45%, transparent);
+}
+
+.badge[data-tone='warning'] {
+  color: var(--cx-warning);
+  border-color: color-mix(in srgb, var(--cx-warning) 45%, transparent);
+}
+
+.badge[data-tone='accent'] {
+  color: var(--cx-accent);
+  border-color: color-mix(in srgb, var(--cx-accent) 45%, transparent);
+}
+
+.badge[data-tone='danger'] {
+  color: var(--cx-danger);
+  border-color: color-mix(in srgb, var(--cx-danger) 45%, transparent);
+}
+
+.badge[data-tone='muted'] {
+  border-style: dashed;
+}
+
+.badge[data-tone='muted']::before {
+  background: transparent;
+  border: 1px solid currentColor;
+}
+
+/* Buttons beyond the one primary action per view. */
+.button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  background: transparent;
+  color: var(--cx-ink);
+  font: 600 14px/20px var(--cx-font-display);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--cx-accent);
+  background: var(--cx-accent-subtle);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.button--primary {
+  border-color: var(--cx-primary);
+  background: var(--cx-primary);
+  color: var(--cx-on-primary);
+}
+
+a.button--primary {
+  color: var(--cx-on-primary);
+}
+
+.button--primary:hover:not(:disabled) {
+  border-color: var(--cx-primary-hover);
+  background: var(--cx-primary-hover);
+}
+
+.button--primary:active:not(:disabled) {
+  border-color: var(--cx-primary-pressed);
+  background: var(--cx-primary-pressed);
+}
+
+.button--danger {
+  color: var(--cx-danger);
+  border-color: color-mix(in srgb, var(--cx-danger) 45%, transparent);
+}
+
+.button--danger:hover:not(:disabled) {
+  border-color: var(--cx-danger);
+  background: var(--cx-danger-subtle);
+}
+
+/* Row-level actions: compact on pointer devices, still 44 px tall where it counts. */
+.button--small {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+@media (pointer: coarse) {
+  .button--small {
+    min-height: 44px;
+  }
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.button-row--end {
+  justify-content: flex-end;
+}
+
+.notice {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.notice[data-tone='error'] {
+  border-color: color-mix(in srgb, var(--cx-danger) 55%, transparent);
+  background: var(--cx-danger-subtle);
+  color: var(--cx-danger);
+}
+
+.notice[data-tone='success'] {
+  border-color: color-mix(in srgb, var(--cx-success) 45%, transparent);
+  background: var(--cx-success-subtle);
+  color: var(--cx-success);
+}
+
+.notice__action {
+  margin-left: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cx-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Empty and placeholder states keep the space a populated table would take. */
+.empty-state {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 32px 24px;
+  border: 1px dashed var(--cx-border-strong);
+  border-radius: var(--cx-radius-lg);
+  color: var(--cx-muted);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.empty-state h2 {
+  color: var(--cx-ink);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 120px;
+  padding: 0 24px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  color: var(--cx-muted);
+  font-size: 14px;
+}
+
+.loading-state__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--cx-border-strong);
+  border-top-color: var(--cx-accent);
+  border-radius: 50%;
+  animation: page-spin 800ms linear infinite;
+}
+
+@keyframes page-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.modal-actions {
+  margin-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .loading-state__spinner {
+    animation-duration: 2400ms;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .page-header > .button {
+    width: 100%;
+  }
+}

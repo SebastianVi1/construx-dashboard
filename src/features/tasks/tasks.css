@@ -1,0 +1,184 @@
+/* Task board inside a phase, and the My tasks table. Tokens only (design.md). */
+
+.phase-tasks {
+  display: grid;
+  gap: 12px;
+}
+
+.phase-tasks__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.phase-tasks__hint,
+.phase-tasks__empty,
+.task-column__empty {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* Status columns side by side where there is room, stacked otherwise. */
+.task-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.task-board[data-columns='1'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.task-column {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+
+.task-column__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--cx-border-strong);
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.task-column__title[data-status='IN_PROGRESS'] {
+  border-bottom-color: var(--cx-accent);
+}
+
+.task-column__title[data-status='DONE'] {
+  border-bottom-color: var(--cx-success);
+}
+
+.task-column__count {
+  color: var(--cx-muted);
+  font-weight: 400;
+}
+
+.task-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-item {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface-raised);
+}
+
+.task-item__name {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.task-item[data-status='DONE'] .task-item__name {
+  color: var(--cx-muted);
+}
+
+.task-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.task-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.task-due {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-due[data-late] {
+  color: var(--cx-danger);
+}
+
+.task-due__late {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.task-complete {
+  border-color: color-mix(in srgb, var(--cx-success) 55%, transparent);
+  color: var(--cx-success);
+}
+
+.task-complete:hover:not(:disabled) {
+  border-color: var(--cx-success);
+  background: var(--cx-success-subtle);
+}
+
+.task-working {
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+/* Quiet text actions (edit, delete) next to the button actions. */
+.task-link {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--cx-radius-sm);
+  background: transparent;
+  color: var(--cx-accent);
+  font: 500 13px/18px var(--cx-font-sans);
+  cursor: pointer;
+}
+
+.task-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.task-link:focus-visible {
+  outline: 2px solid var(--cx-safety-400);
+  outline-offset: 2px;
+}
+
+.task-link--danger {
+  color: var(--cx-danger);
+}
+
+@media (pointer: coarse) {
+  .task-link {
+    min-height: 44px;
+  }
+}
+
+.my-task__name {
+  font-weight: 500;
+  text-align: left;
+}
+
+.my-task__actions {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 6px;
+}

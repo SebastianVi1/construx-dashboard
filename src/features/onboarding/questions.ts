@@ -1,25 +1,32 @@
 import type { Question } from '../../components/modal'
-
-export type OnboardingAnswers = Record<string, string>
+import type { Messages } from '../../i18n'
 
 /**
- * Additional-information questions collected after registration. Replace with
- * the real questions (backend/config) once that contract is defined — the
- * modal and store consume any `Question[]`, so swapping data needs no changes.
+ * The two onboarding questions. Option ids are the backend enum values of
+ * `PUT /api/onboarding`, so a selected id is sent as is.
  */
-export const onboardingQuestions: Question[] = [
-  {
-    id: 'role',
-    title: 'What best describes your role?',
+export function makeIntentQuestion(m: Messages['onboarding']): Question {
+  return {
+    id: 'intent',
+    title: m.intent.title,
+    description: m.intent.description,
     options: [
-      { id: 'owner', label: 'Owner / Developer' },
-      { id: 'contractor', label: 'General contractor' },
-      { id: 'architect', label: 'Architect / Engineer' },
-      { id: 'subcontractor', label: 'Subcontractor' },
+      { id: 'RUN_COMPANY', label: m.intent.runCompany },
+      { id: 'WORKER_OR_INVITED', label: m.intent.workerOrInvited },
     ],
-  },
-]
+  }
+}
 
-export function isOnboardingComplete(questions: Question[], answers: OnboardingAnswers): boolean {
-  return questions.every((question) => Boolean(answers[question.id]))
+export function makeBusinessTypeQuestion(m: Messages['onboarding']): Question {
+  return {
+    id: 'businessType',
+    title: m.businessType.title,
+    description: m.businessType.description,
+    options: [
+      { id: 'OWNER_DEVELOPER', label: m.businessType.ownerDeveloper },
+      { id: 'GENERAL_CONTRACTOR', label: m.businessType.generalContractor },
+      { id: 'ARCHITECT_ENGINEER', label: m.businessType.architectEngineer },
+      { id: 'SUBCONTRACTOR', label: m.businessType.subcontractor },
+    ],
+  }
 }

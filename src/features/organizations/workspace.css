@@ -1,0 +1,122 @@
+/* Workspace frame below the company strip: navigation beside the page. Tokens only. */
+
+.workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 216px minmax(0, 1fr);
+  min-height: 0;
+  font: 16px/1.5 var(--cx-font-sans);
+}
+
+.workspace-nav {
+  position: sticky;
+  top: 48px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  height: calc(100svh - 48px);
+  padding: 20px 12px;
+  border-right: 1px solid var(--cx-border);
+  background: var(--cx-surface);
+}
+
+.workspace-nav__list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workspace-nav__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--cx-radius-md);
+  color: var(--cx-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.workspace-nav__link:hover {
+  color: var(--cx-ink);
+  background: var(--cx-surface-raised);
+}
+
+/* Active destination: a blueprint marker, like a ruled line on a drawing index. */
+.workspace-nav__link.active {
+  color: var(--cx-ink);
+  background: var(--cx-surface-raised);
+}
+
+.workspace-nav__link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--cx-accent);
+}
+
+.workspace-nav__footer {
+  padding: 0 12px;
+}
+
+.workspace-main {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .workspace-nav {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--cx-border);
+    overflow-x: auto;
+  }
+
+  .workspace-nav__list {
+    display: flex;
+    gap: 4px;
+  }
+
+  .workspace-nav__link {
+    white-space: nowrap;
+  }
+
+  .workspace-nav__link.active::before {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 4px;
+    width: auto;
+    height: 2px;
+  }
+
+  .workspace-nav__footer {
+    flex: none;
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-nav__link {
+    transition: none;
+  }
+}

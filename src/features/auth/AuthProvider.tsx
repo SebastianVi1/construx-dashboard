@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { getCurrentUser, logout as logoutApi } from './authApi'
+import { getCurrentUser, logout as logoutApi, onSessionExpired } from './authApi'
 import { restoreSession } from './session'
 import { AuthContext, type AuthStatus } from './auth-context'
 import type { CurrentUser } from './schemas'
@@ -7,7 +7,20 @@ import type { CurrentUser } from './schemas'
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [user, setUser] = useState<CurrentUser | null>(null)
+  const [sessionExpired, setSessionExpired] = useState(false)
   const startedRef = useRef(false)
+
+  // A business call got a 401 and the silent refresh failed: the session is
+  // over, so route guards send the user to sign in and back to this page.
+  useEffect(
+    () =>
+      onSessionExpired(() => {
+        setUser(null)
+        setStatus('unauthenticated')
+        setSessionExpired(true)
+      }),
+    [],
+  )
 
   useEffect(() => {
     // Run the restore exactly once per mount. Refresh rotates the refresh
@@ -29,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextUser = await getCurrentUser()
     setUser(nextUser)
     setStatus('authenticated')
+    setSessionExpired(false)
   }
 
   async function signOut() {
@@ -39,10 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUser(null)
     setStatus('unauthenticated')
+    setSessionExpired(false)
   }
 
   return (
-    <AuthContext.Provider value={{ status, user, signIn, signOut }}>
+    <AuthContext.Provider value={{ status, user, sessionExpired, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,13 +1,10 @@
 import { useEffect } from 'react'
-import { Navigate } from 'react-router'
+import { Link, Navigate } from 'react-router'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
 import { useLocale } from '../../i18n'
 
-/**
- * Minimal post-login landing. HomePage stays unrouted; this page is the only
- * protected surface and shows the signed-in identity plus a sign-out action.
- */
+/** Signed-in identity plus a sign-out action. */
 export function AccountPage() {
   const { status, user, signOut } = useAuth()
   const { messages: m } = useLocale()
@@ -37,6 +34,9 @@ export function AccountPage() {
         <p>
           {m.auth.account.signedInAs} <span className="auth-account__email">{user.email}</span>
         </p>
+        <Link className="org-primary" to="/sites">
+          {m.workspace.toSites}
+        </Link>
         <button type="button" className="auth-signout" onClick={() => void signOut()}>
           {m.auth.account.signOut}
         </button>
