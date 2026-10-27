@@ -29,7 +29,7 @@ export function CreateOrganizationPage() {
         setErrorKind(createErrorKind(error))
         throw error
       }
-      navigate('/account', { replace: true })
+      navigate('/sites', { replace: true })
     },
     onInvalid: () => document.getElementById('field-name')?.focus(),
   })

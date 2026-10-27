@@ -1,0 +1,37 @@
+/* Team page. Tokens only (design.md). */
+
+.members-columns {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: var(--cx-section-gap);
+  align-items: start;
+}
+
+.members-invite {
+  position: sticky;
+  top: 72px;
+  padding: 20px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+}
+
+.members-lists {
+  display: grid;
+  gap: var(--cx-section-gap);
+  min-width: 0;
+}
+
+.members-email {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 960px) {
+  .members-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .members-invite {
+    position: static;
+  }
+}

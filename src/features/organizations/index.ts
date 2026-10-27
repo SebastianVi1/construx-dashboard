@@ -1,5 +1,7 @@
 export { OrganizationsProvider } from './OrganizationsProvider'
 export { OrganizationGate } from './OrganizationGate'
 export { CreateOrganizationPage } from './CreateOrganizationPage'
-export { useOrganizations } from './organizations-context'
+export { WorkspaceLayout } from './WorkspaceLayout'
+export { useCurrentOrganization, useOrganizations } from './organizations-context'
+export { accountLinkState, wantsAccountPage } from './navigation'
 export type { Organization } from './organizationsApi'

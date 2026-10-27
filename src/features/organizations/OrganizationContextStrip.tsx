@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { Link } from 'react-router'
 import { useLocale } from '../../i18n'
+import { roleLabel } from '../permissions/roles'
 import { useOrganizations } from './organizations-context'
 
 /**
@@ -44,7 +45,7 @@ export function OrganizationContextStrip() {
             <span className="org-strip__name">{current.name}</span>
           </>
         )}
-        {current.myRole ? <span className="org-strip__role">{current.myRole.name}</span> : null}
+        {current.myRole ? <span className="org-strip__role">{roleLabel(current.myRole, m.roles)}</span> : null}
       </div>
       <Link className="org-strip__new" to="/organizations/new">
         {m.organizations.context.newCompany}

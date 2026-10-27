@@ -1,0 +1,206 @@
+/* Sites list and site detail. Tokens only (design.md). */
+
+.sites-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sites-toolbar__label {
+  color: var(--cx-muted);
+  font-size: 14px;
+}
+
+/* Compact native select used beside a dataset. */
+.filter-select {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.filter-select::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--cx-muted);
+  border-bottom: 1.5px solid var(--cx-muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+.filter-select select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 34px 0 12px;
+  appearance: none;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-canvas);
+  color: var(--cx-ink);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+
+.filter-select select:hover:not(:disabled) {
+  border-color: var(--cx-accent);
+}
+
+.filter-select select:focus-visible {
+  outline: none;
+  border-color: var(--cx-accent);
+  box-shadow: 0 0 0 3px var(--cx-accent-subtle);
+}
+
+.filter-select option {
+  background: var(--cx-surface);
+}
+
+.site-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-progress__track {
+  position: relative;
+  width: 88px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--cx-border);
+  overflow: hidden;
+}
+
+.site-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--cx-accent);
+}
+
+/*
+ * The site title block reads like a drawing sheet: the plan-sheet corner mark
+ * (four safety-orange L ticks) marks the one object this page is about.
+ */
+.site-sheet {
+  --tick: 14px;
+  --tick-weight: 2px;
+  position: relative;
+  display: grid;
+  gap: 20px;
+  padding: 24px 28px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+}
+
+.site-sheet::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--cx-primary), var(--cx-primary)) top left / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) top left / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) top right / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) top right / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom left / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom left / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom right / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom right / var(--tick-weight) var(--tick);
+  background-repeat: no-repeat;
+}
+
+.site-sheet__status {
+  margin-bottom: 2px;
+}
+
+.site-sheet__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 40px;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--cx-border);
+}
+
+.site-sheet__facts dt,
+.site-facts dt {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.site-sheet__facts dd,
+.site-facts dd {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.site-columns {
+  display: grid;
+  grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+  gap: var(--cx-section-gap);
+  align-items: start;
+}
+
+.site-facts {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+
+.person-you {
+  margin-left: 8px;
+  padding: 0 6px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.assign-person {
+  display: grid;
+  gap: 8px;
+}
+
+.assign-person__label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.assign-person__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assign-person__select {
+  flex: 1 1 260px;
+}
+
+.assign-person__select select {
+  min-height: 44px;
+}
+
+@media (max-width: 960px) {
+  .site-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .site-sheet {
+    padding: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-select select {
+    transition: none;
+  }
+}

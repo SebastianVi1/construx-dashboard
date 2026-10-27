@@ -22,3 +22,10 @@ export function useOrganizations(): OrganizationsContextValue {
   if (!context) throw new Error('useOrganizations must be used within an OrganizationsProvider')
   return context
 }
+
+/** The selected organization. Only for screens rendered inside `OrganizationGate`. */
+export function useCurrentOrganization(): Organization {
+  const { current } = useOrganizations()
+  if (!current) throw new Error('useCurrentOrganization must be used inside an OrganizationGate')
+  return current
+}

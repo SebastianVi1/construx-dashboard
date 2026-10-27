@@ -26,11 +26,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return children
 }
 
-/** Render children only for a visitor; a signed-in user goes to the account page. */
+/** Render children only for a visitor; a signed-in user goes to the sites list. */
 export function GuestOnly({ children }: { children: ReactNode }) {
   const { status } = useAuth()
 
   if (status === 'loading') return <SessionLoading />
-  if (status === 'authenticated') return <Navigate to="/account" replace />
+  if (status === 'authenticated') return <Navigate to="/sites" replace />
   return children
 }
