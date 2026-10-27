@@ -8,6 +8,7 @@ import { AuthCompletePage } from './features/auth/AuthCompletePage'
 import { AccountPage } from './features/auth/AccountPage'
 import { NotFoundPage } from './features/auth/NotFoundPage'
 import { GuestOnly, RequireAuth } from './features/auth/RouteGuards'
+import { CreateOrganizationPage, OrganizationGate } from './features/organizations'
 
 function App() {
   return (
@@ -20,7 +21,8 @@ function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/auth/complete" element={<AuthCompletePage />} />
-      <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
+      <Route path="/account" element={<RequireAuth><OrganizationGate><AccountPage /></OrganizationGate></RequireAuth>} />
+      <Route path="/organizations/new" element={<RequireAuth><CreateOrganizationPage /></RequireAuth>} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

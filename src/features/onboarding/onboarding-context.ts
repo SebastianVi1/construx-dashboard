@@ -1,10 +1,16 @@
 import { createContext, useContext } from 'react'
-import type { OnboardingAnswers } from './questions'
+import type { BusinessType, Intent, OnboardingAnswer } from './onboardingApi'
+import type { RemoteStatus } from './visibility'
 
 export type OnboardingContextValue = {
-  answers: OnboardingAnswers
+  /** Server answer for this session, or the local pending answer while signed out. */
+  intent: Intent | null
+  businessType: BusinessType | null
+  /** Load state of `GET /api/onboarding` for the signed-in user. */
+  status: RemoteStatus
   isOpen: boolean
-  setAnswer: (questionId: string, optionId: string) => void
+  /** Persist an answer (PUT when signed in, localStorage otherwise). Rejects when PUT fails. */
+  submit: (answer: OnboardingAnswer) => Promise<void>
   open: () => void
   close: () => void
 }

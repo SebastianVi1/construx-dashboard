@@ -1,33 +1,56 @@
+import { useState } from 'react'
 import { QuestionModal } from '../../components/modal'
 import { useLocale } from '../../i18n'
 import { useOnboarding } from './onboarding-context'
-import { isOnboardingComplete, onboardingQuestions } from './questions'
+import { businessTypeSchema, intentSchema, type BusinessType, type Intent } from './onboardingApi'
+import { makeBusinessTypeQuestion, makeIntentQuestion } from './questions'
 
 /**
- * Shows the first unanswered onboarding question and advances through the rest
- * in order. Closes itself once every question has an answer; the modal itself
- * renders through the portal inside `Modal`.
+ * Two steps: the required intent, then the optional business type (with a
+ * Skip action). The answer is saved once, after the second step.
  */
 export function OnboardingModal() {
-  const { answers, setAnswer, close } = useOnboarding()
+  const { submit, close } = useOnboarding()
   const { messages: m } = useLocale()
-  const current = onboardingQuestions.find((question) => !answers[question.id])
+  const [intent, setIntent] = useState<Intent | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [failed, setFailed] = useState(false)
 
-  if (!current) return null
-
-  const question = current
-
-  function handleSubmit(optionId: string) {
-    const next = { ...answers, [question.id]: optionId }
-    setAnswer(question.id, optionId)
-    if (isOnboardingComplete(onboardingQuestions, next)) close()
+  async function save(chosenIntent: Intent, businessType: BusinessType | null) {
+    setSaving(true)
+    setFailed(false)
+    try {
+      await submit({ intent: chosenIntent, businessType })
+    } catch {
+      setFailed(true)
+      setSaving(false)
+    }
   }
 
+  if (!intent) {
+    const question = makeIntentQuestion(m.onboarding)
+    return (
+      <QuestionModal
+        key={question.id}
+        question={question}
+        submitLabel={m.onboarding.continue}
+        onSubmit={(optionId) => setIntent(intentSchema.parse(optionId))}
+        onClose={close}
+      />
+    )
+  }
+
+  const question = makeBusinessTypeQuestion(m.onboarding)
   return (
     <QuestionModal
+      key={question.id}
       question={question}
-      submitLabel={m.onboarding.continue}
-      onSubmit={handleSubmit}
+      submitLabel={m.onboarding.finish}
+      busy={saving}
+      busyLabel={m.onboarding.saving}
+      error={failed ? m.onboarding.saveError : undefined}
+      secondaryAction={{ label: m.onboarding.skip, onClick: () => void save(intent, null) }}
+      onSubmit={(optionId) => void save(intent, businessTypeSchema.parse(optionId))}
       onClose={close}
     />
   )
