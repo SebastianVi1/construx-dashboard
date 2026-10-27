@@ -17,6 +17,9 @@ const SiteDetailPage = lazy(() =>
 )
 const MembersPage = lazy(() => import('./features/members/MembersPage').then((module) => ({ default: module.MembersPage })))
 const MyTasksPage = lazy(() => import('./features/tasks/MyTasksPage').then((module) => ({ default: module.MyTasksPage })))
+const MaterialsPage = lazy(() =>
+  import('./features/materials/MaterialsPage').then((module) => ({ default: module.MaterialsPage })),
+)
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })))
 const AcceptInvitationPage = lazy(() =>
   import('./features/invitations/AcceptInvitationPage').then((module) => ({ default: module.AcceptInvitationPage })),
@@ -41,6 +44,7 @@ function App() {
         <Route path="/sites" element={<SitesPage />} />
         <Route path="/sites/:siteId" element={<SiteDetailPage />} />
         <Route path="/tasks" element={<MyTasksPage />} />
+        <Route path="/materials" element={<MaterialsPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/account" element={<ProfilePage />} />
       </Route>

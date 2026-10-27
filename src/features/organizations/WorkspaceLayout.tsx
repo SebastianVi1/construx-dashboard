@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, type MouseEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
-import { SitesIcon, TasksIcon, TeamIcon } from '../../components/icons'
+import { MaterialsIcon, SitesIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
@@ -15,6 +15,7 @@ const MAIN_ID = 'workspace-main'
 const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
   sites: SitesIcon,
   myTasks: TasksIcon,
+  materials: MaterialsIcon,
   members: TeamIcon,
 }
 
@@ -63,6 +64,7 @@ function WorkspaceBody() {
 
   const items = workspaceNavItems({
     seesOwnTasks: hasPermission(access, 'VIEW_ACTIVITY') || hasPermission(access, 'MANAGE_ACTIVITY'),
+    seesPrices: can('VIEW_PRICES'),
     managesMembers: can('MANAGE_MEMBERS'),
   })
 

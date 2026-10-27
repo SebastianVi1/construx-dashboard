@@ -188,6 +188,7 @@ const en = {
     navLabel: 'Workspace',
     sites: 'Sites',
     myTasks: 'My tasks',
+    materials: 'Materials',
     members: 'Team',
     loading: 'Loading…',
     retry: 'Try again',
@@ -386,6 +387,12 @@ const en = {
         generic: 'We could not update the people on this site. Try again.',
       },
     },
+  },
+  materials: {
+    title: 'Materials',
+    description: 'Look up what construction materials cost at your suppliers. Prices in MXN, IVA included.',
+    emptyTitle: 'No prices yet',
+    empty: 'Prices you record from supplier quotes, tickets or a CSV file will appear here.',
   },
   members: {
     title: 'Team',
@@ -851,6 +858,7 @@ const es: Messages = {
     navLabel: 'Espacio de trabajo',
     sites: 'Obras',
     myTasks: 'Mis tareas',
+    materials: 'Materiales',
     members: 'Equipo',
     loading: 'Cargando…',
     retry: 'Intentar de nuevo',
@@ -1049,6 +1057,12 @@ const es: Messages = {
         generic: 'No pudimos actualizar las personas de esta obra. Inténtalo de nuevo.',
       },
     },
+  },
+  materials: {
+    title: 'Materiales',
+    description: 'Consulta cuánto cuestan los materiales de construcción con tus proveedores. Precios en MXN, IVA incluido.',
+    emptyTitle: 'Aún no hay precios',
+    empty: 'Los precios que registres de cotizaciones, tickets o un archivo CSV aparecerán aquí.',
   },
   members: {
     title: 'Equipo',
