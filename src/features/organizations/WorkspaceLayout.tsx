@@ -3,7 +3,6 @@ import { Link, NavLink, Outlet } from 'react-router'
 import { LoadingState, Notice } from '../../components/page'
 import { LocaleSwitcher, useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
-import { accountLinkState } from './navigation'
 import { useCurrentOrganization } from './organizations-context'
 import './workspace.css'
 
@@ -44,7 +43,7 @@ function WorkspaceShell() {
             </li>
           ) : null}
           <li>
-            <Link className="workspace-nav__link" to="/account" state={accountLinkState}>
+            <Link className="workspace-nav__link" to="/account">
               {t.account}
             </Link>
           </li>

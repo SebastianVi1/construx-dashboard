@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { messages } from '../../i18n/messages'
 import { roleLabel } from '../permissions/roles'
-import { wantsAccountPage, accountLinkState } from '../organizations/navigation'
 import { assignableMembers, siteProgress } from './siteHelpers'
 
 describe('siteProgress', () => {
@@ -29,13 +28,5 @@ describe('roleLabel', () => {
     expect(roleLabel({ code: 'WORKER', name: 'Trabajador' }, messages.en.roles)).toBe('Worker')
     expect(roleLabel({ code: 'WORKER', name: 'Trabajador' }, messages.es.roles)).toBe('Trabajador')
     expect(roleLabel({ code: 'FOREMAN', name: 'Capataz' }, messages.en.roles)).toBe('Capataz')
-  })
-})
-
-describe('wantsAccountPage', () => {
-  it('stays on the account page only when the workspace link asked for it', () => {
-    expect(wantsAccountPage(accountLinkState)).toBe(true)
-    expect(wantsAccountPage(null)).toBe(false)
-    expect(wantsAccountPage({ other: true })).toBe(false)
   })
 })

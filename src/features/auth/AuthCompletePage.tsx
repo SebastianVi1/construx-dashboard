@@ -20,7 +20,7 @@ export function AuthCompletePage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      navigate('/account', { replace: true })
+      navigate('/sites', { replace: true })
     } else if (status === 'unauthenticated') {
       navigate('/login?error=google', { replace: true })
     }

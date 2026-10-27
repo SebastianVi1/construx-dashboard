@@ -41,7 +41,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         } else {
           await login({ email: data.email, password: data.password })
           await signIn()
-          navigate('/account', { replace: true })
+          navigate('/sites', { replace: true })
         }
       } catch (error) {
         setRateLimited(error instanceof AuthApiError && error.status === 429)
