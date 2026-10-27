@@ -1,0 +1,446 @@
+/*
+ * The schedule reads like a drawing sheet: a flat plot, day rules, and phases
+ * drawn as dimension lines (a rule with end ticks) above the task bars. The site
+ * window is a staked frame across the whole sheet. Task status is never colour
+ * alone: to do is hollow, in progress is solid blue, done recedes with a tick.
+ */
+
+.gantt {
+  --gantt-names: 240px;
+  --gantt-phase-row: 48px;
+  --gantt-task-row: 38px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.gantt__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+.gantt__hint {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.gantt__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.gantt__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gantt__swatch {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 12px;
+  border-radius: 2px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.gantt__swatch[data-kind='phase'] {
+  height: 10px;
+  border-inline: 2px solid var(--cx-ink);
+  background: linear-gradient(var(--cx-muted), var(--cx-muted)) center / 100% 2px no-repeat;
+}
+
+.gantt__swatch[data-kind='frame'] {
+  border-inline: 1px dashed var(--cx-accent);
+  background: var(--cx-accent-subtle);
+}
+
+.gantt__swatch[data-kind='today'] {
+  width: 0;
+  height: 16px;
+  border-left: 1px dashed var(--cx-ink);
+}
+
+/* The chart scrolls sideways inside itself; the page never does. */
+.gantt__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+  overscroll-behavior-x: contain;
+}
+
+.gantt__sheet {
+  width: calc(var(--gantt-names) + var(--gantt-width));
+}
+
+.gantt__head,
+.gantt__row {
+  display: grid;
+  grid-template-columns: var(--gantt-names) var(--gantt-width);
+}
+
+.gantt__head {
+  border-bottom: 1px solid var(--cx-border-strong);
+}
+
+.gantt__corner,
+.gantt__name {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  border-right: 1px solid var(--cx-border-strong);
+  background: var(--cx-surface);
+}
+
+.gantt__corner {
+  display: flex;
+  align-items: flex-end;
+  padding: 0 16px 8px;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.gantt__scale {
+  position: relative;
+  height: 52px;
+}
+
+.gantt__tick {
+  position: absolute;
+  bottom: 8px;
+  padding-left: 4px;
+  color: var(--cx-muted);
+  font-size: 11px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+/* Flags stand at the top of the sheet like survey stakes. */
+.gantt__flag {
+  position: absolute;
+  top: 6px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.gantt__flag[data-edge='start'] {
+  border-left: 2px solid var(--cx-accent);
+  color: var(--cx-accent);
+}
+
+.gantt__flag[data-edge='end'] {
+  transform: translateX(-100%);
+  border-right: 2px solid var(--cx-accent);
+  color: var(--cx-accent);
+}
+
+.gantt__flag[data-edge='today'] {
+  transform: translateX(-50%);
+  top: 22px;
+  background: var(--cx-ink);
+  color: var(--cx-canvas);
+}
+
+.gantt__body {
+  position: relative;
+}
+
+.gantt__plot {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--gantt-names);
+  width: var(--gantt-width);
+  pointer-events: none;
+}
+
+.gantt__gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--cx-border);
+}
+
+.gantt__window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-inline: 1px dashed var(--cx-accent);
+  background: var(--cx-accent-subtle);
+}
+
+.gantt__today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--cx-ink);
+}
+
+.gantt__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gantt__row {
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.gantt__row:last-child {
+  border-bottom: 0;
+}
+
+.gantt__row[data-kind='phase'] {
+  min-height: var(--gantt-phase-row);
+}
+
+.gantt__row[data-kind='task'] {
+  min-height: var(--gantt-task-row);
+}
+
+.gantt__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  padding: 6px 12px 6px 16px;
+}
+
+.gantt__row[data-kind='task'] .gantt__name {
+  padding-left: 36px;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.gantt__row[data-kind='phase'] .gantt__name {
+  font-family: var(--cx-font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.gantt__label {
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gantt__row[data-kind='phase'] .gantt__label {
+  flex: 1 1 auto;
+}
+
+.gantt__add {
+  min-height: 28px;
+  margin-left: -8px;
+  font-family: var(--cx-font-sans);
+}
+
+.gantt__track {
+  position: relative;
+}
+
+.gantt__bar {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  translate: 0 -50%;
+  user-select: none;
+}
+
+.gantt__bar[data-draggable='true'] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.gantt__bar[data-active='true'] {
+  z-index: 2;
+  cursor: grabbing;
+}
+
+.gantt__bar[data-pending='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.gantt__bar:focus-visible {
+  outline: 2px solid var(--cx-safety-400);
+  outline-offset: 3px;
+}
+
+/* A phase is a dimension line: a rule between two end ticks. */
+.gantt__bar[data-kind='phase'] {
+  height: 22px;
+  border-inline: 2px solid var(--cx-ink);
+  background: linear-gradient(var(--cx-muted), var(--cx-muted)) center / 100% 2px no-repeat;
+}
+
+.gantt__bar[data-kind='phase'][data-status='DONE'] {
+  border-color: var(--cx-success);
+}
+
+.gantt__bar[data-kind='phase'][data-late='true'] {
+  border-right-color: var(--cx-warning);
+}
+
+.gantt__bar[data-kind='task'] {
+  height: 24px;
+  border: 1px solid var(--cx-muted);
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.gantt__bar[data-kind='task'][data-status='IN_PROGRESS'],
+.gantt__swatch[data-status='IN_PROGRESS'] {
+  border: 1px solid var(--cx-accent);
+  background: var(--cx-accent);
+  color: var(--cx-canvas);
+}
+
+.gantt__bar[data-kind='task'][data-status='DONE'],
+.gantt__swatch[data-status='DONE'] {
+  border: 1px solid var(--cx-success);
+  background: var(--cx-success-subtle);
+  color: var(--cx-muted);
+}
+
+.gantt__swatch[data-status='TODO'] {
+  border: 1px solid var(--cx-muted);
+  background: var(--cx-surface-raised);
+}
+
+.gantt__swatch[data-status='DONE'] {
+  color: var(--cx-success);
+}
+
+.gantt__bar-text {
+  overflow: hidden;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gantt__done-mark {
+  margin-right: 4px;
+  color: var(--cx-success);
+  font-weight: 700;
+}
+
+.gantt__handle {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.gantt__handle[data-edge='start'] {
+  left: -6px;
+}
+
+.gantt__handle[data-edge='end'] {
+  right: -6px;
+}
+
+.gantt__drag-tag {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  padding: 2px 6px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: 2px;
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+  font-size: 11px;
+  line-height: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.gantt__notice {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+/* Short-lived result of a drag; errors stay until dismissed. */
+.gantt-toast {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + var(--cx-tabbar-height, 0px));
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 12px 12px 16px;
+  border: 1px solid var(--cx-border-strong);
+  border-left: 3px solid var(--cx-success);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface-raised);
+  box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.5);
+  color: var(--cx-ink);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.gantt-toast[data-tone='error'] {
+  border-left-color: var(--cx-danger);
+}
+
+.gantt-toast p {
+  margin: 0;
+}
+
+.gantt-toast .task-link {
+  flex: none;
+  min-height: 28px;
+}
+
+@media (max-width: 640px) {
+  .gantt {
+    --gantt-names: 148px;
+  }
+
+  .gantt__name {
+    padding-left: 12px;
+  }
+
+  .gantt__row[data-kind='task'] .gantt__name {
+    padding-left: 20px;
+  }
+}
