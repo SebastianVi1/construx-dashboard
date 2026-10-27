@@ -10,6 +10,7 @@ import { SiteStatusBadge } from '../sites/SiteBits'
 import { listSites } from '../sites/sitesApi'
 import { Avatar } from './Avatar'
 import { EditProfileDialog } from './EditProfileDialog'
+import { formatPhone } from './phone'
 import { displayName } from './profileDisplay'
 import { publishProfile, useMyProfile } from './useMyProfile'
 import './profile.css'
@@ -74,7 +75,7 @@ export function ProfilePage() {
           <dl className="profile-details">
             <ProfileField label={t.fullName} value={profile.data.fullName} empty={t.notSet} />
             <ProfileField label={t.email} value={user.email} empty={t.notSet} />
-            <ProfileField label={t.phone} value={profile.data.phoneNumber} empty={t.notSet} />
+            <ProfileField label={t.phone} value={formatPhone(profile.data.phoneNumber)} empty={t.notSet} />
             <ProfileField label={t.trade} value={profile.data.trade} empty={t.notSet} />
             <ProfileField label={t.company} value={organization.name} empty={t.notSet} />
             <ProfileField label={t.role} value={role} empty={t.notSet} />

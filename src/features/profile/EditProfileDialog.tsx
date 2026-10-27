@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Field, Form, useForm, type FieldConfig } from '../../components/form'
 import { ConfirmDialog, Modal } from '../../components/modal'
 import { useLocale } from '../../i18n'
+import { formatPhone } from './phone'
+import { PhoneField } from './PhoneField'
 import { profileErrorKind, updateProfile, type Profile, type ProfileUpdate } from './profileApi'
 import { buildProfileUpdate, makeProfileSchema, profileChanges, profileFormValues } from './profileForm'
 
@@ -68,11 +70,11 @@ export function EditProfileDialog({ profile, onSaved, onClose }: EditProfileDial
               <dt>{labels[change.field]}</dt>
               <dd>
                 <span className="profile-changes__from" data-empty={change.from ? undefined : true}>
-                  {change.from || m.profile.notSet}
+                  {readable(change.field, change.from) || m.profile.notSet}
                 </span>
                 <span aria-hidden="true">→</span>
                 <span className="visually-hidden">{t.confirm.to}</span>
-                <span data-empty={change.to ? undefined : true}>{change.to || m.profile.notSet}</span>
+                <span data-empty={change.to ? undefined : true}>{readable(change.field, change.to) || m.profile.notSet}</span>
               </dd>
             </div>
           ))}
@@ -81,23 +83,33 @@ export function EditProfileDialog({ profile, onSaved, onClose }: EditProfileDial
     )
   }
 
-  const fields: FieldConfig[] = [
-    { name: 'fullName', label: m.profile.fullName, autoComplete: 'name' },
-    {
-      name: 'phoneNumber',
-      label: m.profile.phone,
-      type: 'tel',
-      inputMode: 'tel',
-      autoComplete: 'tel',
-      placeholder: t.phonePlaceholder,
-      hint: t.phoneHint,
-    },
-    { name: 'trade', label: m.profile.trade, placeholder: t.tradePlaceholder, hint: t.tradeHint },
-  ]
+  const fields: FieldConfig[] = [{ name: 'fullName', label: m.profile.fullName, autoComplete: 'name' }]
+  const trade: FieldConfig = { name: 'trade', label: m.profile.trade, placeholder: t.tradePlaceholder, hint: t.tradeHint }
 
   return (
     <Modal title={t.title} description={t.description} onClose={onClose}>
-      <Form controller={form} fields={fields} submitLabel={t.submit} />
+      <Form controller={form} fields={fields} submitLabel={t.submit}>
+        <PhoneField
+          name="phoneNumber"
+          label={m.profile.phone}
+          value={form.values.phoneNumber ?? ''}
+          hint={t.phoneHint}
+          error={form.errors.phoneNumber}
+          valid={form.valid.phoneNumber}
+          disabled={form.isSubmitting}
+          onChange={(value) => form.onChange('phoneNumber', value)}
+          onBlur={() => form.onBlur('phoneNumber')}
+        />
+        <Field
+          config={trade}
+          value={form.values.trade ?? ''}
+          error={form.errors.trade}
+          valid={form.valid.trade}
+          disabled={form.isSubmitting}
+          onChange={(value) => form.onChange('trade', value)}
+          onBlur={() => form.onBlur('trade')}
+        />
+      </Form>
       <div className="button-row button-row--end modal-actions">
         <button type="button" className="button" onClick={onClose}>
           {t.cancel}
@@ -105,4 +117,8 @@ export function EditProfileDialog({ profile, onSaved, onClose }: EditProfileDial
       </div>
     </Modal>
   )
+}
+
+function readable(field: string, value: string): string {
+  return field === 'phoneNumber' ? (formatPhone(value) ?? '') : value
 }
