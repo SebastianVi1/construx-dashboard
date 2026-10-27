@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { LoadingState, Notice } from '../../components/page'
@@ -9,8 +9,9 @@ import { roleLabel, usePermissions } from '../permissions'
 import { SiteStatusBadge } from '../sites/SiteBits'
 import { listSites } from '../sites/sitesApi'
 import { Avatar } from './Avatar'
+import { EditProfileDialog } from './EditProfileDialog'
 import { displayName } from './profileDisplay'
-import { useMyProfile } from './useMyProfile'
+import { publishProfile, useMyProfile } from './useMyProfile'
 import './profile.css'
 
 /** The signed-in person: identity, role in the selected company, their sites, and sign-out. */
@@ -23,6 +24,7 @@ export function ProfilePage() {
   const profile = useMyProfile()
   const orgId = organization.id
   const sites = useRemoteData(`${orgId}:sites`, () => listSites(orgId))
+  const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     document.title = `${t.title} | Construx`
@@ -58,6 +60,11 @@ export function ProfilePage() {
       <section className="page-section" aria-labelledby="profile-details">
         <div className="page-section__header">
           <h2 id="profile-details">{t.detailsTitle}</h2>
+          {profile.data ? (
+            <button type="button" className="button" onClick={() => setEditing(true)}>
+              {t.edit.open}
+            </button>
+          ) : null}
         </div>
         {profile.status === 'error' ? (
           <Notice tone="error" action={{ label: m.workspace.retry, onClick: profile.reload }}>
@@ -110,6 +117,17 @@ export function ProfilePage() {
           <LoadingState label={m.workspace.loading} />
         )}
       </section>
+
+      {editing && profile.data ? (
+        <EditProfileDialog
+          profile={profile.data}
+          onSaved={(saved) => {
+            publishProfile(saved)
+            setEditing(false)
+          }}
+          onClose={() => setEditing(false)}
+        />
+      ) : null}
     </div>
   )
 }
