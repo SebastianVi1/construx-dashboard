@@ -9,6 +9,7 @@ export const goalSchema = z.object({
   name: z.string(),
   startAt: z.string(),
   dueAt: z.string(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullish(),
   activityCount: z.number().int().nullable(),
   doneCount: z.number().int().nullable(),
   /** The phase has tasks and all of them are done. */
@@ -17,7 +18,7 @@ export const goalSchema = z.object({
 
 export type Goal = z.infer<typeof goalSchema>
 
-export type GoalInput = { name: string; startAt: string; dueAt: string }
+export type GoalInput = { color?: string; name: string; startAt: string; dueAt: string }
 
 export function goalsPath(organizationId: string, siteId: string): string {
   return `${organizationPath(organizationId)}/projects/${encodeURIComponent(siteId)}/goals`
@@ -33,7 +34,7 @@ export function listGoals(organizationId: string, siteId: string): Promise<Goal[
 }
 
 export function createGoal(organizationId: string, siteId: string, input: GoalInput): Promise<Goal> {
-  const body = { name: input.name.trim(), startAt: input.startAt, dueAt: input.dueAt }
+  const body = { name: input.name.trim(), startAt: input.startAt, dueAt: input.dueAt, ...(input.color !== undefined ? { color: input.color } : {}) }
   return sendJson('post', goalsPath(organizationId, siteId), body, 201, goalSchema)
 }
 
@@ -42,7 +43,7 @@ export function updateGoal(
   organizationId: string,
   siteId: string,
   goalId: string,
-  patch: Partial<GoalInput>,
+  patch: Partial<GoalInput> & { color?: string },
 ): Promise<Goal> {
   return sendJson('patch', goalPath(organizationId, siteId, goalId), patch, 200, goalSchema)
 }

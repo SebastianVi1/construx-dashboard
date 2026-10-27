@@ -5,6 +5,7 @@ import { useLocale } from '../../i18n'
 import { instantToLocalInput, localInputToInstant } from './dueAt'
 import { buildGoalPatch, makeGoalSchema } from './goalForm'
 import { createGoal, goalErrorKind, updateGoal, type Goal, type GoalErrorKind } from './goalsApi'
+import { BarColorPicker } from '../gantt/BarColorPicker'
 
 type PhaseDialogProps = {
   organizationId: string
@@ -24,17 +25,18 @@ export function PhaseDialog({ organizationId, siteId, goal, onSaved, onClose }: 
 
   const form = useForm({
     initialValues: {
+      color: goal?.color ?? '',
       name: goal?.name ?? '',
       startAt: goal ? instantToLocalInput(goal.startAt) : '',
       dueAt: goal ? instantToLocalInput(goal.dueAt) : '',
     },
-    schema: makeGoalSchema(t.validation),
+    schema: makeGoalSchema(t.validation, m.gantt.invalidColor),
     onSubmit: async (values) => {
       try {
         if (!goal) {
           const startAt = localInputToInstant(values.startAt) ?? ''
           const dueAt = localInputToInstant(values.dueAt) ?? ''
-          onSaved(await createGoal(organizationId, siteId, { name: values.name, startAt, dueAt }), true)
+          onSaved(await createGoal(organizationId, siteId, { name: values.name, startAt, dueAt, color: values.color }), true)
           return
         }
         const patch = buildGoalPatch(goal, values)
@@ -45,7 +47,7 @@ export function PhaseDialog({ organizationId, siteId, goal, onSaved, onClose }: 
       }
     },
     onInvalid: (errors) => {
-      const first = ['name', 'startAt', 'dueAt'].find((name) => errors[name])
+      const first = ['name', 'startAt', 'dueAt', 'color'].find((name) => errors[name])
       if (first) document.getElementById(`field-${first}`)?.focus()
     },
   })
@@ -59,6 +61,13 @@ export function PhaseDialog({ organizationId, siteId, goal, onSaved, onClose }: 
   return (
     <Modal title={copy.title} description={copy.description} onClose={onClose}>
       <Form controller={form} fields={fields} submitLabel={copy.submit} pendingLabel={copy.pending}>
+        <BarColorPicker
+          value={form.values.color}
+          disabled={form.isSubmitting}
+          error={form.errors.color}
+          onChange={(color) => form.onChange('color', color)}
+          onBlur={() => form.onBlur('color')}
+        />
         {form.submitError ? (
           <p className="form-error" role="alert">
             {t.error[errorKind]}

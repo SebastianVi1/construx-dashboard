@@ -42,4 +42,11 @@ describe('phase form', () => {
       startAt: new Date(2026, 10, 3, 8, 0).toISOString(),
     })
   })
+
+  it('patches a changed color, sends an empty color to reset it, and skips an unchanged one', () => {
+    const same = { name: goal.name, startAt: instantToLocalInput(goal.startAt), dueAt: instantToLocalInput(goal.dueAt) }
+    expect(buildGoalPatch(goal, { ...same, color: '#3b82f6' })).toEqual({ color: '#3b82f6' })
+    expect(buildGoalPatch({ ...goal, color: '#3b82f6' }, { ...same, color: '' })).toEqual({ color: '' })
+    expect(buildGoalPatch({ ...goal, color: '#3b82f6' }, { ...same, color: '#3b82f6' })).toEqual({})
+  })
 })

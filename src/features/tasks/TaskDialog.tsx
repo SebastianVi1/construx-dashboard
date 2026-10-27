@@ -15,6 +15,7 @@ import {
   type Task,
   type TaskErrorKind,
 } from './tasksApi'
+import { BarColorPicker } from '../gantt/BarColorPicker'
 
 type TaskDialogProps = {
   at: PhaseRef
@@ -59,12 +60,13 @@ export function TaskDialog({
 
   const form = useForm({
     initialValues: {
+      color: task?.color ?? '',
       name: task?.name ?? '',
       startAt: instantToLocalInput(task?.startAt ?? initialStartAt ?? goal.startAt),
       dueAt: instantToLocalInput(task?.dueAt ?? initialDueAt ?? goal.dueAt),
       assigneeAccessId: task?.assignee.accessId ?? '',
     },
-    schema: makeTaskSchema(t.validation, goal),
+    schema: makeTaskSchema(t.validation, goal, m.gantt.invalidColor),
     onSubmit: async (values) => {
       let latest = task
       try {
@@ -86,7 +88,7 @@ export function TaskDialog({
       }
     },
     onInvalid: (errors) => {
-      const first = ['name', 'startAt', 'dueAt', 'assigneeAccessId'].find((name) => errors[name])
+      const first = ['name', 'startAt', 'dueAt', 'assigneeAccessId', 'color'].find((name) => errors[name])
       if (first) document.getElementById(`field-${first}`)?.focus()
     },
   })
@@ -125,6 +127,15 @@ export function TaskDialog({
       onClose={onClose}
     >
       <Form controller={form} fields={fields} submitLabel={copy.submit} pendingLabel={copy.pending}>
+        {canEdit ? (
+          <BarColorPicker
+            value={form.values.color}
+            disabled={form.isSubmitting}
+            error={form.errors.color}
+            onChange={(color) => form.onChange('color', color)}
+            onBlur={() => form.onBlur('color')}
+          />
+        ) : null}
         {form.submitError ? (
           <p className="form-error" role="alert">
             {t.error[errorKind]}

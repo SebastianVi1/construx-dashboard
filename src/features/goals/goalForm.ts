@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { localInputToInstant } from './dueAt'
 import type { Goal, GoalInput } from './goalsApi'
+import { colorSchema } from '../gantt/barColor'
 
 export type GoalValidationMessages = {
   nameRequired: string
@@ -10,7 +11,7 @@ export type GoalValidationMessages = {
   startAfterDue: string
 }
 
-export type GoalValues = { name: string; startAt: string; dueAt: string }
+export type GoalValues = { color?: string; name: string; startAt: string; dueAt: string }
 
 /** Name trimmed to 1..160 characters (backend rule); the `datetime-local` value must be complete. */
 export function nameSchema(messages: { nameRequired: string; nameMax: string }) {
@@ -28,9 +29,10 @@ export function startNotAfterDue(values: { startAt: string; dueAt: string }): bo
   return !start || !due || Date.parse(start) <= Date.parse(due)
 }
 
-export function makeGoalSchema(messages: GoalValidationMessages) {
+export function makeGoalSchema(messages: GoalValidationMessages, invalidColor = 'Invalid color') {
   return z
     .object({
+      color: colorSchema(invalidColor),
       name: nameSchema(messages),
       startAt: dueSchema(messages.startRequired),
       dueAt: dueSchema(messages.dueRequired),
@@ -46,6 +48,7 @@ export function sameInstant(a: string, b: string): boolean {
 /** PATCH body for an edited phase: only the fields that changed. */
 export function buildGoalPatch(goal: Goal, values: GoalValues): Partial<GoalInput> {
   const patch: Partial<GoalInput> = {}
+  if (values.color !== undefined && values.color !== (goal.color ?? '')) patch.color = values.color
   const name = values.name.trim()
   const startAt = localInputToInstant(values.startAt)
   const dueAt = localInputToInstant(values.dueAt)

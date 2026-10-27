@@ -3,6 +3,7 @@ import { localInputToInstant } from '../goals/dueAt'
 import { nameSchema, sameInstant, startNotAfterDue } from '../goals/goalForm'
 import type { Goal } from '../goals/goalsApi'
 import type { Task, TaskInput } from './tasksApi'
+import { colorSchema } from '../gantt/barColor'
 
 export type TaskValidationMessages = {
   nameRequired: string
@@ -15,7 +16,7 @@ export type TaskValidationMessages = {
   assigneeRequired: string
 }
 
-export type TaskValues = { name: string; startAt: string; dueAt: string; assigneeAccessId: string }
+export type TaskValues = { color?: string; name: string; startAt: string; dueAt: string; assigneeAccessId: string }
 
 /** A complete `datetime-local` value that `outside` does not reject. */
 function instantField(required: string, outsideMessage: string, outside: (instant: number) => boolean) {
@@ -30,9 +31,10 @@ function instantField(required: string, outsideMessage: string, outside: (instan
  * Task form rules, like the server's 400s: a name, a start and a due that lie
  * inside the phase with the start not after the due, and an assignee.
  */
-export function makeTaskSchema(messages: TaskValidationMessages, phase?: Pick<Goal, 'startAt' | 'dueAt'>) {
+export function makeTaskSchema(messages: TaskValidationMessages, phase?: Pick<Goal, 'startAt' | 'dueAt'>, invalidColor = 'Invalid color') {
   return z
     .object({
+      color: colorSchema(invalidColor),
       name: nameSchema(messages),
       startAt: instantField(messages.startRequired, messages.beforePhase, (start) =>
         phase ? start < Date.parse(phase.startAt) : false,
@@ -46,7 +48,7 @@ export function makeTaskSchema(messages: TaskValidationMessages, phase?: Pick<Go
 }
 
 export type TaskChanges = {
-  patch: Partial<Pick<TaskInput, 'name' | 'startAt' | 'dueAt'>>
+  patch: Partial<Pick<TaskInput, 'name' | 'startAt' | 'dueAt' | 'color'>>
   /** New assignee, or null when unchanged. */
   assigneeAccessId: string | null
 }
@@ -54,6 +56,7 @@ export type TaskChanges = {
 /** An edit becomes `PATCH {name?, startAt?, dueAt?}` plus, if needed, `PUT .../assignee`. */
 export function buildTaskChanges(task: Task, values: TaskValues): TaskChanges {
   const patch: TaskChanges['patch'] = {}
+  if (values.color !== undefined && values.color !== (task.color ?? '')) patch.color = values.color
   const name = values.name.trim()
   const startAt = localInputToInstant(values.startAt)
   const dueAt = localInputToInstant(values.dueAt)

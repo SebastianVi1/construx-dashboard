@@ -1,7 +1,7 @@
 /*
  * The schedule reads like a drawing sheet: a flat plot, day rules, and phases
  * drawn as dimension lines (a rule with end ticks) above the task bars. Bars
- * glow green on the dark sheet. Task status is never colour alone: to do is
+ * glow on the dark sheet, blue unless a manager picked another color. Task status is never colour alone: to do is
  * hollow, in progress is the brightest solid glow, done dims and gets a tick.
  */
 
@@ -9,14 +9,23 @@
   --gantt-names: 240px;
   --gantt-phase-row: 48px;
   --gantt-task-row: 38px;
-  --gantt-green: var(--cx-success);
-  --gantt-green-bright: color-mix(in oklab, var(--cx-success) 70%, var(--cx-ink));
-  --gantt-green-soft: color-mix(in oklab, var(--cx-success) 14%, transparent);
-  --gantt-green-line: color-mix(in oklab, var(--cx-success) 45%, transparent);
-  --gantt-glow: color-mix(in oklab, var(--cx-success) 55%, transparent);
   display: grid;
   gap: 12px;
   min-width: 0;
+}
+
+/*
+ * One hue per bar: the accent blue by default, or the color saved for that
+ * phase or task (`--bar-color`). Every status shade is mixed from it, so a
+ * custom color keeps the hollow / solid / faded status treatment.
+ */
+.gantt,
+.gantt__bar {
+  --gantt-bar: var(--bar-color, var(--cx-accent));
+  --gantt-bar-bright: color-mix(in oklab, var(--gantt-bar) 70%, var(--cx-ink));
+  --gantt-bar-soft: color-mix(in oklab, var(--gantt-bar) 14%, transparent);
+  --gantt-bar-line: color-mix(in oklab, var(--gantt-bar) 45%, transparent);
+  --gantt-glow: color-mix(in oklab, var(--gantt-bar) 55%, transparent);
 }
 
 .gantt__toolbar {
@@ -65,14 +74,14 @@
 
 .gantt__swatch[data-kind='phase'] {
   height: 10px;
-  border-inline: 2px solid var(--gantt-green);
-  background: linear-gradient(var(--gantt-green), var(--gantt-green)) center / 100% 2px no-repeat;
+  border-inline: 2px solid var(--gantt-bar);
+  background: linear-gradient(var(--gantt-bar), var(--gantt-bar)) center / 100% 2px no-repeat;
   filter: drop-shadow(0 0 3px var(--gantt-glow));
 }
 
 .gantt__swatch[data-kind='frame'] {
-  border-inline: 1px dashed var(--gantt-green-line);
-  background: color-mix(in oklab, var(--cx-success) 6%, transparent);
+  border-inline: 1px dashed var(--gantt-bar-line);
+  background: color-mix(in oklab, var(--gantt-bar) 6%, transparent);
 }
 
 .gantt__swatch[data-kind='today'] {
@@ -150,14 +159,14 @@
 }
 
 .gantt__flag[data-edge='start'] {
-  border-left: 2px solid var(--gantt-green);
-  color: var(--gantt-green);
+  border-left: 2px solid var(--gantt-bar);
+  color: var(--gantt-bar);
 }
 
 .gantt__flag[data-edge='end'] {
   transform: translateX(-100%);
-  border-right: 2px solid var(--gantt-green);
-  color: var(--gantt-green);
+  border-right: 2px solid var(--gantt-bar);
+  color: var(--gantt-bar);
 }
 
 .gantt__flag[data-edge='today'] {
@@ -191,8 +200,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  border-inline: 1px dashed var(--gantt-green-line);
-  background: color-mix(in oklab, var(--cx-success) 6%, transparent);
+  border-inline: 1px dashed var(--gantt-bar-line);
+  background: color-mix(in oklab, var(--gantt-bar) 6%, transparent);
 }
 
 .gantt__today {
@@ -308,8 +317,8 @@
 /* A phase is a dimension line: a glowing rule between two end ticks. */
 .gantt__bar[data-kind='phase'] {
   height: 22px;
-  border-inline: 2px solid var(--gantt-green);
-  background: linear-gradient(var(--gantt-green), var(--gantt-green)) center / 100% 2px no-repeat;
+  border-inline: 2px solid var(--gantt-bar);
+  background: linear-gradient(var(--gantt-bar), var(--gantt-bar)) center / 100% 2px no-repeat;
   filter: drop-shadow(0 0 4px var(--gantt-glow));
 }
 
@@ -331,8 +340,8 @@
 
 .gantt__bar[data-kind='task'][data-status='TODO'],
 .gantt__swatch[data-status='TODO'] {
-  border: 1px solid var(--gantt-green);
-  background: var(--gantt-green-soft);
+  border: 1px solid var(--gantt-bar);
+  background: var(--gantt-bar-soft);
   box-shadow:
     0 0 10px -2px var(--gantt-glow),
     inset 0 0 8px -2px var(--gantt-glow);
@@ -341,19 +350,24 @@
 
 .gantt__bar[data-kind='task'][data-status='IN_PROGRESS'],
 .gantt__swatch[data-status='IN_PROGRESS'] {
-  border: 1px solid var(--gantt-green-bright);
-  background: linear-gradient(var(--gantt-green-bright), var(--gantt-green));
+  border: 1px solid var(--gantt-bar-bright);
+  background: linear-gradient(var(--gantt-bar-bright), var(--gantt-bar));
   box-shadow:
     0 0 16px 1px var(--gantt-glow),
-    0 0 3px var(--gantt-green);
+    0 0 3px var(--gantt-bar);
   color: var(--cx-canvas);
   font-weight: 600;
 }
 
+/* A dark chosen color gets light text on its solid fill. */
+.gantt__bar[data-ink='light'][data-status='IN_PROGRESS'] {
+  color: var(--cx-ink);
+}
+
 .gantt__bar[data-kind='task'][data-status='DONE'],
 .gantt__swatch[data-status='DONE'] {
-  border: 1px solid var(--gantt-green-line);
-  background: color-mix(in oklab, var(--cx-success) 8%, transparent);
+  border: 1px solid var(--gantt-bar-line);
+  background: color-mix(in oklab, var(--gantt-bar) 8%, transparent);
   color: var(--cx-muted);
 }
 

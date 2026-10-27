@@ -25,6 +25,7 @@ import {
   type SiteDates,
   type Zoom,
 } from './timeline'
+import { barInk } from './barColor'
 import './gantt.css'
 
 /** What a finished drag asks the page to save. */
@@ -168,8 +169,10 @@ export function GanttChart({
             due: dayText(dates.dueAt),
           })
     const active = drag?.row.id === row.id
-    const style: CSSProperties = { left: position.left, width: position.width }
+    const color = row.kind === 'phase' ? row.goal.color : row.task.color
+    const style = { left: position.left, width: position.width, '--bar-color': color ?? undefined } as CSSProperties
     const data = {
+      'data-ink': color ? barInk(color) : undefined,
       'data-kind': row.kind,
       'data-status': row.kind === 'task' ? row.status : row.goal.completed ? 'DONE' : undefined,
       'data-late': row.kind === 'phase' && endsAfterSite(dates, site) ? 'true' : undefined,
@@ -263,7 +266,7 @@ export function GanttChart({
           {t.today}
         </li>
       </ul>
-      <p className="gantt__hint">{canDragAny ? t.manageHint : t.viewHint}</p>
+      <p className="gantt__hint">{canDragAny ? `${t.manageHint} ${t.colorHint}` : t.viewHint}</p>
 
       <div className="gantt__scroll">
         <div className="gantt__sheet" style={sheetStyle}>

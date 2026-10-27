@@ -70,4 +70,16 @@ describe('task form', () => {
       assigneeAccessId: null,
     })
   })
+
+  it('patches a changed color, sends an empty color to reset it, and skips an unchanged one', () => {
+    const same = {
+      name: task.name,
+      startAt: instantToLocalInput(task.startAt),
+      dueAt: instantToLocalInput(task.dueAt),
+      assigneeAccessId: 'a-1',
+    }
+    expect(buildTaskChanges(task, { ...same, color: '#3b82f6' }).patch).toEqual({ color: '#3b82f6' })
+    expect(buildTaskChanges({ ...task, color: '#3b82f6' }, { ...same, color: '' }).patch).toEqual({ color: '' })
+    expect(buildTaskChanges({ ...task, color: '#3b82f6' }, { ...same, color: '#3b82f6' }).patch).toEqual({})
+  })
 })

@@ -28,6 +28,31 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
 describe('phases API', () => {
   afterEach(() => mock.restore())
 
+  it('includes an optional color when creating a record from the dialog', async () => {
+    const { send } = stubApi({ send: () => ({ status: 201, data: { ...goal, color: '#3b82f6' } }) })
+    expect((await createGoal('org-1', 'p-1', { name: goal.name, startAt: goal.startAt, dueAt: goal.dueAt, color: '#3b82f6' })).color).toBe('#3b82f6')
+    expect((send.mock.calls[0] as unknown as [string, { color: string }])[1].color).toBe('#3b82f6')
+  })
+
+  it('reloads independent colors and resets only the selected bar', async () => {
+    const colored = { ...goal, color: '#123abc' }
+    const other = { ...goal, id: 'other', color: '#abcdef' }
+    const { send } = stubApi({
+      get: () => ({ status: 200, data: [colored, other] }),
+      send: () => ({ status: 200, data: { ...goal, color: null } }),
+    })
+    expect(await listGoals('org-1', 'p-1')).toEqual([colored, other])
+    expect((await updateGoal('org-1', 'p-1', 'g-1', { color: '' })).color).toBeNull()
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ color: '' })
+  })
+
+  it('persists an individual bar color and reads it from the response', async () => {
+    const colored = { ...goal, color: '#123abc' }
+    const { send } = stubApi({ send: () => ({ status: 200, data: colored }) })
+    expect(await updateGoal('org-1', 'p-1', 'g-1', { color: '#123abc' })).toEqual(colored)
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ color: '#123abc' })
+  })
+
   it('listGoals: gets the phases of a site, allowing null progress counts', async () => {
     const hidden = { ...goal, activityCount: null, doneCount: null }
     const { get } = stubApi({ get: () => ({ status: 200, data: [goal, hidden] }) })
