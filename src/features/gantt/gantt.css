@@ -1,14 +1,19 @@
 /*
  * The schedule reads like a drawing sheet: a flat plot, day rules, and phases
- * drawn as dimension lines (a rule with end ticks) above the task bars. The site
- * window is a staked frame across the whole sheet. Task status is never colour
- * alone: to do is hollow, in progress is solid blue, done recedes with a tick.
+ * drawn as dimension lines (a rule with end ticks) above the task bars. Bars
+ * glow green on the dark sheet. Task status is never colour alone: to do is
+ * hollow, in progress is the brightest solid glow, done dims and gets a tick.
  */
 
 .gantt {
   --gantt-names: 240px;
   --gantt-phase-row: 48px;
   --gantt-task-row: 38px;
+  --gantt-green: var(--cx-success);
+  --gantt-green-bright: color-mix(in oklab, var(--cx-success) 70%, var(--cx-ink));
+  --gantt-green-soft: color-mix(in oklab, var(--cx-success) 14%, transparent);
+  --gantt-green-line: color-mix(in oklab, var(--cx-success) 45%, transparent);
+  --gantt-glow: color-mix(in oklab, var(--cx-success) 55%, transparent);
   display: grid;
   gap: 12px;
   min-width: 0;
@@ -60,13 +65,14 @@
 
 .gantt__swatch[data-kind='phase'] {
   height: 10px;
-  border-inline: 2px solid var(--cx-ink);
-  background: linear-gradient(var(--cx-muted), var(--cx-muted)) center / 100% 2px no-repeat;
+  border-inline: 2px solid var(--gantt-green);
+  background: linear-gradient(var(--gantt-green), var(--gantt-green)) center / 100% 2px no-repeat;
+  filter: drop-shadow(0 0 3px var(--gantt-glow));
 }
 
 .gantt__swatch[data-kind='frame'] {
-  border-inline: 1px dashed var(--cx-accent);
-  background: var(--cx-accent-subtle);
+  border-inline: 1px dashed var(--gantt-green-line);
+  background: color-mix(in oklab, var(--cx-success) 6%, transparent);
 }
 
 .gantt__swatch[data-kind='today'] {
@@ -144,14 +150,14 @@
 }
 
 .gantt__flag[data-edge='start'] {
-  border-left: 2px solid var(--cx-accent);
-  color: var(--cx-accent);
+  border-left: 2px solid var(--gantt-green);
+  color: var(--gantt-green);
 }
 
 .gantt__flag[data-edge='end'] {
   transform: translateX(-100%);
-  border-right: 2px solid var(--cx-accent);
-  color: var(--cx-accent);
+  border-right: 2px solid var(--gantt-green);
+  color: var(--gantt-green);
 }
 
 .gantt__flag[data-edge='today'] {
@@ -185,8 +191,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  border-inline: 1px dashed var(--cx-accent);
-  background: var(--cx-accent-subtle);
+  border-inline: 1px dashed var(--gantt-green-line);
+  background: color-mix(in oklab, var(--cx-success) 6%, transparent);
 }
 
 .gantt__today {
@@ -286,6 +292,7 @@
 .gantt__bar[data-active='true'] {
   z-index: 2;
   cursor: grabbing;
+  filter: brightness(1.15);
 }
 
 .gantt__bar[data-pending='true'] {
@@ -298,15 +305,17 @@
   outline-offset: 3px;
 }
 
-/* A phase is a dimension line: a rule between two end ticks. */
+/* A phase is a dimension line: a glowing rule between two end ticks. */
 .gantt__bar[data-kind='phase'] {
   height: 22px;
-  border-inline: 2px solid var(--cx-ink);
-  background: linear-gradient(var(--cx-muted), var(--cx-muted)) center / 100% 2px no-repeat;
+  border-inline: 2px solid var(--gantt-green);
+  background: linear-gradient(var(--gantt-green), var(--gantt-green)) center / 100% 2px no-repeat;
+  filter: drop-shadow(0 0 4px var(--gantt-glow));
 }
 
 .gantt__bar[data-kind='phase'][data-status='DONE'] {
-  border-color: var(--cx-success);
+  filter: none;
+  opacity: 0.6;
 }
 
 .gantt__bar[data-kind='phase'][data-late='true'] {
@@ -315,31 +324,37 @@
 
 .gantt__bar[data-kind='task'] {
   height: 24px;
-  border: 1px solid var(--cx-muted);
   border-radius: var(--cx-radius-sm);
-  background: var(--cx-surface-raised);
-  color: var(--cx-ink);
   font-size: 12px;
   line-height: 16px;
 }
 
+.gantt__bar[data-kind='task'][data-status='TODO'],
+.gantt__swatch[data-status='TODO'] {
+  border: 1px solid var(--gantt-green);
+  background: var(--gantt-green-soft);
+  box-shadow:
+    0 0 10px -2px var(--gantt-glow),
+    inset 0 0 8px -2px var(--gantt-glow);
+  color: var(--cx-ink);
+}
+
 .gantt__bar[data-kind='task'][data-status='IN_PROGRESS'],
 .gantt__swatch[data-status='IN_PROGRESS'] {
-  border: 1px solid var(--cx-accent);
-  background: var(--cx-accent);
+  border: 1px solid var(--gantt-green-bright);
+  background: linear-gradient(var(--gantt-green-bright), var(--gantt-green));
+  box-shadow:
+    0 0 16px 1px var(--gantt-glow),
+    0 0 3px var(--gantt-green);
   color: var(--cx-canvas);
+  font-weight: 600;
 }
 
 .gantt__bar[data-kind='task'][data-status='DONE'],
 .gantt__swatch[data-status='DONE'] {
-  border: 1px solid var(--cx-success);
-  background: var(--cx-success-subtle);
+  border: 1px solid var(--gantt-green-line);
+  background: color-mix(in oklab, var(--cx-success) 8%, transparent);
   color: var(--cx-muted);
-}
-
-.gantt__swatch[data-status='TODO'] {
-  border: 1px solid var(--cx-muted);
-  background: var(--cx-surface-raised);
 }
 
 .gantt__swatch[data-status='DONE'] {
@@ -359,20 +374,49 @@
   font-weight: 700;
 }
 
+/* Resize grips: a 14px grab zone on each end, with a visible grip on hover, focus or touch. */
 .gantt__handle {
   position: absolute;
   top: -4px;
   bottom: -4px;
-  width: 10px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 14px;
   cursor: ew-resize;
 }
 
 .gantt__handle[data-edge='start'] {
-  left: -6px;
+  left: -7px;
 }
 
 .gantt__handle[data-edge='end'] {
-  right: -6px;
+  right: -7px;
+}
+
+.gantt__handle::after {
+  content: '';
+  width: 4px;
+  height: 14px;
+  border: 1px solid var(--cx-canvas);
+  border-radius: 2px;
+  background: var(--cx-ink);
+  box-shadow: 0 0 6px var(--gantt-glow);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gantt__bar:hover .gantt__handle::after,
+.gantt__bar:focus-visible .gantt__handle::after,
+.gantt__bar[data-active='true'] .gantt__handle::after,
+.gantt__handle:hover::after {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .gantt__handle::after {
+    opacity: 1;
+  }
 }
 
 .gantt__drag-tag {
