@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'bun:test'
-import { clampPhaseResize, clampTaskMove, clampTaskResize, phaseMove, pxToDays, shiftInstant } from './drag'
+import {
+  clampPhaseResize,
+  clampTaskMove,
+  clampTaskResize,
+  createClickGuard,
+  phaseMove,
+  pxToDays,
+  shiftInstant,
+} from './drag'
 
 const at = (d: number, h = 0) => new Date(2027, 0, d, h).toISOString()
 const phase = { startAt: at(1, 8), dueAt: at(31, 18) }
@@ -91,5 +99,31 @@ describe('phaseMove', () => {
     expect(phaseMove(85, 'day')).toBe(2)
     expect(phaseMove(-33, 'week')).toBe(-2)
     expect(phaseMove(10, 'day')).toBeNull()
+  })
+})
+
+describe('createClickGuard', () => {
+  it('swallows only the mouse click that ends a drag', () => {
+    const guard = createClickGuard()
+    guard.press()
+    guard.dragged()
+    expect(guard.swallow(1)).toBe(true)
+    expect(guard.swallow(1)).toBe(false)
+  })
+
+  it('lets the next tap through after a touch drag, which fires no click', () => {
+    const guard = createClickGuard()
+    guard.press()
+    guard.dragged()
+    guard.press()
+    expect(guard.swallow(1)).toBe(false)
+  })
+
+  it('never swallows a keyboard click (Enter or Space reports detail 0)', () => {
+    const guard = createClickGuard()
+    guard.press()
+    guard.dragged()
+    expect(guard.swallow(0)).toBe(false)
+    expect(guard.swallow(1)).toBe(false)
   })
 })

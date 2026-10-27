@@ -2,7 +2,15 @@ import { useRef, useState, type CSSProperties, type PointerEvent, type ReactNode
 import { FilterTabs } from '../../components/filter'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import type { Goal } from '../goals/goalsApi'
-import { clampPhaseResize, clampTaskMove, clampTaskResize, pxToDays, shiftInstant, type Edge } from './drag'
+import {
+  clampPhaseResize,
+  clampTaskMove,
+  clampTaskResize,
+  createClickGuard,
+  pxToDays,
+  shiftInstant,
+  type Edge,
+} from './drag'
 import type { GanttRow, PhaseRow, TaskRow } from './ganttRows'
 import {
   barPosition,
@@ -90,7 +98,7 @@ export function GanttChart({
   const intl = intlLocales[locale]
   const [zoom, setZoom] = useState<Zoom>('week')
   const [drag, setDrag] = useState<Drag | null>(null)
-  const justDragged = useRef(false)
+  const clicks = useRef(createClickGuard())
 
   const range = buildRange(
     rows.filter((row) => row.kind === 'phase'),
@@ -106,6 +114,7 @@ export function GanttChart({
 
   function pointerDown(event: PointerEvent<HTMLElement>, row: GanttRow) {
     if (!row.canDrag || event.button !== 0 || drag?.pending) return
+    clicks.current.press()
     const edge = (event.target as HTMLElement).dataset.edge as Edge | undefined
     event.currentTarget.setPointerCapture(event.pointerId)
     setDrag({ row, mode: edge ?? 'move', originX: event.clientX, days: 0, moved: false, pending: false })
@@ -124,7 +133,7 @@ export function GanttChart({
       setDrag(null)
       return
     }
-    justDragged.current = true
+    clicks.current.dragged()
     if (drag.days === 0) {
       setDrag(null)
       return
@@ -141,11 +150,8 @@ export function GanttChart({
     }
   }
 
-  function click(row: GanttRow) {
-    if (justDragged.current) {
-      justDragged.current = false
-      return
-    }
+  function click(row: GanttRow, detail: number) {
+    if (clicks.current.swallow(detail)) return
     if (canOpen(row)) onOpen(row)
   }
 
@@ -211,7 +217,7 @@ export function GanttChart({
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}
         onPointerCancel={() => setDrag(null)}
-        onClick={() => click(row)}
+        onClick={(event) => click(row, event.detail)}
       >
         {content}
       </button>

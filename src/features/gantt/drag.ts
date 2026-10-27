@@ -61,3 +61,26 @@ export function phaseMove(px: number, zoom: Zoom): number | null {
   const days = pxToDays(px, zoom)
   return days === 0 ? null : days
 }
+
+/**
+ * Tells a bar's click apart from the click a browser fires right after a mouse
+ * drag. Touch drags fire no click, so every new press clears the mark, and a
+ * keyboard click (`detail` 0) is never swallowed.
+ */
+export function createClickGuard() {
+  let afterDrag = false
+  return {
+    press() {
+      afterDrag = false
+    },
+    dragged() {
+      afterDrag = true
+    },
+    /** True only for the click that ends a drag. */
+    swallow(detail: number): boolean {
+      const swallowed = afterDrag && detail > 0
+      afterDrag = false
+      return swallowed
+    },
+  }
+}
