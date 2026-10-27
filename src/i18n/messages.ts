@@ -475,17 +475,21 @@ const en = {
     field: {
       name: 'Phase name',
       namePlaceholder: 'Foundations',
+      startAt: 'Start date and time',
+      startHint: 'No task in this phase can start earlier.',
       dueAt: 'Due date and time',
       dueHint: 'Every task in this phase must be due by then.',
     },
     validation: {
       nameRequired: 'Enter the phase name',
       nameMax: 'Use at most 160 characters',
+      startRequired: 'Pick a start date and time',
       dueRequired: 'Pick a due date and time',
+      startAfterDue: 'The start must be on or before the due date',
     },
     create: {
       title: 'Add phase',
-      description: 'Give the phase a name and the date it should be finished.',
+      description: 'Give the phase a name, the date it starts and the date it should be finished.',
       submit: 'Add phase',
       pending: 'Adding phase…',
     },
@@ -502,7 +506,7 @@ const en = {
       pending: 'Deleting…',
     },
     error: {
-      beforeTasks: 'A phase cannot end before its tasks. Pick a later date, or reschedule those tasks first.',
+      beforeTasks: 'A phase must cover all of its tasks. Pick dates that include them, or reschedule those tasks first.',
       invalid: 'Some details were not accepted. Check them and try again.',
       hasTasks: 'This phase still has tasks. Delete them first, then delete the phase.',
       session: 'Your session has ended. Sign in again.',
@@ -556,6 +560,8 @@ const en = {
     field: {
       name: 'Task',
       namePlaceholder: 'Pour slab, level 1',
+      startAt: 'Start date and time',
+      startHint: 'From {date} at the earliest, when the phase starts.',
       dueAt: 'Due date and time',
       dueHint: 'By {date} at the latest, when the phase is due.',
       assignee: 'Assignee',
@@ -564,7 +570,10 @@ const en = {
     validation: {
       nameRequired: 'Enter the task',
       nameMax: 'Use at most 160 characters',
+      startRequired: 'Pick a start date and time',
       dueRequired: 'Pick a due date and time',
+      startAfterDue: 'The start must be on or before the due date',
+      beforePhase: 'A task cannot start before its phase',
       afterPhase: 'A task cannot be due after its phase',
       assigneeRequired: 'Choose who does this task',
     },
@@ -587,7 +596,7 @@ const en = {
       pending: 'Deleting…',
     },
     error: {
-      afterPhase: 'A task cannot be due after its phase. Pick an earlier date, or reschedule the phase.',
+      afterPhase: 'A task must fit inside the dates of its phase. Pick other dates, or reschedule the phase.',
       invalid: 'Some details were not accepted. Check them and try again.',
       transition: 'This task already moved on. Reload to see its current status.',
       session: 'Your session has ended. Sign in again.',
@@ -1138,17 +1147,21 @@ const es: Messages = {
     field: {
       name: 'Nombre de la fase',
       namePlaceholder: 'Cimientos',
+      startAt: 'Fecha y hora de inicio',
+      startHint: 'Ninguna tarea de esta fase puede empezar antes.',
       dueAt: 'Fecha y hora límite',
       dueHint: 'Todas las tareas de esta fase deben vencer antes.',
     },
     validation: {
       nameRequired: 'Escribe el nombre de la fase',
       nameMax: 'Usa como máximo 160 caracteres',
+      startRequired: 'Elige una fecha y hora de inicio',
       dueRequired: 'Elige una fecha y hora límite',
+      startAfterDue: 'El inicio debe ser igual o anterior a la fecha límite',
     },
     create: {
       title: 'Agregar fase',
-      description: 'Ponle un nombre a la fase y la fecha en que debe terminar.',
+      description: 'Ponle un nombre a la fase, la fecha en que empieza y la fecha en que debe terminar.',
       submit: 'Agregar fase',
       pending: 'Agregando fase…',
     },
@@ -1165,7 +1178,7 @@ const es: Messages = {
       pending: 'Eliminando…',
     },
     error: {
-      beforeTasks: 'Una fase no puede terminar antes que sus tareas. Elige una fecha posterior o cambia primero esas tareas.',
+      beforeTasks: 'Una fase debe abarcar todas sus tareas. Elige fechas que las incluyan o cambia primero esas tareas.',
       invalid: 'Algunos datos no fueron aceptados. Revísalos e inténtalo de nuevo.',
       hasTasks: 'Esta fase todavía tiene tareas. Elimínalas primero y luego elimina la fase.',
       session: 'Tu sesión terminó. Inicia sesión de nuevo.',
@@ -1219,6 +1232,8 @@ const es: Messages = {
     field: {
       name: 'Tarea',
       namePlaceholder: 'Colar losa, nivel 1',
+      startAt: 'Fecha y hora de inicio',
+      startHint: 'Desde el {date} como mínimo, cuando empieza la fase.',
       dueAt: 'Fecha y hora límite',
       dueHint: 'A más tardar el {date}, cuando vence la fase.',
       assignee: 'Responsable',
@@ -1227,7 +1242,10 @@ const es: Messages = {
     validation: {
       nameRequired: 'Escribe la tarea',
       nameMax: 'Usa como máximo 160 caracteres',
+      startRequired: 'Elige una fecha y hora de inicio',
       dueRequired: 'Elige una fecha y hora límite',
+      startAfterDue: 'El inicio debe ser igual o anterior a la fecha límite',
+      beforePhase: 'Una tarea no puede empezar antes que su fase',
       afterPhase: 'Una tarea no puede vencer después de su fase',
       assigneeRequired: 'Elige quién hace esta tarea',
     },
@@ -1250,7 +1268,7 @@ const es: Messages = {
       pending: 'Eliminando…',
     },
     error: {
-      afterPhase: 'Una tarea no puede vencer después de su fase. Elige una fecha anterior o cambia la fecha de la fase.',
+      afterPhase: 'Una tarea debe caber dentro de las fechas de su fase. Elige otras fechas o cambia las fechas de la fase.',
       invalid: 'Algunos datos no fueron aceptados. Revísalos e inténtalo de nuevo.',
       transition: 'Esta tarea ya cambió de estado. Recarga para ver su estado actual.',
       session: 'Tu sesión terminó. Inicia sesión de nuevo.',

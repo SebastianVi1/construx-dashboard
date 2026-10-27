@@ -8,6 +8,7 @@ const task: Task = {
   goalId: 'g-1',
   projectId: 'p-1',
   name: 'Pour slab',
+  startAt: '2026-11-20T08:00:00Z',
   dueAt: '2026-12-01T18:00:00Z',
   status: 'TODO',
   completedAt: null,

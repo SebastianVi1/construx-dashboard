@@ -15,7 +15,7 @@ type PhaseDialogProps = {
   onClose: () => void
 }
 
-/** Add a phase, or rename and reschedule one (a 400 means a task is due later). */
+/** Add a phase, or rename and reschedule one (a 400 means the dates cut through a task). */
 export function PhaseDialog({ organizationId, siteId, goal, onSaved, onClose }: PhaseDialogProps) {
   const { messages: m } = useLocale()
   const t = m.goals
@@ -23,13 +23,18 @@ export function PhaseDialog({ organizationId, siteId, goal, onSaved, onClose }: 
   const [errorKind, setErrorKind] = useState<GoalErrorKind>('generic')
 
   const form = useForm({
-    initialValues: { name: goal?.name ?? '', dueAt: goal ? instantToLocalInput(goal.dueAt) : '' },
+    initialValues: {
+      name: goal?.name ?? '',
+      startAt: goal ? instantToLocalInput(goal.startAt) : '',
+      dueAt: goal ? instantToLocalInput(goal.dueAt) : '',
+    },
     schema: makeGoalSchema(t.validation),
     onSubmit: async (values) => {
       try {
         if (!goal) {
+          const startAt = localInputToInstant(values.startAt) ?? ''
           const dueAt = localInputToInstant(values.dueAt) ?? ''
-          onSaved(await createGoal(organizationId, siteId, { name: values.name, dueAt }), true)
+          onSaved(await createGoal(organizationId, siteId, { name: values.name, startAt, dueAt }), true)
           return
         }
         const patch = buildGoalPatch(goal, values)
@@ -40,13 +45,14 @@ export function PhaseDialog({ organizationId, siteId, goal, onSaved, onClose }: 
       }
     },
     onInvalid: (errors) => {
-      const first = ['name', 'dueAt'].find((name) => errors[name])
+      const first = ['name', 'startAt', 'dueAt'].find((name) => errors[name])
       if (first) document.getElementById(`field-${first}`)?.focus()
     },
   })
 
   const fields: FieldConfig[] = [
     { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
+    { name: 'startAt', label: t.field.startAt, type: 'datetime-local', hint: t.field.startHint },
     { name: 'dueAt', label: t.field.dueAt, type: 'datetime-local', hint: t.field.dueHint },
   ]
 

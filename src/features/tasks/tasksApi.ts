@@ -13,6 +13,7 @@ export const taskSchema = z.object({
   goalId: z.string().min(1),
   projectId: z.string().min(1),
   name: z.string(),
+  startAt: z.string(),
   dueAt: z.string(),
   status: z.enum(taskStatuses),
   completedAt: z.string().nullable(),
@@ -30,7 +31,7 @@ export type PhaseRef = { organizationId: string; siteId: string; goalId: string 
 
 export type TaskFilter = { status?: TaskStatus; assigneeAccessId?: string }
 
-export type TaskInput = { name: string; dueAt: string; assigneeAccessId: string }
+export type TaskInput = { name: string; startAt: string; dueAt: string; assigneeAccessId: string }
 
 function tasksPath(at: PhaseRef): string {
   return `${goalPath(at.organizationId, at.siteId, at.goalId)}/activities`
@@ -53,12 +54,21 @@ export function listTasks(at: PhaseRef, filter: TaskFilter = {}): Promise<Task[]
 }
 
 export function createTask(at: PhaseRef, input: TaskInput): Promise<Task> {
-  const body = { name: input.name.trim(), dueAt: input.dueAt, assigneeAccessId: input.assigneeAccessId }
+  const body = {
+    name: input.name.trim(),
+    startAt: input.startAt,
+    dueAt: input.dueAt,
+    assigneeAccessId: input.assigneeAccessId,
+  }
   return sendJson('post', tasksPath(at), body, 201, taskSchema)
 }
 
-/** Rename and/or reschedule. Status and assignee have their own endpoints. */
-export function updateTask(at: PhaseRef, taskId: string, patch: Partial<Pick<TaskInput, 'name' | 'dueAt'>>): Promise<Task> {
+/** Rename and/or reschedule; both dates are checked as a pair. Status and assignee have their own endpoints. */
+export function updateTask(
+  at: PhaseRef,
+  taskId: string,
+  patch: Partial<Pick<TaskInput, 'name' | 'startAt' | 'dueAt'>>,
+): Promise<Task> {
   return sendJson('patch', taskPath(at, taskId), patch, 200, taskSchema)
 }
 
