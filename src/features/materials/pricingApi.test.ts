@@ -7,10 +7,14 @@ import {
   createSupplier,
   deleteObservation,
   getMaterial,
+  importErrorKind,
+  importPrices,
   listMaterials,
   listSuppliers,
   pricingErrorKind,
+  PriceImportRejectedError,
   recordPrice,
+  type ImportReport,
   type Material,
   type MaterialDetail,
   type PriceObservation,
@@ -161,6 +165,89 @@ describe('pricing API', () => {
 
     const [url] = sent(send)
     expect(url).toBe(`${base}/price-observations/o-1`)
+  })
+})
+
+const report: ImportReport = {
+  valid: true,
+  rows: [
+    {
+      line: 2,
+      material: 'Cemento gris 50 kg',
+      supplier: 'Home Depot',
+      branch: 'Tlalpan',
+      price: '245.50',
+      observedOn: '2026-10-20',
+      newMaterial: false,
+      newSupplier: true,
+      errors: [],
+    },
+  ],
+  summary: { rows: 1, newMaterials: 0, newSuppliers: 1, observations: 1 },
+  imported: false,
+}
+const rejected: ImportReport = {
+  ...report,
+  valid: false,
+  rows: [{ ...report.rows[0], errors: [{ field: 'supplier', code: 'ARCHIVED_SUPPLIER' }] }],
+}
+const csv = new File(['material,unit\r\n'], 'prices.csv', { type: 'text/csv' })
+
+describe('price import API', () => {
+  afterEach(() => mock.restore())
+
+  it('importPrices: posts the file as the multipart part "file" with CSRF, dryRun as a query param', async () => {
+    const { send } = stubApi({ send: () => ({ status: 200, data: report }) })
+
+    expect(await importPrices('org-1', csv, { dryRun: true })).toEqual(report)
+    const [url, body, config] = sent(send)
+    expect(url).toBe(`${base}/price-observations/import?dryRun=true`)
+    expect(body).toBeInstanceOf(FormData)
+    const part = (body as FormData).get('file')
+    expect(part).toBeInstanceOf(File)
+    expect((part as File).name).toBe('prices.csv')
+    expect(config.headers?.['X-XSRF-TOKEN']).toBe('proof')
+  })
+
+  it('importPrices: sends dryRun=false to import for real', async () => {
+    const { send } = stubApi({ send: () => ({ status: 200, data: { ...report, imported: true } }) })
+
+    expect((await importPrices('org-1', csv, { dryRun: false })).imported).toBe(true)
+    expect(sent(send)[0]).toBe(`${base}/price-observations/import?dryRun=false`)
+  })
+
+  it('importPrices: rejects a report that does not match the contract', async () => {
+    stubApi({ send: () => ({ status: 200, data: { ...report, summary: undefined } }) })
+
+    await expect(importPrices('org-1', csv, { dryRun: true })).rejects.toBeInstanceOf(AuthApiError)
+  })
+
+  it('importPrices: on 422 nothing is imported and the error carries the report of the rows', async () => {
+    let calls = 0
+    const { send } = stubApi({ send: () => (++calls === 1 ? { status: 422, data: rejected } : { status: 200, data: rejected }) })
+
+    const error = await importPrices('org-1', csv, { dryRun: false }).catch((caught: unknown) => caught)
+    expect(error).toBeInstanceOf(PriceImportRejectedError)
+    expect((error as PriceImportRejectedError).status).toBe(422)
+    expect((error as PriceImportRejectedError).report).toEqual(rejected)
+    expect(sent(send, 1)[0]).toBe(`${base}/price-observations/import?dryRun=true`)
+  })
+})
+
+describe('price import error kinds', () => {
+  it('maps a 400 VALIDATION_FAILED (bad header, too big) to the bad-file message', () => {
+    expect(importErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('badFile')
+  })
+
+  it('maps a 422 to the rejected-import message', () => {
+    expect(importErrorKind(new PriceImportRejectedError(rejected))).toBe('importRejected')
+    expect(importErrorKind(new AuthApiError(422))).toBe('importRejected')
+  })
+
+  it('falls back to the pricing kinds, and pricingErrorKind keeps 400 as invalid', () => {
+    expect(importErrorKind(new AuthApiError(403))).toBe('forbidden')
+    expect(importErrorKind('boom')).toBe('generic')
+    expect(pricingErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
   })
 })
 

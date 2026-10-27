@@ -147,6 +147,77 @@ export function deleteObservation(organizationId: string, observationId: string)
   return deleteJson(`${observationsPath(organizationId)}/${encodeURIComponent(observationId)}`)
 }
 
+/** One problem found in a CSV row: `field` is the column name, or `row` for the whole line. */
+export const importRowErrorSchema = z.object({ field: z.string(), code: z.string() })
+
+export type ImportRowError = z.infer<typeof importRowErrorSchema>
+
+/** One data row of the CSV as the server read it; `line` is the physical line in the file (header = 1). */
+export const importRowSchema = z.object({
+  line: z.number().int(),
+  material: z.string().nullish(),
+  supplier: z.string().nullish(),
+  branch: z.string().nullish(),
+  price: z.string().nullish(),
+  observedOn: z.string().nullish(),
+  newMaterial: z.boolean(),
+  newSupplier: z.boolean(),
+  errors: z.array(importRowErrorSchema),
+})
+
+export type ImportRow = z.infer<typeof importRowSchema>
+
+/** Report of a CSV import, the same for a dry run, a real import and a rejected (422) import. */
+export const importReportSchema = z.object({
+  valid: z.boolean(),
+  rows: z.array(importRowSchema),
+  summary: z.object({
+    rows: z.number().int(),
+    newMaterials: z.number().int(),
+    newSuppliers: z.number().int(),
+    observations: z.number().int(),
+  }),
+  imported: z.boolean(),
+})
+
+export type ImportReport = z.infer<typeof importReportSchema>
+
+/** A real import refused with 422: nothing was saved, and `report` says which rows are wrong. */
+export class PriceImportRejectedError extends AuthApiError {
+  readonly report: ImportReport
+
+  constructor(report: ImportReport) {
+    super(422)
+    this.name = 'PriceImportRejectedError'
+    this.report = report
+  }
+}
+
+function importPath(organizationId: string, dryRun: boolean): string {
+  return `${observationsPath(organizationId)}/import?dryRun=${dryRun}`
+}
+
+function postImport(organizationId: string, file: File, dryRun: boolean): Promise<ImportReport> {
+  const body = new FormData()
+  body.append('file', file, file.name)
+  return sendJson('post', importPath(organizationId, dryRun), body, 200, importReportSchema)
+}
+
+/**
+ * Upload a price CSV. A dry run only checks it; `dryRun: false` saves every row
+ * or none. The shared client drops error bodies, so after a 422 the report is
+ * read again with a dry run (the 422 saved nothing, so it is the same report)
+ * and thrown as a `PriceImportRejectedError`.
+ */
+export async function importPrices(organizationId: string, file: File, { dryRun }: { dryRun: boolean }): Promise<ImportReport> {
+  try {
+    return await postImport(organizationId, file, dryRun)
+  } catch (error) {
+    if (dryRun || !(error instanceof AuthApiError) || error.status !== 422) throw error
+    throw new PriceImportRejectedError(await postImport(organizationId, file, true))
+  }
+}
+
 export type PricingErrorKind =
   | 'duplicateMaterial'
   | 'duplicateSupplier'
@@ -174,4 +245,13 @@ export function pricingErrorKind(error: unknown): PricingErrorKind {
   if (error.status === 403) return 'forbidden'
   if (error.status === 404) return 'notFound'
   return 'generic'
+}
+
+export type ImportErrorKind = PricingErrorKind | 'badFile' | 'importRejected'
+
+/** Import failures: a 400 VALIDATION_FAILED is a file the server cannot read (header, size, rows), a 422 a rejected import. */
+export function importErrorKind(error: unknown): ImportErrorKind {
+  if (error instanceof AuthApiError && error.status === 422) return 'importRejected'
+  if (error instanceof AuthApiError && error.status === 400 && error.code === 'VALIDATION_FAILED') return 'badFile'
+  return pricingErrorKind(error)
 }

@@ -94,3 +94,55 @@
   font-family: var(--cx-font-data);
   font-size: 13px;
 }
+
+/* CSV import: the preview table needs more room than the default dialog. */
+.modal:has(.price-import) {
+  width: min(100%, 880px);
+}
+
+.price-import {
+  display: grid;
+  gap: 12px;
+}
+
+.price-import p {
+  margin: 0;
+}
+
+.price-import__hint {
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.price-import__file {
+  display: grid;
+  gap: 6px;
+  color: var(--cx-ink);
+  font-size: 14px;
+}
+
+.price-import__summary {
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.price-import__table td {
+  vertical-align: top;
+}
+
+.price-import__table tr[data-invalid] td {
+  background: var(--cx-danger-subtle);
+}
+
+.price-import__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.price-import__errors {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--cx-danger);
+  font-size: 13px;
+}

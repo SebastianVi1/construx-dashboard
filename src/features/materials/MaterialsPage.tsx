@@ -7,6 +7,7 @@ import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { CreateMaterialDialog } from './CreateMaterialDialog'
+import { ImportPricesDialog } from './ImportPricesDialog'
 import { LatestPrices } from './MaterialBits'
 import { loadKind } from './materialDisplay'
 import { RecordPriceDialog } from './RecordPriceDialog'
@@ -27,7 +28,7 @@ export function MaterialsPage() {
   const canManage = can('MANAGE_PRICES')
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<MaterialCategory | ''>('')
-  const [dialog, setDialog] = useState<'material' | 'price' | null>(null)
+  const [dialog, setDialog] = useState<'material' | 'price' | 'import' | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const materials = useRemoteData(canView ? `${organization.id}:materials` : null, () => listMaterials(organization.id))
 
@@ -61,6 +62,9 @@ export function MaterialsPage() {
         </div>
         {canManage ? (
           <div className="button-row">
+            <button type="button" className="button" onClick={() => setDialog('import')}>
+              {t.import.open}
+            </button>
             <button type="button" className="button" onClick={() => setDialog('material')}>
               {t.add}
             </button>
@@ -124,6 +128,17 @@ export function MaterialsPage() {
           onRecorded={() => {
             setDialog(null)
             setNotice(t.detail.recorded)
+            materials.reload()
+          }}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog === 'import' ? (
+        <ImportPricesDialog
+          organizationId={organization.id}
+          onImported={(report) => {
+            setDialog(null)
+            setNotice(formatMessage(t.import.imported, report.summary))
             materials.reload()
           }}
           onClose={() => setDialog(null)}
