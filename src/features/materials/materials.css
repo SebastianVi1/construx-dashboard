@@ -1,0 +1,96 @@
+/* Materials list and detail. Tokens only (design.md). */
+
+.materials-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.materials-search {
+  width: 100%;
+  max-width: 360px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-canvas);
+  color: var(--cx-ink);
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 150ms ease-out;
+}
+
+.materials-search::placeholder {
+  color: var(--cx-muted);
+}
+
+.materials-search:hover {
+  border-color: var(--cx-accent);
+}
+
+.materials-search:focus-visible {
+  outline: none;
+  border-color: var(--cx-accent);
+  box-shadow: 0 0 0 3px var(--cx-accent-subtle);
+}
+
+.materials-table td {
+  vertical-align: top;
+}
+
+.materials-table__meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.price-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.price-list__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--cx-radius-sm);
+}
+
+.price-list__row[data-cheapest] {
+  border-color: color-mix(in srgb, var(--cx-success) 45%, transparent);
+  background: var(--cx-success-subtle);
+}
+
+.price-list__supplier {
+  min-width: 0;
+  color: var(--cx-ink);
+}
+
+.price-list__price {
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.price-list__age {
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.material-sheet__status {
+  margin-bottom: 8px;
+}
+
+.material-confirm__detail {
+  margin: 0 0 12px;
+  color: var(--cx-ink);
+  font-family: var(--cx-font-data);
+  font-size: 13px;
+}

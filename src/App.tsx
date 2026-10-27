@@ -20,6 +20,9 @@ const MyTasksPage = lazy(() => import('./features/tasks/MyTasksPage').then((modu
 const MaterialsPage = lazy(() =>
   import('./features/materials/MaterialsPage').then((module) => ({ default: module.MaterialsPage })),
 )
+const MaterialDetailPage = lazy(() =>
+  import('./features/materials/MaterialDetailPage').then((module) => ({ default: module.MaterialDetailPage })),
+)
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })))
 const AcceptInvitationPage = lazy(() =>
   import('./features/invitations/AcceptInvitationPage').then((module) => ({ default: module.AcceptInvitationPage })),
@@ -45,6 +48,7 @@ function App() {
         <Route path="/sites/:siteId" element={<SiteDetailPage />} />
         <Route path="/tasks" element={<MyTasksPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
+        <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/account" element={<ProfilePage />} />
       </Route>
