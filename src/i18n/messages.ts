@@ -360,9 +360,6 @@ const en = {
       notScheduled: 'Not set',
     },
     budget: {
-      title: 'Budget',
-      allocated: 'Allocated budget',
-      notSet: 'No budget assigned yet.',
       set: 'Set budget',
       edit: 'Edit budget',
       dialogTitle: 'Allocated budget',
@@ -1400,9 +1397,6 @@ const es: Messages = {
       notScheduled: 'Sin definir',
     },
     budget: {
-      title: 'Presupuesto',
-      allocated: 'Presupuesto asignado',
-      notSet: 'Todavía no hay presupuesto asignado.',
       set: 'Asignar presupuesto',
       edit: 'Editar presupuesto',
       dialogTitle: 'Presupuesto asignado',
