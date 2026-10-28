@@ -253,5 +253,7 @@ export type ImportErrorKind = PricingErrorKind | 'badFile' | 'importRejected'
 export function importErrorKind(error: unknown): ImportErrorKind {
   if (error instanceof AuthApiError && error.status === 422) return 'importRejected'
   if (error instanceof AuthApiError && error.status === 400 && error.code === 'VALIDATION_FAILED') return 'badFile'
+  // Over 2 MB the server's multipart limit answers 413 before the import's own size check.
+  if (error instanceof AuthApiError && error.status === 413) return 'badFile'
   return pricingErrorKind(error)
 }

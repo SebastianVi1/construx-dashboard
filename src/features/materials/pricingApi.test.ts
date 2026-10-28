@@ -239,6 +239,10 @@ describe('price import error kinds', () => {
     expect(importErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('badFile')
   })
 
+  it('maps a 413 from the upload limit (over 2 MB) to the bad-file message', () => {
+    expect(importErrorKind(new AuthApiError(413))).toBe('badFile')
+  })
+
   it('maps a 422 to the rejected-import message', () => {
     expect(importErrorKind(new PriceImportRejectedError(rejected))).toBe('importRejected')
     expect(importErrorKind(new AuthApiError(422))).toBe('importRejected')
