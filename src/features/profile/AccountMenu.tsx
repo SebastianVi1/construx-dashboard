@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { ChevronDownIcon, SignOutIcon, UserIcon } from '../../components/icons'
 import { usePopover } from '../../components/popover'
 import { LocaleSwitcher, useLocale } from '../../i18n'
+import { ThemeSwitcher } from '../../theme'
 import { useAuth } from '../auth/auth-context'
 import { Avatar } from './Avatar'
 import { displayName } from './profileDisplay'
@@ -62,6 +63,10 @@ export function AccountMenu() {
         <div className="popover__row">
           <span>{m.common.language}</span>
           <LocaleSwitcher />
+        </div>
+        <div className="popover__row">
+          <span>{m.common.theme}</span>
+          <ThemeSwitcher />
         </div>
         <div className="popover__footer">
           <button

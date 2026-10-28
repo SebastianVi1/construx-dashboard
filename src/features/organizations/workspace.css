@@ -201,7 +201,7 @@
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-lg);
   background: var(--cx-surface-raised);
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+  box-shadow: 0 16px 40px var(--cx-shadow-color);
 }
 
 .popover[hidden] {

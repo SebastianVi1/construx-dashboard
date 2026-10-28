@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router'
-import symbol from '../../assets/logo/symbol-on-dark.svg'
+import symbol from '../../assets/logo/symbol.svg'
+import symbolOnDark from '../../assets/logo/symbol-on-dark.svg'
 import { useLocale } from '../../i18n'
+import { useTheme } from '../../theme'
 import { AccountMenu } from '../profile'
 import { CompanySwitcher } from './CompanySwitcher'
 import { sectionForPath } from './workspaceNav'
@@ -8,6 +10,7 @@ import { sectionForPath } from './workspaceNav'
 /** Top bar of the workspace: brand, company switcher, where you are, and the account menu. */
 export function WorkspaceHeader() {
   const { messages: m } = useLocale()
+  const { theme } = useTheme()
   const t = m.workspace
   const { pathname } = useLocation()
   const section = sectionForPath(pathname)
@@ -16,7 +19,7 @@ export function WorkspaceHeader() {
   return (
     <header className="workspace-header">
       <Link className="workspace-header__brand" to="/" aria-label={m.auth.brandHome}>
-        <img src={symbol} alt="" width="28" height="28" />
+        <img src={theme === 'dark' ? symbolOnDark : symbol} alt="" width="28" height="28" />
       </Link>
       <CompanySwitcher />
       {section && sectionLabel ? (

@@ -17,7 +17,7 @@
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-lg);
   padding: 24px;
-  box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.5);
+  box-shadow: 0 16px 40px -16px var(--cx-shadow-color);
   animation: modal-in 180ms ease-out;
 }
 

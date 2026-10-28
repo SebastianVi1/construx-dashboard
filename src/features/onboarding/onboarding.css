@@ -12,7 +12,7 @@
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 8px 20px -8px rgb(0 0 0 / 0.5);
+  box-shadow: 0 8px 20px -8px var(--cx-shadow-color);
   animation: onboarding-fab-float 3s ease-in-out infinite;
   transition: background-color 150ms ease-out;
 }
@@ -25,7 +25,7 @@
   outline: none;
   box-shadow:
     0 0 0 3px var(--cx-primary-subtle),
-    0 8px 20px -8px rgb(0 0 0 / 0.5);
+    0 8px 20px -8px var(--cx-shadow-color);
 }
 
 @keyframes onboarding-fab-float {

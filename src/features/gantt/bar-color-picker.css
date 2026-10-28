@@ -32,7 +32,7 @@
   border: 2px solid transparent;
   border-radius: var(--cx-radius-sm);
   background: var(--bar-color);
-  color: var(--cx-canvas);
+  color: var(--cx-on-bar);
   cursor: pointer;
   font-size: 20px;
   font-weight: 700;
@@ -95,7 +95,7 @@
 }
 
 .bar-color__picker input:focus-visible {
-  outline: 2px solid var(--cx-safety-400);
+  outline: 2px solid var(--cx-focus);
   outline-offset: 2px;
 }
 
@@ -111,9 +111,9 @@
   width: 85%;
   padding: 7px 12px;
   border-radius: var(--cx-radius-sm);
-  background: var(--bar-color, var(--cx-accent));
-  box-shadow: 0 0 12px color-mix(in oklab, var(--bar-color, var(--cx-accent)) 55%, transparent);
-  color: var(--cx-canvas);
+  background: var(--bar-color, var(--cx-bar-default));
+  box-shadow: 0 0 12px color-mix(in oklab, var(--bar-color, var(--cx-bar-default)) 55%, transparent);
+  color: var(--cx-on-bar);
   font-size: 12px;
   font-weight: 600;
 }

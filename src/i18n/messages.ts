@@ -3,6 +3,9 @@ import type { Locale } from './locale'
 const en = {
   common: {
     language: 'Language',
+    theme: 'Theme',
+    themeLight: 'Light',
+    themeDark: 'Dark',
   },
   auth: {
     brandHome: 'Construx home',
@@ -936,6 +939,9 @@ export type Messages = DeepStringify<typeof en>
 const es: Messages = {
   common: {
     language: 'Idioma',
+    theme: 'Tema',
+    themeLight: 'Claro',
+    themeDark: 'Oscuro',
   },
   auth: {
     brandHome: 'Inicio de Construx',

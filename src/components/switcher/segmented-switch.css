@@ -1,4 +1,5 @@
-.locale-switcher {
+/* Two-to-few option toggle shared by the language and theme switchers. */
+.segmented-switch {
   display: inline-flex;
   gap: 2px;
   padding: 2px;
@@ -7,7 +8,9 @@
   background: var(--cx-surface);
 }
 
-.locale-switcher button {
+.segmented-switch button {
+  display: inline-grid;
+  place-items: center;
   min-width: 34px;
   padding: 4px 8px;
   border: 0;
@@ -19,17 +22,17 @@
   transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
-.locale-switcher button:hover:not(.is-active) {
+.segmented-switch button:hover:not(.is-active) {
   color: var(--cx-ink);
   background: var(--cx-primary-subtle);
 }
 
-.locale-switcher button.is-active {
+.segmented-switch button.is-active {
   background: var(--cx-primary);
   color: var(--cx-on-primary);
 }
 
-.locale-switcher button:focus-visible {
+.segmented-switch button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--cx-primary-subtle);
 }
