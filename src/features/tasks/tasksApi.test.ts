@@ -5,10 +5,11 @@ import {
   completeTask,
   createTask,
   deleteTask,
+  getTask,
   listMyTasks,
   listTasks,
-  reassignTask,
   setTaskBudget,
+  setTaskTeam,
   startTask,
   taskErrorKind,
   updateTask,
@@ -27,7 +28,7 @@ const task: Task = {
   dueAt: '2026-12-01T18:00:00Z',
   status: 'TODO',
   completedAt: null,
-  assignee: { accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana Perez' },
+  assignees: [{ accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana Perez', taskRole: 'LEAD' }],
   allocatedBudget: null,
 }
 const base = '/api/organizations/org-1/projects/p-1/goals/g-1/activities'
@@ -62,7 +63,7 @@ describe('tasks API', () => {
 
   it('includes an optional color when creating a record from the dialog', async () => {
     const { send } = stubApi({ send: () => ({ status: 201, data: { ...task, color: '#3b82f6' } }) })
-    expect((await createTask(at, { name: task.name, startAt: task.startAt, dueAt: task.dueAt, assigneeAccessId: 'a-1', color: '#3b82f6' })).color).toBe('#3b82f6')
+    expect((await createTask(at, { name: task.name, startAt: task.startAt, dueAt: task.dueAt, assignees: [{ accessId: 'a-1', taskRole: 'LEAD' }], color: '#3b82f6' })).color).toBe('#3b82f6')
     expect((send.mock.calls[0] as unknown as [string, { color: string }])[1].color).toBe('#3b82f6')
   })
 
@@ -100,19 +101,22 @@ describe('tasks API', () => {
   })
 
   it('listTasks: accepts a done task with completedAt and an assignee without a name', async () => {
-    const done = { ...task, status: 'DONE', completedAt: '2026-11-30T10:00:00Z', assignee: { ...task.assignee, fullName: null } }
+    const done = { ...task, status: 'DONE', completedAt: '2026-11-30T10:00:00Z', assignees: [{ ...task.assignees[0], fullName: null }] }
     stubApi({ get: () => ({ status: 200, data: [done] }) })
 
     expect(await listTasks(at)).toEqual([done as Task])
   })
 
-  it('createTask: posts name, start and due instants and assignee with CSRF and expects 201', async () => {
+  it('createTask: posts name, start and due instants and the team with CSRF and expects 201', async () => {
     const { send } = stubApi({ send: () => ({ status: 201, data: task }) })
     await createTask(at, {
       name: ' Pour slab ',
       startAt: '2026-11-20T08:00:00.000Z',
       dueAt: '2026-12-01T18:00:00.000Z',
-      assigneeAccessId: 'a-1',
+      assignees: [
+        { accessId: 'a-1', taskRole: 'LEAD' },
+        { accessId: 'a-2', taskRole: 'CREW' },
+      ],
     })
 
     const [url, body, config] = send.mock.calls[0] as unknown as [string, unknown, Config]
@@ -121,7 +125,10 @@ describe('tasks API', () => {
       name: 'Pour slab',
       startAt: '2026-11-20T08:00:00.000Z',
       dueAt: '2026-12-01T18:00:00.000Z',
-      assigneeAccessId: 'a-1',
+      assignees: [
+        { accessId: 'a-1', taskRole: 'LEAD' },
+        { accessId: 'a-2', taskRole: 'CREW' },
+      ],
     })
     expect(config.headers?.['X-XSRF-TOKEN']).toBe('proof')
   })
@@ -145,13 +152,37 @@ describe('tasks API', () => {
     })
   })
 
-  it('reassignTask: puts the new assignee access id', async () => {
+  it('setTaskTeam: puts the whole team on the assignees endpoint', async () => {
     const { send } = stubApi({ send: () => ({ status: 200, data: task }) })
-    await reassignTask(at, 't-1', 'a-2')
+    await setTaskTeam(at, 't-1', [
+      { accessId: 'a-2', taskRole: 'LEAD' },
+      { accessId: 'a-1', taskRole: 'FOREMAN' },
+    ])
 
     const [url, body] = send.mock.calls[0] as unknown as [string, unknown]
-    expect(url).toBe(`${base}/t-1/assignee`)
-    expect(body).toEqual({ assigneeAccessId: 'a-2' })
+    expect(url).toBe(`${base}/t-1/assignees`)
+    expect(body).toEqual({
+      assignees: [
+        { accessId: 'a-2', taskRole: 'LEAD' },
+        { accessId: 'a-1', taskRole: 'FOREMAN' },
+      ],
+    })
+  })
+
+  it('getTask: reads one task with its phase and site names', async () => {
+    const { get } = stubApi({ get: () => ({ status: 200, data: { ...task, goalName: 'Structure', projectName: 'Tower' } }) })
+    const loaded = await getTask(at, 't 1')
+    expect(get.mock.calls[0][0]).toBe(`${base}/t%201`)
+    expect(loaded.goalName).toBe('Structure')
+    expect(loaded.projectName).toBe('Tower')
+    expect(loaded.assignees[0].taskRole).toBe('LEAD')
+  })
+
+  it('rejects a task without a team or with an unknown task role', async () => {
+    stubApi({ get: () => ({ status: 200, data: { ...task, assignees: [] } }) })
+    await expect(getTask(at, 't-1')).rejects.toThrow()
+    stubApi({ get: () => ({ status: 200, data: { ...task, assignees: [{ ...task.assignees[0], taskRole: 'BOSS' }] } }) })
+    await expect(getTask(at, 't-1')).rejects.toThrow()
   })
 
   it('startTask and completeTask: post to the transition and parse the updated task', async () => {

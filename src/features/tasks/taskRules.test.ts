@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { MyAccess } from '../permissions'
-import { filterByStatus, groupByStatus, taskActions } from './taskRules'
+import { filterByStatus, groupByStatus, taskActions, taskDetailPath } from './taskRules'
 import type { Task } from './tasksApi'
 
 const task: Task = {
@@ -12,7 +12,10 @@ const task: Task = {
   dueAt: '2026-12-01T18:00:00Z',
   status: 'TODO',
   completedAt: null,
-  assignee: { accessId: 'a-1', membershipId: 'm-worker', fullName: 'Ana' },
+  assignees: [
+    { accessId: 'a-1', membershipId: 'm-worker', fullName: 'Ana', taskRole: 'LEAD' },
+    { accessId: 'a-2', membershipId: 'm-crew', fullName: 'Bob', taskRole: 'CREW' },
+  ],
   allocatedBudget: null,
 }
 
@@ -65,6 +68,11 @@ describe('taskActions', () => {
     expect(taskActions(otherWorker, task, { onSite: true })).toMatchObject({ start: false, complete: false })
   })
 
+  it('OWN scope moves a task for every team member, whatever their task role', () => {
+    const crew = role('m-crew', [['MANAGE_ACTIVITY', 'OWN']])
+    expect(taskActions(crew, task, { onSite: true })).toMatchObject({ start: true, complete: true, reassign: false })
+  })
+
   it('offers only the moves the status allows', () => {
     expect(taskActions(member, { ...task, status: 'IN_PROGRESS' }, {})).toMatchObject({ start: false, complete: true })
     expect(taskActions(member, { ...task, status: 'DONE' }, {})).toMatchObject({ start: false, complete: false })
@@ -112,5 +120,11 @@ describe('filterByStatus', () => {
       counts: { all: 1, TODO: 1, IN_PROGRESS: 0, DONE: 0 },
       visible: [],
     })
+  })
+})
+
+describe('taskDetailPath', () => {
+  it('nests the task under its site and phase, escaping ids', () => {
+    expect(taskDetailPath({ projectId: 'p 1', goalId: 'g-1', id: 't/1' })).toBe('/sites/p%201/phases/g-1/tasks/t%2F1')
   })
 })

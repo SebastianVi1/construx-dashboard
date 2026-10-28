@@ -7,16 +7,17 @@ import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { listSites } from '../sites/sitesApi'
-import { TaskDue, TaskMoveButtons, TaskStatusBadge } from './TaskBits'
-import { filterByStatus, taskActions } from './taskRules'
+import { TaskDue, TaskMoveButtons, TaskRoleBadge, TaskStatusBadge } from './TaskBits'
+import { filterByStatus, taskActions, taskDetailPath } from './taskRules'
 import { listMyTasks, phaseOf, taskStatuses, type Task, type TaskStatus } from './tasksApi'
+import { myTaskRole } from './teamRules'
 import { useTaskMove } from './useTaskMove'
 import '../sites/sites.css'
 import './tasks.css'
 
 /**
- * The caller's own tasks across every site of the company (the Worker's
- * home): filter by status, open the site, start and complete from here.
+ * Tasks whose team includes the caller, across every site of the company (the
+ * Worker's home): filter by status, open a task or its site, start and complete.
  */
 export function MyTasksPage() {
   const { messages: m } = useLocale()
@@ -81,6 +82,7 @@ export function MyTasksPage() {
                   <tr>
                     <th scope="col">{t.mine.column.task}</th>
                     <th scope="col">{t.mine.column.site}</th>
+                    <th scope="col">{t.mine.column.role}</th>
                     <th scope="col">{t.mine.column.due}</th>
                     <th scope="col">{t.mine.column.status}</th>
                     <th scope="col" className="cell-actions">
@@ -94,6 +96,7 @@ export function MyTasksPage() {
                       key={task.id}
                       task={task}
                       siteName={siteNames.get(task.projectId)}
+                      myMembershipId={access?.membershipId ?? null}
                       now={now}
                       actions={taskActions(access, task, {})}
                       busy={moves.busyId === task.id}
@@ -124,6 +127,7 @@ export function MyTasksPage() {
 type MyTaskRowProps = {
   task: Task
   siteName: string | undefined
+  myMembershipId: string | null
   now: Date
   actions: ReturnType<typeof taskActions>
   busy: boolean
@@ -131,19 +135,23 @@ type MyTaskRowProps = {
   onMove: (kind: 'start' | 'complete') => void
 }
 
-function MyTaskRow({ task, siteName, now, actions, busy, disabled, onMove }: MyTaskRowProps) {
+function MyTaskRow({ task, siteName, myMembershipId, now, actions, busy, disabled, onMove }: MyTaskRowProps) {
   const { messages: m } = useLocale()
   const t = m.tasks
+  const role = myTaskRole(task, myMembershipId)
   return (
     <tr>
       <th scope="row" className="my-task__name">
-        {task.name}
+        <Link className="table-link" to={taskDetailPath(task)} aria-label={formatMessage(t.openLabel, { name: task.name })}>
+          {task.name}
+        </Link>
       </th>
       <td>
         <Link className="table-link" to={`/sites/${encodeURIComponent(task.projectId)}`}>
-          {siteName ?? t.mine.unknownSite}
+          {siteName ?? task.projectName ?? t.mine.unknownSite}
         </Link>
       </td>
+      <td>{role ? <TaskRoleBadge role={role} /> : null}</td>
       <td>
         <TaskDue task={task} now={now} />
       </td>

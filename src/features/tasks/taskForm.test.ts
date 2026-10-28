@@ -11,7 +11,6 @@ const messages = {
   startAfterDue: 'order',
   beforePhase: 'before',
   afterPhase: 'after',
-  assigneeRequired: 'assignee',
 }
 const task: Task = {
   id: 't-1',
@@ -22,22 +21,23 @@ const task: Task = {
   dueAt: '2026-12-01T18:00:00Z',
   status: 'TODO',
   completedAt: null,
-  assignee: { accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana' },
+  assignees: [{ accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana', taskRole: 'LEAD' }],
   allocatedBudget: null,
 }
 
-type Values = { name: string; startAt: string; dueAt: string; assigneeAccessId: string }
+type Values = { name: string; startAt: string; dueAt: string }
 
 function issues(values: Values, phase?: { startAt: string; dueAt: string }) {
   return makeTaskSchema(messages, phase).safeParse(values).error?.issues.map((issue) => issue.message) ?? []
 }
 
 const phase = { startAt: new Date(2026, 11, 1, 8, 0).toISOString(), dueAt: new Date(2026, 11, 15, 18, 0).toISOString() }
-const valid = { name: 'Pour', startAt: '2026-12-02T08:00', dueAt: '2026-12-10T18:00', assigneeAccessId: 'a-1' }
+const valid = { name: 'Pour', startAt: '2026-12-02T08:00', dueAt: '2026-12-10T18:00' }
+const sameTeam = [{ accessId: 'a-1', taskRole: 'LEAD' as const }]
 
 describe('task form', () => {
-  it('requires a name, a start, a due date and time and an assignee', () => {
-    expect(issues({ name: '', startAt: '', dueAt: '', assigneeAccessId: '' })).toEqual(['name', 'start', 'due', 'assignee'])
+  it('requires a name, a start and a due date and time', () => {
+    expect(issues({ name: '', startAt: '', dueAt: '' })).toEqual(['name', 'start', 'due'])
     expect(issues(valid)).toEqual([])
   })
 
@@ -53,22 +53,25 @@ describe('task form', () => {
     expect(issues({ ...valid, startAt: '2026-12-01T08:00' }, phase)).toEqual([])
   })
 
-  it('splits an edit into the PATCH fields and a reassignment, sending only changes', () => {
+  it('splits an edit into the PATCH fields and a new team, sending only changes', () => {
     const unchanged = {
       name: 'Pour slab',
       startAt: instantToLocalInput(task.startAt),
       dueAt: instantToLocalInput(task.dueAt),
-      assigneeAccessId: 'a-1',
     }
-    expect(buildTaskChanges(task, unchanged)).toEqual({ patch: {}, assigneeAccessId: null })
+    expect(buildTaskChanges(task, unchanged, sameTeam)).toEqual({ patch: {}, team: null })
 
-    expect(buildTaskChanges(task, { ...unchanged, name: ' Pour slab L2 ', assigneeAccessId: 'a-2' })).toEqual({
+    const team = [
+      { accessId: 'a-2', taskRole: 'LEAD' as const },
+      { accessId: 'a-1', taskRole: 'CREW' as const },
+    ]
+    expect(buildTaskChanges(task, { ...unchanged, name: ' Pour slab L2 ' }, team)).toEqual({
       patch: { name: 'Pour slab L2' },
-      assigneeAccessId: 'a-2',
+      team,
     })
-    expect(buildTaskChanges(task, { ...unchanged, startAt: '2026-11-21T08:00' })).toEqual({
+    expect(buildTaskChanges(task, { ...unchanged, startAt: '2026-11-21T08:00' }, sameTeam)).toEqual({
       patch: { startAt: new Date(2026, 10, 21, 8, 0).toISOString() },
-      assigneeAccessId: null,
+      team: null,
     })
   })
 
@@ -77,10 +80,9 @@ describe('task form', () => {
       name: task.name,
       startAt: instantToLocalInput(task.startAt),
       dueAt: instantToLocalInput(task.dueAt),
-      assigneeAccessId: 'a-1',
     }
-    expect(buildTaskChanges(task, { ...same, color: '#3b82f6' }).patch).toEqual({ color: '#3b82f6' })
-    expect(buildTaskChanges({ ...task, color: '#3b82f6' }, { ...same, color: '' }).patch).toEqual({ color: '' })
-    expect(buildTaskChanges({ ...task, color: '#3b82f6' }, { ...same, color: '#3b82f6' }).patch).toEqual({})
+    expect(buildTaskChanges(task, { ...same, color: '#3b82f6' }, sameTeam).patch).toEqual({ color: '#3b82f6' })
+    expect(buildTaskChanges({ ...task, color: '#3b82f6' }, { ...same, color: '' }, sameTeam).patch).toEqual({ color: '' })
+    expect(buildTaskChanges({ ...task, color: '#3b82f6' }, { ...same, color: '#3b82f6' }, sameTeam).patch).toEqual({})
   })
 })

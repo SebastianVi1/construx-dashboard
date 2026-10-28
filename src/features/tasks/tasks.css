@@ -182,3 +182,66 @@
   justify-content: flex-end;
   gap: 6px;
 }
+
+.task-team {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-team__more {
+  font-size: 12px;
+}
+
+.team-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.team-editor:focus-visible {
+  outline: 2px solid var(--cx-accent);
+  outline-offset: 4px;
+}
+
+.team-editor__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-editor__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-editor__name {
+  overflow-wrap: anywhere;
+}
+
+.team-editor__role {
+  width: auto;
+  min-width: 9.5rem;
+}
+
+@media (max-width: 480px) {
+  .team-editor__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .team-editor__role {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+}
