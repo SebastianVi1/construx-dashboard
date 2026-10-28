@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Locale } from '../../i18n'
+import { AuthApiError } from '../auth/authApi'
 import { moneyText } from '../materials/priceRules'
 
 export type BudgetValidationMessages = {
@@ -34,6 +35,39 @@ export function makeBudgetSchema(messages: BudgetValidationMessages) {
       if (issue) context.addIssue({ code: 'custom', message: messages[issue] })
     }),
   })
+}
+
+/** Phase and task budgets are optional: empty means "no budget", anything typed follows the budget rules. */
+export function optionalBudgetField(messages: BudgetValidationMessages) {
+  return z.string().superRefine((raw, context) => {
+    if (!raw.trim()) return
+    const issue = amountIssue(raw, { allowZero: true })
+    if (issue) context.addIssue({ code: 'custom', message: messages[issue] })
+  })
+}
+
+/** The validated optional input as the API value: null clears the budget. */
+export function optionalBudgetAmount(raw: string): number | null {
+  return raw.trim() ? budgetAmount(raw) : null
+}
+
+/** Whether the typed amount differs from the stored one, so the dialog only calls the budget endpoint when needed. */
+export function budgetChanged(current: number | null, raw: string): boolean {
+  return optionalBudgetAmount(raw) !== current
+}
+
+export type AllocationIssue = 'budgetExceeded' | 'budgetParentMissing'
+
+/**
+ * Budgets nest (site → phases → tasks). The server answers 400 `BUDGET_EXCEEDED` when an amount does not fit
+ * in what the parent has left, or drops below what the children hold, and `BUDGET_PARENT_MISSING` when the
+ * parent has no budget yet.
+ */
+export function allocationIssue(error: unknown): AllocationIssue | null {
+  if (!(error instanceof AuthApiError) || error.status !== 400) return null
+  if (error.code === 'BUDGET_EXCEEDED') return 'budgetExceeded'
+  if (error.code === 'BUDGET_PARENT_MISSING') return 'budgetParentMissing'
+  return null
 }
 
 /** The validated input as the number the API takes. */

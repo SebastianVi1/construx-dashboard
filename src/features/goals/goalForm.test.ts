@@ -13,6 +13,9 @@ const goal: Goal = {
   activityCount: 0,
   doneCount: 0,
   completed: false,
+  allocatedBudget: null,
+  allocatedToActivities: null,
+  unallocated: null,
 }
 
 describe('phase form', () => {
@@ -48,5 +51,20 @@ describe('phase form', () => {
     expect(buildGoalPatch(goal, { ...same, color: '#3b82f6' })).toEqual({ color: '#3b82f6' })
     expect(buildGoalPatch({ ...goal, color: '#3b82f6' }, { ...same, color: '' })).toEqual({ color: '' })
     expect(buildGoalPatch({ ...goal, color: '#3b82f6' }, { ...same, color: '#3b82f6' })).toEqual({})
+  })
+
+  it('validates an optional budget only when the budget messages are given', () => {
+    const budget = { required: 'required', invalid: 'invalid', decimals: 'decimals', max: 'max' }
+    const withBudget = makeGoalSchema(messages, 'color', budget)
+    const valid = { name: 'Slab', startAt: '2026-12-01T08:00', dueAt: '2026-12-15T18:00' }
+    expect(withBudget.safeParse({ ...valid, budget: '' }).success).toBe(true)
+    expect(withBudget.safeParse({ ...valid, budget: '2500.5' }).success).toBe(true)
+    expect(withBudget.safeParse({ ...valid, budget: '1.234' }).error?.issues[0].message).toBe('decimals')
+    expect(schema.safeParse({ ...valid, budget: 'anything' }).success).toBe(true)
+  })
+
+  it('never puts the budget in the phase patch', () => {
+    const same = { name: goal.name, startAt: instantToLocalInput(goal.startAt), dueAt: instantToLocalInput(goal.dueAt) }
+    expect(buildGoalPatch(goal, { ...same, budget: '100' })).toEqual({})
   })
 })

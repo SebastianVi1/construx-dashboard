@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
 import { AuthApiError, configureAuthApi } from '../auth/authApi'
-import { createGoal, deleteGoal, goalErrorKind, listGoals, shiftGoal, updateGoal, type Goal } from './goalsApi'
+import { createGoal, deleteGoal, goalErrorKind, listGoals, setGoalBudget, shiftGoal, updateGoal, type Goal } from './goalsApi'
 
 type Config = { withCredentials?: boolean; headers?: Record<string, string> }
 
@@ -15,6 +15,9 @@ const goal: Goal = {
   activityCount: 5,
   doneCount: 2,
   completed: false,
+  allocatedBudget: 500,
+  allocatedToActivities: 120.25,
+  unallocated: 379.75,
 }
 
 function stubApi(responses: { get?: (url: string) => unknown; send?: () => unknown } = {}) {
@@ -27,6 +30,30 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
 
 describe('phases API', () => {
   afterEach(() => mock.restore())
+
+  it('setGoalBudget: puts the amount (or null) on the phase budget endpoint', async () => {
+    const { send } = stubApi({ send: () => ({ status: 200, data: { ...goal, allocatedBudget: 800 } }) })
+    expect((await setGoalBudget('org-1', 'p-1', 'g-1', 800)).allocatedBudget).toBe(800)
+    const [url, body] = send.mock.calls[0] as unknown as [string, unknown]
+    expect(url).toBe('/api/organizations/org-1/projects/p-1/goals/g-1/budget')
+    expect(body).toEqual({ allocatedBudget: 800 })
+    await setGoalBudget('org-1', 'p-1', 'g-1', null)
+    expect((send.mock.calls[1] as unknown as [string, unknown])[1]).toEqual({ allocatedBudget: null })
+  })
+
+  it('reads phases without budget fields (hidden or older backends) as null', async () => {
+    const bare: Partial<Goal> = { ...goal }
+    delete bare.allocatedBudget
+    delete bare.allocatedToActivities
+    delete bare.unallocated
+    stubApi({ get: () => ({ status: 200, data: [bare] }) })
+    expect((await listGoals('org-1', 'p-1'))[0]).toEqual({ ...goal, allocatedBudget: null, allocatedToActivities: null, unallocated: null })
+  })
+
+  it('goalErrorKind: tells allocation errors apart from date errors', () => {
+    expect(goalErrorKind(new AuthApiError(400, undefined, 'BUDGET_EXCEEDED'))).toBe('budgetExceeded')
+    expect(goalErrorKind(new AuthApiError(400, undefined, 'BUDGET_PARENT_MISSING'))).toBe('budgetParentMissing')
+  })
 
   it('includes an optional color when creating a record from the dialog', async () => {
     const { send } = stubApi({ send: () => ({ status: 201, data: { ...goal, color: '#3b82f6' } }) })

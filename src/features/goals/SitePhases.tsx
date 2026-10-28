@@ -3,14 +3,16 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
+import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import { usePermissions } from '../permissions'
+import { budgetText } from '../sites/budgetRules'
 import { ProgressMeter } from '../sites/SiteBits'
 import { siteProgress } from '../sites/siteHelpers'
 import type { SiteAccess } from '../sites/sitesApi'
 import { PhaseTasks } from '../tasks/PhaseTasks'
 import { taskStatuses, type TaskFilter, type TaskStatus } from '../tasks/tasksApi'
 import { dueText, isOverdue } from './dueAt'
-import { deleteGoal, goalErrorKind, listGoals, type Goal } from './goalsApi'
+import { deleteGoal, goalErrorKind, listGoals, setGoalBudget, type Goal } from './goalsApi'
 import { PhaseDialog } from './PhaseDialog'
 import './goals.css'
 
@@ -23,12 +25,17 @@ type SitePhasesProps = {
   onProgressChanged: () => void
 }
 
-type Dialog = { kind: 'create' } | { kind: 'edit'; goal: Goal } | { kind: 'delete'; goal: Goal } | null
+type Dialog =
+  | { kind: 'create' }
+  | { kind: 'edit'; goal: Goal }
+  | { kind: 'budget'; goal: Goal }
+  | { kind: 'delete'; goal: Goal }
+  | null
 
 /**
  * Phases of a site in due order, each with its task board. Viewing needs
  * VIEW_GOAL; adding, editing and deleting phases MANAGE_GOAL; the boards
- * VIEW_ACTIVITY.
+ * VIEW_ACTIVITY. Budgets show with VIEW_BUDGET and change with MANAGE_BUDGET.
  */
 export function SitePhases({ organizationId, siteId, people, onSite, onProgressChanged }: SitePhasesProps) {
   const { messages: m, locale } = useLocale()
@@ -40,6 +47,8 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
   const canView = can('VIEW_GOAL', siteId, { onSite })
   const canManage = can('MANAGE_GOAL', siteId, { onSite })
   const canViewTasks = can('VIEW_ACTIVITY', siteId, { onSite })
+  const canViewBudget = can('VIEW_BUDGET')
+  const canManageBudget = can('MANAGE_BUDGET')
   const goals = useRemoteData(canView ? `${organizationId}:${siteId}:goals` : null, () =>
     listGoals(organizationId, siteId),
   )
@@ -68,6 +77,13 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
     )
     setDialog(null)
     setNotice(created ? formatMessage(t.created, { name: goal.name }) : t.saved)
+  }
+
+  async function saveBudget(goal: Goal, amount: number | null) {
+    const updated = await setGoalBudget(organizationId, siteId, goal.id, amount)
+    goals.update((list) => list.map((item) => (item.id === updated.id ? updated : item)))
+    setDialog(null)
+    setNotice(formatMessage(t.budget.saved, { name: updated.name }))
   }
 
   async function remove(goal: Goal) {
@@ -181,32 +197,59 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
                               <span className="phase__muted">{t.noTasks}</span>
                             )
                           ) : null}
+                          {canViewBudget ? (
+                            <span className="phase__muted data-mono">
+                              {goal.allocatedBudget === null
+                                ? t.budget.none
+                                : formatMessage(t.budget.facts, {
+                                    budget: budgetText(goal.allocatedBudget, locale),
+                                    left: budgetText(goal.unallocated ?? 0, locale),
+                                  })}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
-                      {canManage ? (
+                      {canManage || canManageBudget ? (
                         <div className="phase__actions">
-                          <button
-                            type="button"
-                            className="task-link"
-                            aria-label={formatMessage(t.editLabel, { name: goal.name })}
-                            onClick={() => {
-                              setNotice(null)
-                              setDialog({ kind: 'edit', goal })
-                            }}
-                          >
-                            {t.edit}
-                          </button>
-                          <button
-                            type="button"
-                            className="task-link task-link--danger"
-                            aria-label={formatMessage(t.deleteLabel, { name: goal.name })}
-                            onClick={() => {
-                              setDeleteError(null)
-                              setDialog({ kind: 'delete', goal })
-                            }}
-                          >
-                            {t.delete}
-                          </button>
+                          {canManageBudget ? (
+                            <button
+                              type="button"
+                              className="task-link"
+                              aria-label={formatMessage(t.budget.actionLabel, { name: goal.name })}
+                              onClick={() => {
+                                setNotice(null)
+                                setDialog({ kind: 'budget', goal })
+                              }}
+                            >
+                              {t.budget.action}
+                            </button>
+                          ) : null}
+                          {canManage ? (
+                            <>
+                              <button
+                                type="button"
+                                className="task-link"
+                                aria-label={formatMessage(t.editLabel, { name: goal.name })}
+                                onClick={() => {
+                                  setNotice(null)
+                                  setDialog({ kind: 'edit', goal })
+                                }}
+                              >
+                                {t.edit}
+                              </button>
+                              <button
+                                type="button"
+                                className="task-link task-link--danger"
+                                aria-label={formatMessage(t.deleteLabel, { name: goal.name })}
+                                onClick={() => {
+                                  setDeleteError(null)
+                                  setDialog({ kind: 'delete', goal })
+                                }}
+                              >
+                                {t.delete}
+                              </button>
+                            </>
+                          ) : null}
                         </div>
                       ) : null}
                     </header>
@@ -240,7 +283,18 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
           organizationId={organizationId}
           siteId={siteId}
           goal={dialog.kind === 'edit' ? dialog.goal : undefined}
+          canManageBudget={canManageBudget}
           onSaved={saved}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog?.kind === 'budget' ? (
+        <BudgetAmountDialog
+          title={t.budget.dialogTitle}
+          description={t.budget.dialogBody}
+          current={dialog.goal.allocatedBudget}
+          save={(amount) => saveBudget(dialog.goal, amount)}
+          errorMessage={(error) => t.error[goalErrorKind(error)]}
           onClose={() => setDialog(null)}
         />
       ) : null}

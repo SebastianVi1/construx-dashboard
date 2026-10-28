@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { localInputToInstant } from './dueAt'
 import type { Goal, GoalInput } from './goalsApi'
 import { colorSchema } from '../gantt/barColor'
+import { optionalBudgetField, type BudgetValidationMessages } from '../sites/budgetRules'
 
 export type GoalValidationMessages = {
   nameRequired: string
@@ -11,7 +12,8 @@ export type GoalValidationMessages = {
   startAfterDue: string
 }
 
-export type GoalValues = { color?: string; name: string; startAt: string; dueAt: string }
+/** `budget` is only on the form for roles with MANAGE_BUDGET; it is saved through its own endpoint. */
+export type GoalValues = { color?: string; name: string; startAt: string; dueAt: string; budget?: string }
 
 /** Name trimmed to 1..160 characters (backend rule); the `datetime-local` value must be complete. */
 export function nameSchema(messages: { nameRequired: string; nameMax: string }) {
@@ -29,13 +31,19 @@ export function startNotAfterDue(values: { startAt: string; dueAt: string }): bo
   return !start || !due || Date.parse(start) <= Date.parse(due)
 }
 
-export function makeGoalSchema(messages: GoalValidationMessages, invalidColor = 'Invalid color') {
+/** With `budget` messages the optional budget field is validated; without them it is ignored. */
+export function makeGoalSchema(
+  messages: GoalValidationMessages,
+  invalidColor = 'Invalid color',
+  budget?: BudgetValidationMessages,
+) {
   return z
     .object({
       color: colorSchema(invalidColor),
       name: nameSchema(messages),
       startAt: dueSchema(messages.startRequired),
       dueAt: dueSchema(messages.dueRequired),
+      budget: budget ? optionalBudgetField(budget).optional() : z.string().optional(),
     })
     .refine(startNotAfterDue, { message: messages.startAfterDue, path: ['startAt'] })
 }

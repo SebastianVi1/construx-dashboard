@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'bun:test'
 import { messages } from '../../i18n/messages'
-import { budgetAmount, budgetText, budgetToInput, makeBudgetSchema } from './budgetRules'
+import { AuthApiError } from '../auth/authApi'
+import {
+  allocationIssue,
+  budgetAmount,
+  budgetChanged,
+  budgetText,
+  budgetToInput,
+  makeBudgetSchema,
+  optionalBudgetAmount,
+  optionalBudgetField,
+} from './budgetRules'
 
 const v = messages.en.sites.budget.validation
 
@@ -41,5 +51,40 @@ describe('site budget display', () => {
   it('prefills the dialog with the stored amount, or nothing', () => {
     expect(budgetToInput(250000.5)).toBe('250000.5')
     expect(budgetToInput(null)).toBe('')
+  })
+})
+
+describe('optional budget field', () => {
+  function optionalError(raw: string) {
+    const result = optionalBudgetField(v).safeParse(raw)
+    return result.success ? null : result.error.issues[0].message
+  }
+
+  it('accepts an empty value as "no budget" and validates anything typed', () => {
+    expect(optionalError('')).toBeNull()
+    expect(optionalError('  ')).toBeNull()
+    expect(optionalError('0')).toBeNull()
+    expect(optionalError('-1')).toBe(v.invalid)
+    expect(optionalError('1.234')).toBe(v.decimals)
+    expect(optionalBudgetAmount(' ')).toBeNull()
+    expect(optionalBudgetAmount(' 12.5 ')).toBe(12.5)
+  })
+
+  it('budgetChanged compares the typed amount with the stored one', () => {
+    expect(budgetChanged(null, '')).toBe(false)
+    expect(budgetChanged(null, '0')).toBe(true)
+    expect(budgetChanged(500, '500.00')).toBe(false)
+    expect(budgetChanged(500, '')).toBe(true)
+    expect(budgetChanged(500, '501')).toBe(true)
+  })
+})
+
+describe('allocation errors', () => {
+  it('maps the server allocation codes and ignores everything else', () => {
+    expect(allocationIssue(new AuthApiError(400, undefined, 'BUDGET_EXCEEDED'))).toBe('budgetExceeded')
+    expect(allocationIssue(new AuthApiError(400, undefined, 'BUDGET_PARENT_MISSING'))).toBe('budgetParentMissing')
+    expect(allocationIssue(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBeNull()
+    expect(allocationIssue(new AuthApiError(403))).toBeNull()
+    expect(allocationIssue(new Error('x'))).toBeNull()
   })
 })

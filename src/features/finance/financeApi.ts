@@ -24,6 +24,9 @@ export const budgetSummarySchema = z.object({
   allocatedBudget: z.number().nullable(),
   spent: z.number(),
   remaining: z.number().nullable(),
+  /** Sum of the phase budgets, and what the site has left to give phases (null without a budget). */
+  allocatedToPhases: z.number().default(0),
+  unallocated: z.number().nullable().default(null),
   byCategory: z.array(z.object({ category: z.enum(expenseCategories), amount: z.number() })),
 })
 

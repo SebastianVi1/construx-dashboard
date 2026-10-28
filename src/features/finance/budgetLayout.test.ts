@@ -8,6 +8,8 @@ function summary(allocatedBudget: number | null, amounts: [number, number, numbe
     allocatedBudget,
     spent,
     remaining: allocatedBudget === null ? null : allocatedBudget - spent,
+    allocatedToPhases: 0,
+    unallocated: allocatedBudget,
     byCategory: (['MATERIALS', 'LABOR', 'EQUIPMENT', 'OTHER'] as const).map((category, index) => ({
       category,
       amount: amounts[index],
