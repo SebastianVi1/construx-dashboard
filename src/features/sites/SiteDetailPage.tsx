@@ -165,6 +165,7 @@ export function SiteDetailPage() {
           site={current}
           canManage={can('MANAGE_BUDGET')}
           onSaved={saved}
+          onNotice={setSavedNotice}
         />
       ) : null}
 

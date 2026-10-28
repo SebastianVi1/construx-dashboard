@@ -1,0 +1,277 @@
+/* Site budget: figures beside a quick stacked bar, then the expenses behind it. */
+
+.budget-overview {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: var(--cx-section-gap);
+  align-items: start;
+  padding: 20px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+}
+
+.budget-figures dl {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.budget-figures dt {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.budget-figures__value {
+  margin: 2px 0 0;
+  font-family: var(--cx-font-data);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  line-height: 22px;
+}
+
+.budget-figures__value--lead {
+  font-family: var(--cx-font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 30px;
+  overflow-wrap: anywhere;
+}
+
+.budget-figures [data-status='overrun'] dt,
+.budget-figures [data-status='overrun'] .budget-figures__value {
+  color: var(--cx-danger);
+}
+
+.budget-figures__note {
+  margin: 12px 0 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.budget-figures__note:empty {
+  display: none;
+}
+
+.budget-chart {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.budget-chart__caption {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.budget-chart__plot {
+  position: relative;
+  padding-top: 30px;
+}
+
+.budget-chart__bar {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 20px;
+}
+
+.budget-chart__segment {
+  min-width: 4px;
+  flex-basis: 0;
+  background: var(--cx-chart-track);
+  transition: opacity 120ms ease-out;
+}
+
+.budget-chart__segment:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.budget-chart__segment:last-of-type {
+  border-radius: 0 4px 4px 0;
+}
+
+.budget-chart__segment:only-of-type {
+  border-radius: 4px;
+}
+
+.budget-chart__segment[data-dim='true'] {
+  opacity: 0.35;
+}
+
+[data-category='MATERIALS'] {
+  --series: var(--cx-chart-1);
+}
+
+[data-category='LABOR'] {
+  --series: var(--cx-chart-2);
+}
+
+[data-category='EQUIPMENT'] {
+  --series: var(--cx-chart-3);
+}
+
+[data-category='OTHER'] {
+  --series: var(--cx-chart-4);
+}
+
+.budget-chart__segment[data-category] {
+  background: var(--series);
+}
+
+.budget-chart__marker {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--cx-ink);
+}
+
+.budget-chart__marker span {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--cx-ink);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.budget-chart__tooltip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  pointer-events: none;
+}
+
+.budget-chart__tooltip[data-visible='true'] {
+  opacity: 1;
+}
+
+.budget-chart__legend {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.budget-chart__legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto minmax(0, 9rem);
+  gap: 10px;
+  align-items: center;
+  padding: 4px 6px;
+  border-radius: var(--cx-radius-sm);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.budget-chart__legend li[data-active='true'] {
+  background: var(--cx-surface-raised);
+}
+
+.budget-chart__swatch {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--series, var(--cx-chart-track));
+}
+
+.budget-chart__swatch--remaining {
+  border: 1px solid var(--cx-border-strong);
+  background: var(--cx-chart-track);
+}
+
+.budget-chart__value {
+  text-align: right;
+}
+
+.budget-chart__share {
+  color: var(--cx-muted);
+  font-size: 13px;
+  text-align: right;
+}
+
+.site-budget {
+  min-width: 0;
+}
+
+/* minmax(0, 1fr) lets the table scroll inside its box instead of widening the page. */
+.site-budget__expenses {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Contains the visually hidden "Actions" header, which is absolutely positioned. */
+.site-budget .table-scroll {
+  position: relative;
+}
+
+.site-budget__expenses h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.site-budget__empty {
+  margin: 0;
+  color: var(--cx-muted);
+}
+
+.expense-table td:first-child {
+  white-space: nowrap;
+}
+
+.data-table .expense-table__amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.expense-category {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .budget-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 16px;
+  }
+
+  .budget-chart__legend li {
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+  }
+
+  .budget-chart__share {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-chart__segment,
+  .budget-chart__tooltip {
+    transition: none;
+  }
+}
