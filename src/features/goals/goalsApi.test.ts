@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
 import { AuthApiError, configureAuthApi } from '../auth/authApi'
-import { createGoal, deleteGoal, goalErrorKind, listGoals, updateGoal, type Goal } from './goalsApi'
+import { createGoal, deleteGoal, goalErrorKind, listGoals, shiftGoal, updateGoal, type Goal } from './goalsApi'
 
 type Config = { withCredentials?: boolean; headers?: Record<string, string> }
 
@@ -10,6 +10,7 @@ const goal: Goal = {
   id: 'g-1',
   projectId: 'p-1',
   name: 'Foundations',
+  startAt: '2026-11-01T08:00:00Z',
   dueAt: '2026-12-15T23:59:00Z',
   activityCount: 5,
   doneCount: 2,
@@ -27,6 +28,31 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
 describe('phases API', () => {
   afterEach(() => mock.restore())
 
+  it('includes an optional color when creating a record from the dialog', async () => {
+    const { send } = stubApi({ send: () => ({ status: 201, data: { ...goal, color: '#3b82f6' } }) })
+    expect((await createGoal('org-1', 'p-1', { name: goal.name, startAt: goal.startAt, dueAt: goal.dueAt, color: '#3b82f6' })).color).toBe('#3b82f6')
+    expect((send.mock.calls[0] as unknown as [string, { color: string }])[1].color).toBe('#3b82f6')
+  })
+
+  it('reloads independent colors and resets only the selected bar', async () => {
+    const colored = { ...goal, color: '#123abc' }
+    const other = { ...goal, id: 'other', color: '#abcdef' }
+    const { send } = stubApi({
+      get: () => ({ status: 200, data: [colored, other] }),
+      send: () => ({ status: 200, data: { ...goal, color: null } }),
+    })
+    expect(await listGoals('org-1', 'p-1')).toEqual([colored, other])
+    expect((await updateGoal('org-1', 'p-1', 'g-1', { color: '' })).color).toBeNull()
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ color: '' })
+  })
+
+  it('persists an individual bar color and reads it from the response', async () => {
+    const colored = { ...goal, color: '#123abc' }
+    const { send } = stubApi({ send: () => ({ status: 200, data: colored }) })
+    expect(await updateGoal('org-1', 'p-1', 'g-1', { color: '#123abc' })).toEqual(colored)
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ color: '#123abc' })
+  })
+
   it('listGoals: gets the phases of a site, allowing null progress counts', async () => {
     const hidden = { ...goal, activityCount: null, doneCount: null }
     const { get } = stubApi({ get: () => ({ status: 200, data: [goal, hidden] }) })
@@ -35,13 +61,17 @@ describe('phases API', () => {
     expect(get.mock.calls[0][0]).toBe('/api/organizations/org-1/projects/p-1/goals')
   })
 
-  it('createGoal: posts the trimmed name and the due instant with CSRF and expects 201', async () => {
+  it('createGoal: posts the trimmed name, the start and due instants with CSRF and expects 201', async () => {
     const { send } = stubApi({ send: () => ({ status: 201, data: goal }) })
 
-    expect(await createGoal('org-1', 'p-1', { name: '  Foundations ', dueAt: '2026-12-15T23:59:00.000Z' })).toEqual(goal)
+    expect(await createGoal('org-1', 'p-1', {
+      name: '  Foundations ',
+      startAt: '2026-11-01T08:00:00.000Z',
+      dueAt: '2026-12-15T23:59:00.000Z',
+    })).toEqual(goal)
     const [url, body, config] = send.mock.calls[0] as unknown as [string, unknown, Config]
     expect(url).toBe('/api/organizations/org-1/projects/p-1/goals')
-    expect(body).toEqual({ name: 'Foundations', dueAt: '2026-12-15T23:59:00.000Z' })
+    expect(body).toEqual({ name: 'Foundations', startAt: '2026-11-01T08:00:00.000Z', dueAt: '2026-12-15T23:59:00.000Z' })
     expect(config.headers?.['X-XSRF-TOKEN']).toBe('proof')
   })
 
@@ -52,6 +82,24 @@ describe('phases API', () => {
     const [url, body] = send.mock.calls[0] as unknown as [string, unknown]
     expect(url).toBe('/api/organizations/org-1/projects/p-1/goals/g%2F1')
     expect(body).toEqual({ name: 'Slab' })
+  })
+
+  it('updateGoal: can move the start alone', async () => {
+    const { send } = stubApi({ send: () => ({ status: 200, data: goal }) })
+    await updateGoal('org-1', 'p-1', 'g-1', { startAt: '2026-11-02T08:00:00.000Z' })
+
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ startAt: '2026-11-02T08:00:00.000Z' })
+  })
+
+  it('shiftGoal: posts the day offset to the shift endpoint and expects 200', async () => {
+    const moved = { ...goal, startAt: '2026-11-04T08:00:00Z', dueAt: '2026-12-18T23:59:00Z' }
+    const { send } = stubApi({ send: () => ({ status: 200, data: moved }) })
+
+    expect(await shiftGoal('org-1', 'p-1', 'g/1', 3)).toEqual(moved)
+    const [url, body, config] = send.mock.calls[0] as unknown as [string, unknown, Config]
+    expect(url).toBe('/api/organizations/org-1/projects/p-1/goals/g%2F1/shift')
+    expect(body).toEqual({ days: 3 })
+    expect(config.headers?.['X-XSRF-TOKEN']).toBe('proof')
   })
 
   it('deleteGoal: deletes one phase and expects 204', async () => {

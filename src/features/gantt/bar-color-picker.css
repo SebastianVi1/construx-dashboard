@@ -1,0 +1,123 @@
+.bar-color {
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-sm);
+}
+
+.bar-color legend {
+  padding: 0 6px;
+  color: var(--cx-ink);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.bar-color__hint {
+  margin: 0 0 16px;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.bar-color__palette {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bar-color__swatch {
+  min-width: 0;
+  min-height: 36px;
+  border: 2px solid transparent;
+  border-radius: var(--cx-radius-sm);
+  background: var(--bar-color);
+  color: var(--cx-canvas);
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.bar-color__swatch[aria-pressed='true'] {
+  outline: 2px solid var(--cx-ink);
+  outline-offset: 3px;
+}
+
+.bar-color__swatch:focus-visible {
+  outline: 3px solid var(--cx-accent);
+  outline-offset: 3px;
+}
+
+.bar-color__swatch[data-ink='light'] {
+  color: var(--cx-ink);
+}
+
+.bar-color__swatch:disabled {
+  cursor: default;
+}
+
+.bar-color__custom {
+  display: flex;
+  align-items: start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.bar-color__custom > .form-field {
+  flex: 1 1 150px;
+}
+
+.bar-color__custom > button,
+.bar-color__picker {
+  margin-top: 24px;
+}
+
+/* The native picker: any color, shown as a large swatch with its label. */
+.bar-color__picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--cx-ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.bar-color__picker input {
+  width: 44px;
+  height: 44px;
+  padding: 2px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-canvas);
+  cursor: pointer;
+}
+
+.bar-color__picker input:focus-visible {
+  outline: 2px solid var(--cx-safety-400);
+  outline-offset: 2px;
+}
+
+.bar-color__preview {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-canvas);
+}
+
+.bar-color__preview span {
+  display: block;
+  width: 85%;
+  padding: 7px 12px;
+  border-radius: var(--cx-radius-sm);
+  background: var(--bar-color, var(--cx-accent));
+  box-shadow: 0 0 12px color-mix(in oklab, var(--bar-color, var(--cx-accent)) 55%, transparent);
+  color: var(--cx-canvas);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bar-color__preview[data-ink='light'] span {
+  color: var(--cx-ink);
+}

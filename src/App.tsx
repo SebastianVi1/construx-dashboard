@@ -15,6 +15,7 @@ const SitesPage = lazy(() => import('./features/sites/SitesPage').then((module) 
 const SiteDetailPage = lazy(() =>
   import('./features/sites/SiteDetailPage').then((module) => ({ default: module.SiteDetailPage })),
 )
+const PhasesPage = lazy(() => import('./features/goals/PhasesPage').then((module) => ({ default: module.PhasesPage })))
 const MembersPage = lazy(() => import('./features/members/MembersPage').then((module) => ({ default: module.MembersPage })))
 const MyTasksPage = lazy(() => import('./features/tasks/MyTasksPage').then((module) => ({ default: module.MyTasksPage })))
 const MaterialsPage = lazy(() =>
@@ -46,6 +47,7 @@ function App() {
         <Route index element={<WorkspaceHome />} />
         <Route path="/sites" element={<SitesPage />} />
         <Route path="/sites/:siteId" element={<SiteDetailPage />} />
+        <Route path="/sites/:siteId/phases" element={<PhasesPage />} />
         <Route path="/tasks" element={<MyTasksPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
         <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
