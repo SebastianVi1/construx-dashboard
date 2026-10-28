@@ -42,6 +42,8 @@
 }
 
 .auth-locale {
+  display: flex;
+  gap: 8px;
   position: absolute;
   top: 24px;
   right: 24px;
@@ -74,7 +76,7 @@
   border-radius: var(--cx-radius-lg);
   padding: 32px;
   position: relative;
-  box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.6);
+  box-shadow: 0 24px 48px -24px var(--cx-shadow-color);
   animation: auth-panel-in 180ms ease-out;
 }
 
@@ -84,7 +86,7 @@
   position: absolute;
   inset: 8px;
   pointer-events: none;
-  --c: var(--cx-safety-500);
+  --c: var(--cx-brand);
   background:
     linear-gradient(var(--c), var(--c)) top left / 12px 1px,
     linear-gradient(var(--c), var(--c)) top left / 1px 12px,
@@ -136,11 +138,11 @@
 
 .auth-page .auth-brand:hover,
 .auth-switch a:hover {
-  color: var(--cx-blueprint-300);
+  color: var(--cx-accent-hover);
 }
 
 .auth-page a:focus-visible {
-  outline: 2px solid var(--cx-safety-400);
+  outline: 2px solid var(--cx-focus);
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -163,7 +165,7 @@
 }
 
 .auth-forgot a:hover {
-  color: var(--cx-blueprint-300);
+  color: var(--cx-accent-hover);
 }
 
 .auth-accepted {

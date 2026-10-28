@@ -21,7 +21,7 @@
  */
 .gantt,
 .gantt__bar {
-  --gantt-bar: var(--bar-color, var(--cx-accent));
+  --gantt-bar: var(--bar-color, var(--cx-bar-default));
   --gantt-bar-bright: color-mix(in oklab, var(--gantt-bar) 70%, var(--cx-ink));
   --gantt-bar-soft: color-mix(in oklab, var(--gantt-bar) 14%, transparent);
   --gantt-bar-line: color-mix(in oklab, var(--gantt-bar) 45%, transparent);
@@ -87,7 +87,7 @@
 .gantt__swatch[data-kind='today'] {
   width: 0;
   height: 16px;
-  border-left: 1px dashed var(--cx-ink);
+  border-left: 2px solid var(--cx-brand);
 }
 
 /* The chart scrolls sideways inside itself; the page never does. */
@@ -171,8 +171,8 @@
 
 .gantt__flag[data-edge='today'] {
   transform: translateX(-50%);
-  background: var(--cx-ink);
-  color: var(--cx-canvas);
+  background: var(--cx-brand);
+  color: var(--cx-on-brand);
 }
 
 .gantt__body {
@@ -208,7 +208,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  border-left: 1px dashed var(--cx-ink);
+  border-left: 2px solid var(--cx-brand);
 }
 
 .gantt__rows {
@@ -310,7 +310,7 @@
 }
 
 .gantt__bar:focus-visible {
-  outline: 2px solid var(--cx-safety-400);
+  outline: 2px solid var(--cx-focus);
   outline-offset: 3px;
 }
 
@@ -355,7 +355,7 @@
   box-shadow:
     0 0 16px 1px var(--gantt-glow),
     0 0 3px var(--gantt-bar);
-  color: var(--cx-canvas);
+  color: var(--cx-on-bar);
   font-weight: 600;
 }
 
@@ -469,7 +469,7 @@
   border-left: 3px solid var(--cx-success);
   border-radius: var(--cx-radius-md);
   background: var(--cx-surface-raised);
-  box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.5);
+  box-shadow: 0 16px 40px -16px var(--cx-shadow-color);
   color: var(--cx-ink);
   font-size: 14px;
   line-height: 20px;

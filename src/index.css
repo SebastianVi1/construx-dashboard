@@ -3,40 +3,62 @@
 @import '@fontsource-variable/jetbrains-mono';
 
 :root {
-  /* Blueprint palette, mirrored from construx-landing-page/src/styles/global.css */
+  /* Base palette. Safety orange and blueprint blue are shared with
+     construx-landing-page; the concrete greys are dashboard-only. */
+  --cx-concrete-50: #f3f4f1;
+  --cx-concrete-100: #eceee9;
+  --cx-concrete-300: #d3d8d0;
+  --cx-concrete-400: #b4bbb1;
+  --cx-concrete-700: #545c56;
+  --cx-concrete-950: #18201c;
   --cx-ink-950: #060d1a;
   --cx-ink-900: #0a1628;
   --cx-ink-800: #102039;
   --cx-ink-700: #1a2f52;
   --cx-ink-600: #2a4373;
+  --cx-blueprint-700: #163a87;
+  --cx-blueprint-600: #1b47a6;
+  --cx-blueprint-500: #2257c9;
   --cx-blueprint-400: #6fa8ff;
   --cx-blueprint-300: #9cc2ff;
   --cx-paper: #f3f6fb;
   --cx-paper-dim: #c4cfe0;
-  --cx-safety-600: #e5640a;
+  --cx-safety-700: #b4500a;
   --cx-safety-500: #ff7a1a;
-  --cx-safety-400: #ff9446;
 
-  /* Semantic roles consumed by components */
-  --cx-canvas: var(--cx-ink-950);
-  --cx-surface: var(--cx-ink-900);
-  --cx-surface-raised: var(--cx-ink-800);
-  --cx-ink: var(--cx-paper);
-  --cx-muted: var(--cx-paper-dim);
-  --cx-border: var(--cx-ink-700);
-  --cx-border-strong: var(--cx-ink-600);
-  --cx-primary: var(--cx-safety-500);
-  --cx-primary-hover: var(--cx-safety-400);
-  --cx-primary-pressed: var(--cx-safety-600);
-  --cx-primary-subtle: rgb(255 122 26 / 0.14);
-  --cx-on-primary: var(--cx-ink-950);
-  --cx-accent: var(--cx-blueprint-400);
-  --cx-accent-subtle: rgb(111 168 255 / 0.14);
-  --cx-success: #3ddc97;
-  --cx-success-subtle: rgb(61 220 151 / 0.12);
-  --cx-warning: #ffc24a;
-  --cx-danger: #ff7b8a;
-  --cx-danger-subtle: rgb(255 123 138 / 0.12);
+  /* Semantic roles consumed by components. Each layer has one job:
+     structure (canvas..border), interaction (primary, accent, focus),
+     brand (logo marks and "today"), status (success, warning, danger).
+     Light is the default: the dashboard is read on phones on site, outdoors. */
+  --cx-canvas: var(--cx-concrete-50);
+  --cx-surface: #ffffff;
+  --cx-surface-raised: var(--cx-concrete-100);
+  --cx-ink: var(--cx-concrete-950);
+  --cx-muted: var(--cx-concrete-700);
+  --cx-border: var(--cx-concrete-300);
+  --cx-border-strong: var(--cx-concrete-400);
+  --cx-primary: var(--cx-blueprint-500);
+  --cx-primary-hover: var(--cx-blueprint-600);
+  --cx-primary-pressed: var(--cx-blueprint-700);
+  --cx-primary-subtle: rgb(34 87 201 / 0.1);
+  --cx-on-primary: #ffffff;
+  --cx-accent: var(--cx-blueprint-500);
+  --cx-accent-hover: var(--cx-blueprint-600);
+  --cx-accent-subtle: rgb(34 87 201 / 0.1);
+  --cx-focus: var(--cx-blueprint-500);
+  --cx-brand: var(--cx-safety-500);
+  --cx-brand-text: var(--cx-safety-700);
+  --cx-on-brand: var(--cx-concrete-950);
+  --cx-success: #1f7a4f;
+  --cx-success-subtle: rgb(31 122 79 / 0.12);
+  --cx-warning: #9a6200;
+  --cx-danger: #c23b3b;
+  --cx-danger-subtle: rgb(194 59 59 / 0.1);
+  --cx-shadow-color: rgb(24 32 28 / 0.16);
+  /* Gantt bars are data, not controls: they keep their own default hue
+     and a dark label that reads on every swatch in both themes. */
+  --cx-bar-default: var(--cx-blueprint-400);
+  --cx-on-bar: var(--cx-concrete-950);
   --cx-radius-sm: 0.375rem;
   --cx-radius-md: 0.5rem;
   --cx-radius-lg: 0.75rem;
@@ -47,6 +69,36 @@
   --cx-section-gap: 2rem;
   --cx-header-height: 56px;
   --cx-tabbar-height: 64px;
+
+  color-scheme: light;
+}
+
+/* Blueprint night theme, the landing page look. Not the default. */
+:root[data-theme='dark'] {
+  --cx-canvas: var(--cx-ink-950);
+  --cx-surface: var(--cx-ink-900);
+  --cx-surface-raised: var(--cx-ink-800);
+  --cx-ink: var(--cx-paper);
+  --cx-muted: var(--cx-paper-dim);
+  --cx-border: var(--cx-ink-700);
+  --cx-border-strong: var(--cx-ink-600);
+  --cx-primary: var(--cx-blueprint-400);
+  --cx-primary-hover: var(--cx-blueprint-300);
+  --cx-primary-pressed: var(--cx-blueprint-500);
+  --cx-primary-subtle: rgb(111 168 255 / 0.14);
+  --cx-on-primary: var(--cx-ink-950);
+  --cx-accent: var(--cx-blueprint-400);
+  --cx-accent-hover: var(--cx-blueprint-300);
+  --cx-accent-subtle: rgb(111 168 255 / 0.14);
+  --cx-focus: var(--cx-blueprint-300);
+  --cx-brand-text: var(--cx-safety-500);
+  --cx-on-brand: var(--cx-ink-950);
+  --cx-success: #3ddc97;
+  --cx-success-subtle: rgb(61 220 151 / 0.12);
+  --cx-warning: #ffc24a;
+  --cx-danger: #ff7b8a;
+  --cx-danger-subtle: rgb(255 123 138 / 0.12);
+  --cx-shadow-color: var(--cx-shadow-color);
 
   color-scheme: dark;
 }
@@ -64,6 +116,10 @@ body,
   min-height: 100%;
 }
 
+html {
+  background: var(--cx-canvas);
+}
+
 body {
   font: 16px/1.5 var(--cx-font-sans);
   color: var(--cx-ink);
@@ -72,8 +128,41 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Night mode reads like a plan sheet: a fine grid with a heavier line every
+   fifth square, and a faint light falling from the top of the sheet. */
+:root[data-theme='dark'] body {
+  background-image:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgb(111 168 255 / 0.1), transparent 70%),
+    linear-gradient(to right, rgb(111 168 255 / 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(111 168 255 / 0.09) 1px, transparent 1px),
+    linear-gradient(to right, rgb(111 168 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(111 168 255 / 0.04) 1px, transparent 1px);
+  background-size: auto, 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-attachment: fixed;
+}
+
+/* Switching theme grows the new one as a circle from the switch (ThemeSwitcher). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: cx-theme-reveal 560ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@keyframes cx-theme-reveal {
+  from {
+    clip-path: circle(0 at var(--cx-reveal-x, 50%) var(--cx-reveal-y, 0));
+  }
+  to {
+    clip-path: circle(150vmax at var(--cx-reveal-x, 50%) var(--cx-reveal-y, 0));
+  }
+}
+
 :focus-visible {
-  outline: 2px solid var(--cx-safety-400);
+  outline: 2px solid var(--cx-focus);
   outline-offset: 3px;
 }
 

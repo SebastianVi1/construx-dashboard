@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { LocaleSwitcher, useLocale } from '../../i18n'
-import lockup from '../../assets/logo/lockup-horizontal-on-dark.svg'
+import { ThemeSwitcher, useTheme } from '../../theme'
+import lockup from '../../assets/logo/lockup-horizontal.svg'
+import lockupOnDark from '../../assets/logo/lockup-horizontal-on-dark.svg'
 import './auth.css'
 
 type AuthLayoutProps = {
@@ -12,15 +14,17 @@ type AuthLayoutProps = {
 
 export function AuthLayout({ title, description, children }: AuthLayoutProps) {
   const { messages: m } = useLocale()
+  const { theme } = useTheme()
 
   return (
     <main className="auth-page">
       <div className="auth-locale">
+        <ThemeSwitcher />
         <LocaleSwitcher />
       </div>
       <div className="auth-shell">
         <Link className="auth-brand" to="/" aria-label={m.auth.brandHome}>
-          <img className="auth-brand-logo" src={lockup} alt="Construx" height="32" />
+          <img className="auth-brand-logo" src={theme === 'dark' ? lockupOnDark : lockup} alt="Construx" height="32" />
         </Link>
 
         <section className="auth-panel" aria-labelledby="auth-title">
