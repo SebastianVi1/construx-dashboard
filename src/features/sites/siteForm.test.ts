@@ -14,6 +14,7 @@ const site: Site = {
   status: 'ACTIVE',
   activityCount: null,
   doneCount: null,
+  allocatedBudget: null,
 }
 
 function errorsOf(result: ReturnType<ReturnType<typeof makeSiteSchema>['safeParse']>) {

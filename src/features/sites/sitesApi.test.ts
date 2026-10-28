@@ -9,6 +9,7 @@ import {
   listSiteAccess,
   listSites,
   removeFromSite,
+  setSiteBudget,
   siteErrorKind,
   updateSite,
   type Site,
@@ -26,6 +27,7 @@ const site: Site = {
   status: 'ACTIVE',
   activityCount: 12,
   doneCount: 4,
+  allocatedBudget: 250000.5,
 }
 const access = {
   accessId: 'a-1',
@@ -38,7 +40,7 @@ const access = {
 function stubApi(responses: { get?: (url: string) => unknown; send?: () => unknown } = {}) {
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
-  const client = { get, post: send, patch: send, delete: send }
+  const client = { get, post: send, patch: send, put: send, delete: send }
   configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
@@ -68,7 +70,7 @@ describe('sites API', () => {
   })
 
   it('listSites: accepts null progress counts and missing optional fields', async () => {
-    const bare = { ...site, address: null, startDate: null, expectedEndDate: null, activityCount: null, doneCount: null }
+    const bare = { ...site, address: null, startDate: null, expectedEndDate: null, activityCount: null, doneCount: null, allocatedBudget: null }
     stubApi({ get: () => ({ status: 200, data: [bare] }) })
 
     expect(await listSites('org-1')).toEqual([bare])
@@ -106,6 +108,33 @@ describe('sites API', () => {
     const [url, body] = send.mock.calls[0] as unknown as [string, unknown]
     expect(url).toBe('/api/organizations/org-1/projects/p-1')
     expect(body).toEqual({ status: 'ARCHIVED' })
+  })
+
+  it('setSiteBudget: puts the amount on the budget endpoint and parses the 200 body', async () => {
+    const { send } = stubApi({ send: () => ({ status: 200, data: { ...site, allocatedBudget: 1000 } }) })
+    const updated = await setSiteBudget('org-1', 'p-1', 1000)
+
+    expect(updated.allocatedBudget).toBe(1000)
+    const [url, body] = send.mock.calls[0] as unknown as [string, unknown]
+    expect(url).toBe('/api/organizations/org-1/projects/p-1/budget')
+    expect(body).toEqual({ allocatedBudget: 1000 })
+  })
+
+  it('setSiteBudget: sends null to clear the budget', async () => {
+    const { send } = stubApi({ send: () => ({ status: 200, data: { ...site, allocatedBudget: null } }) })
+
+    expect((await setSiteBudget('org-1', 'p-1', null)).allocatedBudget).toBeNull()
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ allocatedBudget: null })
+  })
+
+  it('setSiteBudget: a 403 maps to the forbidden message', async () => {
+    stubApi({
+      send: () => {
+        throw failure(403)
+      },
+    })
+
+    expect(siteErrorKind(await setSiteBudget('org-1', 'p-1', 1).catch((error: unknown) => error))).toBe('forbidden')
   })
 
   it('listSiteAccess: gets the people on a site, allowing a null full name', async () => {
