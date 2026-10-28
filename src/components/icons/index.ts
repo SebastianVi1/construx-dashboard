@@ -1,6 +1,7 @@
 export {
   CheckIcon,
   ChevronDownIcon,
+  MaterialsIcon,
   PlusIcon,
   SignOutIcon,
   SitesIcon,

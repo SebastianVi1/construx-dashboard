@@ -1,18 +1,21 @@
 /** A destination of the workspace navigation; `key` names its label in `messages.workspace`. */
-export type WorkspaceNavItem = { key: 'sites' | 'myTasks' | 'members'; to: string }
+export type WorkspaceNavItem = { key: 'sites' | 'myTasks' | 'materials' | 'members'; to: string }
 
 export type WorkspaceSection = { key: WorkspaceNavItem['key'] | 'account'; to: string; isRoot: boolean }
 
 /** Destinations the role can open, in display order. Sites is always present. */
 export function workspaceNavItems({
   seesOwnTasks,
+  seesPrices,
   managesMembers,
 }: {
   seesOwnTasks: boolean
+  seesPrices: boolean
   managesMembers: boolean
 }): WorkspaceNavItem[] {
   const items: WorkspaceNavItem[] = [{ key: 'sites', to: '/sites' }]
   if (seesOwnTasks) items.push({ key: 'myTasks', to: '/tasks' })
+  if (seesPrices) items.push({ key: 'materials', to: '/materials' })
   if (managesMembers) items.push({ key: 'members', to: '/members' })
   return items
 }
@@ -20,6 +23,7 @@ export function workspaceNavItems({
 const sections: Omit<WorkspaceSection, 'isRoot'>[] = [
   { key: 'sites', to: '/sites' },
   { key: 'myTasks', to: '/tasks' },
+  { key: 'materials', to: '/materials' },
   { key: 'members', to: '/members' },
   { key: 'account', to: '/account' },
 ]
