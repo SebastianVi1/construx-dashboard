@@ -10,7 +10,7 @@ export const materialCategories = ['CEMENT_AGGREGATES', 'STEEL', 'WOOD', 'ELECTR
 
 export type MaterialCategory = (typeof materialCategories)[number]
 
-/** Money is a decimal string with two decimals, MXN including IVA. */
+/** Money is a decimal string with two decimals, USD including IVA. */
 const moneySchema = z.string().regex(/^\d+(\.\d{1,2})?$/)
 
 /** `PriceData`: one recorded price, immutable. */

@@ -7,7 +7,7 @@ export const expenseCategories = ['MATERIALS', 'LABOR', 'EQUIPMENT', 'OTHER'] as
 
 export type ExpenseCategory = (typeof expenseCategories)[number]
 
-/** `ExpenseData`: money spent on a site, in MXN. */
+/** `ExpenseData`: money spent on a site, in USD. */
 export const expenseSchema = z.object({
   id: z.string().min(1),
   projectId: z.string().min(1),

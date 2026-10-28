@@ -54,7 +54,7 @@ export function canConfirmImport(report: ImportReport | null, pending: boolean):
   return !pending && report !== null && report.valid && !report.imported && report.summary.observations > 0
 }
 
-/** Price cell of the preview: pesos when it is a valid amount, otherwise the text as written in the file. */
+/** Price cell of the preview: money when it is a valid amount, otherwise the text as written in the file. */
 export function previewPrice(price: string | null | undefined, locale: Locale): string {
   if (!price) return '—'
   return /^\d+(\.\d{1,2})?$/.test(price) ? moneyText(price, locale) : price

@@ -37,14 +37,17 @@ export function localToday(now = new Date()): string {
   return `${now.getFullYear()}-${month}-${day}`
 }
 
-/** Prices are MXN, so both languages use Mexican formatting: "$1,245.50". */
+/** Every amount in the app (prices, budgets, expenses) is in this currency for now. */
+export const CURRENCY = 'USD'
+
+/** The narrow symbol keeps both languages on "$1,245.50". */
 const moneyLocales: Record<Locale, string> = { en: 'en-US', es: 'es-MX' }
 
-/** A decimal string such as "245.5" as pesos with two decimals. */
+/** A decimal string such as "245.5" in the global currency with two decimals. */
 export function moneyText(price: string, locale: Locale): string {
   return new Intl.NumberFormat(moneyLocales[locale], {
     style: 'currency',
-    currency: 'MXN',
+    currency: CURRENCY,
     currencyDisplay: 'narrowSymbol',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { daysSince, isStale, localToday, matchesQuery, moneyText, priceRows, relativeAge } from './priceRules'
+import { messages } from '../../i18n/messages'
+import { CURRENCY, daysSince, isStale, localToday, matchesQuery, moneyText, priceRows, relativeAge } from './priceRules'
 
 const today = '2026-10-27'
 
@@ -34,9 +35,19 @@ describe('price age', () => {
 })
 
 describe('money', () => {
-  it('moneyText: formats an MXN decimal string as pesos with two decimals', () => {
+  it('moneyText: formats a decimal string in the global currency (USD) with two decimals', () => {
+    expect(CURRENCY).toBe('USD')
     expect(moneyText('245.5', 'en')).toBe('$245.50')
     expect(moneyText('1245.50', 'es')).toBe('$1,245.50')
+  })
+
+  it('no copy still names the old currency', () => {
+    for (const locale of ['en', 'es'] as const) {
+      const text = JSON.stringify(messages[locale])
+      expect(text).not.toContain('MXN')
+      expect(text).not.toMatch(/pesos/i)
+      expect(text).toContain(CURRENCY)
+    }
   })
 })
 
