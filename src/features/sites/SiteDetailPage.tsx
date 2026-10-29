@@ -5,6 +5,7 @@ import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
+import { SitePlans } from '../plans/SitePlans'
 import { ArchiveSiteDialog } from './ArchiveSiteDialog'
 import { SiteBudget } from './SiteBudget'
 import { ProgressMeter, SiteStatusBadge } from './SiteBits'
@@ -15,7 +16,7 @@ import { siteProgress } from './siteHelpers'
 import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import './sites.css'
 
-/** One site: its details (editable with MANAGE_PROJECT), budget (finance roles), progress, people, and its phases. */
+/** One site: its details (editable with MANAGE_PROJECT), budget (finance roles), progress, people, plans and its phases. */
 export function SiteDetailPage() {
   const { siteId = '' } = useParams()
   const { messages: m, locale } = useLocale()
@@ -165,6 +166,15 @@ export function SiteDetailPage() {
           site={current}
           canManage={can('MANAGE_BUDGET')}
           onSaved={saved}
+          onNotice={setSavedNotice}
+        />
+      ) : null}
+
+      {can('VIEW_PLAN', current.id, { onSite }) ? (
+        <SitePlans
+          organizationId={organization.id}
+          siteId={current.id}
+          canManage={can('MANAGE_PLAN', current.id, { onSite }) && current.status !== 'ARCHIVED'}
           onNotice={setSavedNotice}
         />
       ) : null}

@@ -1,0 +1,131 @@
+.site-plans__empty-title {
+  color: var(--cx-ink);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+}
+
+.site-plans__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-card {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  color: var(--cx-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plan-card:hover {
+  border-color: var(--cx-border-strong);
+}
+
+.plan-card:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 2px;
+}
+
+.plan-card__thumb {
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--cx-paper-dim);
+  border-radius: var(--cx-radius-md);
+}
+
+.plan-card__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.plan-card__name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-card__meta {
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.plan-viewer__image {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  background: var(--cx-paper-dim);
+  border-radius: var(--cx-radius-md);
+}
+
+.plan-upload__picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Visually hidden; the label styled as a button opens it. */
+.plan-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.plan-upload__picker:focus-within .button {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 2px;
+}
+
+.plan-upload__file {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.plan-upload__preview {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  background: var(--cx-paper-dim);
+  border-radius: var(--cx-radius-md);
+}
+
+.plan-upload__description {
+  min-height: 70px;
+  padding-right: 14px;
+  resize: vertical;
+}
+
+.plan-upload__progress {
+  width: 100%;
+  accent-color: var(--cx-primary);
+}
+
+.plan-upload__note {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
