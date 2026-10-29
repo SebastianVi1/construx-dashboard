@@ -1,7 +1,8 @@
 import { formatMessage, intlLocales, useLocale, type Messages } from '../../i18n'
 import { dueText, isOverdue } from '../goals/dueAt'
-import type { Task, TaskStatus } from './tasksApi'
+import type { Task, TaskRole, TaskStatus } from './tasksApi'
 import type { TaskActions } from './taskRules'
+import { isOnTeam } from './teamRules'
 
 const statusTone: Record<TaskStatus, string> = { TODO: 'neutral', IN_PROGRESS: 'accent', DONE: 'success' }
 
@@ -9,6 +10,33 @@ export function TaskStatusBadge({ status, labels }: { status: TaskStatus; labels
   return (
     <span className="badge" data-tone={statusTone[status]}>
       {labels[status]}
+    </span>
+  )
+}
+
+const roleTone: Record<TaskRole, string> = { LEAD: 'accent', FOREMAN: 'neutral', CREW: 'neutral' }
+
+export function TaskRoleBadge({ role }: { role: TaskRole }) {
+  const { messages: m } = useLocale()
+  return (
+    <span className="badge task-role" data-tone={roleTone[role]} data-role={role}>
+      {m.tasks.roles[role]}
+    </span>
+  )
+}
+
+/** The Lead's name, how many others are on the team, and whether the caller is one of them. */
+export function TaskTeamSummary({ task, myMembershipId }: { task: Task; myMembershipId: string | null }) {
+  const { messages: m } = useLocale()
+  const t = m.tasks
+  const [lead, ...others] = task.assignees
+  return (
+    <span className="task-team">
+      {lead.fullName || t.unnamed}
+      {others.length > 0 ? (
+        <span className="task-team__more data-mono">{formatMessage(t.team.more, { count: others.length })}</span>
+      ) : null}
+      {isOnTeam(task, myMembershipId) ? <span className="person-you">{t.you}</span> : null}
     </span>
   )
 }

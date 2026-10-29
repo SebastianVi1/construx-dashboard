@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
 import { LoadingState, Notice } from '../../components/page'
@@ -9,8 +10,8 @@ import { usePermissions } from '../permissions'
 import { allocationIssue, budgetText } from '../sites/budgetRules'
 import type { SiteAccess } from '../sites/sitesApi'
 import { TaskDialog } from './TaskDialog'
-import { TaskDue, TaskMoveButtons } from './TaskBits'
-import { groupByStatus, taskActions } from './taskRules'
+import { TaskDue, TaskMoveButtons, TaskTeamSummary } from './TaskBits'
+import { groupByStatus, taskActions, taskDetailPath } from './taskRules'
 import {
   deleteTask,
   taskErrorKind,
@@ -28,7 +29,7 @@ type PhaseTasksProps = {
   siteId: string
   goal: Goal
   filter: TaskFilter
-  /** People on the site, the assignee choices; undefined while loading. */
+  /** People on the site, the team choices; undefined while loading. */
   people: SiteAccess[] | undefined
   onSite: boolean | undefined
   /** A task was added, changed or removed: phase and site progress are stale. */
@@ -102,7 +103,8 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
       setNotice(formatMessage(t.deleted, { name: task.name }))
       onChanged()
     } catch (error) {
-      setDeleteError(t.error[taskErrorKind(error)])
+      const kind = taskErrorKind(error)
+      setDeleteError(kind === 'transition' ? t.remove.hasExpenses : t.error[kind])
     }
   }
 
@@ -159,15 +161,19 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
                   <ul className="task-list">
                     {group.tasks.map((task) => {
                       const allowed = taskActions(access, task, { onSite })
-                      const mine = task.assignee.membershipId === myMembershipId
                       return (
                         <li key={task.id} className="task-item" data-status={task.status}>
-                          <p className="task-item__name">{task.name}</p>
+                          <p className="task-item__name">
+                            <Link
+                              className="table-link"
+                              to={taskDetailPath(task)}
+                              aria-label={formatMessage(t.openLabel, { name: task.name })}
+                            >
+                              {task.name}
+                            </Link>
+                          </p>
                           <p className="task-item__meta">
-                            <span>
-                              {task.assignee.fullName || t.unnamed}
-                              {mine ? <span className="person-you">{t.you}</span> : null}
-                            </span>
+                            <TaskTeamSummary task={task} myMembershipId={myMembershipId} />
                             <TaskDue task={task} now={now} />
                           </p>
                           {canViewBudget && task.allocatedBudget !== null ? (

@@ -1,6 +1,7 @@
 import { filterCounts } from '../../components/filter'
 import { canPerform, type MyAccess } from '../permissions/can'
 import { taskStatuses, type Task, type TaskStatus } from './tasksApi'
+import { isOnTeam } from './teamRules'
 
 export type TaskActions = {
   start: boolean
@@ -12,13 +13,13 @@ export type TaskActions = {
 
 /**
  * Which task actions the UI offers. Start and complete pass `OWN` scope for
- * the assignee (compared by membership id), and only for the moves the status
+ * any team member (compared by membership id), and only for the moves the status
  * allows; edit and delete need `MANAGE_ACTIVITY` beyond `OWN`, reassign needs
  * `ASSIGN_ACTIVITY`. `onSite` is the caller's own access to the task's site
  * when known. The server still checks every request.
  */
 export function taskActions(access: MyAccess | null, task: Task, context: { onSite?: boolean }): TaskActions {
-  const own = access !== null && task.assignee.membershipId === access.membershipId
+  const own = isOnTeam(task, access?.membershipId ?? null)
   const move = canPerform(access, 'MANAGE_ACTIVITY', task.projectId, { onSite: context.onSite, own })
   const manage = canPerform(access, 'MANAGE_ACTIVITY', task.projectId, { onSite: context.onSite })
   return {
@@ -41,4 +42,10 @@ export function groupByStatus(tasks: Task[]): StatusGroup[] {
 /** Tasks for the chosen status (`''` keeps all) and how many each filter tab would show. */
 export function filterByStatus(tasks: Task[], status: TaskStatus | '') {
   return filterCounts(tasks, (task) => task.status, taskStatuses, status)
+}
+
+/** The task details page; the API path needs the site and phase too. */
+export function taskDetailPath(task: Pick<Task, 'projectId' | 'goalId' | 'id'>): string {
+  const part = encodeURIComponent
+  return `/sites/${part(task.projectId)}/phases/${part(task.goalId)}/tasks/${part(task.id)}`
 }

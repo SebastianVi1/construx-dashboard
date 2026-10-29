@@ -17,7 +17,7 @@ function task(id: string, goalId: string, startAt: string, dueAt: string, status
     dueAt,
     status,
     completedAt: null,
-    assignee: { accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana' },
+    assignees: [{ accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana', taskRole: 'LEAD' }],
     allocatedBudget: null,
   }
 }
