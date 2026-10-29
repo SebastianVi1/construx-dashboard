@@ -6,12 +6,13 @@ import type { Expense } from './financeApi'
 type ExpenseTableProps = {
   expenses: Expense[]
   canManage: boolean
+  canManageExpense?: (expense: Expense) => boolean
   onEdit: (expense: Expense) => void
   onDelete: (expense: Expense) => void
 }
 
 /** The site's expenses, newest first; also the text equivalent of the chart. */
-export function ExpenseTable({ expenses, canManage, onEdit, onDelete }: ExpenseTableProps) {
+export function ExpenseTable({ expenses, canManage, canManageExpense, onEdit, onDelete }: ExpenseTableProps) {
   const { messages: m, locale } = useLocale()
   const t = m.finance
 
@@ -47,7 +48,7 @@ export function ExpenseTable({ expenses, canManage, onEdit, onDelete }: ExpenseT
               <td className="data-mono expense-table__amount">{budgetText(expense.amount, locale)}</td>
               {canManage ? (
                 <td className="cell-actions">
-                  <div className="button-row button-row--end">
+                  {(!canManageExpense || canManageExpense(expense)) ? <div className="button-row button-row--end">
                     <button
                       type="button"
                       className="button button--small"
@@ -64,7 +65,7 @@ export function ExpenseTable({ expenses, canManage, onEdit, onDelete }: ExpenseT
                     >
                       {t.delete}
                     </button>
-                  </div>
+                  </div> : null}
                 </td>
               ) : null}
             </tr>

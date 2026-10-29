@@ -1,5 +1,6 @@
+import { taskDetailPath } from '../tasks/taskRules'
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useNavigate, Link, useParams } from 'react-router'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
 import { FilterTabs } from '../../components/filter'
 import { LoadingState, Notice } from '../../components/page'
@@ -132,6 +133,7 @@ type PhaseScheduleProps = {
 
 /** The Gantt with its data, dialogs and the toast that reports each drag. */
 function PhaseSchedule({ organizationId, site, people, onSite }: PhaseScheduleProps) {
+  const navigate = useNavigate()
   const { messages: m } = useLocale()
   const t = m.gantt
   const { access, can } = usePermissions()
@@ -218,13 +220,13 @@ function PhaseSchedule({ organizationId, site, people, onSite }: PhaseSchedulePr
 
   function canOpen(row: GanttRow): boolean {
     if (row.kind === 'phase') return canManageGoal
-    const actions = taskActions(access, row.task, { onSite })
-    return actions.edit || actions.reassign
+    return true
   }
 
   function open(row: GanttRow) {
     setToast(null)
-    setDialog(row.kind === 'phase' ? { kind: 'editPhase', goal: row.goal } : { kind: 'editTask', goal: row.goal, task: row.task })
+    if (row.kind === 'task') navigate(taskDetailPath(row.task))
+    else setDialog({ kind: 'editPhase', goal: row.goal })
   }
 
   let body

@@ -14,6 +14,12 @@
       "computedHash": "5db10aea0f95d69a54cabcfae129ea0e7069b7022de967b2a04acdd9fa1be050",
       "wellKnownDigest": "sha256:8db9f7cafeda65751e88fcbc1c9e4fc3f93803a438c30fe8e3fc8b00773417bd"
     },
+    "querying-aws-s3": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/specialized-skills/system-table-skills/querying-aws-s3/SKILL.md",
+      "computedHash": "a38961870e9994f276f14525c19b80510ddf60c7fb0a831161387836581fe762"
+    },
     "ui-taste": {
       "source": "uizze.sh",
       "sourceUrl": "https://uizze.sh/",

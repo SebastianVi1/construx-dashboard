@@ -6,13 +6,14 @@ import { useLocale, type Messages } from '../../i18n'
 import { localToday } from '../materials/priceRules'
 import { siteErrorKind, type SiteErrorKind } from '../sites/sitesApi'
 import { buildExpenseDraft, buildExpensePatch, expenseToValues, makeExpenseSchema } from './expenseForm'
-import { createExpense, expenseCategories, updateExpense, type Expense } from './financeApi'
+import { createExpense, expenseCategories, updateExpense, type Expense, type ExpenseDraft } from './financeApi'
 
 type ExpenseDialogProps = {
   organizationId: string
   siteId: string
   /** Edit this expense; without it the dialog adds a new one. */
   expense?: Expense
+  create?: (draft: ExpenseDraft) => Promise<Expense>
   onSaved: () => void
   onClose: () => void
 }
@@ -35,7 +36,7 @@ function expenseFields(t: Messages['finance']): FieldConfig[] {
 }
 
 /** Add or edit an expense; on edit only changed fields are sent. */
-export function ExpenseDialog({ organizationId, siteId, expense, onSaved, onClose }: ExpenseDialogProps) {
+export function ExpenseDialog({ organizationId, siteId, expense, create, onSaved, onClose }: ExpenseDialogProps) {
   const { messages: m } = useLocale()
   const t = m.finance
   const [errorKind, setErrorKind] = useState<SiteErrorKind>('generic')
@@ -56,7 +57,7 @@ export function ExpenseDialog({ organizationId, siteId, expense, onSaved, onClos
           }
           await updateExpense(organizationId, siteId, expense.id, patch)
         } else {
-          await createExpense(organizationId, siteId, buildExpenseDraft(values))
+          await (create ? create(buildExpenseDraft(values)) : createExpense(organizationId, siteId, buildExpenseDraft(values)))
         }
         onSaved()
       } catch (error) {

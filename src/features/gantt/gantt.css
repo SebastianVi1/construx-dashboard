@@ -5,6 +5,12 @@
  * hollow, in progress is the brightest solid glow, done dims and gets a tick.
  */
 
+/* Schedule pages use the full workspace width without widening other pages. */
+.page:has(.gantt) {
+  max-width: none;
+  min-width: 0;
+}
+
 .gantt {
   --gantt-names: 240px;
   --gantt-phase-row: 48px;
