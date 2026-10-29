@@ -17,6 +17,7 @@ const SiteDetailPage = lazy(() =>
 )
 const PhasesPage = lazy(() => import('./features/goals/PhasesPage').then((module) => ({ default: module.PhasesPage })))
 const MembersPage = lazy(() => import('./features/members/MembersPage').then((module) => ({ default: module.MembersPage })))
+const TaskDetailPage = lazy(() => import('./features/tasks/TaskDetailPage').then((module) => ({ default: module.TaskDetailPage })))
 const MyTasksPage = lazy(() => import('./features/tasks/MyTasksPage').then((module) => ({ default: module.MyTasksPage })))
 const MaterialsPage = lazy(() =>
   import('./features/materials/MaterialsPage').then((module) => ({ default: module.MaterialsPage })),
@@ -48,6 +49,7 @@ function App() {
         <Route path="/sites" element={<SitesPage />} />
         <Route path="/sites/:siteId" element={<SiteDetailPage />} />
         <Route path="/sites/:siteId/phases" element={<PhasesPage />} />
+        <Route path="/sites/:siteId/phases/:goalId/tasks/:taskId" element={<TaskDetailPage />} />
         <Route path="/tasks" element={<MyTasksPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
         <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
