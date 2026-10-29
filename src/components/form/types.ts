@@ -14,7 +14,7 @@ export type FieldType =
 
 export type FieldOption = { value: string; label: string }
 
-export type InputMode = 'text' | 'email' | 'numeric' | 'tel' | 'url' | 'search'
+export type InputMode = 'text' | 'email' | 'numeric' | 'decimal' | 'tel' | 'url' | 'search'
 
 /**
  * Declarative description of a single form field. `<Form>` renders one

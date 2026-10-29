@@ -13,6 +13,8 @@ export const permissionActions = [
   'ASSIGN_ACTIVITY',
   'VIEW_PRICES',
   'MANAGE_PRICES',
+  'VIEW_BUDGET',
+  'MANAGE_BUDGET',
 ] as const
 
 export type PermissionAction = (typeof permissionActions)[number]

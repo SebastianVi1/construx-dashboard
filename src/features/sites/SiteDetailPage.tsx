@@ -6,6 +6,7 @@ import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { ArchiveSiteDialog } from './ArchiveSiteDialog'
+import { SiteBudget } from './SiteBudget'
 import { ProgressMeter, SiteStatusBadge } from './SiteBits'
 import { SiteDetailsForm } from './SiteDetailsForm'
 import { SitePeople } from './SitePeople'
@@ -14,7 +15,7 @@ import { siteProgress } from './siteHelpers'
 import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import './sites.css'
 
-/** One site: its details (editable with MANAGE_PROJECT), progress, people, and the way to its phases. */
+/** One site: its details (editable with MANAGE_PROJECT), budget (finance roles), progress, people, and its phases. */
 export function SiteDetailPage() {
   const { siteId = '' } = useParams()
   const { messages: m, locale } = useLocale()
@@ -157,6 +158,15 @@ export function SiteDetailPage() {
           myMembershipId={myMembershipId}
         />
       </div>
+
+      {can('VIEW_BUDGET') ? (
+        <SiteBudget
+          organizationId={organization.id}
+          site={current}
+          canManage={can('MANAGE_BUDGET')}
+          onSaved={saved}
+        />
+      ) : null}
 
       {can('VIEW_GOAL', current.id, { onSite }) ? (
         <section className="page-section site-phases-link" aria-labelledby="site-phases-heading">

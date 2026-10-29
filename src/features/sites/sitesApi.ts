@@ -7,7 +7,10 @@ export const siteStatuses = ['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'ARCHI
 
 export type SiteStatus = (typeof siteStatuses)[number]
 
-/** `ProjectResponse`. Progress counts are null when the caller cannot see the site's tasks. */
+/**
+ * `ProjectResponse`. Progress counts are null when the caller cannot see the site's tasks;
+ * `allocatedBudget` is null when unset or without VIEW_BUDGET (and absent on older backends).
+ */
 export const siteSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
@@ -17,6 +20,7 @@ export const siteSchema = z.object({
   status: z.enum(siteStatuses),
   activityCount: z.number().int().nullable(),
   doneCount: z.number().int().nullable(),
+  allocatedBudget: z.number().nullable().default(null),
 })
 
 export type Site = z.infer<typeof siteSchema>
@@ -81,6 +85,11 @@ export function createSite(organizationId: string, draft: SiteDraft): Promise<Si
 /** Change only the fields sent. Archive a site by sending `status: 'ARCHIVED'`. */
 export function updateSite(organizationId: string, siteId: string, patch: SitePatch): Promise<Site> {
   return sendJson('patch', sitePath(organizationId, siteId), patch, 200, siteSchema)
+}
+
+/** Sets the site's allocated budget (MANAGE_BUDGET); null clears it. */
+export function setSiteBudget(organizationId: string, siteId: string, amount: number | null): Promise<Site> {
+  return sendJson('put', `${sitePath(organizationId, siteId)}/budget`, { allocatedBudget: amount }, 200, siteSchema)
 }
 
 export function listSiteAccess(organizationId: string, siteId: string): Promise<SiteAccess[]> {
