@@ -4,7 +4,7 @@ import type { Task } from '../tasks/tasksApi'
 import { buildRows } from './ganttRows'
 
 function goal(id: string, startAt: string, dueAt: string): Goal {
-  return { id, projectId: 'p-1', name: `Phase ${id}`, startAt, dueAt, activityCount: 0, doneCount: 0, completed: false }
+  return { id, projectId: 'p-1', name: `Phase ${id}`, startAt, dueAt, activityCount: 0, doneCount: 0, completed: false, allocatedBudget: null, allocatedToActivities: null, unallocated: null }
 }
 
 function task(id: string, goalId: string, startAt: string, dueAt: string, status: Task['status'] = 'TODO'): Task {
@@ -18,6 +18,7 @@ function task(id: string, goalId: string, startAt: string, dueAt: string, status
     status,
     completedAt: null,
     assignee: { accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana' },
+    allocatedBudget: null,
   }
 }
 

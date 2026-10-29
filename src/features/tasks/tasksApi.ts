@@ -23,6 +23,8 @@ export const taskSchema = z.object({
     membershipId: z.string().min(1),
     fullName: z.string().nullable(),
   }),
+  /** Share of the phase budget; null when unset or without VIEW_BUDGET. */
+  allocatedBudget: z.number().nullable().default(null),
 })
 
 export type Task = z.infer<typeof taskSchema>
@@ -72,6 +74,11 @@ export function updateTask(
   patch: Partial<Pick<TaskInput, 'name' | 'startAt' | 'dueAt'>> & { color?: string },
 ): Promise<Task> {
   return sendJson('patch', taskPath(at, taskId), patch, 200, taskSchema)
+}
+
+/** Owner and Finance only: carves the task budget out of its phase budget; null clears it. */
+export function setTaskBudget(at: PhaseRef, taskId: string, amount: number | null): Promise<Task> {
+  return sendJson('put', `${taskPath(at, taskId)}/budget`, { allocatedBudget: amount }, 200, taskSchema)
 }
 
 export function reassignTask(at: PhaseRef, taskId: string, assigneeAccessId: string): Promise<Task> {

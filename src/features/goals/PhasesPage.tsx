@@ -299,6 +299,7 @@ function PhaseSchedule({ organizationId, site, people, onSite }: PhaseSchedulePr
           organizationId={organizationId}
           siteId={siteId}
           goal={dialog.kind === 'editPhase' ? dialog.goal : undefined}
+          canManageBudget={can('MANAGE_BUDGET')}
           onSaved={phaseSaved}
           onClose={() => setDialog(null)}
         />

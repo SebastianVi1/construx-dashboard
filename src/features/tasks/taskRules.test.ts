@@ -13,6 +13,7 @@ const task: Task = {
   status: 'TODO',
   completedAt: null,
   assignee: { accessId: 'a-1', membershipId: 'm-worker', fullName: 'Ana' },
+  allocatedBudget: null,
 }
 
 function role(membershipId: string, grants: Array<[string, 'ORGANIZATION' | 'PROJECT' | 'OWN']>): MyAccess {

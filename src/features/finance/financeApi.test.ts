@@ -16,6 +16,8 @@ const summary = {
   allocatedBudget: 10000,
   spent: 1200.5,
   remaining: 8799.5,
+  allocatedToPhases: 6000,
+  unallocated: 4000,
   byCategory: [
     { category: 'MATERIALS', amount: 1200.5 },
     { category: 'LABOR', amount: 0 },
@@ -43,6 +45,16 @@ describe('finance API', () => {
 
     stubApi({ get: () => ({ status: 200, data: { ...summary, allocatedBudget: null, remaining: null } }) })
     expect((await getBudgetSummary('org-1', 'p-1')).remaining).toBeNull()
+  })
+
+  it('getBudgetSummary: reads a summary without allocation fields as nothing allocated', async () => {
+    const older: Partial<typeof summary> = { ...summary }
+    delete older.allocatedToPhases
+    delete older.unallocated
+    stubApi({ get: () => ({ status: 200, data: older }) })
+    const read = await getBudgetSummary('org-1', 'p-1')
+    expect(read.allocatedToPhases).toBe(0)
+    expect(read.unallocated).toBeNull()
   })
 
   it('listExpenses: gets the site expenses', async () => {

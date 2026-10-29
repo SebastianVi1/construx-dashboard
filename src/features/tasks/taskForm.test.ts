@@ -23,6 +23,7 @@ const task: Task = {
   status: 'TODO',
   completedAt: null,
   assignee: { accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana' },
+  allocatedBudget: null,
 }
 
 type Values = { name: string; startAt: string; dueAt: string; assigneeAccessId: string }

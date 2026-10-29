@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { Form, useForm } from '../../components/form'
-import { Modal } from '../../components/modal'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
+import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import { BudgetChart } from '../finance/BudgetChart'
 import { budgetChart } from '../finance/budgetLayout'
 import { DeleteExpenseDialog } from '../finance/DeleteExpenseDialog'
@@ -11,8 +10,8 @@ import { ExpenseDialog } from '../finance/ExpenseDialog'
 import { ExpenseTable } from '../finance/ExpenseTable'
 import { getBudgetSummary, listExpenses, type BudgetSummary, type Expense } from '../finance/financeApi'
 import '../finance/finance.css'
-import { budgetAmount, budgetText, budgetToInput, makeBudgetSchema } from './budgetRules'
-import { setSiteBudget, siteErrorKind, type Site, type SiteErrorKind } from './sitesApi'
+import { allocationIssue, budgetText } from './budgetRules'
+import { setSiteBudget, siteErrorKind, type Site } from './sitesApi'
 
 type SiteBudgetProps = {
   organizationId: string
@@ -98,15 +97,18 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
       )}
 
       {dialog?.kind === 'budget' ? (
-        <BudgetDialog
-          organizationId={organizationId}
-          site={{ ...site, allocatedBudget: budget }}
-          onClose={() => setDialog(null)}
-          onSaved={(updated, notice) => {
+        <BudgetAmountDialog
+          title={m.sites.budget.dialogTitle}
+          description={m.sites.budget.dialogBody}
+          current={budget}
+          save={async (amount) => {
+            const updated = await setSiteBudget(organizationId, site.id, amount)
             setDialog(null)
             summary.reload()
-            onSaved(updated, notice)
+            onSaved(updated, amount === null ? m.sites.budget.removed : m.sites.budget.saved)
           }}
+          errorMessage={(error) => m.sites.budget.error[allocationIssue(error) ?? siteErrorKind(error)]}
+          onClose={() => setDialog(null)}
         />
       ) : null}
       {dialog?.kind === 'expense' ? (
@@ -153,6 +155,18 @@ function BudgetOverview({ summary }: { summary: BudgetSummary }) {
             <dt>{t.spent}</dt>
             <dd className="budget-figures__value">{budgetText(summary.spent, locale)}</dd>
           </div>
+          {summary.allocatedBudget !== null ? (
+            <>
+              <div>
+                <dt>{t.allocatedToPhases}</dt>
+                <dd className="budget-figures__value">{budgetText(summary.allocatedToPhases, locale)}</dd>
+              </div>
+              <div>
+                <dt>{t.unallocated}</dt>
+                <dd className="budget-figures__value">{budgetText(summary.unallocated ?? 0, locale)}</dd>
+              </div>
+            </>
+          ) : null}
           <div data-status={chart.status}>
             <dt>{overrun ? t.overrun : t.remaining}</dt>
             <dd className="budget-figures__value budget-figures__value--lead">
@@ -170,75 +184,5 @@ function BudgetOverview({ summary }: { summary: BudgetSummary }) {
       </div>
       <BudgetChart chart={chart} summary={summary} />
     </div>
-  )
-}
-
-type BudgetDialogProps = {
-  organizationId: string
-  site: Site
-  onClose: () => void
-  onSaved: (site: Site, notice: string) => void
-}
-
-function BudgetDialog({ organizationId, site, onClose, onSaved }: BudgetDialogProps) {
-  const { messages: m } = useLocale()
-  const t = m.sites.budget
-  const [errorKind, setErrorKind] = useState<SiteErrorKind | null>(null)
-  const [removing, setRemoving] = useState(false)
-
-  const form = useForm({
-    initialValues: { amount: budgetToInput(site.allocatedBudget) },
-    schema: makeBudgetSchema(t.validation),
-    onSubmit: async (values) => {
-      setErrorKind(null)
-      try {
-        onSaved(await setSiteBudget(organizationId, site.id, budgetAmount(values.amount)), t.saved)
-      } catch (error) {
-        setErrorKind(siteErrorKind(error))
-        throw error
-      }
-    },
-    onInvalid: () => document.getElementById('field-amount')?.focus(),
-  })
-
-  async function remove() {
-    if (removing) return
-    setRemoving(true)
-    setErrorKind(null)
-    try {
-      onSaved(await setSiteBudget(organizationId, site.id, null), t.removed)
-    } catch (error) {
-      setErrorKind(siteErrorKind(error))
-      setRemoving(false)
-    }
-  }
-
-  const busy = removing || form.isSubmitting
-
-  return (
-    <Modal title={t.dialogTitle} description={t.dialogBody} onClose={onClose}>
-      <Form
-        controller={form}
-        fields={[{ name: 'amount', label: t.amount, placeholder: t.amountPlaceholder, inputMode: 'decimal', autoComplete: 'off' }]}
-        submitLabel={t.save}
-        pendingLabel={t.saving}
-      >
-        {errorKind ? (
-          <p className="form-error" role="alert">
-            {t.error[errorKind]}
-          </p>
-        ) : null}
-      </Form>
-      <div className="button-row button-row--end modal-actions">
-        {site.allocatedBudget !== null ? (
-          <button type="button" className="button button--danger" onClick={() => void remove()} disabled={busy}>
-            {removing ? t.removing : t.remove}
-          </button>
-        ) : null}
-        <button type="button" className="button" onClick={onClose} disabled={busy}>
-          {t.cancel}
-        </button>
-      </div>
-    </Modal>
   )
 }

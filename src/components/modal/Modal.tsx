@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import './modal.css'
 
@@ -19,14 +19,18 @@ export function Modal({ title, description, children, onClose }: ModalProps) {
   const descriptionId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
 
+  // Always calls the latest onClose without re-running the effect: a new onClose on every render
+  // (an inline arrow in the caller) must not move focus back to the dialog while the user types.
+  const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key === 'Escape') onClose()
+  })
+
+  // Focus the dialog once, when it opens.
   useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
-    }
     document.addEventListener('keydown', handleKeyDown)
     dialogRef.current?.focus()
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  }, [])
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>

@@ -7,7 +7,7 @@ export const expenseCategories = ['MATERIALS', 'LABOR', 'EQUIPMENT', 'OTHER'] as
 
 export type ExpenseCategory = (typeof expenseCategories)[number]
 
-/** `ExpenseData`: money spent on a site, in MXN. */
+/** `ExpenseData`: money spent on a site, in USD. */
 export const expenseSchema = z.object({
   id: z.string().min(1),
   projectId: z.string().min(1),
@@ -24,6 +24,9 @@ export const budgetSummarySchema = z.object({
   allocatedBudget: z.number().nullable(),
   spent: z.number(),
   remaining: z.number().nullable(),
+  /** Sum of the phase budgets, and what the site has left to give phases (null without a budget). */
+  allocatedToPhases: z.number().default(0),
+  unallocated: z.number().nullable().default(null),
   byCategory: z.array(z.object({ category: z.enum(expenseCategories), amount: z.number() })),
 })
 

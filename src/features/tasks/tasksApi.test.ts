@@ -8,6 +8,7 @@ import {
   listMyTasks,
   listTasks,
   reassignTask,
+  setTaskBudget,
   startTask,
   taskErrorKind,
   updateTask,
@@ -27,6 +28,7 @@ const task: Task = {
   status: 'TODO',
   completedAt: null,
   assignee: { accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana Perez' },
+  allocatedBudget: null,
 }
 const base = '/api/organizations/org-1/projects/p-1/goals/g-1/activities'
 
@@ -42,6 +44,21 @@ const at = { organizationId: 'org-1', siteId: 'p-1', goalId: 'g-1' }
 
 describe('tasks API', () => {
   afterEach(() => mock.restore())
+
+  it('setTaskBudget: puts the amount on the task budget endpoint', async () => {
+    const { send } = stubApi({ send: () => ({ status: 200, data: { ...task, allocatedBudget: 120.25 } }) })
+    expect((await setTaskBudget(at, 't-1', 120.25)).allocatedBudget).toBe(120.25)
+    const [url, body] = send.mock.calls[0] as unknown as [string, unknown]
+    expect(url).toBe(`${base}/t-1/budget`)
+    expect(body).toEqual({ allocatedBudget: 120.25 })
+  })
+
+  it('reads tasks without a budget field as no budget', async () => {
+    const bare: Partial<Task> = { ...task }
+    delete bare.allocatedBudget
+    stubApi({ get: () => ({ status: 200, data: [bare] }) })
+    expect((await listTasks(at))[0].allocatedBudget).toBeNull()
+  })
 
   it('includes an optional color when creating a record from the dialog', async () => {
     const { send } = stubApi({ send: () => ({ status: 201, data: { ...task, color: '#3b82f6' } }) })

@@ -1,8 +1,12 @@
 import { z } from 'zod'
 import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
 import { organizationPath } from '../permissions/permissionsApi'
+import { allocationIssue } from '../sites/budgetRules'
 
-/** `GoalResponse`: a phase of a site. Counts are null without task visibility. */
+/**
+ * `GoalResponse`: a phase of a site. Counts are null without task visibility. The budget fields are null
+ * without VIEW_BUDGET; `unallocated` is what the phase has left for its tasks, null when it has no budget.
+ */
 export const goalSchema = z.object({
   id: z.string().min(1),
   projectId: z.string().min(1),
@@ -14,6 +18,9 @@ export const goalSchema = z.object({
   doneCount: z.number().int().nullable(),
   /** The phase has tasks and all of them are done. */
   completed: z.boolean(),
+  allocatedBudget: z.number().nullable().default(null),
+  allocatedToActivities: z.number().nullable().default(null),
+  unallocated: z.number().nullable().default(null),
 })
 
 export type Goal = z.infer<typeof goalSchema>
@@ -48,6 +55,11 @@ export function updateGoal(
   return sendJson('patch', goalPath(organizationId, siteId, goalId), patch, 200, goalSchema)
 }
 
+/** Owner and Finance only: carves the phase budget out of the site budget; null clears it. */
+export function setGoalBudget(organizationId: string, siteId: string, goalId: string, amount: number | null): Promise<Goal> {
+  return sendJson('put', `${goalPath(organizationId, siteId, goalId)}/budget`, { allocatedBudget: amount }, 200, goalSchema)
+}
+
 /** Moves the phase and every task inside it by whole days, in one transaction. */
 export function shiftGoal(organizationId: string, siteId: string, goalId: string, days: number): Promise<Goal> {
   return sendJson('post', `${goalPath(organizationId, siteId, goalId)}/shift`, { days }, 200, goalSchema)
@@ -57,14 +69,26 @@ export function deleteGoal(organizationId: string, siteId: string, goalId: strin
   return deleteJson(goalPath(organizationId, siteId, goalId))
 }
 
-export type GoalErrorKind = 'beforeTasks' | 'invalid' | 'hasTasks' | 'session' | 'forbidden' | 'notFound' | 'generic'
+export type GoalErrorKind =
+  | 'beforeTasks'
+  | 'invalid'
+  | 'hasTasks'
+  | 'budgetExceeded'
+  | 'budgetParentMissing'
+  | 'session'
+  | 'forbidden'
+  | 'notFound'
+  | 'generic'
 
 /**
  * Message for a failed phase request. A 400 `INVALID_ARGUMENT` means the due
  * date is before one of its tasks; a 409 means the phase still has tasks.
+ * Budget allocation errors have their own codes.
  */
 export function goalErrorKind(error: unknown): GoalErrorKind {
   if (!(error instanceof AuthApiError)) return 'generic'
+  const allocation = allocationIssue(error)
+  if (allocation) return allocation
   if (error.status === 400) return error.code === 'INVALID_ARGUMENT' ? 'beforeTasks' : 'invalid'
   if (error.status === 409) return 'hasTasks'
   if (error.status === 401) return 'session'

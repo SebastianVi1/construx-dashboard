@@ -3,13 +3,23 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
+import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import type { Goal } from '../goals/goalsApi'
 import { usePermissions } from '../permissions'
+import { allocationIssue, budgetText } from '../sites/budgetRules'
 import type { SiteAccess } from '../sites/sitesApi'
 import { TaskDialog } from './TaskDialog'
 import { TaskDue, TaskMoveButtons } from './TaskBits'
 import { groupByStatus, taskActions } from './taskRules'
-import { deleteTask, taskErrorKind, listTasks, type PhaseRef, type Task, type TaskFilter } from './tasksApi'
+import {
+  deleteTask,
+  taskErrorKind,
+  listTasks,
+  setTaskBudget,
+  type PhaseRef,
+  type Task,
+  type TaskFilter,
+} from './tasksApi'
 import { useTaskMove } from './useTaskMove'
 import './tasks.css'
 
@@ -25,11 +35,16 @@ type PhaseTasksProps = {
   onChanged: () => void
 }
 
-type Dialog = { kind: 'create' } | { kind: 'edit'; task: Task } | { kind: 'delete'; task: Task } | null
+type Dialog =
+  | { kind: 'create' }
+  | { kind: 'edit'; task: Task }
+  | { kind: 'budget'; task: Task }
+  | { kind: 'delete'; task: Task }
+  | null
 
-/** Tasks of one phase as a board grouped by status, filtered on the server. */
+/** Tasks of one phase as a board grouped by status, filtered on the server. Budgets need VIEW_BUDGET / MANAGE_BUDGET. */
 export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSite, onChanged }: PhaseTasksProps) {
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.tasks
   const { access, can } = usePermissions()
   const at: PhaseRef = { organizationId, siteId, goalId: goal.id }
@@ -44,6 +59,8 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
 
   const canCreate = can('MANAGE_ACTIVITY', siteId, { onSite }) && can('ASSIGN_ACTIVITY', siteId, { onSite })
   const myMembershipId = access?.membershipId ?? null
+  const canViewBudget = can('VIEW_BUDGET')
+  const canManageBudget = can('MANAGE_BUDGET')
 
   function replace(task: Task) {
     tasks.update((list) => list.map((item) => (item.id === task.id ? task : item)))
@@ -59,6 +76,21 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
     setDialog(null)
     setNotice(created ? formatMessage(t.created, { name: task.name }) : t.saved)
     onChanged()
+  }
+
+  async function saveBudget(task: Task, amount: number | null) {
+    const updated = await setTaskBudget(at, task.id, amount)
+    tasks.update((list) => list.map((item) => (item.id === updated.id ? updated : item)))
+    setDialog(null)
+    setNotice(formatMessage(t.budget.saved, { name: updated.name }))
+    onChanged()
+  }
+
+  function budgetError(error: unknown): string {
+    const allocation = allocationIssue(error)
+    if (allocation) return t.budget.error[allocation]
+    const kind = taskErrorKind(error)
+    return kind === 'afterPhase' ? t.budget.error.invalid : t.error[kind]
   }
 
   async function remove(task: Task) {
@@ -138,7 +170,17 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
                             </span>
                             <TaskDue task={task} now={now} />
                           </p>
-                          {allowed.start || allowed.complete || allowed.edit || allowed.reassign || allowed.remove ? (
+                          {canViewBudget && task.allocatedBudget !== null ? (
+                            <p className="task-item__meta data-mono">
+                              {formatMessage(t.budget.value, { amount: budgetText(task.allocatedBudget, locale) })}
+                            </p>
+                          ) : null}
+                          {allowed.start ||
+                          allowed.complete ||
+                          allowed.edit ||
+                          allowed.reassign ||
+                          allowed.remove ||
+                          canManageBudget ? (
                             <div className="task-item__actions">
                               <TaskMoveButtons
                                 task={task}
@@ -161,6 +203,19 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
                                   }}
                                 >
                                   {t.edit}
+                                </button>
+                              ) : null}
+                              {canManageBudget ? (
+                                <button
+                                  type="button"
+                                  className="task-link"
+                                  aria-label={formatMessage(t.budget.actionLabel, { name: task.name })}
+                                  onClick={() => {
+                                    setNotice(null)
+                                    setDialog({ kind: 'budget', task })
+                                  }}
+                                >
+                                  {t.budget.action}
                                 </button>
                               ) : null}
                               {allowed.remove ? (
@@ -205,6 +260,16 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
           canReassign={dialog.kind === 'create' || taskActions(access, dialog.task, { onSite }).reassign}
           onSaved={saved}
           onUpdated={replace}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog?.kind === 'budget' ? (
+        <BudgetAmountDialog
+          title={t.budget.dialogTitle}
+          description={t.budget.dialogBody}
+          current={dialog.task.allocatedBudget}
+          save={(amount) => saveBudget(dialog.task, amount)}
+          errorMessage={budgetError}
           onClose={() => setDialog(null)}
         />
       ) : null}
