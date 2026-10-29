@@ -15,6 +15,8 @@ export const permissionActions = [
   'MANAGE_PRICES',
   'VIEW_BUDGET',
   'MANAGE_BUDGET',
+  'VIEW_PLAN',
+  'MANAGE_PLAN',
 ] as const
 
 export type PermissionAction = (typeof permissionActions)[number]
