@@ -126,7 +126,7 @@
   border: 1px solid var(--cx-border);
   border-top: 0;
   border-radius: 0 0 var(--cx-radius-md) var(--cx-radius-md);
-  background: var(--cx-paper-dim);
+  background: var(--cx-surface-raised);
 }
 
 .sheet-tabs__tab {

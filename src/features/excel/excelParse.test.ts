@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'bun:test'
 import JSZip from 'jszip'
 import { ExcelParseError, parseWorkbook } from './excelParse'
-import { buildFixture } from './testFixture'
+import { buildFixture, withoutCellRefs } from './testFixture'
 
 describe('parseWorkbook', () => {
+  it('reads a workbook whose rows and cells carry no reference, as Excel does', async () => {
+    const sheets = await parseWorkbook(await withoutCellRefs(await buildFixture()))
+    expect(sheets).toEqual(await parseWorkbook(await buildFixture()))
+  })
+
   it('reads every sheet in order', async () => {
     const sheets = await parseWorkbook(await buildFixture())
     expect(sheets.map((sheet) => sheet.name)).toEqual(['Budget', 'Notes'])
