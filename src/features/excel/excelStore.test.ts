@@ -57,6 +57,26 @@ describe('openExcelStore', () => {
   })
 })
 
+describe('saveEdits', () => {
+  it('updates the edit log without rewriting the original bytes', async () => {
+    const store = await openExcelStore(new IDBFactory())
+    await store.put(record('a', 10))
+    await store.saveEdits(record('a', 30, { original: new Uint8Array([9]).buffer, ops: [], dirty: true }))
+    const found = await store.get(owner, 'a')
+    expect(found?.ops).toEqual([])
+    expect(found?.dirty).toBe(true)
+    expect(found?.updatedAt).toBe(30)
+    expect(new Uint8Array(found!.original)).toEqual(new Uint8Array([1, 2, 3]))
+  })
+
+  it('does not save edits for a record of another owner', async () => {
+    const store = await openExcelStore(new IDBFactory())
+    await store.put(record('a', 10))
+    await store.saveEdits(record('a', 30, { organizationId: 'o2', ops: [] }))
+    expect((await store.get(owner, 'a'))?.ops).toEqual(record('a', 10).ops)
+  })
+})
+
 describe('toStoreError', () => {
   it('maps a quota error', () => {
     expect(toStoreError(new DOMException('full', 'QuotaExceededError')).reason).toBe('quota')

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useParams } from 'react-router'
 import { LoadingState, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
-import { downloadWorkbook } from './excelDownload'
+import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { ExcelOp, ExcelRecord, GridSheet } from './excelModel'
 import { applyOps } from './excelOps'
 import type { SaveQueue, SaveState } from './excelSaveQueue'
@@ -63,7 +63,7 @@ export function ExcelEditorPage() {
       const parsed = await parseInWorker(record.original)
       if (!active) return
       const queue = createSaveQueue({
-        save: (next) => opened.put(next),
+        save: (next) => opened.saveEdits(next),
         schedule: (run) => {
           const timer = setTimeout(run, SAVE_DELAY_MS)
           return () => clearTimeout(timer)
@@ -119,13 +119,14 @@ export function ExcelEditorPage() {
     setActionError(null)
     setDownloading(true)
     try {
+      const snapshot = recordRef.current
+      await downloadWorkbook(snapshot)
+      // Recorded through the queue, after any edit made while the file was being built.
+      const next = exportedRecord(recordRef.current, snapshot.ops.length)
+      recordRef.current = next
+      setDirty(next.dirty)
+      queue.push(next)
       await queue.flush()
-      const exported = await downloadWorkbook(store, recordRef.current)
-      // An edit made while the file was being built keeps the workbook dirty.
-      if (recordRef.current.ops.length === exported.ops.length) {
-        recordRef.current = exported
-        setDirty(false)
-      }
     } catch (caught) {
       setActionError(excelErrorMessage(caught, t))
     } finally {

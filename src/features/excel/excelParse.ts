@@ -17,6 +17,8 @@ export async function parseWorkbook(buffer: ArrayBuffer): Promise<GridSheet[]> {
   } catch (error) {
     throw new ExcelParseError(error instanceof Error ? error.message : String(error))
   }
+  // Any zip opens; one without worksheets (a renamed .docx, for example) is not a workbook.
+  if (workbook.worksheets.length === 0) throw new ExcelParseError('No worksheets')
   return sheetsFromWorkbook(workbook)
 }
 

@@ -40,7 +40,15 @@ describe('coerceCellValue', () => {
     expect(coerceCellValue(numberCell, '')).toBeNull()
     expect(coerceCellValue(emptyCell, null)).toBeNull()
     expect(coerceCellValue(emptyCell, false)).toBe(false)
-    expect(coerceCellValue(emptyCell, 3)).toBe('3')
+  })
+
+  it('stores a number typed into a blank or text cell as a number', () => {
+    expect(coerceCellValue(emptyCell, '500')).toBe(500)
+    expect(coerceCellValue(emptyCell, 3)).toBe(3)
+    expect(coerceCellValue({ ...emptyCell, type: 'text', value: 'a' }, '-12.5')).toBe(-12.5)
+    expect(coerceCellValue(emptyCell, '12abc')).toBe('12abc')
+    expect(coerceCellValue(emptyCell, ' ')).toBe(' ')
+    expect(coerceCellValue({ ...emptyCell, type: 'text', numFmt: '@' }, '500')).toBe('500')
   })
 })
 
@@ -67,6 +75,12 @@ describe('opsFromStructure', () => {
 })
 
 describe('cellMeta', () => {
+  it('makes every cell read-only when the table is', () => {
+    expect(cellMeta(emptyCell, 'en-US', true).readOnly).toBe(true)
+    expect(cellMeta({ ...numberCell, value: 1 }, 'en-US', true).readOnly).toBe(true)
+    expect(cellMeta(emptyCell, 'en-US', false).readOnly).toBe(false)
+  })
+
   it('formats numbers from their numFmt and the locale', () => {
     expect(cellMeta({ ...numberCell, value: 1 }, 'es-MX')).toEqual({
       type: 'numeric',

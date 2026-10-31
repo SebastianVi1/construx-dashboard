@@ -14,6 +14,13 @@ describe('excelFileIssue', () => {
     expect(excelFileIssue({ ...xlsx, name: 'BUDGET.XLSX' }, 0)).toBeNull()
   })
 
+  it('accepts the types some Windows setups report for an xlsx', () => {
+    expect(excelFileIssue({ ...xlsx, type: 'application/vnd.ms-excel' }, 0)).toBeNull()
+    expect(excelFileIssue({ ...xlsx, type: 'application/x-zip-compressed' }, 0)).toBeNull()
+    expect(excelFileIssue({ ...xlsx, type: 'application/zip' }, 0)).toBeNull()
+    expect(excelFileIssue({ ...xlsx, type: 'image/png' }, 0)).toBe('fileType')
+  })
+
   it('rejects other extensions', () => {
     expect(excelFileIssue({ ...xlsx, name: 'budget.xls' }, 0)).toBe('fileType')
     expect(excelFileIssue({ name: 'budget.csv', type: 'text/csv', size: 10 }, 0)).toBe('fileType')

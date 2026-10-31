@@ -2,8 +2,18 @@ export const MAX_EXCEL_BYTES = 10 * 1024 * 1024
 export const MAX_LIBRARY_FILES = 20
 export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-/** Browsers without an office suite installed report an `.xlsx` with no type or a generic one. */
-const acceptedTypes = [XLSX_MIME, '', 'application/octet-stream']
+/**
+ * Browsers without an office suite report an `.xlsx` with no type or a generic one, and some
+ * Windows setups report the old Excel or a zip type. The worker still checks the content.
+ */
+const acceptedTypes = [
+  XLSX_MIME,
+  '',
+  'application/octet-stream',
+  'application/vnd.ms-excel',
+  'application/zip',
+  'application/x-zip-compressed',
+]
 
 export type ExcelFileIssue = 'fileType' | 'empty' | 'tooLarge' | 'libraryFull'
 

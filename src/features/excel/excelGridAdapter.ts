@@ -7,6 +7,7 @@ export type HotValue = string | number | boolean | null
 export type HotChange = [row: number, col: number | string, oldValue: unknown, newValue: unknown]
 
 const isoDay = /^(\d{4})-(\d{2})-(\d{2})$/
+const numeric = /^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i
 
 /** Dates use UTC getters: ExcelJS dates are UTC midnights, and local time would shift a day west of UTC. */
 export function toGridData(sheet: GridSheet): HotValue[][] {
@@ -28,6 +29,12 @@ export function coerceCellValue(cell: GridCell, raw: unknown): CellValue {
   if (cell.type === 'date') {
     const match = isoDay.exec(String(raw))
     return match ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))) : String(raw)
+  }
+  // Like Excel's General format: figures typed into a blank or text cell are numbers, unless
+  // the cell is formatted as text (`@`).
+  if (typeof raw === 'number') return raw
+  if ((cell.type === 'empty' || cell.type === 'text') && cell.numFmt !== '@' && numeric.test(String(raw))) {
+    return Number(raw)
   }
   return String(raw)
 }
@@ -61,8 +68,9 @@ export type CellMeta = {
   dateFormat?: Intl.DateTimeFormatOptions
 }
 
-export function cellMeta(cell: GridCell, locale: string): CellMeta {
-  const readOnly = cell.readOnly
+/** `tableReadOnly` wins: Handsontable lets a cell's own `readOnly` override the table's. */
+export function cellMeta(cell: GridCell, locale: string, tableReadOnly = false): CellMeta {
+  const readOnly = tableReadOnly || cell.readOnly
   const type = cell.type === 'formula' ? resultType(cell.value) : cell.type
   if (type === 'number') return { type: 'numeric', readOnly, locale, numericFormat: numericFormatFor(cell.numFmt) }
   if (type === 'date') return { type: 'date', readOnly, locale, dateFormat: { year: 'numeric', month: '2-digit', day: '2-digit' } }

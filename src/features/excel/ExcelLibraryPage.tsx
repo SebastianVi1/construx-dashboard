@@ -4,7 +4,7 @@ import { SpreadsheetIcon } from '../../components/icons'
 import { ConfirmDialog } from '../../components/modal'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
-import { downloadWorkbook } from './excelDownload'
+import { downloadWorkbook, exportedRecord } from './excelDownload'
 import { excelFileIssue, MAX_LIBRARY_FILES } from './excelFile'
 import type { ExcelRecordSummary } from './excelModel'
 import { parseInWorker } from './excelWorkerClient'
@@ -105,7 +105,8 @@ export function ExcelLibraryPage() {
     try {
       const record = await store.get(owner, item.id)
       if (!record) throw new Error('missing')
-      await downloadWorkbook(store, record)
+      await downloadWorkbook(record)
+      await store.saveEdits(exportedRecord(record, record.ops.length))
       await refresh()
     } catch (caught) {
       setError(excelErrorMessage(caught, t))

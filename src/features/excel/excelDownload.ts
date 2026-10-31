@@ -1,13 +1,13 @@
 import { XLSX_MIME } from './excelFile'
 import type { ExcelRecord } from './excelModel'
-import type { ExcelStore } from './excelStore'
 import { exportInWorker } from './excelWorkerClient'
 
 /**
- * Builds the edited `.xlsx` in the worker, saves it under the original name, and marks the
- * record exported. Returns the updated record; the original bytes are never changed.
+ * Builds the edited `.xlsx` in the worker and saves it under the original name. Stores nothing:
+ * the caller records the download with `exportedRecord`, through the editor's save queue when
+ * one is open, so a save from an edit made meanwhile is never overwritten.
  */
-export async function downloadWorkbook(store: ExcelStore, record: ExcelRecord): Promise<ExcelRecord> {
+export async function downloadWorkbook(record: ExcelRecord): Promise<void> {
   const bytes = await exportInWorker(record.original, record.ops)
   const url = URL.createObjectURL(new Blob([bytes], { type: XLSX_MIME }))
   const link = document.createElement('a')
@@ -18,7 +18,9 @@ export async function downloadWorkbook(store: ExcelStore, record: ExcelRecord): 
   link.remove()
   // Some browsers start reading the blob after `click()` returns.
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
-  const exported = { ...record, dirty: false, exportedAt: Date.now() }
-  await store.put(exported)
-  return exported
+}
+
+/** The record after a download of its first `exportedOps` edits; later edits keep it dirty. */
+export function exportedRecord(current: ExcelRecord, exportedOps: number, now = Date.now()): ExcelRecord {
+  return { ...current, dirty: current.ops.length !== exportedOps, exportedAt: now }
 }

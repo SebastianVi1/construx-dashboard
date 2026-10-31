@@ -24,6 +24,8 @@ export type ExcelStore = {
   /** Null when missing or owned by another user or organization. */
   get(owner: Owner, id: string): Promise<ExcelRecord | null>
   put(record: ExcelRecord): Promise<void>
+  /** Saves the edit log and flags without rewriting the original bytes; ignored for another owner. */
+  saveEdits(record: ExcelRecord): Promise<void>
   remove(owner: Owner, id: string): Promise<void>
   count(owner: Owner): Promise<number>
 }
@@ -62,6 +64,15 @@ export async function openExcelStore(factory: IDBFactory = globalThis.indexedDB)
       const transaction = db.transaction([WORKBOOKS, ORIGINALS], 'readwrite')
       transaction.objectStore(WORKBOOKS).put(workbook)
       transaction.objectStore(ORIGINALS).put(original, record.id)
+      await done(transaction)
+    },
+
+    async saveEdits(record) {
+      const workbook: Partial<ExcelRecord> = { ...record }
+      delete workbook.original
+      const transaction = db.transaction(WORKBOOKS, 'readwrite')
+      const stored = await request<StoredWorkbook | undefined>(transaction.objectStore(WORKBOOKS).get(record.id))
+      if (stored && isOwner(stored, record)) transaction.objectStore(WORKBOOKS).put(workbook)
       await done(transaction)
     },
 

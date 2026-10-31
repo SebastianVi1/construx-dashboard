@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import JSZip from 'jszip'
 import { ExcelParseError, parseWorkbook } from './excelParse'
 import { buildFixture } from './testFixture'
 
@@ -33,5 +34,12 @@ describe('parseWorkbook', () => {
   it('rejects bytes that are not a workbook', async () => {
     const bytes = new TextEncoder().encode('not a zip')
     await expect(parseWorkbook(bytes.buffer as ArrayBuffer)).rejects.toBeInstanceOf(ExcelParseError)
+  })
+
+  it('rejects a zip that holds no worksheets', async () => {
+    const zip = new JSZip()
+    zip.file('word/document.xml', '<w:document/>')
+    const buffer = await zip.generateAsync({ type: 'arraybuffer' })
+    await expect(parseWorkbook(buffer)).rejects.toBeInstanceOf(ExcelParseError)
   })
 })
