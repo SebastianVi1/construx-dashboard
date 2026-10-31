@@ -14,6 +14,8 @@ type ConfirmDialogProps = {
   onClose: () => void
   /** `danger` (default) for destructive actions, `primary` to confirm a save. */
   confirmTone?: 'danger' | 'primary'
+  /** Keeps the confirm button off until the caller's own check passes, such as typing a name. */
+  confirmDisabled?: boolean
   /** Extra detail shown under the body, such as the changes being saved. */
   children?: ReactNode
 }
@@ -29,12 +31,13 @@ export function ConfirmDialog({
   onConfirm,
   onClose,
   confirmTone = 'danger',
+  confirmDisabled = false,
   children,
 }: ConfirmDialogProps) {
   const [busy, setBusy] = useState(false)
 
   async function confirm() {
-    if (busy) return
+    if (busy || confirmDisabled) return
     setBusy(true)
     try {
       await onConfirm()
@@ -55,7 +58,7 @@ export function ConfirmDialog({
         <button type="button" className="button" onClick={onClose} disabled={busy}>
           {cancelLabel}
         </button>
-        <button type="button" className={`button button--${confirmTone}`} onClick={() => void confirm()} disabled={busy}>
+        <button type="button" className={`button button--${confirmTone}`} onClick={() => void confirm()} disabled={busy || confirmDisabled}>
           {busy ? pendingLabel : confirmLabel}
         </button>
       </div>

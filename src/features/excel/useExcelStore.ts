@@ -3,10 +3,12 @@ import type { Messages } from '../../i18n'
 import { useAuth } from '../auth/auth-context'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { ExcelWorkerError } from './excelWorkerClient'
-import type { ExcelStore, Owner } from './excelStore'
-import { ExcelStoreError, openExcelStore } from './excelStore'
+import type { ExcelStore } from './excelStore'
+import { ExcelStoreError, ExcelTreeError, openExcelStore } from './excelStore'
 
-/** The signed-in user in the selected company: workbooks are kept apart per pair. */
+/** The selected company owns the workbooks; the signed-in user is recorded as their uploader. */
+export type Owner = { userId: string; organizationId: string }
+
 export function useExcelOwner(): Owner {
   const { user } = useAuth()
   const organization = useCurrentOrganization()
@@ -34,6 +36,7 @@ export function useExcelStore(): { store: ExcelStore | null; failed: boolean } {
 
 /** The message for a failed store, worker or export call. */
 export function excelErrorMessage(error: unknown, t: Messages['excel']): string {
+  if (error instanceof ExcelTreeError) return t.folderIssues[error.issue]
   if (error instanceof ExcelStoreError) return error.reason === 'quota' ? t.quotaFailed : t.storeFailed
   if (error instanceof ExcelWorkerError && error.reason === 'unreadable') return t.issues.unreadable
   return t.exportFailed

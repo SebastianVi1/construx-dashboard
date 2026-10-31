@@ -11,6 +11,7 @@ import type { ExcelStore, ExcelStoreError } from './excelStore'
 import { parseInWorker } from './excelWorkerClient'
 import { ExcelGrid } from './ExcelGrid'
 import { SheetTabs } from './SheetTabs'
+import { folderHref } from './excelTree'
 import { excelErrorMessage, useExcelOwner, useExcelStore } from './useExcelStore'
 import './excel.css'
 
@@ -55,7 +56,7 @@ export function ExcelEditorPage() {
     if (!store) return
     let active = true
     async function load(opened: ExcelStore) {
-      const record = await opened.get({ userId: owner.userId, organizationId: owner.organizationId }, fileId)
+      const record = await opened.get(owner.organizationId, fileId)
       if (!record) {
         if (active) setLoadError({ cause: NOT_FOUND })
         return
@@ -82,7 +83,7 @@ export function ExcelEditorPage() {
     return () => {
       active = false
     }
-  }, [store, fileId, owner.userId, owner.organizationId])
+  }, [store, fileId, owner.organizationId])
 
   // Save what is pending when leaving the page, and warn before closing the tab with unsaved edits.
   const queue = loaded?.queue
@@ -152,7 +153,7 @@ export function ExcelEditorPage() {
 
   return (
     <div className="page excel-editor">
-      <Link className="page-back" to="/excel">{t.back}</Link>
+      <Link className="page-back" to={folderHref(loaded.record.folderId)}>{t.back}</Link>
       <header className="excel-editor__toolbar">
         <h1 className="excel-editor__name">{loaded.record.name}</h1>
         {dirty ? <span className="badge" data-tone="warning">{t.unexported}</span> : null}

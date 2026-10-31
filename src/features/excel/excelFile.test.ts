@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { excelFileIssue, MAX_EXCEL_BYTES, XLSX_MIME } from './excelFile'
+import { excelFileIssue, MAX_EXCEL_BYTES, MAX_LIBRARY_FILES, XLSX_MIME } from './excelFile'
 
 const xlsx = { name: 'budget.xlsx', type: XLSX_MIME, size: 1024 }
 
@@ -35,9 +35,9 @@ describe('excelFileIssue', () => {
     expect(excelFileIssue({ ...xlsx, size: MAX_EXCEL_BYTES + 1 }, 0)).toBe('tooLarge')
   })
 
-  it('rejects a 21st file but allows replacing when full', () => {
-    expect(excelFileIssue(xlsx, 19)).toBeNull()
-    expect(excelFileIssue(xlsx, 20)).toBe('libraryFull')
-    expect(excelFileIssue(xlsx, 20, true)).toBeNull()
+  it('rejects a 201st file but allows replacing when full', () => {
+    expect(excelFileIssue(xlsx, MAX_LIBRARY_FILES - 1)).toBeNull()
+    expect(excelFileIssue(xlsx, MAX_LIBRARY_FILES)).toBe('libraryFull')
+    expect(excelFileIssue(xlsx, MAX_LIBRARY_FILES, true)).toBeNull()
   })
 })

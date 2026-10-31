@@ -51,30 +51,53 @@
 }
 
 .excel-list {
-  display: grid;
-  gap: 8px;
+  --tree-indent: 24px;
   margin: 0;
   padding: 0;
-  list-style: none;
-}
-
-.excel-list__item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-md);
   background: var(--cx-surface);
+  list-style: none;
+}
+
+/* One surface with divided rows; the indent sits inside the row so the tree reads as a tree. */
+.excel-list__item {
+  display: flex;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 56px;
+  padding: 8px 12px;
+  padding-inline-start: calc(8px + var(--tree-indent) * var(--tree-level, 0));
+  transition: background-color 120ms ease;
+}
+
+.excel-list__item + .excel-list__item {
+  border-top: 1px solid var(--cx-border);
+}
+
+.excel-list__item:first-child {
+  border-radius: var(--cx-radius-md) var(--cx-radius-md) 0 0;
+}
+
+.excel-list__item:last-child {
+  border-radius: 0 0 var(--cx-radius-md) var(--cx-radius-md);
+}
+
+.excel-list__item:hover {
+  background: var(--cx-surface-raised);
 }
 
 .excel-list__text {
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
   align-items: center;
-  gap: 4px 12px;
+  gap: 12px;
+  min-width: 0;
+}
+
+.excel-list__body {
+  display: grid;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -82,13 +105,263 @@
   overflow: hidden;
   color: var(--cx-ink);
   font-weight: 600;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.excel-list__name:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .excel-list__detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
   color: var(--cx-muted);
   font-size: 13px;
+}
+
+.excel-list__actions {
+  flex: none;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+/* Quiet row actions: the row's content leads, the actions answer on hover and focus. */
+.excel-list__action {
+  border-color: transparent;
+  color: var(--cx-muted);
+}
+
+.excel-list__action:hover:not(:disabled),
+.excel-list__action:focus-visible {
+  border-color: var(--cx-border-strong);
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+}
+
+.excel-list__action--danger:hover:not(:disabled),
+.excel-list__action--danger:focus-visible {
+  border-color: color-mix(in srgb, var(--cx-danger) 45%, transparent);
+  background: var(--cx-danger-subtle);
+  color: var(--cx-danger);
+}
+
+/*
+ * Narrow screens: the arrow, icon and name stay on one line and shrink; the actions take
+ * their own line, right-aligned like on desktop and freed from the indent so they never split.
+ */
+@media (max-width: 720px) {
+  .excel-list {
+    --tree-indent: 16px;
+  }
+
+  .excel-list__item {
+    flex-wrap: wrap;
+  }
+
+  .excel-list__text {
+    flex-basis: 0;
+  }
+
+  .excel-list__actions {
+    justify-content: flex-end;
+    width: calc(100% + var(--tree-indent) * var(--tree-level, 0));
+    margin-inline-start: calc(-1 * var(--tree-indent) * var(--tree-level, 0));
+  }
+
+  .excel-list__action {
+    padding: 0 8px;
+  }
+}
+
+.excel-list__toggle,
+.excel-nav-tree__toggle {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cx-radius-sm);
+  background: none;
+  color: var(--cx-muted);
+  cursor: pointer;
+}
+
+.excel-list__toggle:hover:not(:disabled),
+.excel-nav-tree__toggle:hover:not(:disabled) {
+  background: var(--cx-border);
+  color: var(--cx-ink);
+}
+
+.excel-list__toggle svg,
+.excel-nav-tree__toggle svg {
+  width: 16px;
+  height: 16px;
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.excel-list__toggle[aria-expanded='true'] svg,
+.excel-nav-tree__toggle[aria-expanded='true'] svg {
+  transform: none;
+}
+
+.excel-list__toggle[data-empty],
+.excel-nav-tree__toggle[data-empty] {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .excel-list__toggle svg,
+  .excel-nav-tree__toggle svg {
+    transition: none;
+  }
+}
+
+.excel-list__item[draggable='true'] {
+  cursor: grab;
+}
+
+.excel-list__item[data-dragged] {
+  opacity: 0.5;
+}
+
+.excel-list__item[data-drop-target],
+.excel-path a[data-drop-target] {
+  outline: 2px solid var(--cx-accent);
+  outline-offset: -2px;
+  background: var(--cx-accent-subtle);
+}
+
+.excel-path a[data-drop-target] {
+  outline-offset: 2px;
+}
+
+.excel-list__icon {
+  flex: none;
+  color: var(--cx-muted);
+}
+
+.excel-list__item[data-kind='folder'] .excel-list__icon {
+  color: var(--cx-accent);
+}
+
+.excel-path ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 0;
+  color: var(--cx-muted);
+  font-size: 14px;
+  list-style: none;
+}
+
+.excel-path li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.excel-path li + li::before {
+  content: '/';
+  color: var(--cx-border-strong);
+}
+
+.excel-path a {
+  color: var(--cx-muted);
+}
+
+.excel-path a:hover {
+  color: var(--cx-ink);
+}
+
+.excel-path [aria-current='page'] {
+  overflow: hidden;
+  color: var(--cx-ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Small screens keep the root and the current folder: Excel / … / 2026. */
+.excel-path__ellipsis {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .excel-path li[data-collapsible] {
+    display: none;
+  }
+
+  .excel-path__ellipsis {
+    display: flex !important;
+  }
+}
+
+.excel-move {
+  display: grid;
+  gap: 2px;
+  max-height: min(50vh, 420px);
+  margin: 0 0 16px;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  list-style: none;
+}
+
+.excel-move__option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--cx-radius-sm);
+  background: none;
+  color: var(--cx-ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.excel-move__option:hover:not(:disabled) {
+  background: var(--cx-surface-raised);
+}
+
+.excel-move__option[aria-selected='true'] {
+  border-color: var(--cx-accent);
+  background: var(--cx-accent-subtle);
+}
+
+.excel-move__option:disabled {
+  color: var(--cx-muted);
+  cursor: not-allowed;
+}
+
+.excel-move__name {
+  font-weight: 600;
+}
+
+.excel-move__reason {
+  font-size: 12px;
+}
+
+.excel-delete__summary {
+  margin: 0 0 16px;
+  color: var(--cx-ink);
+  font-weight: 600;
 }
 
 .excel-editor__toolbar {
@@ -156,5 +429,119 @@
 @media (max-width: 760px) {
   .excel-editor__grid {
     height: 60vh;
+  }
+}
+
+/* ---------- Folder tree in the side navigation (full width only) ---------- */
+
+.workspace-nav__item {
+  position: relative;
+}
+
+.excel-nav__switch {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cx-radius-sm);
+  background: none;
+  color: var(--cx-muted);
+  cursor: pointer;
+}
+
+.excel-nav__switch:hover {
+  background: var(--cx-border);
+  color: var(--cx-ink);
+}
+
+.excel-nav__switch svg {
+  width: 16px;
+  height: 16px;
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.excel-nav__switch[aria-expanded='true'] svg {
+  transform: none;
+}
+
+.excel-nav-tree {
+  --tree-indent: 12px;
+  display: grid;
+  gap: 1px;
+  margin: 2px 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.excel-nav-tree__item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding-inline-start: calc(6px + var(--tree-indent) * var(--tree-level, 0));
+}
+
+.excel-nav-tree__toggle {
+  width: 24px;
+  height: 24px;
+}
+
+.excel-nav-tree__link {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.excel-nav-tree__link:hover {
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+}
+
+.excel-nav-tree__link.active {
+  background: var(--cx-accent-subtle);
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.excel-nav-tree__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.excel-nav-tree__link.active .excel-nav-tree__icon {
+  color: var(--cx-accent);
+}
+
+.excel-nav-tree__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .excel-nav__switch svg {
+    transition: none;
+  }
+}
+
+/* The icon rail and the phone tab bar have no room for a tree. */
+@media (max-width: 1080px) {
+  .excel-nav {
+    display: none;
   }
 }
