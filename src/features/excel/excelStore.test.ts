@@ -90,6 +90,15 @@ describe('openExcelStore', () => {
     expect((await store.tree(org)).folders).toHaveLength(1)
   })
 
+  it('refuses a workbook for a missing folder or over a record of another organization', async () => {
+    const store = await openExcelStore(new IDBFactory())
+    await store.put(record('a', 10))
+    expect(await treeIssue(store.put(record('b', 10, { folderId: 'gone' })))).toBe('notFound')
+    expect(await treeIssue(store.put(record('a', 20, { organizationId: 'o2' })))).toBe('notFound')
+    expect((await store.tree(org)).workbooks.map((item) => item.id)).toEqual(['a'])
+    expect(await store.count('o2')).toBe(0)
+  })
+
   it('removes a record and its bytes', async () => {
     const store = await openExcelStore(new IDBFactory())
     await store.put(record('a', 10))
@@ -162,6 +171,21 @@ describe('folders', () => {
     expect(folders.map((item) => item.id)).toEqual(['keep'])
     expect(workbooks.map((item) => item.id)).toEqual(['root'])
     expect(await store.get(org, 'in-b')).toBeNull()
+  })
+})
+
+describe('version upgrades', () => {
+  it('closes this connection when another tab opens a newer version', async () => {
+    const factory = new IDBFactory()
+    await openExcelStore(factory)
+    const newer = await new Promise<IDBDatabase>((resolve, reject) => {
+      const opening = factory.open('construx-excel', 3)
+      opening.onsuccess = () => resolve(opening.result)
+      opening.onerror = () => reject(opening.error)
+      opening.onblocked = () => reject(new Error('blocked'))
+    })
+    expect(newer.version).toBe(3)
+    newer.close()
   })
 })
 

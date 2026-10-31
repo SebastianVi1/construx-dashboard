@@ -101,7 +101,16 @@ export async function openExcelStore(factory: IDBFactory = globalThis.indexedDB)
 
     async put(record) {
       const { original, ...workbook } = record
-      const transaction = write([WORKBOOKS, ORIGINALS])
+      const transaction = write([WORKBOOKS, ORIGINALS, FOLDERS])
+      const [stored, folder] = await Promise.all([
+        request<StoredWorkbook | undefined>(transaction.objectStore(WORKBOOKS).get(record.id)),
+        record.folderId === null
+          ? undefined
+          : request<ExcelFolder | undefined>(transaction.objectStore(FOLDERS).get(record.folderId)),
+      ])
+      // A folder deleted while the file was read, or an id of another organization, is refused.
+      const lostFolder = record.folderId !== null && folder?.organizationId !== record.organizationId
+      refuse(transaction, lostFolder || (stored && stored.organizationId !== record.organizationId) ? 'notFound' : null)
       transaction.objectStore(WORKBOOKS).put(workbook)
       transaction.objectStore(ORIGINALS).put(original, record.id)
       await done(transaction)
@@ -171,10 +180,16 @@ export async function openExcelStore(factory: IDBFactory = globalThis.indexedDB)
       const library = await load(transaction, organizationId)
       const summary = deleteSummary(library, folderId)
       refuse(transaction, summary.folderIds.length === 0 ? 'notFound' : null)
-      for (const id of summary.folderIds) transaction.objectStore(FOLDERS).delete(id)
-      for (const id of summary.workbookIds) {
-        transaction.objectStore(WORKBOOKS).delete(id)
-        transaction.objectStore(ORIGINALS).delete(id)
+      try {
+        for (const id of summary.folderIds) transaction.objectStore(FOLDERS).delete(id)
+        for (const id of summary.workbookIds) {
+          transaction.objectStore(WORKBOOKS).delete(id)
+          transaction.objectStore(ORIGINALS).delete(id)
+        }
+      } catch (error) {
+        // Deletes already queued would still commit; all or nothing.
+        transaction.abort()
+        throw toStoreError(error)
       }
       await done(transaction)
       return summary
@@ -205,7 +220,11 @@ function open(factory: IDBFactory): Promise<IDBDatabase> {
       return
     }
     opening.onupgradeneeded = (event) => upgrade(opening.result, opening.transaction!, event.oldVersion)
-    opening.onsuccess = () => resolve(opening.result)
+    opening.onsuccess = () => {
+      // Lets a newer version of the app in another tab upgrade instead of being blocked by this one.
+      opening.result.onversionchange = () => opening.result.close()
+      resolve(opening.result)
+    }
     opening.onerror = () => reject(toStoreError(opening.error))
     opening.onblocked = () => reject(new ExcelStoreError('unavailable', 'Excel store blocked'))
   })
