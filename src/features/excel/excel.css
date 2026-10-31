@@ -257,7 +257,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  margin: 0 0 16px;
+  margin: 0 0 8px;
   padding: 0;
   color: var(--cx-muted);
   font-size: 14px;
@@ -429,5 +429,119 @@
 @media (max-width: 760px) {
   .excel-editor__grid {
     height: 60vh;
+  }
+}
+
+/* ---------- Folder tree in the side navigation (full width only) ---------- */
+
+.workspace-nav__item {
+  position: relative;
+}
+
+.excel-nav__switch {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cx-radius-sm);
+  background: none;
+  color: var(--cx-muted);
+  cursor: pointer;
+}
+
+.excel-nav__switch:hover {
+  background: var(--cx-border);
+  color: var(--cx-ink);
+}
+
+.excel-nav__switch svg {
+  width: 16px;
+  height: 16px;
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.excel-nav__switch[aria-expanded='true'] svg {
+  transform: none;
+}
+
+.excel-nav-tree {
+  --tree-indent: 12px;
+  display: grid;
+  gap: 1px;
+  margin: 2px 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.excel-nav-tree__item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding-inline-start: calc(6px + var(--tree-indent) * var(--tree-level, 0));
+}
+
+.excel-nav-tree__toggle {
+  width: 24px;
+  height: 24px;
+}
+
+.excel-nav-tree__link {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.excel-nav-tree__link:hover {
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+}
+
+.excel-nav-tree__link.active {
+  background: var(--cx-accent-subtle);
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.excel-nav-tree__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.excel-nav-tree__link.active .excel-nav-tree__icon {
+  color: var(--cx-accent);
+}
+
+.excel-nav-tree__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .excel-nav__switch svg {
+    transition: none;
+  }
+}
+
+/* The icon rail and the phone tab bar have no room for a tree. */
+@media (max-width: 1080px) {
+  .excel-nav {
+    display: none;
   }
 }

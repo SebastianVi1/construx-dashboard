@@ -300,6 +300,34 @@ export function ExcelLibraryPage() {
 
   return (
     <div className="page">
+      {path.length > 0 ? (
+        <nav className="excel-path" aria-label={t.folderPath}>
+          <ol>
+            <li>
+              <Link to="/excel" {...dropZone(null)}>
+                {t.title}
+              </Link>
+            </li>
+            {path.length > 1 ? (
+              <li className="excel-path__ellipsis" aria-hidden="true">
+                …
+              </li>
+            ) : null}
+            {path.map((folder, index) => (
+              <li key={folder.id} data-collapsible={index < path.length - 1 || undefined}>
+                {index === path.length - 1 ? (
+                  <span aria-current="page">{folder.name}</span>
+                ) : (
+                  <Link to={folderHref(folder.id)} {...dropZone(folder.id)}>
+                    {folder.name}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      ) : null}
+
       <header className="page-header">
         <div className="page-header__text">
           <h1>{here?.name ?? t.title}</h1>
@@ -332,34 +360,6 @@ export function ExcelLibraryPage() {
           />
         </div>
       </header>
-
-      {path.length > 0 ? (
-        <nav className="excel-path" aria-label={t.folderPath}>
-          <ol>
-            <li>
-              <Link to="/excel" {...dropZone(null)}>
-                {t.title}
-              </Link>
-            </li>
-            {path.length > 1 ? (
-              <li className="excel-path__ellipsis" aria-hidden="true">
-                …
-              </li>
-            ) : null}
-            {path.map((folder, index) => (
-              <li key={folder.id} data-collapsible={index < path.length - 1 || undefined}>
-                {index === path.length - 1 ? (
-                  <span aria-current="page">{folder.name}</span>
-                ) : (
-                  <Link to={folderHref(folder.id)} {...dropZone(folder.id)}>
-                    {folder.name}
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
-      ) : null}
 
       {folderMissing ? <Notice tone="info">{t.folderMissing}</Notice> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
