@@ -6,6 +6,7 @@ export {
   PlusIcon,
   SignOutIcon,
   SitesIcon,
+  SpreadsheetIcon,
   SunIcon,
   TasksIcon,
   TeamIcon,

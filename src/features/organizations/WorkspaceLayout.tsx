@@ -1,9 +1,10 @@
 import { Suspense, useEffect, useRef, type MouseEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
-import { MaterialsIcon, SitesIcon, TasksIcon, TeamIcon } from '../../components/icons'
+import { MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
+import { seesWorkbooks } from '../excel/excelAccess'
 import { hasPermission } from '../permissions/landing'
 import { useCurrentOrganization } from './organizations-context'
 import { WorkspaceHeader } from './WorkspaceHeader'
@@ -16,6 +17,7 @@ const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
   sites: SitesIcon,
   myTasks: TasksIcon,
   materials: MaterialsIcon,
+  excel: SpreadsheetIcon,
   members: TeamIcon,
 }
 
@@ -65,6 +67,7 @@ function WorkspaceBody() {
   const items = workspaceNavItems({
     seesOwnTasks: hasPermission(access, 'VIEW_ACTIVITY') || hasPermission(access, 'MANAGE_ACTIVITY'),
     seesPrices: can('VIEW_PRICES'),
+    seesBudget: seesWorkbooks(access),
     managesMembers: can('MANAGE_MEMBERS'),
   })
 

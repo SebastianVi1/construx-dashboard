@@ -8,6 +8,7 @@ import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { AuthCompletePage } from './features/auth/AuthCompletePage'
 import { NotFoundPage } from './features/auth/NotFoundPage'
 import { GuestOnly, RequireAuth } from './features/auth/RouteGuards'
+import { RequireWorkbooks } from './features/excel/RequireWorkbooks'
 import { CreateOrganizationPage, OrganizationGate, WorkspaceHome, WorkspaceLayout } from './features/organizations'
 
 // Workspace screens load on first visit; WorkspaceLayout holds their Suspense boundary.
@@ -24,6 +25,12 @@ const MaterialsPage = lazy(() =>
 )
 const MaterialDetailPage = lazy(() =>
   import('./features/materials/MaterialDetailPage').then((module) => ({ default: module.MaterialDetailPage })),
+)
+const ExcelLibraryPage = lazy(() =>
+  import('./features/excel/ExcelLibraryPage').then((module) => ({ default: module.ExcelLibraryPage })),
+)
+const ExcelEditorPage = lazy(() =>
+  import('./features/excel/ExcelEditorPage').then((module) => ({ default: module.ExcelEditorPage })),
 )
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })))
 const AcceptInvitationPage = lazy(() =>
@@ -53,6 +60,8 @@ function App() {
         <Route path="/tasks" element={<MyTasksPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
         <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
+        <Route path="/excel" element={<RequireWorkbooks><ExcelLibraryPage /></RequireWorkbooks>} />
+        <Route path="/excel/:fileId" element={<RequireWorkbooks><ExcelEditorPage /></RequireWorkbooks>} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/account" element={<ProfilePage />} />
       </Route>
