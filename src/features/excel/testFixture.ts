@@ -29,18 +29,22 @@ export async function buildFixture(): Promise<ArrayBuffer> {
 }
 
 /**
- * The same workbook as some generators write it: no `r` on rows, and none on a cell that
- * directly follows the previous one (a cell after a gap keeps its reference). Tests only.
+ * The same workbook as some generators write it: no `r` on a row or cell that directly follows
+ * the previous one (one after a gap keeps its reference). Tests only.
  */
 export async function withoutCellRefs(buffer: ArrayBuffer): Promise<ArrayBuffer> {
   const zip = await JSZip.loadAsync(buffer)
   for (const path of Object.keys(zip.files).filter((name) => /^xl\/worksheets\/[^/]+\.xml$/.test(name))) {
+    let previousRow = 0
     let previous = -1
     const xml = (await zip.file(path)!.async('string')).replace(/<(row|c)(?=[\s>/])([^>]*)>/g, (tag, name: string, attrs: string) => {
-      const ref = /\sr="([A-Z]*)\d+"/.exec(attrs)
+      const ref = /\sr="([A-Z]*)(\d+)"/.exec(attrs)
       if (name === 'row') {
+        const row = Number(ref![2])
+        const follows = row === previousRow + 1
+        previousRow = row
         previous = -1
-        return `<row${attrs.replace(/\sr="\d+"/, '')}>`
+        return follows ? `<row${attrs.replace(ref![0], '')}>` : tag
       }
       if (!ref) return tag
       const col = [...ref[1]].reduce((total, letter) => total * 26 + letter.charCodeAt(0) - 64, 0) - 1

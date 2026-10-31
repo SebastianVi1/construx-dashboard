@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs'
 import type { CellValue, GridCell, GridSheet, Merge } from './excelModel'
 import { emptyCell } from './excelModel'
+import { loadWorkbook } from './excelLoad'
 
 /** The bytes are not a workbook ExcelJS can open (corrupt, encrypted, or another format renamed). */
 export class ExcelParseError extends Error {}
@@ -11,9 +12,9 @@ export function colWidthPx(chars: number | undefined): number {
 }
 
 export async function parseWorkbook(buffer: ArrayBuffer): Promise<GridSheet[]> {
-  const workbook = new ExcelJS.Workbook()
+  let workbook: ExcelJS.Workbook
   try {
-    await workbook.xlsx.load(buffer)
+    workbook = await loadWorkbook(buffer)
   } catch (error) {
     throw new ExcelParseError(error instanceof Error ? error.message : String(error))
   }

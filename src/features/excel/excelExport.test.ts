@@ -4,7 +4,7 @@ import JSZip from 'jszip'
 import type { ExcelOp } from './excelModel'
 import { exportWorkbook } from './excelExport'
 import { parseWorkbook } from './excelParse'
-import { buildFixture } from './testFixture'
+import { buildFixture, withoutCellRefs } from './testFixture'
 
 async function roundTrip(ops: ExcelOp[]) {
   return parseWorkbook(await exportWorkbook(await buildFixture(), ops))
@@ -17,6 +17,14 @@ async function reload(ops: ExcelOp[]) {
 }
 
 describe('exportWorkbook', () => {
+  it('replays edits on a workbook whose rows and cells carry no reference', async () => {
+    const ops: ExcelOp[] = [{ kind: 'setCell', sheet: 0, row: 2, col: 1, value: 900 }]
+    const [budget] = await parseWorkbook(await exportWorkbook(await withoutCellRefs(await buildFixture()), ops))
+    expect(budget.cells[2][1]).toMatchObject({ value: 900, type: 'number' })
+    expect(budget.cells[3][1]).toMatchObject({ type: 'formula', formula: 'SUM(B2:B3)' })
+    expect(budget.merges).toEqual([{ row: 5, col: 0, rowspan: 1, colspan: 2 }])
+  })
+
   it('returns the same content with no ops', async () => {
     expect(await roundTrip([])).toEqual(await parseWorkbook(await buildFixture()))
   })

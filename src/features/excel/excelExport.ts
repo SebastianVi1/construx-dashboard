@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 import type { ExcelOp } from './excelModel'
+import { loadWorkbook } from './excelLoad'
 import { applyOps } from './excelOps'
 import { sheetsFromWorkbook } from './excelParse'
 
@@ -11,8 +12,7 @@ const DEFAULT_COL_WIDTH = 64
  * columns are spliced, so those are reconciled from `applyOps`, the same model the grid shows.
  */
 export async function exportWorkbook(original: ArrayBuffer, ops: ExcelOp[]): Promise<ArrayBuffer> {
-  const workbook = new ExcelJS.Workbook()
-  await workbook.xlsx.load(original)
+  const workbook = await loadWorkbook(original)
   const expected = applyOps(sheetsFromWorkbook(workbook), ops)
   const worksheets = workbook.worksheets
 
