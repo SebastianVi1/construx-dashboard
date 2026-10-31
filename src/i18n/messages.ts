@@ -2183,7 +2183,7 @@ const es: Messages = {
     roles: {
       LEAD: 'Líder',
       FOREMAN: 'Maestro de obra',
-      CREW: 'Trabajador',
+      CREW: 'Cuadrilla',
     },
     team: {
       title: 'Equipo',
