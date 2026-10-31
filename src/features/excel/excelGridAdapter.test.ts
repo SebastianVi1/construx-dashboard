@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import type { GridCell, GridSheet } from './excelModel'
 import { emptyCell } from './excelModel'
-import { coerceCellValue, opsFromChanges, opsFromStructure, toGridData } from './excelGridAdapter'
+import { cellMeta, coerceCellValue, opsFromChanges, opsFromStructure, toGridData } from './excelGridAdapter'
 
 const dateCell: GridCell = { ...emptyCell, type: 'date', numFmt: 'yyyy-mm-dd' }
 const numberCell: GridCell = { ...emptyCell, type: 'number', numFmt: '#,##0.00' }
@@ -63,5 +63,40 @@ describe('opsFromChanges', () => {
 describe('opsFromStructure', () => {
   it('maps structure hooks to ops', () => {
     expect(opsFromStructure('removeCols', 1, 2, 3)).toEqual([{ kind: 'removeCols', sheet: 1, at: 2, count: 3 }])
+  })
+})
+
+describe('cellMeta', () => {
+  it('formats numbers from their numFmt and the locale', () => {
+    expect(cellMeta({ ...numberCell, value: 1 }, 'es-MX')).toEqual({
+      type: 'numeric',
+      readOnly: false,
+      locale: 'es-MX',
+      numericFormat: { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true },
+    })
+    expect(cellMeta({ ...numberCell, numFmt: '0' }, 'en-US').numericFormat).toEqual({
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+      useGrouping: false,
+    })
+    expect(cellMeta({ ...numberCell, numFmt: '0.0%' }, 'en-US').numericFormat).toEqual({
+      style: 'percent',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+      useGrouping: false,
+    })
+    expect(cellMeta({ ...numberCell, numFmt: null }, 'en-US').numericFormat).toEqual({ maximumFractionDigits: 10, useGrouping: false })
+  })
+
+  it('maps dates, booleans and text', () => {
+    expect(cellMeta(dateCell, 'en-US')).toMatchObject({ type: 'date', locale: 'en-US', readOnly: false })
+    expect(cellMeta({ ...emptyCell, type: 'boolean', value: true }, 'en-US')).toEqual({ type: 'checkbox', readOnly: false })
+    expect(cellMeta(emptyCell, 'en-US')).toEqual({ type: 'text', readOnly: false })
+  })
+
+  it('makes formulas read-only and formats a numeric result', () => {
+    const formula: GridCell = { value: 2050.5, type: 'formula', numFmt: '#,##0.00', formula: 'SUM(B2:B3)', readOnly: true }
+    expect(cellMeta(formula, 'en-US')).toMatchObject({ type: 'numeric', readOnly: true })
+    expect(cellMeta({ ...formula, value: 'n/a' }, 'en-US')).toEqual({ type: 'text', readOnly: true })
   })
 })

@@ -17,8 +17,11 @@ COPY . .
 # VITE_* values are inlined into the bundle at build time, so they are build args, not runtime env
 ARG VITE_API_BASE_URL=/api
 ARG VITE_OAUTH2_AUTHORIZATION_URL=
+# Empty falls back to Handsontable's non-commercial evaluation key
+ARG VITE_HANDSONTABLE_LICENSE=
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
-    VITE_OAUTH2_AUTHORIZATION_URL=$VITE_OAUTH2_AUTHORIZATION_URL
+    VITE_OAUTH2_AUTHORIZATION_URL=$VITE_OAUTH2_AUTHORIZATION_URL \
+    VITE_HANDSONTABLE_LICENSE=$VITE_HANDSONTABLE_LICENSE
 RUN bun run build
 
 # Runtime stage (default target): nginx serves the bundle and proxies the backend on the same origin

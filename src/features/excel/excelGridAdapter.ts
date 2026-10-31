@@ -51,3 +51,43 @@ export function opsFromStructure(
 ): ExcelOp[] {
   return [{ kind, sheet: sheetIndex, at, count }]
 }
+
+/** The per-cell settings Handsontable needs: editor and renderer type, read-only, and locale formatting. */
+export type CellMeta = {
+  type: 'numeric' | 'date' | 'checkbox' | 'text'
+  readOnly: boolean
+  locale?: string
+  numericFormat?: Intl.NumberFormatOptions
+  dateFormat?: Intl.DateTimeFormatOptions
+}
+
+export function cellMeta(cell: GridCell, locale: string): CellMeta {
+  const readOnly = cell.readOnly
+  const type = cell.type === 'formula' ? resultType(cell.value) : cell.type
+  if (type === 'number') return { type: 'numeric', readOnly, locale, numericFormat: numericFormatFor(cell.numFmt) }
+  if (type === 'date') return { type: 'date', readOnly, locale, dateFormat: { year: 'numeric', month: '2-digit', day: '2-digit' } }
+  if (type === 'boolean') return { type: 'checkbox', readOnly }
+  return { type: 'text', readOnly }
+}
+
+function resultType(value: CellValue): GridCell['type'] {
+  if (typeof value === 'number') return 'number'
+  if (value instanceof Date) return 'date'
+  if (typeof value === 'boolean') return 'boolean'
+  return 'text'
+}
+
+/** Reads decimals, grouping and percent from an Excel number format such as `#,##0.00` or `0.0%`. */
+function numericFormatFor(numFmt: string | null): Intl.NumberFormatOptions {
+  if (!numFmt || numFmt === 'General') return { maximumFractionDigits: 10, useGrouping: false }
+  // Only the positive section counts; quoted text and [color]/[locale] tags are not digits.
+  const pattern = numFmt.split(';')[0].replace(/"[^"]*"|\[[^\]]*\]/g, '')
+  const decimals = /\.([0#]+)/.exec(pattern)?.[1] ?? ''
+  const minimum = decimals.replace(/#/g, '').length
+  return {
+    ...(pattern.includes('%') ? { style: 'percent' as const } : {}),
+    minimumFractionDigits: minimum,
+    maximumFractionDigits: decimals.length,
+    useGrouping: pattern.includes(','),
+  }
+}
