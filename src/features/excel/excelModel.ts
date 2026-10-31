@@ -17,11 +17,15 @@ export type ExcelOp =
   | { kind: 'setCell'; sheet: number; row: number; col: number; value: CellValue }
   | { kind: 'insertRows' | 'removeRows' | 'insertCols' | 'removeCols'; sheet: number; at: number; count: number }
 
-/** The stored workbook: the original bytes plus the edits made since upload are the source of truth. */
+/**
+ * The stored workbook: the original bytes plus the edits made since upload are the source of truth.
+ * It belongs to the organization; `folderId` null means the library root.
+ */
 export type ExcelRecord = {
   id: string
-  userId: string
   organizationId: string
+  folderId: string | null
+  createdBy: string
   name: string
   size: number
   sheetCount: number
@@ -52,5 +56,8 @@ export type TreeWorkbook = { id: string; name: string; folderId: string | null; 
 
 /** Every folder and workbook of one organization. */
 export type ExcelTree = { folders: ExcelFolder[]; workbooks: TreeWorkbook[] }
+
+/** The library as storage returns it: the folders plus every workbook summary, newest edit first. */
+export type ExcelLibrary = { folders: ExcelFolder[]; workbooks: ExcelRecordSummary[] }
 
 export const emptyCell: GridCell = { value: null, type: 'empty', numFmt: null, readOnly: false }

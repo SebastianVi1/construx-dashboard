@@ -13,7 +13,7 @@ import './excel.css'
 
 type Replace = { file: File; existing: ExcelRecordSummary }
 
-/** `/excel`: the workbooks this user keeps in this browser for the selected company. */
+/** `/excel`: the selected company's workbooks, kept in this browser until they move to shared storage. */
 export function ExcelLibraryPage() {
   const { locale, messages: m } = useLocale()
   const t = m.excel
@@ -33,9 +33,9 @@ export function ExcelLibraryPage() {
     if (!store) return
     let active = true
     store
-      .list({ userId: owner.userId, organizationId: owner.organizationId })
-      .then((list) => {
-        if (active) setItems(list)
+      .tree(owner.organizationId)
+      .then((library) => {
+        if (active) setItems(library.workbooks)
       })
       .catch((caught: unknown) => {
         if (active) setError(excelErrorMessage(caught, t))
@@ -43,12 +43,12 @@ export function ExcelLibraryPage() {
     return () => {
       active = false
     }
-  }, [store, owner.userId, owner.organizationId, t])
+  }, [store, owner.organizationId, t])
 
   const dateFormat = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
 
   async function refresh() {
-    if (store) setItems(await store.list(owner))
+    if (store) setItems((await store.tree(owner.organizationId)).workbooks)
   }
 
   /** Reads the file in the worker (which also proves it is a real workbook) and stores it. */
@@ -60,7 +60,9 @@ export function ExcelLibraryPage() {
     await store.put({
       // Reusing the id replaces the old record and its bytes in one transaction.
       id: existing?.id ?? crypto.randomUUID(),
-      ...owner,
+      organizationId: owner.organizationId,
+      folderId: existing?.folderId ?? null,
+      createdBy: owner.userId,
       name: file.name,
       size: file.size,
       sheetCount: sheets.length,
@@ -103,7 +105,7 @@ export function ExcelLibraryPage() {
     setError(null)
     setDownloadingId(item.id)
     try {
-      const record = await store.get(owner, item.id)
+      const record = await store.get(owner.organizationId, item.id)
       if (!record) throw new Error('missing')
       await downloadWorkbook(record)
       await store.saveEdits(exportedRecord(record, record.ops.length))
@@ -251,7 +253,7 @@ export function ExcelLibraryPage() {
           error={dialogError}
           onConfirm={async () => {
             try {
-              await store?.remove(owner, deleting.id)
+              await store?.remove(owner.organizationId, deleting.id)
               await refresh()
               setDeleting(null)
             } catch (caught) {

@@ -3,10 +3,12 @@ import type { Messages } from '../../i18n'
 import { useAuth } from '../auth/auth-context'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { ExcelWorkerError } from './excelWorkerClient'
-import type { ExcelStore, Owner } from './excelStore'
+import type { ExcelStore } from './excelStore'
 import { ExcelStoreError, openExcelStore } from './excelStore'
 
-/** The signed-in user in the selected company: workbooks are kept apart per pair. */
+/** The selected company owns the workbooks; the signed-in user is recorded as their uploader. */
+export type Owner = { userId: string; organizationId: string }
+
 export function useExcelOwner(): Owner {
   const { user } = useAuth()
   const organization = useCurrentOrganization()

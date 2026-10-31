@@ -55,7 +55,7 @@ export function ExcelEditorPage() {
     if (!store) return
     let active = true
     async function load(opened: ExcelStore) {
-      const record = await opened.get({ userId: owner.userId, organizationId: owner.organizationId }, fileId)
+      const record = await opened.get(owner.organizationId, fileId)
       if (!record) {
         if (active) setLoadError({ cause: NOT_FOUND })
         return
@@ -82,7 +82,7 @@ export function ExcelEditorPage() {
     return () => {
       active = false
     }
-  }, [store, fileId, owner.userId, owner.organizationId])
+  }, [store, fileId, owner.organizationId])
 
   // Save what is pending when leaving the page, and warn before closing the tab with unsaved edits.
   const queue = loaded?.queue
