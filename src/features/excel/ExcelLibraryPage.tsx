@@ -1,10 +1,12 @@
-import { useEffect, useId, useState, type DragEvent } from 'react'
+import { useEffect, useId, useState, type DragEvent, type HTMLAttributes } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router'
 import { FolderIcon, SpreadsheetIcon } from '../../components/icons'
 import { ConfirmDialog } from '../../components/modal'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { downloadWorkbook, exportedRecord } from './excelDownload'
+import type { DragItem } from './excelDrag'
+import { dragKind, dropIssue, ITEM_DRAG_TYPE } from './excelDrag'
 import { excelFileIssue, MAX_LIBRARY_FILES } from './excelFile'
 import type { ExcelFolder, ExcelLibrary, ExcelRecordSummary } from './excelModel'
 import {
@@ -55,6 +57,9 @@ export function ExcelLibraryPage() {
   const [moving, setMoving] = useState<Moving | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
+  // The library row being dragged; browsers hide drag data until the drop, so it is kept here.
+  const [dragged, setDragged] = useState<DragItem | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null | undefined>(undefined)
 
   useEffect(() => {
     if (!store) return
@@ -160,7 +165,51 @@ export function ExcelLibraryPage() {
   function drop(event: DragEvent) {
     event.preventDefault()
     setDragging(false)
-    void pick(event.dataTransfer.files[0])
+    if (dragKind(event.dataTransfer.types) === 'files') void pick(event.dataTransfer.files[0])
+  }
+
+  /** Makes a row draggable onto folders and the breadcrumb (desktop; touch screens use the move dialog). */
+  function dragSource(item: DragItem): HTMLAttributes<HTMLElement> {
+    return {
+      draggable: true,
+      onDragStart: (event) => {
+        event.dataTransfer.setData(ITEM_DRAG_TYPE, item.id)
+        event.dataTransfer.effectAllowed = 'move'
+        setDragged(item)
+      },
+      onDragEnd: () => {
+        setDragged(null)
+        setDropTarget(undefined)
+      },
+    }
+  }
+
+  /** Accepts a dragged row on the folder `targetId` (null for the root) only when the move rules allow it. */
+  function dropZone(targetId: string | null): HTMLAttributes<HTMLElement> & { 'data-drop-target'?: true } {
+    if (!library || !dragged || dropIssue(library, dragged, targetId)) return {}
+    const item = dragged
+    return {
+      'data-drop-target': dropTarget === targetId || undefined,
+      onDragOver: (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        event.dataTransfer.dropEffect = 'move'
+        setDropTarget(targetId)
+      },
+      onDragLeave: () => setDropTarget(undefined),
+      onDrop: (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        setDragged(null)
+        setDropTarget(undefined)
+        void change(() => {
+          if (!store) throw new Error('store')
+          return item.kind === 'folder'
+            ? store.moveFolder(owner.organizationId, item.id, targetId, Date.now())
+            : store.moveWorkbook(owner.organizationId, item.id, targetId)
+        }).then(setError)
+      },
+    }
   }
 
   if (failed) {
@@ -224,7 +273,9 @@ export function ExcelLibraryPage() {
         <nav className="excel-path" aria-label={t.folderPath}>
           <ol>
             <li>
-              <Link to="/excel">{t.title}</Link>
+              <Link to="/excel" {...dropZone(null)}>
+                {t.title}
+              </Link>
             </li>
             {path.length > 1 ? (
               <li className="excel-path__ellipsis" aria-hidden="true">
@@ -236,7 +287,9 @@ export function ExcelLibraryPage() {
                 {index === path.length - 1 ? (
                   <span aria-current="page">{folder.name}</span>
                 ) : (
-                  <Link to={folderHref(folder.id)}>{folder.name}</Link>
+                  <Link to={folderHref(folder.id)} {...dropZone(folder.id)}>
+                    {folder.name}
+                  </Link>
                 )}
               </li>
             ))}
@@ -251,6 +304,7 @@ export function ExcelLibraryPage() {
         className="excel-library"
         data-dragging={dragging || undefined}
         onDragOver={(event) => {
+          if (dragKind(event.dataTransfer.types) !== 'files') return
           event.preventDefault()
           setDragging(true)
         }}
@@ -273,7 +327,14 @@ export function ExcelLibraryPage() {
               {contents.folders.map((folder) => {
                 const counts = contents.counts.get(folder.id)
                 return (
-                  <li key={folder.id} className="excel-list__item" data-kind="folder">
+                  <li
+                    key={folder.id}
+                    className="excel-list__item"
+                    data-kind="folder"
+                    data-dragged={dragged?.id === folder.id || undefined}
+                    {...dragSource({ kind: 'folder', id: folder.id })}
+                    {...dropZone(folder.id)}
+                  >
                     <div className="excel-list__text">
                       <FolderIcon className="excel-list__icon" />
                       <Link className="excel-list__name" to={folderHref(folder.id)}>
@@ -306,7 +367,12 @@ export function ExcelLibraryPage() {
                 )
               })}
               {contents.workbooks.map((item) => (
-                <li key={item.id} className="excel-list__item">
+                <li
+                  key={item.id}
+                  className="excel-list__item"
+                  data-dragged={dragged?.id === item.id || undefined}
+                  {...dragSource({ kind: 'workbook', id: item.id })}
+                >
                   <div className="excel-list__text">
                     <SpreadsheetIcon className="excel-list__icon" />
                     <Link className="excel-list__name" to={`/excel/${item.id}`}>
