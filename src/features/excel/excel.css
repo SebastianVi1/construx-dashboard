@@ -1,0 +1,92 @@
+.excel-library__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.excel-library {
+  border: 1px dashed transparent;
+  border-radius: var(--cx-radius-lg);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.excel-library[data-dragging] {
+  border-color: var(--cx-accent);
+  background: var(--cx-accent-subtle);
+}
+
+.excel-library__empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  border: 1px dashed var(--cx-border-strong);
+  border-radius: var(--cx-radius-lg);
+  color: var(--cx-muted);
+  text-align: center;
+}
+
+.excel-library__empty svg {
+  width: 32px;
+  height: 32px;
+}
+
+.excel-library__empty-title {
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.excel-library__meta,
+.excel-library__hint {
+  margin: 0 0 12px;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.excel-library__hint {
+  margin: 12px 0 0;
+}
+
+.excel-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.excel-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface);
+}
+
+.excel-list__text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.excel-list__name {
+  overflow: hidden;
+  color: var(--cx-ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.excel-list__detail {
+  color: var(--cx-muted);
+  font-size: 13px;
+}

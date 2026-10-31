@@ -3,25 +3,34 @@ import { sectionForPath, workspaceNavItems } from './workspaceNav'
 
 describe('workspaceNavItems', () => {
   it('always lists sites first', () => {
-    expect(workspaceNavItems({ seesOwnTasks: false, seesPrices: false, managesMembers: false }).map((item) => item.key)).toEqual(['sites'])
+    expect(workspaceNavItems({ seesOwnTasks: false, seesPrices: false, seesBudget: false, managesMembers: false }).map((item) => item.key)).toEqual(['sites'])
   })
 
   it('adds my tasks and team only when the role allows them', () => {
     expect(
-      workspaceNavItems({ seesOwnTasks: true, seesPrices: false, managesMembers: true }).map((item) => item.to),
+      workspaceNavItems({ seesOwnTasks: true, seesPrices: false, seesBudget: false, managesMembers: true }).map((item) => item.to),
     ).toEqual(['/sites', '/tasks', '/members'])
     expect(
-      workspaceNavItems({ seesOwnTasks: false, seesPrices: false, managesMembers: true }).map((item) => item.key),
+      workspaceNavItems({ seesOwnTasks: false, seesPrices: false, seesBudget: false, managesMembers: true }).map((item) => item.key),
     ).toEqual(['sites', 'members'])
   })
 
   it('places materials after my tasks and before team when the role sees prices', () => {
     expect(
-      workspaceNavItems({ seesOwnTasks: true, seesPrices: true, managesMembers: true }).map((item) => item.to),
+      workspaceNavItems({ seesOwnTasks: true, seesPrices: true, seesBudget: false, managesMembers: true }).map((item) => item.to),
     ).toEqual(['/sites', '/tasks', '/materials', '/members'])
     expect(
-      workspaceNavItems({ seesOwnTasks: false, seesPrices: true, managesMembers: false }).map((item) => item.key),
+      workspaceNavItems({ seesOwnTasks: false, seesPrices: true, seesBudget: false, managesMembers: false }).map((item) => item.key),
     ).toEqual(['sites', 'materials'])
+  })
+
+  it('places excel after materials and before team when the role sees the budget', () => {
+    expect(
+      workspaceNavItems({ seesOwnTasks: true, seesPrices: true, seesBudget: true, managesMembers: true }).map((item) => item.to),
+    ).toEqual(['/sites', '/tasks', '/materials', '/excel', '/members'])
+    expect(
+      workspaceNavItems({ seesOwnTasks: false, seesPrices: false, seesBudget: true, managesMembers: false }).map((item) => item.key),
+    ).toEqual(['sites', 'excel'])
   })
 })
 
@@ -36,6 +45,11 @@ describe('sectionForPath', () => {
 
   it('keeps a nested page under its section', () => {
     expect(sectionForPath('/sites/42')).toEqual({ key: 'sites', to: '/sites', isRoot: false })
+  })
+
+  it('maps /excel/:id to the excel section', () => {
+    expect(sectionForPath('/excel')).toEqual({ key: 'excel', to: '/excel', isRoot: true })
+    expect(sectionForPath('/excel/abc')).toEqual({ key: 'excel', to: '/excel', isRoot: false })
   })
 
   it('does not match a path that only shares a prefix', () => {
