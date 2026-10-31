@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type DragEvent, type HTMLAttributes } from 'react'
+import { useId, useState, type DragEvent, type HTMLAttributes } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router'
 import { FolderIcon, SpreadsheetIcon } from '../../components/icons'
 import { ConfirmDialog } from '../../components/modal'
@@ -8,7 +8,7 @@ import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { DragItem } from './excelDrag'
 import { dragKind, dropIssue, ITEM_DRAG_TYPE } from './excelDrag'
 import { excelFileIssue, MAX_LIBRARY_FILES } from './excelFile'
-import type { ExcelFolder, ExcelLibrary, ExcelRecordSummary } from './excelModel'
+import type { ExcelFolder, ExcelRecordSummary } from './excelModel'
 import {
   createFolderIssue,
   deleteSummary,
@@ -21,8 +21,11 @@ import {
   newFolderIssue,
   renameFolderIssue,
 } from './excelTree'
+import { treeRows } from './excelTreeRows'
 import { parseInWorker } from './excelWorkerClient'
+import { ExcelTreeView } from './ExcelTreeView'
 import { DeleteFolderDialog, FolderNameDialog, MoveDialog } from './ExcelFolderDialogs'
+import { useExcelLibrary, useExpandedFolders } from './useExcelLibrary'
 import { excelErrorMessage, useExcelOwner, useExcelStore } from './useExcelStore'
 import './excel.css'
 
@@ -46,7 +49,8 @@ export function ExcelLibraryPage() {
   const owner = useExcelOwner()
   const { store, failed } = useExcelStore()
   const inputId = useId()
-  const [library, setLibrary] = useState<ExcelLibrary | null>(null)
+  const { library, error: loadError, refresh } = useExcelLibrary(store, owner.organizationId, t)
+  const { expanded, toggle } = useExpandedFolders(owner.organizationId, 'page')
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
@@ -61,27 +65,7 @@ export function ExcelLibraryPage() {
   const [dragged, setDragged] = useState<DragItem | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null | undefined>(undefined)
 
-  useEffect(() => {
-    if (!store) return
-    let active = true
-    store
-      .tree(owner.organizationId)
-      .then((tree) => {
-        if (active) setLibrary(tree)
-      })
-      .catch((caught: unknown) => {
-        if (active) setError(excelErrorMessage(caught, t))
-      })
-    return () => {
-      active = false
-    }
-  }, [store, owner.organizationId, t])
-
   const dateFormat = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
-
-  async function refresh() {
-    if (store) setLibrary(await store.tree(owner.organizationId))
-  }
 
   /** Runs a folder change; returns the message to show in its dialog, or null once it is done. */
   async function change(action: () => Promise<unknown>): Promise<string | null> {
@@ -212,6 +196,85 @@ export function ExcelLibraryPage() {
     }
   }
 
+  function folderRow(folder: ExcelFolder) {
+    const counts = library ? folderContents(library, folder.id) : null
+    return (
+      <>
+        <div className="excel-list__text">
+          <FolderIcon className="excel-list__icon" />
+          <div className="excel-list__body">
+            <Link className="excel-list__name" to={folderHref(folder.id)} title={folder.name}>
+              <span className="visually-hidden">{t.folder}: </span>
+              {folder.name}
+            </Link>
+            <span className="excel-list__detail">
+              {formatMessage(t.folderContents, { folders: counts?.folders.length ?? 0, workbooks: counts?.workbooks.length ?? 0 })}
+            </span>
+          </div>
+        </div>
+        <div className="button-row excel-list__actions">
+          <button type="button" className="button button--small excel-list__action" onClick={() => setNaming({ mode: 'rename', folder })}>
+            {t.rename}
+          </button>
+          <button type="button" className="button button--small excel-list__action" onClick={() => setMoving({ kind: 'folder', folder })}>
+            {t.move}
+          </button>
+          <button
+            type="button"
+            className="button button--small excel-list__action excel-list__action--danger"
+            onClick={() => {
+              setDialogError(null)
+              setDeletingFolder(folder)
+            }}
+          >
+            {t.delete}
+          </button>
+        </div>
+      </>
+    )
+  }
+
+  function workbookRow(item: ExcelRecordSummary) {
+    return (
+      <>
+        <div className="excel-list__text">
+          <SpreadsheetIcon className="excel-list__icon" />
+          <div className="excel-list__body">
+            <Link className="excel-list__name" to={`/excel/${item.id}`} title={item.name}>
+              {item.name}
+            </Link>
+            <span className="excel-list__detail">
+              {formatMessage(t.lastEdit, { date: dateFormat.format(item.updatedAt) })} ·{' '}
+              {item.sheetCount === 1 ? t.oneSheet : formatMessage(t.sheets, { count: item.sheetCount })}
+              {item.dirty ? <span className="badge" data-tone="warning">{t.unexported}</span> : null}
+            </span>
+          </div>
+        </div>
+        <div className="button-row excel-list__actions">
+          <Link className="button button--small excel-list__action" to={`/excel/${item.id}`}>
+            {t.open}
+          </Link>
+          <button type="button" className="button button--small excel-list__action" disabled={downloadingId !== null} onClick={() => void download(item)}>
+            {downloadingId === item.id ? t.downloading : t.download}
+          </button>
+          <button type="button" className="button button--small excel-list__action" onClick={() => setMoving({ kind: 'workbook', workbook: item })}>
+            {t.move}
+          </button>
+          <button
+            type="button"
+            className="button button--small excel-list__action excel-list__action--danger"
+            onClick={() => {
+              setDialogError(null)
+              setDeleting(item)
+            }}
+          >
+            {t.delete}
+          </button>
+        </div>
+      </>
+    )
+  }
+
   if (failed) {
     return (
       <div className="page">
@@ -220,6 +283,7 @@ export function ExcelLibraryPage() {
     )
   }
   if (!library) {
+    if (loadError) return <div className="page"><Notice tone="error">{loadError}</Notice></div>
     if (error) return <div className="page"><Notice tone="error">{error}</Notice></div>
     return <LoadingState label={m.workspace.loading} />
   }
@@ -323,91 +387,23 @@ export function ExcelLibraryPage() {
               {formatMessage(t.limit, { count: library.workbooks.length, max: MAX_LIBRARY_FILES })} ·{' '}
               {formatMessage(t.folderLimit, { count: library.folders.length, max: MAX_FOLDERS })} · {t.localOnly}
             </p>
-            <ul className="excel-list">
-              {contents.folders.map((folder) => {
-                const counts = contents.counts.get(folder.id)
-                return (
-                  <li
-                    key={folder.id}
-                    className="excel-list__item"
-                    data-kind="folder"
-                    data-dragged={dragged?.id === folder.id || undefined}
-                    {...dragSource({ kind: 'folder', id: folder.id })}
-                    {...dropZone(folder.id)}
-                  >
-                    <div className="excel-list__text">
-                      <FolderIcon className="excel-list__icon" />
-                      <Link className="excel-list__name" to={folderHref(folder.id)}>
-                        <span className="visually-hidden">{t.folder}: </span>
-                        {folder.name}
-                      </Link>
-                      <span className="excel-list__detail">
-                        {formatMessage(t.folderContents, { folders: counts?.folders ?? 0, workbooks: counts?.workbooks ?? 0 })}
-                      </span>
-                    </div>
-                    <div className="button-row">
-                      <button type="button" className="button" onClick={() => setNaming({ mode: 'rename', folder })}>
-                        {t.rename}
-                      </button>
-                      <button type="button" className="button" onClick={() => setMoving({ kind: 'folder', folder })}>
-                        {t.move}
-                      </button>
-                      <button
-                        type="button"
-                        className="button button--danger"
-                        onClick={() => {
-                          setDialogError(null)
-                          setDeletingFolder(folder)
-                        }}
-                      >
-                        {t.delete}
-                      </button>
-                    </div>
-                  </li>
-                )
-              })}
-              {contents.workbooks.map((item) => (
-                <li
-                  key={item.id}
-                  className="excel-list__item"
-                  data-dragged={dragged?.id === item.id || undefined}
-                  {...dragSource({ kind: 'workbook', id: item.id })}
-                >
-                  <div className="excel-list__text">
-                    <SpreadsheetIcon className="excel-list__icon" />
-                    <Link className="excel-list__name" to={`/excel/${item.id}`}>
-                      {item.name}
-                    </Link>
-                    <span className="excel-list__detail">
-                      {formatMessage(t.lastEdit, { date: dateFormat.format(item.updatedAt) })} ·{' '}
-                      {item.sheetCount === 1 ? t.oneSheet : formatMessage(t.sheets, { count: item.sheetCount })}
-                    </span>
-                    {item.dirty ? <span className="badge" data-tone="warning">{t.unexported}</span> : null}
-                  </div>
-                  <div className="button-row">
-                    <Link className="button" to={`/excel/${item.id}`}>
-                      {t.open}
-                    </Link>
-                    <button type="button" className="button" disabled={downloadingId !== null} onClick={() => void download(item)}>
-                      {downloadingId === item.id ? t.downloading : t.download}
-                    </button>
-                    <button type="button" className="button" onClick={() => setMoving({ kind: 'workbook', workbook: item })}>
-                      {t.move}
-                    </button>
-                    <button
-                      type="button"
-                      className="button button--danger"
-                      onClick={() => {
-                        setDialogError(null)
-                        setDeleting(item)
-                      }}
-                    >
-                      {t.delete}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <ExcelTreeView
+              t={t}
+              rows={treeRows(library, current, expanded)}
+              className="excel-list"
+              label={here?.name ?? t.title}
+              onToggle={toggle}
+              rowProps={(row) => {
+                const item: DragItem =
+                  row.kind === 'folder' ? { kind: 'folder', id: row.folder.id } : { kind: 'workbook', id: row.workbook.id }
+                return {
+                  'data-dragged': dragged?.id === item.id || undefined,
+                  ...dragSource(item),
+                  ...(row.kind === 'folder' ? dropZone(row.folder.id) : {}),
+                }
+              }}
+              renderRow={(row) => (row.kind === 'folder' ? folderRow(row.folder) : workbookRow(row.workbook))}
+            />
             <p className="excel-library__hint">{t.dropHint}</p>
           </>
         )}
