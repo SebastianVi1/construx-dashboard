@@ -8,7 +8,7 @@ Construx dashboard — a React 19 + TypeScript + Vite 8 (Rolldown) SPA. Bun is t
 - `bun run dev` — Vite dev server (HMR). Proxies `/api` → `VITE_API_PROXY_TARGET` when that var is set.
 - `bun run build` — `tsc -b` typecheck, then production bundle to `dist/`.
 - `bun run lint` — ESLint.
-- `bun test` — all tests; `bun test src/features/auth/auth.test.ts` — a single file.
+- `bun test` — all tests; `bun test src/tests/features/auth/auth.test.ts` — a single file.
 - `bun run preview` — serve the production build.
 
 Run lint + build + test before finishing. No formatter is configured — do not run Prettier.
@@ -17,6 +17,7 @@ Run lint + build + test before finishing. No formatter is configured — do not 
 
 - `src/main.tsx` wraps the app in `<BrowserRouter>`; `src/App.tsx` is the route table: `/` → `LoginPage`, `/register` → `RegisterPage`.
 - Features live in `src/features/<domain>/`; shared UI in `src/components/`; `src/config/env.ts` wraps env access.
+- Tests live in `src/tests/`, mirroring the source tree (`src/tests/features/auth/auth.test.ts` ↔ `src/features/auth/`); test-only helpers in `src/tests/support/`.
 - Styles are co-located per feature/component (`auth.css`, `home.css`, `form.css`); `src/index.css` is global only.
 - `src/features/home/HomePage.tsx` exists but is intentionally not routed yet.
 
@@ -32,7 +33,7 @@ Run lint + build + test before finishing. No formatter is configured — do not 
 ## Testing
 
 - `bun test` runs `*.test.ts`. There is **no React component test renderer** (no Testing Library/jsdom): tests cover pure logic only — zod schemas, the axios API (via an injected fake `AxiosInstance`), and pure helpers.
-- Keep test files beside their subject (`auth.test.ts`, `form.test.ts`, `format.test.ts`).
+- Keep tests out of feature folders: `src/tests/<same path as src>/<name>.test.ts` (for example `src/tests/features/auth/auth.test.ts`, `src/tests/components/form/form.test.ts`). Import the subject with a relative path (`../../../features/auth/authApi`); test-only helpers go in `src/tests/support/`.
 
 ## Environment
 

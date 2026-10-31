@@ -10,7 +10,7 @@ React 19 + TypeScript + Vite 8 (Rolldown) SPA. Bun is the package manager/runtim
 - `bun run dev` — Vite dev server; `/api` is proxied to `VITE_API_PROXY_TARGET` (default `http://localhost:8080`, see `vite.config.ts`)
 - `bun run build` — `tsc -b` typecheck, then bundle to `dist/`
 - `bun run lint` — ESLint
-- `bun test` — all tests; `bun test src/features/auth/auth.test.ts` — one file
+- `bun test` — all tests; `bun test src/tests/features/auth/auth.test.ts` — one file
 - Run lint + build + test before finishing. No formatter is configured; don't run Prettier.
 
 ## Architecture
@@ -39,7 +39,7 @@ React 19 + TypeScript + Vite 8 (Rolldown) SPA. Bun is the package manager/runtim
 
 ## Testing
 
-`bun test` runs `*.test.ts` only. There is no component renderer (no Testing Library/jsdom), so tests cover pure logic: zod schemas, the axios API via a fake `AxiosInstance`, and helpers. Keep tests beside their subject. Extract logic into pure functions so it is testable.
+`bun test` runs `*.test.ts` only. There is no component renderer (no Testing Library/jsdom), so tests cover pure logic: zod schemas, the axios API via a fake `AxiosInstance`, and helpers. Tests live in `src/tests/` mirroring the source tree (`src/tests/features/auth/auth.test.ts` for `src/features/auth/`); test-only helpers live in `src/tests/support/`. Keep tests out of feature folders and extract logic into pure functions so it is testable.
 
 ## Commits
 

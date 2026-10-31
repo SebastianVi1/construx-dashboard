@@ -1,0 +1,130 @@
+import { describe, expect, it } from 'bun:test'
+import type { MyAccess } from '../../../features/permissions'
+import { filterByStatus, groupByStatus, taskActions, taskDetailPath } from '../../../features/tasks/taskRules'
+import type { Task } from '../../../features/tasks/tasksApi'
+
+const task: Task = {
+  id: 't-1',
+  goalId: 'g-1',
+  projectId: 'p-1',
+  name: 'Pour slab',
+  startAt: '2026-11-20T08:00:00Z',
+  dueAt: '2026-12-01T18:00:00Z',
+  status: 'TODO',
+  completedAt: null,
+  assignees: [
+    { accessId: 'a-1', membershipId: 'm-worker', fullName: 'Ana', taskRole: 'LEAD' },
+    { accessId: 'a-2', membershipId: 'm-crew', fullName: 'Bob', taskRole: 'CREW' },
+  ],
+  allocatedBudget: null,
+}
+
+function role(membershipId: string, grants: Array<[string, 'ORGANIZATION' | 'PROJECT' | 'OWN']>): MyAccess {
+  return {
+    membershipId,
+    role: { code: 'X', name: 'X' },
+    permissions: grants.map(([action, scope]) => ({ action, scope })),
+  }
+}
+
+const member = role('m-member', [
+  ['MANAGE_ACTIVITY', 'ORGANIZATION'],
+  ['ASSIGN_ACTIVITY', 'ORGANIZATION'],
+])
+const siteLead = role('m-lead', [['MANAGE_ACTIVITY', 'PROJECT']])
+const worker = role('m-worker', [
+  ['VIEW_ACTIVITY', 'PROJECT'],
+  ['MANAGE_ACTIVITY', 'OWN'],
+])
+const otherWorker = role('m-other', [
+  ['VIEW_ACTIVITY', 'PROJECT'],
+  ['MANAGE_ACTIVITY', 'OWN'],
+])
+
+describe('taskActions', () => {
+  it('ORGANIZATION scope can start, complete, edit, reassign and delete any task', () => {
+    expect(taskActions(member, task, { onSite: false })).toEqual({
+      start: true,
+      complete: true,
+      edit: true,
+      reassign: true,
+      remove: true,
+    })
+  })
+
+  it('PROJECT scope moves tasks on a site the caller is on, but not elsewhere', () => {
+    expect(taskActions(siteLead, task, { onSite: true })).toMatchObject({ start: true, complete: true, edit: true })
+    expect(taskActions(siteLead, task, { onSite: false })).toMatchObject({ start: false, complete: false, edit: false })
+  })
+
+  it('OWN scope starts and completes only the caller’s own task and never edits it', () => {
+    expect(taskActions(worker, task, { onSite: true })).toEqual({
+      start: true,
+      complete: true,
+      edit: false,
+      reassign: false,
+      remove: false,
+    })
+    expect(taskActions(otherWorker, task, { onSite: true })).toMatchObject({ start: false, complete: false })
+  })
+
+  it('OWN scope moves a task for every team member, whatever their task role', () => {
+    const crew = role('m-crew', [['MANAGE_ACTIVITY', 'OWN']])
+    expect(taskActions(crew, task, { onSite: true })).toMatchObject({ start: true, complete: true, reassign: false })
+  })
+
+  it('offers only the moves the status allows', () => {
+    expect(taskActions(member, { ...task, status: 'IN_PROGRESS' }, {})).toMatchObject({ start: false, complete: true })
+    expect(taskActions(member, { ...task, status: 'DONE' }, {})).toMatchObject({ start: false, complete: false })
+  })
+
+  it('offers nothing while permissions are unknown', () => {
+    expect(Object.values(taskActions(null, task, {})).some(Boolean)).toBe(false)
+  })
+})
+
+describe('groupByStatus', () => {
+  it('groups tasks as to do, in progress, done, each by due date', () => {
+    const tasks: Task[] = [
+      { ...task, id: 'late', dueAt: '2026-12-09T00:00:00Z' },
+      { ...task, id: 'done', status: 'DONE' },
+      { ...task, id: 'early', dueAt: '2026-11-02T00:00:00Z' },
+      { ...task, id: 'busy', status: 'IN_PROGRESS' },
+    ]
+
+    expect(groupByStatus(tasks).map((group) => [group.status, group.tasks.map((item) => item.id)])).toEqual([
+      ['TODO', ['early', 'late']],
+      ['IN_PROGRESS', ['busy']],
+      ['DONE', ['done']],
+    ])
+  })
+
+  it('keeps empty groups so the board layout stays stable', () => {
+    expect(groupByStatus([]).map((group) => group.tasks.length)).toEqual([0, 0, 0])
+  })
+})
+
+describe('filterByStatus', () => {
+  const todo = { ...task, id: 't-todo' }
+  const doing = { ...task, id: 't-doing', status: 'IN_PROGRESS' as const }
+  const done = { ...task, id: 't-done', status: 'DONE' as const }
+  const tasks = [todo, doing, done, { ...done, id: 't-done-2' }]
+
+  it('counts every status and keeps all tasks without a filter', () => {
+    expect(filterByStatus(tasks, '')).toEqual({ counts: { all: 4, TODO: 1, IN_PROGRESS: 1, DONE: 2 }, visible: tasks })
+  })
+
+  it('shows only the chosen status, in the original order', () => {
+    expect(filterByStatus(tasks, 'DONE').visible.map((item) => item.id)).toEqual(['t-done', 't-done-2'])
+    expect(filterByStatus([todo], 'IN_PROGRESS')).toEqual({
+      counts: { all: 1, TODO: 1, IN_PROGRESS: 0, DONE: 0 },
+      visible: [],
+    })
+  })
+})
+
+describe('taskDetailPath', () => {
+  it('nests the task under its site and phase, escaping ids', () => {
+    expect(taskDetailPath({ projectId: 'p 1', goalId: 'g-1', id: 't/1' })).toBe('/sites/p%201/phases/g-1/tasks/t%2F1')
+  })
+})
