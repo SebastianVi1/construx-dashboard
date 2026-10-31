@@ -1,4 +1,4 @@
-import type { ExcelFolder, ExcelTree } from './excelModel'
+import type { ExcelFolder, ExcelTree, TreeWorkbook } from './excelModel'
 
 /** A root-level folder is depth 1. */
 export const MAX_FOLDER_DEPTH = 3
@@ -16,6 +16,11 @@ export type FolderCounts = { folders: number; workbooks: number }
 /** What deleting a folder removes: the folder itself, everything under it, and how much of it is unexported. */
 export type DeleteSummary = { folderIds: string[]; workbookIds: string[]; subfolders: number; unexported: number }
 
+/** The library page that shows a folder; the root is `/excel`. */
+export function folderHref(folderId: string | null): string {
+  return folderId === null ? '/excel' : `/excel/folders/${encodeURIComponent(folderId)}`
+}
+
 /** The folders from the root down to `folderId`, for the breadcrumb; empty for the root or a missing folder. */
 export function folderPath(folders: ExcelFolder[], folderId: string | null): ExcelFolder[] {
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
@@ -29,7 +34,7 @@ export function folderPath(folders: ExcelFolder[], folderId: string | null): Exc
 }
 
 /** The direct sub-folders and workbooks of a folder, sorted by name, with each sub-folder's own counts. */
-export function folderContents(tree: ExcelTree, folderId: string | null) {
+export function folderContents<W extends TreeWorkbook>(tree: { folders: ExcelFolder[]; workbooks: W[] }, folderId: string | null) {
   const counts = new Map<string, FolderCounts>()
   const folders = tree.folders.filter((folder) => folder.parentId === folderId).sort(byName)
   for (const folder of folders) {
@@ -42,11 +47,16 @@ export function folderContents(tree: ExcelTree, folderId: string | null) {
   return { folders, workbooks, counts }
 }
 
-export function createFolderIssue(tree: ExcelTree, parentId: string | null, name: string): TreeIssue | null {
+/** Whether any folder can be created in `parentId`, before a name is typed. */
+export function newFolderIssue(tree: ExcelTree, parentId: string | null): TreeIssue | null {
   if (parentId !== null && !findFolder(tree.folders, parentId)) return 'notFound'
   if (depth(tree.folders, parentId) + 1 > MAX_FOLDER_DEPTH) return 'tooDeep'
   if (tree.folders.length >= MAX_FOLDERS) return 'folderLimit'
-  return nameIssue(tree.folders, parentId, name, null)
+  return null
+}
+
+export function createFolderIssue(tree: ExcelTree, parentId: string | null, name: string): TreeIssue | null {
+  return newFolderIssue(tree, parentId) ?? nameIssue(tree.folders, parentId, name, null)
 }
 
 export function renameFolderIssue(folders: ExcelFolder[], folderId: string, name: string): TreeIssue | null {

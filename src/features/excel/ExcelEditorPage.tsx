@@ -11,6 +11,7 @@ import type { ExcelStore, ExcelStoreError } from './excelStore'
 import { parseInWorker } from './excelWorkerClient'
 import { ExcelGrid } from './ExcelGrid'
 import { SheetTabs } from './SheetTabs'
+import { folderHref } from './excelTree'
 import { excelErrorMessage, useExcelOwner, useExcelStore } from './useExcelStore'
 import './excel.css'
 
@@ -152,7 +153,7 @@ export function ExcelEditorPage() {
 
   return (
     <div className="page excel-editor">
-      <Link className="page-back" to="/excel">{t.back}</Link>
+      <Link className="page-back" to={folderHref(loaded.record.folderId)}>{t.back}</Link>
       <header className="excel-editor__toolbar">
         <h1 className="excel-editor__name">{loaded.record.name}</h1>
         {dirty ? <span className="badge" data-tone="warning">{t.unexported}</span> : null}

@@ -86,6 +86,127 @@
   white-space: nowrap;
 }
 
+.excel-list__icon {
+  flex: none;
+  color: var(--cx-muted);
+}
+
+.excel-list__item[data-kind='folder'] .excel-list__icon {
+  color: var(--cx-accent);
+}
+
+.excel-path ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 0;
+  color: var(--cx-muted);
+  font-size: 14px;
+  list-style: none;
+}
+
+.excel-path li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.excel-path li + li::before {
+  content: '/';
+  color: var(--cx-border-strong);
+}
+
+.excel-path a {
+  color: var(--cx-muted);
+}
+
+.excel-path a:hover {
+  color: var(--cx-ink);
+}
+
+.excel-path [aria-current='page'] {
+  overflow: hidden;
+  color: var(--cx-ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Small screens keep the root and the current folder: Excel / … / 2026. */
+.excel-path__ellipsis {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .excel-path li[data-collapsible] {
+    display: none;
+  }
+
+  .excel-path__ellipsis {
+    display: flex !important;
+  }
+}
+
+.excel-move {
+  display: grid;
+  gap: 2px;
+  max-height: min(50vh, 420px);
+  margin: 0 0 16px;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  list-style: none;
+}
+
+.excel-move__option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--cx-radius-sm);
+  background: none;
+  color: var(--cx-ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.excel-move__option:hover:not(:disabled) {
+  background: var(--cx-surface-raised);
+}
+
+.excel-move__option[aria-selected='true'] {
+  border-color: var(--cx-accent);
+  background: var(--cx-accent-subtle);
+}
+
+.excel-move__option:disabled {
+  color: var(--cx-muted);
+  cursor: not-allowed;
+}
+
+.excel-move__name {
+  font-weight: 600;
+}
+
+.excel-move__reason {
+  font-size: 12px;
+}
+
+.excel-delete__summary {
+  margin: 0 0 16px;
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
 .excel-list__detail {
   color: var(--cx-muted);
   font-size: 13px;

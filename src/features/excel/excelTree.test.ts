@@ -4,11 +4,13 @@ import {
   createFolderIssue,
   deleteSummary,
   folderContents,
+  folderHref,
   folderPath,
   MAX_FOLDER_NAME,
   MAX_FOLDERS,
   moveFolderIssue,
   moveWorkbookIssue,
+  newFolderIssue,
   renameFolderIssue,
 } from './excelTree'
 
@@ -24,6 +26,13 @@ function workbook(id: string, folderId: string | null, dirty = false, name = `${
 const folders = [folder('finance', null, 'Finance'), folder('year', 'finance', '2026'), folder('q1', 'year', 'Q1'), folder('works', null, 'Works')]
 const workbooks = [workbook('a', 'finance'), workbook('b', 'q1', true), workbook('c', null), workbook('d', 'year', true)]
 const tree = { folders, workbooks }
+
+describe('folderHref', () => {
+  it('links the root and a folder', () => {
+    expect(folderHref(null)).toBe('/excel')
+    expect(folderHref('a b')).toBe('/excel/folders/a%20b')
+  })
+})
 
 describe('folderPath', () => {
   it('lists the folders from the root down to the given one', () => {
@@ -66,6 +75,14 @@ describe('createFolderIssue', () => {
     expect(createFolderIssue(tree, 'missing', 'X')).toBe('notFound')
     const full = { folders: Array.from({ length: MAX_FOLDERS }, (_, i) => folder(`f${i}`, null)), workbooks: [] }
     expect(createFolderIssue(full, null, 'X')).toBe('folderLimit')
+  })
+})
+
+describe('newFolderIssue', () => {
+  it('says whether a folder can be created before a name is typed', () => {
+    expect(newFolderIssue(tree, 'year')).toBeNull()
+    expect(newFolderIssue(tree, 'q1')).toBe('tooDeep')
+    expect(newFolderIssue(tree, 'missing')).toBe('notFound')
   })
 })
 
