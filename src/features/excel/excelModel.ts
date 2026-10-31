@@ -36,4 +36,21 @@ export type ExcelRecord = {
 
 export type ExcelRecordSummary = Omit<ExcelRecord, 'original' | 'ops'>
 
+/** A folder of the organization's library; `parentId` null means the root. */
+export type ExcelFolder = {
+  id: string
+  organizationId: string
+  parentId: string | null
+  name: string
+  createdBy: string
+  createdAt: number
+  updatedAt: number
+}
+
+/** What the folder rules need from a workbook; `folderId` null means the root. */
+export type TreeWorkbook = { id: string; name: string; folderId: string | null; dirty: boolean }
+
+/** Every folder and workbook of one organization. */
+export type ExcelTree = { folders: ExcelFolder[]; workbooks: TreeWorkbook[] }
+
 export const emptyCell: GridCell = { value: null, type: 'empty', numFmt: null, readOnly: false }

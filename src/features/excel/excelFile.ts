@@ -1,5 +1,6 @@
 export const MAX_EXCEL_BYTES = 10 * 1024 * 1024
-export const MAX_LIBRARY_FILES = 20
+/** Workbooks per organization, across every folder. */
+export const MAX_LIBRARY_FILES = 200
 export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 /**
