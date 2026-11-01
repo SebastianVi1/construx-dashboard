@@ -268,6 +268,9 @@ const en = {
     MEMBER: 'Member',
     WORKER: 'Worker',
     FINANCE: 'Finance',
+    RESIDENT: 'Resident',
+    SITE_MANAGER: 'Site Manager',
+    SUPERINTENDENT: 'Superintendent',
   },
   sites: {
     title: 'Sites',
@@ -1539,6 +1542,9 @@ const es: Messages = {
     MEMBER: 'Miembro',
     WORKER: 'Trabajador',
     FINANCE: 'Finanzas',
+    RESIDENT: 'Residente',
+    SITE_MANAGER: 'Jefe de Obra',
+    SUPERINTENDENT: 'Superintendente',
   },
   sites: {
     title: 'Obras',
