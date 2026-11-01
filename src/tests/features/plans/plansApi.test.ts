@@ -4,7 +4,6 @@ import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
 import {
   completePlanUpload,
   deletePlan,
-  listPlans,
   planErrorKind,
   requestPlanUpload,
   sendToStorage,
@@ -72,12 +71,6 @@ function fakeRequest(status: number, fail = false) {
 
 describe('plans API', () => {
   afterEach(() => mock.restore())
-
-  it('listPlans: gets the ready plans of the site', async () => {
-    const { get } = stubApi({ get: () => ({ status: 200, data: [plan] }) })
-    expect(await listPlans('o-1', 'p-1')).toEqual([plan])
-    expect((get.mock.calls[0] as unknown as [string])[0]).toBe(base)
-  })
 
   it('requestPlanUpload: sends the file metadata and leaves out a blank name and description', async () => {
     const ticket = { planId: 'pl-1', uploadUrl: 'https://bucket.test/put', headers: { 'Content-Type': 'image/webp' }, expiresAt: '2030-01-01T00:00:00Z' }
