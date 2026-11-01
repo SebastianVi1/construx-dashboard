@@ -5,7 +5,6 @@ import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
-import { SitePlans } from '../plans/SitePlans'
 import { ArchiveSiteDialog } from './ArchiveSiteDialog'
 import { SiteBudget } from './SiteBudget'
 import { ProgressMeter, SiteStatusBadge } from './SiteBits'
@@ -166,15 +165,6 @@ export function SiteDetailPage() {
           site={current}
           canManage={can('MANAGE_BUDGET')}
           onSaved={saved}
-          onNotice={setSavedNotice}
-        />
-      ) : null}
-
-      {can('VIEW_PLAN', current.id, { onSite }) ? (
-        <SitePlans
-          organizationId={organization.id}
-          siteId={current.id}
-          canManage={can('MANAGE_PLAN', current.id, { onSite }) && current.status !== 'ARCHIVED'}
           onNotice={setSavedNotice}
         />
       ) : null}

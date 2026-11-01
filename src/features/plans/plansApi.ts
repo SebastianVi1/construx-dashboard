@@ -1,11 +1,12 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
+import { AuthApiError, deleteJson, sendJson } from '../auth/authApi'
 import { organizationPath } from '../permissions/permissionsApi'
 
 /** `PlanResponse`. `viewUrl` is a short-lived link to the image; reload the list for a fresh one. */
 export const planSchema = z.object({
   id: z.string().min(1),
   projectId: z.string().min(1),
+  folderId: z.string().nullable().optional(),
   name: z.string(),
   description: z.string().nullable(),
   fileName: z.string(),
@@ -46,10 +47,6 @@ function planPath(organizationId: string, siteId: string, planId: string): strin
 }
 
 /** Ready plans of the site, newest first. */
-export function listPlans(organizationId: string, siteId: string): Promise<Plan[]> {
-  return getJson(plansPath(organizationId, siteId), z.array(planSchema))
-}
-
 /** Step 1: announce the file; blank name and description are left out. */
 export function requestPlanUpload(organizationId: string, siteId: string, request: PlanUploadRequest): Promise<UploadTicket> {
   const body: Record<string, string | number> = {

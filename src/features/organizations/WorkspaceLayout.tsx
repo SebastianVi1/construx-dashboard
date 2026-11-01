@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, type MouseEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
-import { MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
+import { FolderIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
@@ -9,6 +9,8 @@ import { hasPermission } from '../permissions/landing'
 import { useCurrentOrganization } from './organizations-context'
 import { WorkspaceHeader } from './WorkspaceHeader'
 import { workspaceNavItems, type WorkspaceNavItem } from './workspaceNav'
+import { PlanLibraryProvider } from '../plans/PlanLibraryProvider'
+import { PlansNavTree } from '../plans/PlansNavTree'
 import './workspace.css'
 
 const MAIN_ID = 'workspace-main'
@@ -21,6 +23,7 @@ const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
   myTasks: TasksIcon,
   materials: MaterialsIcon,
   excel: SpreadsheetIcon,
+  plans: FolderIcon,
   members: TeamIcon,
 }
 
@@ -46,7 +49,7 @@ export function WorkspaceLayout() {
       </a>
       <WorkspaceHeader />
       <PermissionsProvider key={organization.id} organizationId={organization.id}>
-        <WorkspaceBody />
+        <PlanLibraryProvider><WorkspaceBody /></PlanLibraryProvider>
       </PermissionsProvider>
     </div>
   )
@@ -72,6 +75,7 @@ function WorkspaceBody() {
     seesPrices: can('VIEW_PRICES'),
     seesBudget: seesWorkbooks(access),
     managesMembers: can('MANAGE_MEMBERS'),
+    seesPlans: hasPermission(access, 'VIEW_PLAN'),
   })
 
   const links = (prefix: 'workspace-nav' | 'workspace-tabbar') =>
@@ -83,6 +87,7 @@ function WorkspaceBody() {
             <Icon className={`${prefix}__icon`} />
             <span className={`${prefix}__label`}>{t[item.key]}</span>
           </NavLink>
+          {item.key === 'plans' && prefix === 'workspace-nav' ? <PlansNavTree /> : null}
           {item.key === 'excel' && prefix === 'workspace-nav' ? (
             <Suspense fallback={null}>
               <ExcelNavTree />
