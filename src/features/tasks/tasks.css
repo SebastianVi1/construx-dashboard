@@ -172,6 +172,27 @@
   }
 }
 
+/* Drag and drop */
+.task-item[draggable='true'] {
+  cursor: grab;
+}
+
+.task-item[data-dragging] {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+.task-column[data-drop-valid] {
+  outline: 2px dashed var(--cx-accent);
+  outline-offset: 6px;
+  border-radius: var(--cx-radius-md);
+  background: color-mix(in srgb, var(--cx-accent) 6%, transparent);
+}
+
+.task-column[data-drop-invalid] {
+  opacity: 0.45;
+}
+
 .my-task__name {
   font-weight: 500;
   text-align: left;
