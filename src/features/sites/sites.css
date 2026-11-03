@@ -1,5 +1,7 @@
 /* Sites list and site detail. Tokens only (design.md). */
 
+/* ── Sites toolbar (filter select) ────────────────────────────── */
+
 .sites-toolbar {
   display: flex;
   align-items: center;
@@ -9,6 +11,83 @@
 .sites-toolbar__label {
   color: var(--cx-muted);
   font-size: 14px;
+}
+
+/* ── Sites card grid ───────────────────────────────────────────── */
+
+.sites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/*
+ * Each card borrows the drawing-sheet corner marks from .site-sheet,
+ * scaled down to card proportions.
+ */
+.site-card {
+  --tick: 10px;
+  --tick-weight: 1.5px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 150ms ease-out;
+}
+
+.site-card::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--cx-primary), var(--cx-primary)) top left / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) top left / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) top right / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) top right / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom left / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom left / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom right / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom right / var(--tick-weight) var(--tick);
+  background-repeat: no-repeat;
+}
+
+.site-card:hover {
+  border-color: var(--cx-accent);
+}
+
+.site-card:focus-visible {
+  outline: none;
+  border-color: var(--cx-accent);
+  box-shadow: 0 0 0 3px var(--cx-accent-subtle);
+}
+
+.site-card__header {
+  margin-bottom: 4px;
+}
+
+.site-card__name {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.site-card__address,
+.site-card__schedule {
+  font-size: 13px;
+  color: var(--cx-muted);
+}
+
+.site-card__progress {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--cx-border);
 }
 
 /* Compact native select used beside a dataset. */

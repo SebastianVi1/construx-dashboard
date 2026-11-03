@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { FilterTabs, filterCounts, type FilterOption } from '../../components/filter'
+import { filterCounts, type FilterOption } from '../../components/filter'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -58,11 +58,26 @@ export function SitesPage() {
       </header>
 
       <section className="page-section" aria-label={t.title}>
-        <FilterTabs label={t.filterLabel} options={filters} value={filter} onChange={setFilter} />
+        <div className="sites-toolbar">
+          <span className="sites-toolbar__label">{t.filterLabel}</span>
+          <div className="filter-select">
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as SiteStatus | '')}
+              aria-label={t.filterLabel}
+            >
+              {filters.map((opt) => (
+                <option key={opt.value || 'all'} value={opt.value}>
+                  {opt.count !== undefined ? `${opt.label} (${opt.count})` : opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {shown ? (
           shown.length > 0 ? (
-            <SitesTable sites={shown} t={t} locale={locale} />
+            <SitesGrid sites={shown} t={t} locale={locale} />
           ) : filter ? (
             <div className="empty-state">
               <p>{t.noResults}</p>
@@ -92,53 +107,32 @@ export function SitesPage() {
   )
 }
 
-function SitesTable({ sites, t, locale }: { sites: Site[]; t: Messages['sites']; locale: Locale }) {
-  const showProgress = sites.some((site) => siteProgress(site) !== null)
-
+function SitesGrid({ sites, t, locale }: { sites: Site[]; t: Messages['sites']; locale: Locale }) {
   return (
-    <div className="table-scroll">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th scope="col">{t.column.name}</th>
-            <th scope="col">{t.column.status}</th>
-            <th scope="col">{t.column.address}</th>
-            <th scope="col">{t.column.schedule}</th>
-            {showProgress ? <th scope="col">{t.column.progress}</th> : null}
-          </tr>
-        </thead>
-        <tbody>
-          {sites.map((site) => {
-            const progress = siteProgress(site)
-            return (
-              <tr key={site.id}>
-                <td>
-                  <Link className="table-link" to={`/sites/${encodeURIComponent(site.id)}`}>
-                    {site.name}
-                  </Link>
-                </td>
-                <td>
-                  <SiteStatusBadge status={site.status} labels={t.status} />
-                </td>
-                <td className={site.address ? undefined : 'cell-muted'}>{site.address || t.noAddress}</td>
-                <td className="data-mono">{scheduleText(site, t, locale)}</td>
-                {showProgress ? (
-                  <td>
-                    {progress && progress.total > 0 ? (
-                      <ProgressMeter
-                        progress={progress}
-                        label={formatMessage(t.progress, { done: progress.done, total: progress.total })}
-                      />
-                    ) : progress ? (
-                      <span className="cell-muted">{t.noTasks}</span>
-                    ) : null}
-                  </td>
-                ) : null}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+    <div className="sites-grid">
+      {sites.map((site) => {
+        const progress = siteProgress(site)
+        return (
+          <Link key={site.id} className="site-card" to={`/sites/${encodeURIComponent(site.id)}`}>
+            <div className="site-card__header">
+              <SiteStatusBadge status={site.status} labels={t.status} />
+            </div>
+            <div className="site-card__name">{site.name}</div>
+            <div className={`site-card__address${site.address ? '' : ' cell-muted'}`}>
+              {site.address || t.noAddress}
+            </div>
+            <div className="site-card__schedule data-mono">{scheduleText(site, t, locale)}</div>
+            {progress && progress.total > 0 ? (
+              <div className="site-card__progress">
+                <ProgressMeter
+                  progress={progress}
+                  label={formatMessage(t.progress, { done: progress.done, total: progress.total })}
+                />
+              </div>
+            ) : null}
+          </Link>
+        )
+      })}
     </div>
   )
 }
