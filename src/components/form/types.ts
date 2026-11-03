@@ -43,6 +43,8 @@ export type FieldConfig = {
   revealLabels?: { show: string; hide: string }
   /** Choices of a `select` field, in display order. Use `value: ''` for "none". */
   options?: FieldOption[]
+  /** Minimum value for `date` or `datetime-local` inputs (YYYY-MM-DD). */
+  min?: string
 }
 
 export type FieldErrors = Record<string, string | undefined>

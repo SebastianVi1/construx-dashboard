@@ -67,6 +67,14 @@ export function TaskDialog({
   const issue = canReassign ? teamIssue(team) : null
   const teamError = teamChecked && issue ? t.validation[issue === 'empty' ? 'teamRequired' : 'teamLead'] : undefined
 
+  const todayStr = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })()
+  const notBefore = task
+    ? undefined
+    : (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime() })()
+
   const form = useForm({
     initialValues: {
       color: task?.color ?? '',
@@ -74,7 +82,7 @@ export function TaskDialog({
       startAt: instantToLocalInput(task?.startAt ?? initialStartAt ?? goal.startAt),
       dueAt: instantToLocalInput(task?.dueAt ?? initialDueAt ?? goal.dueAt),
     },
-    schema: makeTaskSchema(t.validation, goal, m.gantt.invalidColor),
+    schema: makeTaskSchema(t.validation, goal, m.gantt.invalidColor, notBefore),
     onSubmit: async (values) => {
       setTeamChecked(true)
       if (issue) {
@@ -114,14 +122,16 @@ export function TaskDialog({
           {
             name: 'startAt',
             label: t.field.startAt,
-            type: 'datetime-local',
+            type: 'date',
             hint: formatMessage(t.field.startHint, { date: dueText(goal.startAt, intlLocales[locale]) }),
+            min: task ? undefined : todayStr,
           },
           {
             name: 'dueAt',
             label: t.field.dueAt,
-            type: 'datetime-local',
+            type: 'date',
             hint: formatMessage(t.field.dueHint, { date: dueText(goal.dueAt, intlLocales[locale]) }),
+            min: task ? undefined : todayStr,
           },
         ] satisfies FieldConfig[])
       : []),

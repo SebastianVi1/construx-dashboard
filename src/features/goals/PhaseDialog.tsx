@@ -31,6 +31,14 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
   const [errorKind, setErrorKind] = useState<GoalErrorKind>('generic')
   const [created, setCreated] = useState<Goal | null>(null)
 
+  const todayStr = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })()
+  const notBefore = goal
+    ? undefined
+    : (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime() })()
+
   const form = useForm({
     initialValues: {
       color: goal?.color ?? '',
@@ -39,7 +47,7 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
       dueAt: goal ? instantToLocalInput(goal.dueAt) : '',
       budget: budgetToInput(goal?.allocatedBudget ?? null),
     },
-    schema: makeGoalSchema(t.validation, m.gantt.invalidColor, canManageBudget ? m.sites.budget.validation : undefined),
+    schema: makeGoalSchema(t.validation, m.gantt.invalidColor, canManageBudget ? m.sites.budget.validation : undefined, notBefore),
     onSubmit: async (values) => {
       try {
         let saved = goal ?? created
@@ -70,8 +78,8 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
 
   const fields: FieldConfig[] = [
     { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
-    { name: 'startAt', label: t.field.startAt, type: 'datetime-local', hint: t.field.startHint },
-    { name: 'dueAt', label: t.field.dueAt, type: 'datetime-local', hint: t.field.dueHint },
+    { name: 'startAt', label: t.field.startAt, type: 'date', hint: t.field.startHint, min: goal ? undefined : todayStr },
+    { name: 'dueAt', label: t.field.dueAt, type: 'date', hint: t.field.dueHint, min: goal ? undefined : todayStr },
     ...(canManageBudget
       ? [
           {

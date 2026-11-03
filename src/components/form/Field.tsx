@@ -23,6 +23,7 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
     hint,
     revealLabels,
     options = [],
+    min,
   } = config
 
   const [revealed, setRevealed] = useState(false)
@@ -67,6 +68,7 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
           autoComplete={autoComplete}
           inputMode={inputMode}
           spellCheck={spellCheck}
+          min={min}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onBlur={onBlur}

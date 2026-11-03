@@ -11,6 +11,8 @@ const messages = {
   startAfterDue: 'order',
   beforePhase: 'before',
   afterPhase: 'after',
+  startPast: 'startPast',
+  duePast: 'duePast',
 }
 const task: Task = {
   id: 't-1',
@@ -31,26 +33,36 @@ function issues(values: Values, phase?: { startAt: string; dueAt: string }) {
   return makeTaskSchema(messages, phase).safeParse(values).error?.issues.map((issue) => issue.message) ?? []
 }
 
+// Phase spanning Dec 1–15 (stored with time components to test day-level comparison)
 const phase = { startAt: new Date(2026, 11, 1, 8, 0).toISOString(), dueAt: new Date(2026, 11, 15, 18, 0).toISOString() }
-const valid = { name: 'Pour', startAt: '2026-12-02T08:00', dueAt: '2026-12-10T18:00' }
+const valid = { name: 'Pour', startAt: '2026-12-02', dueAt: '2026-12-10' }
 const sameTeam = [{ accessId: 'a-1', taskRole: 'LEAD' as const }]
 
 describe('task form', () => {
-  it('requires a name, a start and a due date and time', () => {
+  it('requires a name, a start and a due date', () => {
     expect(issues({ name: '', startAt: '', dueAt: '' })).toEqual(['name', 'start', 'due'])
     expect(issues(valid)).toEqual([])
   })
 
   it('rejects a start after the due', () => {
-    expect(issues({ ...valid, startAt: '2026-12-10T18:01' }, phase)).toEqual(['order'])
-    expect(issues({ ...valid, startAt: '2026-12-10T18:00' }, phase)).toEqual([])
+    expect(issues({ ...valid, startAt: '2026-12-11' }, phase)).toEqual(['order'])
+    expect(issues({ ...valid, startAt: '2026-12-10' }, phase)).toEqual([])
   })
 
-  it('rejects dates outside the phase, like the server', () => {
-    expect(issues({ ...valid, dueAt: '2026-12-15T18:01' }, phase)).toEqual(['after'])
-    expect(issues({ ...valid, dueAt: '2026-12-15T18:00' }, phase)).toEqual([])
-    expect(issues({ ...valid, startAt: '2026-12-01T07:59' }, phase)).toEqual(['before'])
-    expect(issues({ ...valid, startAt: '2026-12-01T08:00' }, phase)).toEqual([])
+  it('rejects dates outside the phase using day-level comparison', () => {
+    expect(issues({ ...valid, dueAt: '2026-12-16' }, phase)).toEqual(['after'])
+    expect(issues({ ...valid, dueAt: '2026-12-15' }, phase)).toEqual([])
+    expect(issues({ ...valid, startAt: '2026-11-30' }, phase)).toEqual(['before'])
+    expect(issues({ ...valid, startAt: '2026-12-01' }, phase)).toEqual([])
+  })
+
+  it('rejects dates before notBefore when creating', () => {
+    const notBefore = new Date(2027, 0, 1).getTime()
+    const creating = makeTaskSchema(messages, undefined, 'color', notBefore)
+    const issuesWith = (values: Values) =>
+      creating.safeParse(values).error?.issues.map((issue) => issue.message) ?? []
+    expect(issuesWith({ name: 'x', startAt: '2026-12-01', dueAt: '2026-12-15' })).toEqual(['startPast', 'duePast'])
+    expect(issuesWith({ name: 'x', startAt: '2027-01-01', dueAt: '2027-01-15' })).toEqual([])
   })
 
   it('splits an edit into the PATCH fields and a new team, sending only changes', () => {
@@ -69,8 +81,8 @@ describe('task form', () => {
       patch: { name: 'Pour slab L2' },
       team,
     })
-    expect(buildTaskChanges(task, { ...unchanged, startAt: '2026-11-21T08:00' }, sameTeam)).toEqual({
-      patch: { startAt: new Date(2026, 10, 21, 8, 0).toISOString() },
+    expect(buildTaskChanges(task, { ...unchanged, startAt: '2026-11-21' }, sameTeam)).toEqual({
+      patch: { startAt: new Date(2026, 10, 21).toISOString() },
       team: null,
     })
   })
