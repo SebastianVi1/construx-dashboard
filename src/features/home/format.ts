@@ -25,7 +25,7 @@ export function formatCurrency(
  * machine's timezone so tests and renders are deterministic.
  */
 export function formatDate(isoDate: string, locale = 'en-US'): string {
-  const [year, month, day] = isoDate.split('-').map(Number)
+  const [year, month, day] = isoDate.slice(0, 10).split('-').map(Number)
   const date = new Date(Date.UTC(year, month - 1, day))
   return date.toLocaleDateString(locale, DATE_OPTIONS)
 }
