@@ -41,10 +41,12 @@ describe('money', () => {
     expect(moneyText('1245.50', 'es')).toBe('$1,245.50')
   })
 
-  it('copy names the active currency', () => {
+  it('copy names the active currency and has no leftover USD references', () => {
     for (const locale of ['en', 'es'] as const) {
       const text = JSON.stringify(messages[locale])
       expect(text).toContain(CURRENCY)
+      expect(text).not.toContain('USD')
+      expect(text).not.toMatch(/dólares|dollars/i)
     }
   })
 })
