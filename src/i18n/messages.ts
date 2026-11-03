@@ -366,6 +366,8 @@ const en = {
       tabs: {
         overview: 'Overview',
         details: 'Details',
+        list: 'Tasks',
+        gantt: 'Gantt',
       },
     },
     overview: {
@@ -1695,6 +1697,8 @@ const es: Messages = {
       tabs: {
         overview: 'Resumen',
         details: 'Datos',
+        list: 'Tareas',
+        gantt: 'Gantt',
       },
     },
     overview: {
