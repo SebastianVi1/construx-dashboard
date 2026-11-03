@@ -5,6 +5,7 @@ import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { PhaseSchedule } from '../goals/PhasesPage'
 import { SitePhases } from '../goals/SitePhases'
+import { SiteReportsSection } from '../reports/SiteReportsSection'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { ArchiveSiteDialog } from './ArchiveSiteDialog'
@@ -18,7 +19,7 @@ import { siteProgress } from './siteHelpers'
 import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import './sites.css'
 
-type Tab = 'overview' | 'details' | 'list' | 'gantt'
+type Tab = 'overview' | 'details' | 'list' | 'gantt' | 'reports'
 
 /** One site: its details (editable with MANAGE_PROJECT), budget (finance roles), progress, people, plans and its phases. */
 export function SiteDetailPage() {
@@ -149,6 +150,14 @@ export function SiteDetailPage() {
         >
           {t.detail.tabs.gantt}
         </button>
+        <button
+          type="button"
+          className={`site-tab${tab === 'reports' ? ' site-tab--active' : ''}`}
+          onClick={() => setTab('reports')}
+          aria-current={tab === 'reports' ? 'true' : undefined}
+        >
+          {m.reports.title}
+        </button>
       </nav>
 
       {tab === 'overview' ? (
@@ -158,7 +167,6 @@ export function SiteDetailPage() {
           people={people}
           myMembershipId={myMembershipId}
           canViewBudget={can('VIEW_BUDGET')}
-          canGenerate={canManage}
           canViewGoals={can('VIEW_GOAL', current.id, { onSite }) ?? false}
         />
       ) : tab === 'details' ? (
@@ -222,6 +230,8 @@ export function SiteDetailPage() {
             />
           ) : null}
         </>
+      ) : tab === 'reports' ? (
+        <SiteReportsSection organizationId={organization.id} siteId={current.id} canGenerate={canManage} />
       ) : !can('VIEW_GOAL', current.id, { onSite }) ? (
         <Notice tone="error">{m.phasesPage.forbidden}</Notice>
       ) : tab === 'list' ? (

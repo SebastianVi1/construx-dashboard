@@ -2,7 +2,6 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { getBudgetSummary } from '../finance/financeApi'
-import { SiteReportsSection } from '../reports/SiteReportsSection'
 import { BudgetOverview } from './SiteBudget'
 import { SitePeople } from './SitePeople'
 import { PhasesProgressCard } from './PhasesProgressCard'
@@ -16,7 +15,6 @@ type Props = {
   people: RemoteData<SiteAccess[]>
   myMembershipId: string | null
   canViewBudget: boolean
-  canGenerate: boolean
   canViewGoals: boolean
 }
 
@@ -26,7 +24,6 @@ export function SiteOverviewTab({
   people,
   myMembershipId,
   canViewBudget,
-  canGenerate,
   canViewGoals,
 }: Props) {
   const { messages: m } = useLocale()
@@ -75,7 +72,6 @@ export function SiteOverviewTab({
         />
       </section>
 
-      <SiteReportsSection organizationId={organizationId} siteId={site.id} canGenerate={canGenerate} />
     </div>
   )
 }
