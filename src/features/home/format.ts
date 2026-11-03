@@ -1,4 +1,4 @@
-export type CurrencyCode = 'USD' | 'EUR' | 'ARS'
+export type CurrencyCode = 'MXN' | 'USD' | 'EUR' | 'ARS'
 
 const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   year: 'numeric',
@@ -9,7 +9,7 @@ const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
 
 export function formatCurrency(
   amount: number,
-  currency: CurrencyCode = 'USD',
+  currency: CurrencyCode = 'MXN',
   locale = 'en-US',
 ): string {
   return new Intl.NumberFormat(locale, {

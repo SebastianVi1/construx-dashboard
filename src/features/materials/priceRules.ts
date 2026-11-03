@@ -38,7 +38,7 @@ export function localToday(now = new Date()): string {
 }
 
 /** Every amount in the app (prices, budgets, expenses) is in this currency for now. */
-export const CURRENCY = 'USD'
+export const CURRENCY = 'MXN'
 
 /** The narrow symbol keeps both languages on "$1,245.50". */
 const moneyLocales: Record<Locale, string> = { en: 'en-US', es: 'es-MX' }

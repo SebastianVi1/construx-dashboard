@@ -2,12 +2,12 @@ import { describe, expect, it } from 'bun:test'
 import { budgetVariance, formatCurrency, formatDate, formatMonthYear } from '../../../features/home/format'
 
 describe('formatCurrency', () => {
-  it('formats whole amounts in USD', () => {
-    expect(formatCurrency(1_400_000, 'USD')).toBe('$1,400,000')
+  it('formats whole amounts in MXN', () => {
+    expect(formatCurrency(1_400_000, 'MXN')).toBe('MX$1,400,000')
   })
 
   it('formats negative amounts', () => {
-    expect(formatCurrency(-200, 'USD')).toBe('-$200')
+    expect(formatCurrency(-200, 'MXN')).toBe('-MX$200')
   })
 })
 

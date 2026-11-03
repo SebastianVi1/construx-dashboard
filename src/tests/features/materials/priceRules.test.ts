@@ -35,17 +35,15 @@ describe('price age', () => {
 })
 
 describe('money', () => {
-  it('moneyText: formats a decimal string in the global currency (USD) with two decimals', () => {
-    expect(CURRENCY).toBe('USD')
+  it('moneyText: formats a decimal string in the global currency (MXN) with two decimals', () => {
+    expect(CURRENCY).toBe('MXN')
     expect(moneyText('245.5', 'en')).toBe('$245.50')
     expect(moneyText('1245.50', 'es')).toBe('$1,245.50')
   })
 
-  it('no copy still names the old currency', () => {
+  it('copy names the active currency', () => {
     for (const locale of ['en', 'es'] as const) {
       const text = JSON.stringify(messages[locale])
-      expect(text).not.toContain('MXN')
-      expect(text).not.toMatch(/pesos/i)
       expect(text).toContain(CURRENCY)
     }
   })
