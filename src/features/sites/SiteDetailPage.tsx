@@ -9,11 +9,14 @@ import { ArchiveSiteDialog } from './ArchiveSiteDialog'
 import { SiteBudget } from './SiteBudget'
 import { ProgressMeter, SiteStatusBadge } from './SiteBits'
 import { SiteDetailsForm } from './SiteDetailsForm'
+import { SiteOverviewTab } from './SiteOverviewTab'
 import { SitePeople } from './SitePeople'
 import { dateText, scheduleText } from './siteDisplay'
 import { siteProgress } from './siteHelpers'
 import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import './sites.css'
+
+type Tab = 'overview' | 'details'
 
 /** One site: its details (editable with MANAGE_PROJECT), budget (finance roles), progress, people, plans and its phases. */
 export function SiteDetailPage() {
@@ -28,6 +31,7 @@ export function SiteDetailPage() {
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [formVersion, setFormVersion] = useState(0)
   const [savedNotice, setSavedNotice] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('overview')
 
   const myMembershipId = access?.membershipId ?? null
   const onSite = people.data ? people.data.some((person) => person.membershipId === myMembershipId) : undefined
@@ -110,78 +114,111 @@ export function SiteDetailPage() {
 
       {savedNotice ? <Notice tone="success">{savedNotice}</Notice> : null}
 
-      <div className="site-columns">
-        <section className="page-section" aria-labelledby="site-details-heading">
-          <div className="page-section__header">
-            <h2 id="site-details-heading">{t.detail.details}</h2>
-          </div>
-          {canManage ? (
-            <SiteDetailsForm
-              key={formVersion}
-              organizationId={organization.id}
-              site={current}
-              onSaved={(updated) => saved(updated, t.detail.saved)}
-            />
-          ) : (
-            <dl className="site-facts">
-              <div>
-                <dt>{t.field.name}</dt>
-                <dd>{current.name}</dd>
-              </div>
-              <div>
-                <dt>{t.field.address}</dt>
-                <dd>{current.address || t.noAddress}</dd>
-              </div>
-              <div>
-                <dt>{t.field.startDate}</dt>
-                <dd className="data-mono">{current.startDate ? dateText(current.startDate, locale) : t.detail.notScheduled}</dd>
-              </div>
-              <div>
-                <dt>{t.field.expectedEndDate}</dt>
-                <dd className="data-mono">
-                  {current.expectedEndDate ? dateText(current.expectedEndDate, locale) : t.detail.notScheduled}
-                </dd>
-              </div>
-              <div>
-                <dt>{t.field.status}</dt>
-                <dd>{t.status[current.status]}</dd>
-              </div>
-            </dl>
-          )}
-        </section>
+      <nav className="site-tabs" aria-label={t.detail.tabs.overview}>
+        <button
+          type="button"
+          className={`site-tab${tab === 'overview' ? ' site-tab--active' : ''}`}
+          onClick={() => setTab('overview')}
+          aria-current={tab === 'overview' ? 'true' : undefined}
+        >
+          {t.detail.tabs.overview}
+        </button>
+        <button
+          type="button"
+          className={`site-tab${tab === 'details' ? ' site-tab--active' : ''}`}
+          onClick={() => setTab('details')}
+          aria-current={tab === 'details' ? 'true' : undefined}
+        >
+          {t.detail.tabs.details}
+        </button>
+      </nav>
 
-        <SitePeople
-          organizationId={organization.id}
-          siteId={current.id}
-          people={people}
-          canManage={canManage}
-          myMembershipId={myMembershipId}
-        />
-      </div>
-
-      {can('VIEW_BUDGET') ? (
-        <SiteBudget
+      {tab === 'overview' ? (
+        <SiteOverviewTab
           organizationId={organization.id}
           site={current}
-          canManage={can('MANAGE_BUDGET')}
-          onSaved={saved}
-          onNotice={setSavedNotice}
+          people={people}
+          myMembershipId={myMembershipId}
+          canViewBudget={can('VIEW_BUDGET')}
+          canGenerate={canManage}
+          canViewGoals={can('VIEW_GOAL', current.id, { onSite }) ?? false}
         />
-      ) : null}
+      ) : (
+        <>
+          <div className="site-columns">
+            <section className="page-section" aria-labelledby="site-details-heading">
+              <div className="page-section__header">
+                <h2 id="site-details-heading">{t.detail.details}</h2>
+              </div>
+              {canManage ? (
+                <SiteDetailsForm
+                  key={formVersion}
+                  organizationId={organization.id}
+                  site={current}
+                  onSaved={(updated) => saved(updated, t.detail.saved)}
+                />
+              ) : (
+                <dl className="site-facts">
+                  <div>
+                    <dt>{t.field.name}</dt>
+                    <dd>{current.name}</dd>
+                  </div>
+                  <div>
+                    <dt>{t.field.address}</dt>
+                    <dd>{current.address || t.noAddress}</dd>
+                  </div>
+                  <div>
+                    <dt>{t.field.startDate}</dt>
+                    <dd className="data-mono">{current.startDate ? dateText(current.startDate, locale) : t.detail.notScheduled}</dd>
+                  </div>
+                  <div>
+                    <dt>{t.field.expectedEndDate}</dt>
+                    <dd className="data-mono">
+                      {current.expectedEndDate ? dateText(current.expectedEndDate, locale) : t.detail.notScheduled}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t.field.status}</dt>
+                    <dd>{t.status[current.status]}</dd>
+                  </div>
+                </dl>
+              )}
+            </section>
 
-      {can('VIEW_GOAL', current.id, { onSite }) ? (
-        <section className="page-section site-phases-link" aria-labelledby="site-phases-heading">
-          <div className="page-section__header">
-            <div>
-              <h2 id="site-phases-heading">{m.phasesPage.open}</h2>
-              <p>{m.phasesPage.openHint}</p>
-            </div>
-            <Link className="button" to={`/sites/${encodeURIComponent(current.id)}/phases`}>
-              {m.phasesPage.open}
-            </Link>
+            <SitePeople
+              organizationId={organization.id}
+              siteId={current.id}
+              people={people}
+              canManage={canManage}
+              myMembershipId={myMembershipId}
+            />
           </div>
-        </section>
-      ) : null}
+
+          {can('VIEW_BUDGET') ? (
+            <SiteBudget
+              organizationId={organization.id}
+              site={current}
+              canManage={can('MANAGE_BUDGET')}
+              onSaved={saved}
+              onNotice={setSavedNotice}
+            />
+          ) : null}
+
+          {can('VIEW_GOAL', current.id, { onSite }) ? (
+            <section className="page-section site-phases-link" aria-labelledby="site-phases-heading">
+              <div className="page-section__header">
+                <div>
+                  <h2 id="site-phases-heading">{m.phasesPage.open}</h2>
+                  <p>{m.phasesPage.openHint}</p>
+                </div>
+                <Link className="button" to={`/sites/${encodeURIComponent(current.id)}/phases`}>
+                  {m.phasesPage.open}
+                </Link>
+              </div>
+            </section>
+          ) : null}
+        </>
+      )}
 
       {archiveOpen ? (
         <ArchiveSiteDialog

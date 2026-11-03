@@ -134,7 +134,7 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
 }
 
 /** Figures on the left, the chart beside them; they stack on narrow screens. */
-function BudgetOverview({ summary }: { summary: BudgetSummary }) {
+export function BudgetOverview({ summary }: { summary: BudgetSummary }) {
   const { messages: m, locale } = useLocale()
   const t = m.finance
   const chart = budgetChart(summary)
