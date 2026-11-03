@@ -9,6 +9,7 @@ import { colorSchema } from '../gantt/barColor'
 export type TaskValidationMessages = {
   nameRequired: string
   nameMax: string
+  descriptionMax: string
   startRequired: string
   dueRequired: string
   startAfterDue: string
@@ -19,7 +20,7 @@ export type TaskValidationMessages = {
 }
 
 /** The form's text fields; the team is edited beside them and checked with `teamIssue`. */
-export type TaskValues = { color?: string; name: string; startAt: string; dueAt: string }
+export type TaskValues = { color?: string; description?: string; name: string; startAt: string; dueAt: string }
 
 /** Local midnight of an instant's calendar day, for day-level boundary checks. */
 function dayStart(instant: string): number {
@@ -56,6 +57,7 @@ export function makeTaskSchema(
   return z
     .object({
       color: colorSchema(invalidColor),
+      description: z.string().max(500, messages.descriptionMax).default(''),
       name: nameSchema(messages),
       startAt: instantField(
         messages.startRequired,
@@ -76,7 +78,7 @@ export function makeTaskSchema(
 }
 
 export type TaskChanges = {
-  patch: Partial<Pick<TaskInput, 'name' | 'startAt' | 'dueAt' | 'color'>>
+  patch: Partial<Pick<TaskInput, 'name' | 'startAt' | 'dueAt' | 'color' | 'description'>>
   /** The new team, or null when nobody or no role changed. */
   team: TeamPlace[] | null
 }
@@ -85,6 +87,7 @@ export type TaskChanges = {
 export function buildTaskChanges(task: Task, values: TaskValues, team: TeamPlace[]): TaskChanges {
   const patch: TaskChanges['patch'] = {}
   if (values.color !== undefined && values.color !== (task.color ?? '')) patch.color = values.color
+  if (values.description !== undefined && values.description !== (task.description ?? '')) patch.description = values.description
   const name = values.name.trim()
   const startAt = localInputToInstant(values.startAt)
   const dueAt = localInputToInstant(values.dueAt)

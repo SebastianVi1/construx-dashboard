@@ -78,6 +78,7 @@ export function TaskDialog({
   const form = useForm({
     initialValues: {
       color: task?.color ?? '',
+      description: task?.description ?? '',
       name: task?.name ?? '',
       startAt: instantToLocalInput(task?.startAt ?? initialStartAt ?? goal.startAt),
       dueAt: instantToLocalInput(task?.dueAt ?? initialDueAt ?? goal.dueAt),
@@ -110,7 +111,7 @@ export function TaskDialog({
     },
     onInvalid: (errors) => {
       setTeamChecked(true)
-      const first = ['name', 'startAt', 'dueAt', 'color'].find((name) => errors[name])
+      const first = ['name', 'description', 'startAt', 'dueAt', 'color'].find((name) => errors[name])
       if (first) document.getElementById(`field-${first}`)?.focus()
     },
   })
@@ -119,6 +120,7 @@ export function TaskDialog({
     ...(canEdit
       ? ([
           { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
+          { name: 'description', label: t.field.description, placeholder: t.field.descriptionPlaceholder, type: 'textarea', autoComplete: 'off', spellCheck: false, rows: 3 },
           {
             name: 'startAt',
             label: t.field.startAt,
@@ -149,6 +151,7 @@ export function TaskDialog({
             value={form.values.color}
             disabled={form.isSubmitting}
             error={form.errors.color}
+            simple
             onChange={(color) => form.onChange('color', color)}
             onBlur={() => form.onBlur('color')}
           />

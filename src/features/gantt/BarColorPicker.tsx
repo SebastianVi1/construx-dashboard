@@ -29,21 +29,22 @@ type BarColorPickerProps = {
   value: string
   disabled: boolean
   error?: string
+  /** When true, only the palette swatches are shown (no hex input or native picker). */
+  simple?: boolean
   onChange: (color: string) => void
   onBlur: () => void
 }
 
 /** Part of the edit dialog's form: nothing is saved until the dialog is, and Cancel discards it. */
-export function BarColorPicker({ value, disabled, error, onChange, onBlur }: BarColorPickerProps) {
+export function BarColorPicker({ value, disabled, error, simple, onChange, onBlur }: BarColorPickerProps) {
   const { messages: m } = useLocale()
   const t = m.gantt
   const pickerId = useId()
   const color = HEX.test(value) ? value.toLowerCase() : undefined
-  const preview = { '--bar-color': color } as CSSProperties
   return (
     <fieldset className="bar-color" disabled={disabled}>
       <legend>{t.barColor}</legend>
-      <p className="bar-color__hint">{t.colorDialogHint}</p>
+      {!simple && <p className="bar-color__hint">{t.colorDialogHint}</p>}
       <div className="bar-color__palette" role="group" aria-label={t.barColor}>
         {palette.map(([name, hex]) => (
           <button
@@ -61,32 +62,36 @@ export function BarColorPicker({ value, disabled, error, onChange, onBlur }: Bar
           </button>
         ))}
       </div>
-      <div className="bar-color__custom">
-        <label className="bar-color__picker" htmlFor={pickerId}>
-          <input
-            id={pickerId}
-            type="color"
-            value={color ?? PICKER_START}
-            onChange={(event) => onChange(event.target.value)}
-            onBlur={onBlur}
-          />
-          <span>{t.pickColor}</span>
-        </label>
-        <Field
-          config={{ name: 'color', label: t.customColor, placeholder: '#3b82f6', autoComplete: 'off', spellCheck: false }}
-          value={value}
-          error={error}
-          disabled={disabled}
-          onChange={onChange}
-          onBlur={onBlur}
-        />
-        <button type="button" className="button" disabled={disabled || !value} onClick={() => onChange('')}>
-          {t.resetColor}
-        </button>
-      </div>
-      <div className="bar-color__preview" style={preview} data-ink={color ? barInk(color) : undefined}>
-        <span>{t.colorPreview}</span>
-      </div>
+      {!simple && (
+        <>
+          <div className="bar-color__custom">
+            <label className="bar-color__picker" htmlFor={pickerId}>
+              <input
+                id={pickerId}
+                type="color"
+                value={color ?? PICKER_START}
+                onChange={(event) => onChange(event.target.value)}
+                onBlur={onBlur}
+              />
+              <span>{t.pickColor}</span>
+            </label>
+            <Field
+              config={{ name: 'color', label: t.customColor, placeholder: '#3b82f6', autoComplete: 'off', spellCheck: false }}
+              value={value}
+              error={error}
+              disabled={disabled}
+              onChange={onChange}
+              onBlur={onBlur}
+            />
+            <button type="button" className="button" disabled={disabled || !value} onClick={() => onChange('')}>
+              {t.resetColor}
+            </button>
+          </div>
+          <div className="bar-color__preview" style={{ '--bar-color': color } as CSSProperties} data-ink={color ? barInk(color) : undefined}>
+            <span>{t.colorPreview}</span>
+          </div>
+        </>
+      )}
     </fieldset>
   )
 }

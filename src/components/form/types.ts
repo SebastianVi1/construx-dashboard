@@ -11,6 +11,7 @@ export type FieldType =
   | 'date'
   | 'datetime-local'
   | 'select'
+  | 'textarea'
 
 export type FieldOption = { value: string; label: string }
 
@@ -45,6 +46,8 @@ export type FieldConfig = {
   options?: FieldOption[]
   /** Minimum value for `date` or `datetime-local` inputs (YYYY-MM-DD). */
   min?: string
+  /** Number of visible rows for `textarea` fields. */
+  rows?: number
 }
 
 export type FieldErrors = Record<string, string | undefined>

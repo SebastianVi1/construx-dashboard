@@ -6,6 +6,7 @@ import type { Task } from '../../../features/tasks/tasksApi'
 const messages = {
   nameRequired: 'name',
   nameMax: 'max',
+  descriptionMax: 'descMax',
   startRequired: 'start',
   dueRequired: 'due',
   startAfterDue: 'order',

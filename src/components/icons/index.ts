@@ -1,6 +1,7 @@
 export {
   CheckIcon,
   ChevronDownIcon,
+  DocumentIcon,
   FolderIcon,
   MaterialsIcon,
   MoonIcon,

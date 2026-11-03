@@ -136,6 +136,18 @@
   padding-right: 76px;
 }
 
+/* Textarea: no right-side padding for an icon, resizable vertically. */
+.form-field[data-type='textarea'] .form-field__control {
+  min-height: 80px;
+  padding: 10px 14px;
+  resize: vertical;
+}
+
+.form-field[data-type='textarea'] .form-field__status {
+  top: 14px;
+  margin-top: 0;
+}
+
 /* Select: own chevron, and the status glyph moves left of it. */
 .form-field[data-type='select'] .form-field__control {
   appearance: none;

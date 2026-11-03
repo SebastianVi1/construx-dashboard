@@ -107,6 +107,7 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
           value={form.values.color}
           disabled={form.isSubmitting}
           error={form.errors.color}
+          simple
           onChange={(color) => form.onChange('color', color)}
           onBlur={() => form.onBlur('color')}
         />

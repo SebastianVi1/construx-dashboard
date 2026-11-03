@@ -144,7 +144,7 @@ export function SiteDetailPage() {
         </button>
         <button
           type="button"
-          className={`site-tab${tab === 'gantt' ? ' site-tab--active' : ''}`}
+          className={`site-tab site-tab--desktop${tab === 'gantt' ? ' site-tab--active' : ''}`}
           onClick={() => setTab('gantt')}
           aria-current={tab === 'gantt' ? 'true' : undefined}
         >

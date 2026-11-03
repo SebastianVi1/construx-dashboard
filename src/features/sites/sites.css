@@ -274,7 +274,35 @@
 
 @media (max-width: 640px) {
   .site-sheet {
-    padding: 20px;
+    padding: 16px;
+  }
+
+  .site-sheet__facts {
+    gap: 10px 24px;
+  }
+
+  .site-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-tab {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 0.875rem;
+  }
+
+  .site-tab--desktop {
+    display: none;
+  }
+
+  .site-overview {
+    gap: 16px;
   }
 }
 

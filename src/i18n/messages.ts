@@ -194,6 +194,7 @@ const en = {
     materials: 'Materials',
     excel: 'Excel',
     plans: 'Plans',
+    documents: 'Documents',
     members: 'Team',
     loading: 'Loading…',
     retry: 'Try again',
@@ -1220,6 +1221,8 @@ const en = {
     field: {
       name: 'Task',
       namePlaceholder: 'Pour slab, level 1',
+      description: 'Description',
+      descriptionPlaceholder: 'What needs to be done, materials needed, etc.',
       startAt: 'Start date',
       startHint: 'From {date} at the earliest, when the phase starts.',
       dueAt: 'Due date',
@@ -1228,6 +1231,7 @@ const en = {
     validation: {
       nameRequired: 'Enter the task',
       nameMax: 'Use at most 160 characters',
+      descriptionMax: 'Use at most 500 characters',
       startRequired: 'Pick a start date',
       dueRequired: 'Pick a due date',
       startAfterDue: 'The start must be on or before the due date',
@@ -1528,6 +1532,7 @@ const es: Messages = {
     materials: 'Materiales',
     excel: 'Excel',
     plans: 'Planos',
+    documents: 'Documentos',
     members: 'Equipo',
     loading: 'Cargando…',
     retry: 'Intentar de nuevo',
@@ -2554,6 +2559,8 @@ const es: Messages = {
     field: {
       name: 'Tarea',
       namePlaceholder: 'Colar losa, nivel 1',
+      description: 'Descripción',
+      descriptionPlaceholder: 'Qué hay que hacer, materiales necesarios, etc.',
       startAt: 'Fecha de inicio',
       startHint: 'Desde el {date} como mínimo, cuando empieza la fase.',
       dueAt: 'Fecha límite',
@@ -2562,6 +2569,7 @@ const es: Messages = {
     validation: {
       nameRequired: 'Escribe la tarea',
       nameMax: 'Usa como máximo 160 caracteres',
+      descriptionMax: 'Usa como máximo 500 caracteres',
       startRequired: 'Elige una fecha de inicio',
       dueRequired: 'Elige una fecha límite',
       startAfterDue: 'El inicio debe ser igual o anterior a la fecha límite',
