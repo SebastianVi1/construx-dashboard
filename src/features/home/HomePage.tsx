@@ -53,7 +53,7 @@ export function HomePage() {
     budget: 1_400_000,
     cost: 1_052_000,
     period: reportingPeriod,
-    currency: 'USD' as const,
+    currency: 'MXN' as const,
   }
   const variance = budgetVariance(finance.budget, finance.cost)
   const costRatio = finance.budget > 0 ? Math.min(finance.cost / finance.budget, 1) : 0

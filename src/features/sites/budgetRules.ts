@@ -80,7 +80,7 @@ export function budgetToInput(amount: number | null): string {
   return amount === null ? '' : String(amount)
 }
 
-/** Budgets share the global currency (USD): "$250,000.50". */
+/** Budgets share the global currency (MXN): "$250,000.50". */
 export function budgetText(amount: number, locale: Locale): string {
   return moneyText(String(amount), locale)
 }

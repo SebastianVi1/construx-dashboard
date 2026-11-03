@@ -132,7 +132,7 @@ type PhaseScheduleProps = {
 }
 
 /** The Gantt with its data, dialogs and the toast that reports each drag. */
-function PhaseSchedule({ organizationId, site, people, onSite }: PhaseScheduleProps) {
+export function PhaseSchedule({ organizationId, site, people, onSite }: PhaseScheduleProps) {
   const navigate = useNavigate()
   const { messages: m } = useLocale()
   const t = m.gantt

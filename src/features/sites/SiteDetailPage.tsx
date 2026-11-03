@@ -3,6 +3,9 @@ import { Link, useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
+import { PhaseSchedule } from '../goals/PhasesPage'
+import { SitePhases } from '../goals/SitePhases'
+import { SiteReportsSection } from '../reports/SiteReportsSection'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { ArchiveSiteDialog } from './ArchiveSiteDialog'
@@ -16,7 +19,7 @@ import { siteProgress } from './siteHelpers'
 import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import './sites.css'
 
-type Tab = 'overview' | 'details'
+type Tab = 'overview' | 'details' | 'list' | 'gantt' | 'reports'
 
 /** One site: its details (editable with MANAGE_PROJECT), budget (finance roles), progress, people, plans and its phases. */
 export function SiteDetailPage() {
@@ -131,6 +134,30 @@ export function SiteDetailPage() {
         >
           {t.detail.tabs.details}
         </button>
+        <button
+          type="button"
+          className={`site-tab${tab === 'list' ? ' site-tab--active' : ''}`}
+          onClick={() => setTab('list')}
+          aria-current={tab === 'list' ? 'true' : undefined}
+        >
+          {t.detail.tabs.list}
+        </button>
+        <button
+          type="button"
+          className={`site-tab${tab === 'gantt' ? ' site-tab--active' : ''}`}
+          onClick={() => setTab('gantt')}
+          aria-current={tab === 'gantt' ? 'true' : undefined}
+        >
+          {t.detail.tabs.gantt}
+        </button>
+        <button
+          type="button"
+          className={`site-tab${tab === 'reports' ? ' site-tab--active' : ''}`}
+          onClick={() => setTab('reports')}
+          aria-current={tab === 'reports' ? 'true' : undefined}
+        >
+          {m.reports.title}
+        </button>
       </nav>
 
       {tab === 'overview' ? (
@@ -140,10 +167,9 @@ export function SiteDetailPage() {
           people={people}
           myMembershipId={myMembershipId}
           canViewBudget={can('VIEW_BUDGET')}
-          canGenerate={canManage}
           canViewGoals={can('VIEW_GOAL', current.id, { onSite }) ?? false}
         />
-      ) : (
+      ) : tab === 'details' ? (
         <>
           <div className="site-columns">
             <section className="page-section" aria-labelledby="site-details-heading">
@@ -203,21 +229,21 @@ export function SiteDetailPage() {
               onNotice={setSavedNotice}
             />
           ) : null}
-
-          {can('VIEW_GOAL', current.id, { onSite }) ? (
-            <section className="page-section site-phases-link" aria-labelledby="site-phases-heading">
-              <div className="page-section__header">
-                <div>
-                  <h2 id="site-phases-heading">{m.phasesPage.open}</h2>
-                  <p>{m.phasesPage.openHint}</p>
-                </div>
-                <Link className="button" to={`/sites/${encodeURIComponent(current.id)}/phases`}>
-                  {m.phasesPage.open}
-                </Link>
-              </div>
-            </section>
-          ) : null}
         </>
+      ) : tab === 'reports' ? (
+        <SiteReportsSection organizationId={organization.id} siteId={current.id} canGenerate={canManage} />
+      ) : !can('VIEW_GOAL', current.id, { onSite }) ? (
+        <Notice tone="error">{m.phasesPage.forbidden}</Notice>
+      ) : tab === 'list' ? (
+        <SitePhases
+          organizationId={organization.id}
+          siteId={current.id}
+          people={people.data}
+          onSite={onSite}
+          onProgressChanged={site.reload}
+        />
+      ) : (
+        <PhaseSchedule organizationId={organization.id} site={current} people={people} onSite={onSite} />
       )}
 
       {archiveOpen ? (
