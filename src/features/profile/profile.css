@@ -87,7 +87,7 @@
 .profile-hero .avatar[data-size='large'] {
   width: 88px;
   height: 88px;
-  border-color: var(--cx-blueprint-400);
+  border-color: var(--cx-accent);
   background: rgba(34, 87, 201, 0.28);
   font-size: 30px;
 }
@@ -255,21 +255,21 @@
 
 .profile-changes {
   display: grid;
-  gap: 0.75rem;
-  margin: 0 0 1rem;
+  gap: 12px;
+  margin: 0 0 16px;
 }
 
 .profile-changes__row dt {
   color: var(--cx-muted);
-  font-size: 0.875rem;
+  font-size: 14px;
 }
 
 .profile-changes__row dd {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
   align-items: baseline;
-  margin: 0.125rem 0 0;
+  margin: 2px 0 0;
   overflow-wrap: anywhere;
 }
 
