@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, type MouseEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
-import { FolderIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
+import { DocumentIcon, FolderIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
@@ -24,6 +24,7 @@ const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
   materials: MaterialsIcon,
   excel: SpreadsheetIcon,
   plans: FolderIcon,
+  documents: DocumentIcon,
   members: TeamIcon,
 }
 

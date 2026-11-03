@@ -40,17 +40,19 @@ export function ProfilePage() {
   return (
     <div className="page">
       <header className="profile-hero">
-        <Avatar fullName={fullName} email={user.email} size="large" />
-        <div className="profile-hero__text">
-          <h1>{displayName(fullName, user.email)}</h1>
-          <p>{user.email}</p>
-          <div className="profile-hero__meta">
-            {role ? (
-              <span className="badge" data-tone="accent">
-                {role}
-              </span>
-            ) : null}
-            <span>{organization.name}</span>
+        <div className="profile-hero__identity">
+          <Avatar fullName={fullName} email={user.email} size="large" />
+          <div className="profile-hero__text">
+            <h1>{displayName(fullName, user.email)}</h1>
+            <p>{user.email}</p>
+            <div className="profile-hero__meta">
+              {role ? (
+                <span className="badge" data-tone="accent">
+                  {role}
+                </span>
+              ) : null}
+              <span>{organization.name}</span>
+            </div>
           </div>
         </div>
         <button type="button" className="button" onClick={() => void signOut()}>

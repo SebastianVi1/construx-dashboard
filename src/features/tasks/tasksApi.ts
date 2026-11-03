@@ -32,6 +32,7 @@ export const taskSchema = z.object({
   projectId: z.string().min(1),
   projectName: z.string().nullish(),
   name: z.string(),
+  description: z.string().nullish(),
   startAt: z.string(),
   dueAt: z.string(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullish(),
@@ -49,7 +50,7 @@ export type PhaseRef = { organizationId: string; siteId: string; goalId: string 
 
 export type TaskFilter = { status?: TaskStatus; assigneeAccessId?: string }
 
-export type TaskInput = { color?: string; name: string; startAt: string; dueAt: string; assignees: TeamPlace[] }
+export type TaskInput = { color?: string; description?: string; name: string; startAt: string; dueAt: string; assignees: TeamPlace[] }
 
 function tasksPath(at: PhaseRef): string {
   return `${goalPath(at.organizationId, at.siteId, at.goalId)}/activities`
@@ -78,6 +79,7 @@ export function createTask(at: PhaseRef, input: TaskInput): Promise<Task> {
     dueAt: input.dueAt,
     assignees: input.assignees,
     ...(input.color !== undefined ? { color: input.color } : {}),
+    ...(input.description !== undefined ? { description: input.description } : {}),
   }
   return sendJson('post', tasksPath(at), body, 201, taskSchema)
 }
@@ -90,7 +92,7 @@ export function getTask(at: PhaseRef, taskId: string): Promise<Task> {
 export function updateTask(
   at: PhaseRef,
   taskId: string,
-  patch: Partial<Pick<TaskInput, 'name' | 'startAt' | 'dueAt'>> & { color?: string },
+  patch: Partial<Pick<TaskInput, 'name' | 'startAt' | 'dueAt'>> & { color?: string; description?: string },
 ): Promise<Task> {
   return sendJson('patch', taskPath(at, taskId), patch, 200, taskSchema)
 }

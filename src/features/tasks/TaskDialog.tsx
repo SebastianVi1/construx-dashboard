@@ -67,14 +67,23 @@ export function TaskDialog({
   const issue = canReassign ? teamIssue(team) : null
   const teamError = teamChecked && issue ? t.validation[issue === 'empty' ? 'teamRequired' : 'teamLead'] : undefined
 
+  const todayStr = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })()
+  const notBefore = task
+    ? undefined
+    : (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime() })()
+
   const form = useForm({
     initialValues: {
       color: task?.color ?? '',
+      description: task?.description ?? '',
       name: task?.name ?? '',
       startAt: instantToLocalInput(task?.startAt ?? initialStartAt ?? goal.startAt),
       dueAt: instantToLocalInput(task?.dueAt ?? initialDueAt ?? goal.dueAt),
     },
-    schema: makeTaskSchema(t.validation, goal, m.gantt.invalidColor),
+    schema: makeTaskSchema(t.validation, goal, m.gantt.invalidColor, notBefore),
     onSubmit: async (values) => {
       setTeamChecked(true)
       if (issue) {
@@ -102,7 +111,7 @@ export function TaskDialog({
     },
     onInvalid: (errors) => {
       setTeamChecked(true)
-      const first = ['name', 'startAt', 'dueAt', 'color'].find((name) => errors[name])
+      const first = ['name', 'description', 'startAt', 'dueAt', 'color'].find((name) => errors[name])
       if (first) document.getElementById(`field-${first}`)?.focus()
     },
   })
@@ -111,17 +120,20 @@ export function TaskDialog({
     ...(canEdit
       ? ([
           { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
+          { name: 'description', label: t.field.description, placeholder: t.field.descriptionPlaceholder, type: 'textarea', autoComplete: 'off', spellCheck: false, rows: 3 },
           {
             name: 'startAt',
             label: t.field.startAt,
-            type: 'datetime-local',
+            type: 'date',
             hint: formatMessage(t.field.startHint, { date: dueText(goal.startAt, intlLocales[locale]) }),
+            min: task ? undefined : todayStr,
           },
           {
             name: 'dueAt',
             label: t.field.dueAt,
-            type: 'datetime-local',
+            type: 'date',
             hint: formatMessage(t.field.dueHint, { date: dueText(goal.dueAt, intlLocales[locale]) }),
+            min: task ? undefined : todayStr,
           },
         ] satisfies FieldConfig[])
       : []),
@@ -139,6 +151,7 @@ export function TaskDialog({
             value={form.values.color}
             disabled={form.isSubmitting}
             error={form.errors.color}
+            simple
             onChange={(color) => form.onChange('color', color)}
             onBlur={() => form.onBlur('color')}
           />

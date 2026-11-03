@@ -78,41 +78,43 @@ export function SiteReportsSection({ organizationId, siteId, canGenerate }: Prop
           {t.loadError}
         </Notice>
       ) : remote.data && remote.data.length > 0 ? (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{t.column.title}</th>
-              <th>{t.column.date}</th>
-              <th>{t.column.generatedBy}</th>
-              <th>{t.column.actions}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {remote.data.map((report) => (
-              <tr key={report.id}>
-                <td>{report.title}</td>
-                <td className="data-mono">{formatDate(report.createdAt, intlLocales[locale])}</td>
-                <td>{report.generatedByName ?? '—'}</td>
-                <td>
-                  {report.status === 'READY' ? (
-                    <button
-                      type="button"
-                      className="button button--ghost button--sm"
-                      onClick={() => download(report)}
-                      disabled={downloading === report.id}
-                    >
-                      {downloading === report.id ? t.downloading : t.download}
-                    </button>
-                  ) : report.status === 'FAILED' ? (
-                    <span className="text-muted">{t.status.FAILED}</span>
-                  ) : (
-                    <span className="text-muted">{t.status.PENDING}</span>
-                  )}
-                </td>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{t.column.title}</th>
+                <th>{t.column.date}</th>
+                <th>{t.column.generatedBy}</th>
+                <th>{t.column.actions}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {remote.data.map((report) => (
+                <tr key={report.id}>
+                  <td>{report.title}</td>
+                  <td className="data-mono">{formatDate(report.createdAt, intlLocales[locale])}</td>
+                  <td>{report.generatedByName ?? '—'}</td>
+                  <td>
+                    {report.status === 'READY' ? (
+                      <button
+                        type="button"
+                        className="button button--ghost button--sm"
+                        onClick={() => download(report)}
+                        disabled={downloading === report.id}
+                      >
+                        {downloading === report.id ? t.downloading : t.download}
+                      </button>
+                    ) : report.status === 'FAILED' ? (
+                      <span className="text-muted">{t.status.FAILED}</span>
+                    ) : (
+                      <span className="text-muted">{t.status.PENDING}</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <p className="empty-state">{t.empty}</p>
       )}

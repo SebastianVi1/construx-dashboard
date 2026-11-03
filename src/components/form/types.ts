@@ -11,6 +11,7 @@ export type FieldType =
   | 'date'
   | 'datetime-local'
   | 'select'
+  | 'textarea'
 
 export type FieldOption = { value: string; label: string }
 
@@ -43,6 +44,10 @@ export type FieldConfig = {
   revealLabels?: { show: string; hide: string }
   /** Choices of a `select` field, in display order. Use `value: ''` for "none". */
   options?: FieldOption[]
+  /** Minimum value for `date` or `datetime-local` inputs (YYYY-MM-DD). */
+  min?: string
+  /** Number of visible rows for `textarea` fields. */
+  rows?: number
 }
 
 export type FieldErrors = Record<string, string | undefined>

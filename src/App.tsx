@@ -37,6 +37,9 @@ const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((mo
 const AcceptInvitationPage = lazy(() =>
   import('./features/invitations/AcceptInvitationPage').then((module) => ({ default: module.AcceptInvitationPage })),
 )
+const DocumentsPage = lazy(() =>
+  import('./features/documents/DocumentsPage').then((module) => ({ default: module.DocumentsPage })),
+)
 
 function App() {
   return (
@@ -66,6 +69,7 @@ function App() {
         <Route path="/excel/:fileId" element={<RequireWorkbooks><ExcelEditorPage /></RequireWorkbooks>} />
         <Route path="/plans" element={<PlanLibraryPage />} />
         <Route path="/plans/folders/:folderId" element={<PlanLibraryPage />} />
+        <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/account" element={<ProfilePage />} />
       </Route>

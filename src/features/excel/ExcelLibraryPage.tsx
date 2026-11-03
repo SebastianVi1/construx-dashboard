@@ -7,7 +7,7 @@ import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { DragItem } from './excelDrag'
 import { dragKind, dropIssue, ITEM_DRAG_TYPE } from './excelDrag'
-import { excelFileIssue, MAX_LIBRARY_FILES } from './excelFile'
+import { excelFileIssue } from './excelFile'
 import type { ExcelFolder, ExcelRecordSummary } from './excelModel'
 import {
   createFolderIssue,
@@ -109,7 +109,7 @@ export function ExcelLibraryPage() {
     // Names only clash inside the same folder.
     const siblings = folderContents(library, current).workbooks
     const existing = siblings.find((item) => item.name.toLowerCase() === file.name.toLowerCase()) ?? null
-    const issue = excelFileIssue(file, library.workbooks.length, existing !== null)
+    const issue = excelFileIssue(file)
     if (issue) {
       setError(t.issues[issue])
       return
@@ -384,7 +384,7 @@ export function ExcelLibraryPage() {
         ) : (
           <>
             <p className="excel-library__meta">
-              {formatMessage(t.limit, { count: library.workbooks.length, max: MAX_LIBRARY_FILES })} ·{' '}
+              {formatMessage(t.limit, { count: library.workbooks.length })} ·{' '}
               {formatMessage(t.folderLimit, { count: library.folders.length, max: MAX_FOLDERS })} · {t.localOnly}
             </p>
             <ExcelTreeView

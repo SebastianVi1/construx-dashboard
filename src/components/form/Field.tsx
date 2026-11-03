@@ -23,6 +23,8 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
     hint,
     revealLabels,
     options = [],
+    min,
+    rows = 3,
   } = config
 
   const [revealed, setRevealed] = useState(false)
@@ -57,6 +59,21 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
               </option>
             ))}
           </select>
+        ) : type === 'textarea' ? (
+          <textarea
+            className="form-field__control"
+            id={controlId}
+            name={name}
+            placeholder={placeholder}
+            spellCheck={spellCheck}
+            rows={rows}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            onBlur={onBlur}
+            aria-invalid={Boolean(error)}
+            aria-describedby={describedBy}
+            disabled={disabled}
+          />
         ) : (
         <input
           className="form-field__control"
@@ -67,6 +84,7 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
           autoComplete={autoComplete}
           inputMode={inputMode}
           spellCheck={spellCheck}
+          min={min}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onBlur={onBlur}

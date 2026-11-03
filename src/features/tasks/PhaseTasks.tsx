@@ -11,7 +11,7 @@ import { allocationIssue, budgetText } from '../sites/budgetRules'
 import type { SiteAccess } from '../sites/sitesApi'
 import { TaskDialog } from './TaskDialog'
 import { TaskDue, TaskMoveButtons, TaskTeamSummary } from './TaskBits'
-import { groupByStatus, taskActions, taskDetailPath } from './taskRules'
+import { groupByStatus, taskActions, taskDetailPath, type TaskActions } from './taskRules'
 import {
   deleteTask,
   taskErrorKind,
@@ -20,6 +20,7 @@ import {
   type PhaseRef,
   type Task,
   type TaskFilter,
+  type TaskStatus,
 } from './tasksApi'
 import { useTaskMove } from './useTaskMove'
 import './tasks.css'
@@ -69,6 +70,20 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
   }
 
   const moves = useTaskMove(replace)
+
+  const [drag, setDrag] = useState<{ task: Task; actions: TaskActions } | null>(null)
+  const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
+
+  function dragMoveKind(
+    task: Task,
+    targetStatus: TaskStatus,
+    actions: TaskActions,
+  ): 'start' | 'complete' | null {
+    if (task.status === targetStatus) return null
+    if (targetStatus === 'IN_PROGRESS' && task.status === 'TODO' && actions.start) return 'start'
+    if (targetStatus === 'DONE' && task.status !== 'DONE' && actions.complete) return 'complete'
+    return null
+  }
 
   function saved(task: Task, created: boolean) {
     if (created) tasks.update((list) => [...list, task])
@@ -148,9 +163,34 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
         tasks.data.length === 0 ? (
           <p className="phase-tasks__empty">{filtered ? t.noResults : t.empty}</p>
         ) : (
-          <div className="task-board" data-columns={groups.length}>
-            {groups.map((group) => (
-              <section key={group.status} className="task-column" aria-label={t.status[group.status]}>
+          <div
+            className="task-board"
+            data-columns={groups.length}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverColumn(null)
+            }}
+          >
+            {groups.map((group) => {
+              const moveKind = drag ? dragMoveKind(drag.task, group.status, drag.actions) : null
+              const isOver = drag !== null && dragOverColumn === group.status
+              return (
+              <section
+                key={group.status}
+                className="task-column"
+                aria-label={t.status[group.status]}
+                data-drop-valid={isOver && moveKind !== null ? '' : undefined}
+                data-drop-invalid={isOver && moveKind === null ? '' : undefined}
+                onDragEnter={() => { if (drag && !moves.busyId) setDragOverColumn(group.status) }}
+                onDragOver={(e) => { if (drag && moveKind !== null) e.preventDefault() }}
+                onDrop={() => {
+                  if (!drag || !moveKind) return
+                  const { task } = drag
+                  setDrag(null)
+                  setDragOverColumn(null)
+                  setNotice(null)
+                  void moves.move(at, task, moveKind)
+                }}
+              >
                 <h4 className="task-column__title" data-status={group.status}>
                   {t.status[group.status]}
                   <span className="data-mono task-column__count">{group.tasks.length}</span>
@@ -161,8 +201,23 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
                   <ul className="task-list">
                     {group.tasks.map((task) => {
                       const allowed = taskActions(access, task, { onSite })
+                      const canDrag = !moves.busyId && (allowed.start || allowed.complete)
                       return (
-                        <li key={task.id} className="task-item" data-status={task.status}>
+                        <li
+                          key={task.id}
+                          className="task-item"
+                          data-status={task.status}
+                          draggable={canDrag}
+                          data-dragging={drag?.task.id === task.id ? '' : undefined}
+                          onDragStart={() => {
+                            setDrag({ task, actions: allowed })
+                            setNotice(null)
+                          }}
+                          onDragEnd={() => {
+                            setDrag(null)
+                            setDragOverColumn(null)
+                          }}
+                        >
                           <p className="task-item__name">
                             <Link
                               className="table-link"
@@ -245,7 +300,8 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
                   </ul>
                 )}
               </section>
-            ))}
+              )
+            })}
           </div>
         )
       ) : tasks.status === 'error' ? (
