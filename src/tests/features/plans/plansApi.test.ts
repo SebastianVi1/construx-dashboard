@@ -82,6 +82,7 @@ describe('plans API', () => {
       sizeBytes: 10,
       name: '  ',
       description: ' Level 0 ',
+      folderId: null,
     })
     expect(result).toEqual(ticket)
     expect((send.mock.calls[0] as unknown as [string, unknown])[0]).toBe(`${base}/uploads`)
