@@ -238,6 +238,10 @@ const en = {
     delete: 'Delete',
     deleteConfirm: 'Delete this file?',
     backToFolders: 'All folders',
+    searchPlaceholder: 'Search files…',
+    searchResults: 'Search results',
+    noSearchResults: 'No files found.',
+    inFolder: 'In folder',
   },
   profile: {
     title: 'Profile',
@@ -1608,6 +1612,10 @@ const es: Messages = {
     delete: 'Eliminar',
     deleteConfirm: '¿Eliminar este archivo?',
     backToFolders: 'Todas las carpetas',
+    searchPlaceholder: 'Buscar archivos…',
+    searchResults: 'Resultados de búsqueda',
+    noSearchResults: 'No se encontraron archivos.',
+    inFolder: 'En carpeta',
   },
   profile: {
     title: 'Perfil',

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
 import { FolderIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { LoadingState, Notice } from '../../components/page'
@@ -7,7 +7,13 @@ import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { getSite } from '../sites/sitesApi'
-import { createDocumentFolder, getDocumentFolders, type DocumentFolder } from './documentFoldersApi'
+import {
+  createDocumentFolder,
+  getDocumentFolders,
+  searchDocuments,
+  type DocumentFolder,
+  type DocumentSearchHit,
+} from './documentFoldersApi'
 import './documents.css'
 
 function folderName(folder: DocumentFolder, locale: Locale) {
@@ -23,6 +29,7 @@ export function SiteDocumentsPage() {
   const org = useCurrentOrganization()
   const { can } = usePermissions()
   const canManage = can('MANAGE_PROJECT', siteId)
+  const navigate = useNavigate()
   const site = useRemoteData(`${org.id}:${siteId}:site`, () => getSite(org.id, siteId))
   const remote = useRemoteData(`${org.id}:${siteId}:doc-folders`, () => getDocumentFolders(org.id, siteId))
 
@@ -31,10 +38,37 @@ export function SiteDocumentsPage() {
   const [nameEs, setNameEs] = useState('')
   const [createError, setCreateError] = useState<string | null>(null)
 
+  // Search
+  const [query, setQuery] = useState('')
+  const [searchHits, setSearchHits] = useState<DocumentSearchHit[] | null>(null)
+  const [searching, setSearching] = useState(false)
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     const name = site.data?.name ?? t.pageTitle
     document.title = `${name} · ${m.workspace.documents} | Construx`
   }, [site.data?.name, t.pageTitle, m.workspace.documents])
+
+  function handleQueryChange(value: string) {
+    setQuery(value)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    if (!value.trim()) { setSearchHits(null); return }
+    searchTimer.current = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const hits = await searchDocuments(org.id, siteId, value.trim())
+        setSearchHits(hits)
+      } catch {
+        setSearchHits([])
+      } finally {
+        setSearching(false)
+      }
+    }, 300)
+  }
+
+  function folderNameForHit(hit: DocumentSearchHit) {
+    return locale === 'es' ? hit.folderNameEs : hit.folderNameEn
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -67,6 +101,15 @@ export function SiteDocumentsPage() {
         )}
       </header>
 
+      <input
+        className="input document-search-input"
+        type="search"
+        placeholder={t.searchPlaceholder}
+        value={query}
+        onChange={(e) => handleQueryChange(e.target.value)}
+        aria-label={t.searchPlaceholder}
+      />
+
       {creating && (
         <form className="inline-form" onSubmit={handleCreate}>
           <label>
@@ -98,35 +141,69 @@ export function SiteDocumentsPage() {
         </form>
       )}
 
-      {remote.status === 'loading' && <LoadingState label={t.loadingFolders} />}
-      {remote.status === 'error' && (
-        <Notice tone="error" action={{ label: m.workspace.retry, onClick: remote.reload }}>
-          {t.loadFoldersError}
-        </Notice>
+      {/* Search results */}
+      {query.trim() && (
+        <section className="document-search-results">
+          <h2 className="document-search-results__title">{t.searchResults}</h2>
+          {searching && <LoadingState label={t.searchPlaceholder} />}
+          {!searching && searchHits !== null && (
+            searchHits.length > 0 ? (
+              <ul className="document-entries-list">
+                {searchHits.map((hit) => (
+                  <div
+                    key={hit.entryId}
+                    className="document-entry document-entry--clickable"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/documents/sites/${encodeURIComponent(siteId)}/folders/${encodeURIComponent(hit.folderId)}`)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/documents/sites/${encodeURIComponent(siteId)}/folders/${encodeURIComponent(hit.folderId)}`) }}
+                  >
+                    <span className="document-entry__name" title={hit.fileName}>{hit.fileName}</span>
+                    <span className="document-entry__meta">{t.inFolder}: {folderNameForHit(hit)}</span>
+                  </div>
+                ))}
+              </ul>
+            ) : (
+              <p>{t.noSearchResults}</p>
+            )
+          )}
+        </section>
       )}
-      {remote.status === 'ready' && remote.data && (
-        remote.data.length > 0 ? (
-          <ul className="document-folders-grid">
-            {remote.data.map((folder) => (
-              <li key={folder.id}>
-                <Link
-                  className="document-folder-card"
-                  to={`/documents/sites/${encodeURIComponent(siteId)}/folders/${encodeURIComponent(folder.id)}`}
-                >
-                  <FolderIcon className="document-folder-card__icon" />
-                  <span className="document-folder-card__name">{folderName(folder, locale)}</span>
-                  <span className="document-folder-card__count">
-                    {folder.entryCount === 1
-                      ? t.oneFile
-                      : `${folder.entryCount} ${t.files}`}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>{t.noFolders}</p>
-        )
+
+      {/* Folder grid (hidden while searching) */}
+      {!query.trim() && (
+        <>
+          {remote.status === 'loading' && <LoadingState label={t.loadingFolders} />}
+          {remote.status === 'error' && (
+            <Notice tone="error" action={{ label: m.workspace.retry, onClick: remote.reload }}>
+              {t.loadFoldersError}
+            </Notice>
+          )}
+          {remote.status === 'ready' && remote.data && (
+            remote.data.length > 0 ? (
+              <ul className="document-folders-grid">
+                {remote.data.map((folder) => (
+                  <li key={folder.id}>
+                    <Link
+                      className="document-folder-card"
+                      to={`/documents/sites/${encodeURIComponent(siteId)}/folders/${encodeURIComponent(folder.id)}`}
+                    >
+                      <FolderIcon className="document-folder-card__icon" />
+                      <span className="document-folder-card__name">{folderName(folder, locale)}</span>
+                      <span className="document-folder-card__count">
+                        {folder.entryCount === 1
+                          ? t.oneFile
+                          : `${folder.entryCount} ${t.files}`}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>{t.noFolders}</p>
+            )
+          )}
+        </>
       )}
 
       <p style={{ marginTop: 8 }}>

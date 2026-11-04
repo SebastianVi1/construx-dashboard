@@ -110,6 +110,34 @@
   overflow: hidden;
 }
 
+.document-search-input {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 1.5rem;
+}
+
+.document-search-results {
+  margin-bottom: 2rem;
+}
+
+.document-search-results__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cx-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.75rem;
+}
+
+.document-entry--clickable {
+  cursor: pointer;
+}
+
+.document-entry--clickable:hover {
+  background: var(--cx-color-surface-raised);
+}
+
 .document-entry {
   display: flex;
   align-items: center;

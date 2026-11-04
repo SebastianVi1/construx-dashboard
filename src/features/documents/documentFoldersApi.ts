@@ -99,3 +99,19 @@ export function deleteDocumentEntry(org: string, site: string, folderId: string,
     `${basePath(org, site)}/${encodeURIComponent(folderId)}/entries/${encodeURIComponent(entryId)}`,
   )
 }
+
+export const documentSearchHitSchema = z.object({
+  entryId: z.string(),
+  fileName: z.string(),
+  folderId: z.string(),
+  folderNameEn: z.string(),
+  folderNameEs: z.string(),
+})
+export type DocumentSearchHit = z.infer<typeof documentSearchHitSchema>
+
+export function searchDocuments(org: string, site: string, q: string) {
+  return getJson(
+    `${basePath(org, site)}/search?q=${encodeURIComponent(q)}`,
+    z.array(documentSearchHitSchema),
+  )
+}
