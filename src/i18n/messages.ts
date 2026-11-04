@@ -242,6 +242,8 @@ const en = {
     searchResults: 'Search results',
     noSearchResults: 'No files found.',
     inFolder: 'In folder',
+    deleteFolder: 'Delete folder',
+    deleteFolderConfirm: 'Delete this folder and all its files?',
   },
   profile: {
     title: 'Profile',
@@ -1616,6 +1618,8 @@ const es: Messages = {
     searchResults: 'Resultados de búsqueda',
     noSearchResults: 'No se encontraron archivos.',
     inFolder: 'En carpeta',
+    deleteFolder: 'Eliminar carpeta',
+    deleteFolderConfirm: '¿Eliminar esta carpeta y todos sus archivos?',
   },
   profile: {
     title: 'Perfil',

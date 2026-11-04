@@ -9,6 +9,7 @@ import { usePermissions } from '../permissions'
 import { getSite } from '../sites/sitesApi'
 import {
   createDocumentFolder,
+  deleteDocumentFolder,
   getDocumentFolders,
   searchDocuments,
   type DocumentFolder,
@@ -68,6 +69,16 @@ export function SiteDocumentsPage() {
 
   function folderNameForHit(hit: DocumentSearchHit) {
     return locale === 'es' ? hit.folderNameEs : hit.folderNameEn
+  }
+
+  async function handleDeleteFolder(folderId: string) {
+    if (!confirm(t.deleteFolderConfirm)) return
+    try {
+      await deleteDocumentFolder(org.id, siteId, folderId)
+      remote.update((folders) => folders.filter((f) => f.id !== folderId))
+    } catch {
+      // deletion failed — folder stays in the list
+    }
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -183,7 +194,7 @@ export function SiteDocumentsPage() {
             remote.data.length > 0 ? (
               <ul className="document-folders-grid">
                 {remote.data.map((folder) => (
-                  <li key={folder.id}>
+                  <li key={folder.id} className="document-folder-card-item">
                     <Link
                       className="document-folder-card"
                       to={`/documents/sites/${encodeURIComponent(siteId)}/folders/${encodeURIComponent(folder.id)}`}
@@ -196,6 +207,15 @@ export function SiteDocumentsPage() {
                           : `${folder.entryCount} ${t.files}`}
                       </span>
                     </Link>
+                    {canManage && !folder.standard && (
+                      <button
+                        className="button button--ghost document-folder-card__delete-btn"
+                        type="button"
+                        onClick={() => handleDeleteFolder(folder.id)}
+                      >
+                        {t.deleteFolder}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

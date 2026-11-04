@@ -77,6 +77,19 @@
   border-color: var(--cx-border-strong);
 }
 
+.document-folder-card-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.document-folder-card__delete-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  color: var(--cx-danger, #dc2626);
+  align-self: flex-start;
+}
+
 .document-folder-card:focus-visible {
   outline: 2px solid var(--cx-focus);
   outline-offset: 2px;
