@@ -7,7 +7,7 @@
 
 .site-plans__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
   margin: 0;
   padding: 0;
@@ -130,13 +130,31 @@
   line-height: 18px;
 }
 
-/* Shared library: reuse the existing plan thumbnails and workspace tokens. */
-.plans-breadcrumb, .plans-library__toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; margin-block: 1rem; }
-.plans-breadcrumb a + a::before { content: '/'; color: var(--cx-muted); margin-inline-end: 1rem; }
-.plans-breadcrumb a { overflow-wrap: anywhere; }
-.plans-library__toolbar h2 { margin: 0; }
-.plans-site-filter { display: flex; align-items: center; gap: .75rem; margin-inline-start: auto; }
+/* Shared library */
+.plans-library__title-block { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.plans-library__title-block > div { min-width: 0; }
+.plans-library__title-block h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.plans-back {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md, .5rem);
+  background: transparent;
+  color: var(--cx-ink);
+  cursor: pointer;
+}
+.plans-back:hover { background: var(--cx-surface-raised); }
+.plans-back:focus-visible { outline: 2px solid var(--cx-focus); outline-offset: 2px; }
+
+.plans-filter-bar { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; margin-block: 1rem; }
+.plans-site-filter { display: flex; align-items: center; gap: .75rem; }
 .plans-site-filter select { width: min(16rem, 100%); }
+
 .plans-folder-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: .75rem; }
 .plans-folder-list a { display: flex; align-items: center; gap: .75rem; padding: 1rem; border: 1px solid var(--cx-border); border-radius: var(--cx-radius-md, .5rem); color: var(--cx-ink); text-decoration: none; overflow-wrap: anywhere; }
 .plans-folder-list a:hover { background: var(--cx-surface-raised); }
@@ -152,6 +170,7 @@
 .plans-nav-tree__toggle svg { transform: rotate(-90deg); }
 .plans-nav-tree__toggle[aria-expanded='true'] svg { transform: none; }
 @media (max-width: 40rem) {
-  .plans-site-filter { margin-inline-start: 0; width: 100%; }
+  .plans-site-filter { width: 100%; }
+  .plans-filter-bar { flex-direction: column; align-items: stretch; }
   .plans-library .page-header { align-items: stretch; }
 }
