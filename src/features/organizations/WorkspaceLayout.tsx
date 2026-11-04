@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, type MouseEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
-import { DocumentIcon, FolderIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
+import { DocumentIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
@@ -9,7 +9,6 @@ import { hasPermission } from '../permissions/landing'
 import { useCurrentOrganization } from './organizations-context'
 import { WorkspaceHeader } from './WorkspaceHeader'
 import { workspaceNavItems, type WorkspaceNavItem } from './workspaceNav'
-import { PlanLibraryProvider } from '../plans/PlanLibraryProvider'
 import './workspace.css'
 
 const MAIN_ID = 'workspace-main'
@@ -19,7 +18,6 @@ const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
   myTasks: TasksIcon,
   materials: MaterialsIcon,
   excel: SpreadsheetIcon,
-  plans: FolderIcon,
   documents: DocumentIcon,
   members: TeamIcon,
 }
@@ -46,7 +44,7 @@ export function WorkspaceLayout() {
       </a>
       <WorkspaceHeader />
       <PermissionsProvider key={organization.id} organizationId={organization.id}>
-        <PlanLibraryProvider><WorkspaceBody /></PlanLibraryProvider>
+        <WorkspaceBody />
       </PermissionsProvider>
     </div>
   )
@@ -72,7 +70,6 @@ function WorkspaceBody() {
     seesPrices: can('VIEW_PRICES'),
     seesBudget: seesWorkbooks(access),
     managesMembers: can('MANAGE_MEMBERS'),
-    seesPlans: hasPermission(access, 'VIEW_PLAN'),
   })
 
   const links = (prefix: 'workspace-nav' | 'workspace-tabbar') =>

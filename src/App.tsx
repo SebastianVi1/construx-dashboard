@@ -12,7 +12,6 @@ import { RequireWorkbooks } from './features/excel/RequireWorkbooks'
 import { CreateOrganizationPage, OrganizationGate, WorkspaceHome, WorkspaceLayout } from './features/organizations'
 
 // Workspace screens load on first visit; WorkspaceLayout holds their Suspense boundary.
-const PlanLibraryPage = lazy(() => import('./features/plans/PlanLibraryPage').then(module => ({ default: module.PlanLibraryPage })))
 const SitesPage = lazy(() => import('./features/sites/SitesPage').then((module) => ({ default: module.SitesPage })))
 const SiteDetailPage = lazy(() =>
   import('./features/sites/SiteDetailPage').then((module) => ({ default: module.SiteDetailPage })),
@@ -73,8 +72,6 @@ function App() {
         <Route path="/excel" element={<RequireWorkbooks><ExcelLibraryPage /></RequireWorkbooks>} />
         <Route path="/excel/folders/:folderId" element={<RequireWorkbooks><ExcelLibraryPage /></RequireWorkbooks>} />
         <Route path="/excel/:fileId" element={<RequireWorkbooks><ExcelEditorPage /></RequireWorkbooks>} />
-        <Route path="/plans" element={<PlanLibraryPage />} />
-        <Route path="/plans/folders/:folderId" element={<PlanLibraryPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/documents/sites/:siteId" element={<SiteDocumentsPage />} />
         <Route path="/documents/sites/:siteId/folders/:folderId" element={<DocumentFolderPage />} />
