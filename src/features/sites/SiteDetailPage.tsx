@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { BackLink, LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
@@ -35,7 +35,11 @@ export function SiteDetailPage() {
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [formVersion, setFormVersion] = useState(0)
   const [savedNotice, setSavedNotice] = useState<string | null>(null)
-  const [tab, setTab] = useState<Tab>('overview')
+  const [searchParams] = useSearchParams()
+  const initialTab = (['overview', 'details', 'list', 'gantt', 'reports'] as Tab[]).find(
+    (t) => t === searchParams.get('tab'),
+  )
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'overview')
 
   const myMembershipId = access?.membershipId ?? null
   const onSite = people.data ? people.data.some((person) => person.membershipId === myMembershipId) : undefined

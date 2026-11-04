@@ -5,6 +5,8 @@ import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
 import { seesWorkbooks } from '../excel/excelAccess'
+import { FinanceIcon } from '../org-finance/FinanceIcon'
+import { seesOrgFinance } from '../org-finance/orgFinanceAccess'
 import { hasPermission } from '../permissions/landing'
 import { useCurrentOrganization } from './organizations-context'
 import { WorkspaceHeader } from './WorkspaceHeader'
@@ -14,6 +16,7 @@ import './workspace.css'
 const MAIN_ID = 'workspace-main'
 
 const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
+  finance: FinanceIcon,
   sites: SitesIcon,
   myTasks: TasksIcon,
   materials: MaterialsIcon,
@@ -66,6 +69,7 @@ function WorkspaceBody() {
   }, [pathname])
 
   const items = workspaceNavItems({
+    seesFinance: seesOrgFinance(access),
     seesOwnTasks: hasPermission(access, 'VIEW_ACTIVITY') || hasPermission(access, 'MANAGE_ACTIVITY'),
     seesPrices: can('VIEW_PRICES'),
     seesBudget: seesWorkbooks(access),
