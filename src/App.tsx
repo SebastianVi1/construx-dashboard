@@ -32,6 +32,9 @@ const ExcelLibraryPage = lazy(() =>
 const ExcelEditorPage = lazy(() =>
   import('./features/excel/ExcelEditorPage').then((module) => ({ default: module.ExcelEditorPage })),
 )
+const OrgFinancePage = lazy(() =>
+  import('./features/org-finance/OrgFinancePage').then((module) => ({ default: module.OrgFinancePage })),
+)
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })))
 const AcceptInvitationPage = lazy(() =>
   import('./features/invitations/AcceptInvitationPage').then((module) => ({ default: module.AcceptInvitationPage })),
@@ -66,8 +69,9 @@ function App() {
       {/* Public: a signed-out visitor is sent to sign in and brought back with the token. */}
       <Route path="/invitations/accept" element={<Suspense fallback={null}><AcceptInvitationPage /></Suspense>} />
       <Route element={<RequireAuth><OrganizationGate><WorkspaceLayout /></OrganizationGate></RequireAuth>}>
-        {/* `/` picks the landing screen for the role (My tasks for a Worker). */}
+        {/* `/` picks the landing screen for the role: Finance with company-wide VIEW_BUDGET, My tasks for a Worker. */}
         <Route index element={<WorkspaceHome />} />
+        <Route path="/finance" element={<OrgFinancePage />} />
         <Route path="/sites" element={<SitesPage />} />
         <Route path="/sites/:siteId" element={<SiteDetailPage />} />
         <Route path="/sites/:siteId/phases" element={<PhasesPage />} />

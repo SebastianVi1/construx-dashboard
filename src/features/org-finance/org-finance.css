@@ -1,0 +1,438 @@
+/* Company finance dashboard. Tokens only; category series colors come from finance.css. */
+
+.org-finance__scope {
+  padding: 4px 10px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font: 500 13px/18px var(--cx-font-data);
+}
+
+.org-finance__empty {
+  padding: 24px 16px;
+  border: 1px dashed var(--cx-border-strong);
+  border-radius: var(--cx-radius-lg);
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+/* Over-budget banner: a rose rule on the leading edge, the site names in plain text. */
+.org-finance__alert {
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--cx-danger) 55%, transparent);
+  border-left-width: 4px;
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-danger-subtle);
+  color: var(--cx-danger);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.org-finance__alert strong {
+  font-family: var(--cx-font-display);
+  font-weight: 600;
+}
+
+.org-finance__alert p {
+  color: var(--cx-ink);
+}
+
+/* KPI band: one surface split into four measures, not four floating cards. */
+.org-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+  overflow: hidden;
+}
+
+.org-kpis__item {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 16px 20px 18px;
+  border-left: 1px solid var(--cx-border);
+}
+
+.org-kpis__item:first-child {
+  border-left: 0;
+}
+
+.org-kpis__item dt {
+  color: var(--cx-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.org-kpis__item dd {
+  margin: 0;
+}
+
+.org-kpis__value.data-mono {
+  color: var(--cx-ink);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 30px;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.org-kpis__hint {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.org-kpis__item[data-tone='danger'] {
+  background: var(--cx-danger-subtle);
+}
+
+.org-kpis__item[data-tone='danger'] .org-kpis__value,
+.org-kpis__item[data-tone='danger'] .org-kpis__hint {
+  color: var(--cx-danger);
+}
+
+@media (max-width: 860px) {
+  .org-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .org-kpis__item:nth-child(3) {
+    border-left: 0;
+  }
+
+  .org-kpis__item:nth-child(n + 3) {
+    border-top: 1px solid var(--cx-border);
+  }
+}
+
+@media (max-width: 420px) {
+  .org-kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .org-kpis__item {
+    border-left: 0;
+  }
+
+  .org-kpis__item + .org-kpis__item {
+    border-top: 1px solid var(--cx-border);
+  }
+}
+
+/* Site table */
+.data-table .cell-number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.org-sites th[scope='row'] {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--cx-border);
+  font-weight: 400;
+  text-align: left;
+}
+
+.org-sites tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+.org-sites__row {
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.org-sites__row:hover {
+  background: var(--cx-surface-raised);
+}
+
+.org-sites__row[data-status='OVER_BUDGET'] .org-sites__remaining {
+  color: var(--cx-danger);
+}
+
+/* Charts */
+.org-finance__charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .org-finance__charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.org-panel {
+  padding: 20px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+}
+
+/* Reserve the plot height so switching period does not make the page jump. */
+.org-burn__body {
+  display: grid;
+  gap: 12px;
+  min-height: 300px;
+  align-content: start;
+}
+
+.org-burn__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.org-burn__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.org-burn__key {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+}
+
+.org-burn__key--bar {
+  height: 10px;
+  border-radius: 2px;
+  background: var(--cx-chart-1);
+}
+
+.org-burn__key--line {
+  height: 2px;
+  background: var(--cx-chart-2);
+}
+
+.org-burn__key--ceiling {
+  height: 0;
+  border-top: 2px dashed var(--cx-muted);
+}
+
+.org-burn__plot {
+  position: relative;
+  height: 220px;
+  border-bottom: 1px solid var(--cx-border-strong);
+}
+
+.org-burn__ceiling {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px dashed var(--cx-muted);
+  pointer-events: none;
+}
+
+.org-burn__line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.org-burn__line polyline {
+  fill: none;
+  stroke: var(--cx-chart-2);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.org-burn__bars,
+.org-burn__axis {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.org-burn__bars {
+  position: absolute;
+  inset: 0;
+}
+
+.org-burn__column {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+.org-burn__bar {
+  width: min(60%, 28px);
+  min-height: 1px;
+  border-radius: 3px 3px 0 0;
+  background: var(--cx-chart-1);
+  transition: opacity 150ms ease-out;
+}
+
+.org-burn__bar[data-over='true'] {
+  background: color-mix(in srgb, var(--cx-chart-1) 55%, var(--cx-danger));
+}
+
+.org-burn__bars:hover .org-burn__bar {
+  opacity: 0.45;
+}
+
+.org-burn__bars:hover .org-burn__column:hover .org-burn__bar {
+  opacity: 1;
+}
+
+.org-burn__tip {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  z-index: 2;
+  width: max-content;
+  max-width: 220px;
+  padding: 6px 8px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+  font-size: 12px;
+  line-height: 18px;
+  box-shadow: 0 8px 24px var(--cx-shadow-color);
+  opacity: 0;
+  transform: translate(-50%, -100%);
+  transition: opacity 120ms ease-out;
+  pointer-events: none;
+}
+
+.org-burn__column:hover .org-burn__tip {
+  opacity: 1;
+}
+
+.org-burn__column:first-child .org-burn__tip {
+  left: 0;
+  transform: translate(0, -100%);
+}
+
+.org-burn__column:last-child .org-burn__tip {
+  left: auto;
+  right: 0;
+  transform: translate(0, -100%);
+}
+
+.org-burn__axis {
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.org-burn__overrun {
+  color: var(--cx-danger);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* Category donut */
+.org-category__body {
+  display: grid;
+  gap: 20px;
+  justify-items: center;
+}
+
+.org-category__donut {
+  position: relative;
+  width: min(100%, 200px);
+  margin: 0;
+}
+
+.org-category__donut svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.org-category__track,
+.org-category__slice {
+  fill: none;
+  stroke-width: 6;
+}
+
+.org-category__track {
+  stroke: var(--cx-chart-track);
+}
+
+.org-category__slice {
+  stroke: var(--series);
+}
+
+.org-category__center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.org-category__center span {
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.org-category__center strong {
+  color: var(--cx-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.org-category__legend {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.org-category__legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto 3.5rem;
+  align-items: center;
+  gap: 10px;
+}
+
+.org-category__share {
+  color: var(--cx-muted);
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .org-sites__row,
+  .org-burn__bar,
+  .org-burn__tip {
+    transition: none;
+  }
+}
