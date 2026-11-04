@@ -413,6 +413,7 @@ const en = {
         list: 'Tasks',
         gantt: 'Gantt',
       },
+      plans: 'Plans',
     },
     overview: {
       budgetTitle: 'Budget',
@@ -531,6 +532,8 @@ const en = {
   plans: {
     title: 'Plans',
     description: 'Drawings and photos of this site. Large images are compressed before upload.',
+    back: 'Plans',
+    foldersDescription: 'Site plans organized by folder.',
     upload: 'Upload plan',
     uploadFirst: 'Upload the first plan',
     loading: 'Loading plans…',
@@ -1783,6 +1786,7 @@ const es: Messages = {
         list: 'Tareas',
         gantt: 'Gantt',
       },
+      plans: 'Planos',
     },
     overview: {
       budgetTitle: 'Presupuesto',
@@ -1901,6 +1905,8 @@ const es: Messages = {
   plans: {
     title: 'Planos',
     description: 'Planos y fotos de esta obra. Las imágenes grandes se comprimen antes de subirlas.',
+    back: 'Planos',
+    foldersDescription: 'Planos de la obra organizados por carpeta.',
     upload: 'Subir plano',
     uploadFirst: 'Subir el primer plano',
     loading: 'Cargando planos…',
