@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
-import { FolderIcon } from '../../components/icons'
+import { ArrowLeftIcon, FolderIcon } from '../../components/icons'
 import { ConfirmDialog, Modal } from '../../components/modal'
 import { LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
@@ -11,7 +11,7 @@ import { PlanUploadDialog } from './PlanUploadDialog'
 import { deletePlan, type Plan } from './plansApi'
 import { deletePlanFolder, movePlan, savePlanFolder, type PlanFolder, type PlanLibrary } from './planLibraryApi'
 import { usePlanLibrary } from './planLibraryContext'
-import { folderOptions, folderPath, planFolderHref, plansInFolder } from './planTree'
+import { folderOptions, planFolderHref, plansInFolder } from './planTree'
 import { PlanLibraryForm } from './PlanLibraryDialogs'
 import { megabytes, viewUrlExpired } from './planDisplay'
 import './plans.css'
@@ -52,31 +52,47 @@ function Library({ data, folderId }: { data: PlanLibrary; folderId: string | nul
   const saved = () => { close(); remote.reload() }
   const refreshExpired = (plan: Plan) => { if (viewUrlExpired(plan.viewUrlExpiresAt)) remote.reload() }
 
+  const parentFolder = current?.parentId ? data.folders.find(f => f.id === current.parentId) ?? null : null
+
   if (folderId && !current) return <div className="page"><Notice tone="error">{c.missing}</Notice><Link to="/plans">{t.title}</Link></div>
 
   return <div className="page plans-library">
     <header className="page-header">
-      <div><h1>{t.title}</h1><p>{c.description}</p></div>
+      <div className="plans-library__title-block">
+        {folderId && current ? (
+          <button
+            className="plans-back"
+            type="button"
+            aria-label={parentFolder?.name ?? t.title}
+            onClick={() => navigate(current.parentId ? planFolderHref(current.parentId) : '/plans')}
+          >
+            <ArrowLeftIcon />
+          </button>
+        ) : null}
+        <div>
+          <h1>{current?.name ?? t.title}</h1>
+          {!current && <p>{c.description}</p>}
+        </div>
+      </div>
       <div className="button-row">
+        {current && data.canManageFolders ? <>
+          <button className="button" type="button" onClick={() => setDialog({ kind: 'folder', folder: current })}>{c.editFolder}</button>
+          <button className="button" type="button" onClick={() => setDialog({ kind: 'deleteFolder', folder: current })}>{c.deleteFolder}</button>
+        </> : null}
         {data.canManageFolders ? <button className="button" type="button" onClick={() => setDialog({ kind: 'folder', folder: null })}>{c.newFolder}</button> : null}
         {writableSites.length ? <button className="button button--primary" type="button" onClick={() => setDialog({ kind: 'site' })}>{t.upload}</button> : null}
       </div>
     </header>
     {notice ? <Notice tone="success">{notice}</Notice> : null}
     {remote.status === 'error' ? <Notice tone="error" action={{ label: t.retry, onClick: remote.reload }}>{t.loadError}</Notice> : null}
-    <nav className="plans-breadcrumb" aria-label={m.workspace.breadcrumb}>
-      <Link to="/plans">{c.root}</Link>
-      {folderPath(data.folders, folderId).map(folder => <Link key={folder.id} to={planFolderHref(folder.id)} aria-current={folder.id === folderId ? 'page' : undefined}>{folder.name}</Link>)}
-    </nav>
-    <div className="plans-library__toolbar">
-      <h2>{current?.name ?? c.root}</h2>
-      {current && data.canManageFolders ? <div className="button-row">
-        <button className="button" type="button" onClick={() => setDialog({ kind: 'folder', folder: current })}>{c.editFolder}</button>
-        <button className="button" type="button" onClick={() => setDialog({ kind: 'deleteFolder', folder: current })}>{c.deleteFolder}</button>
-      </div> : null}
-      <label className="plans-site-filter">{c.site}<select className="form-field__control" value={site} onChange={e => setSite(e.target.value)}>
-        <option value="">{c.allSites}</option>{data.sites.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-      </select></label>
+    <div className="plans-filter-bar">
+      <label className="plans-site-filter">
+        <span>{c.site}</span>
+        <select className="form-field__control" value={site} onChange={e => setSite(e.target.value)}>
+          <option value="">{c.allSites}</option>
+          {data.sites.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+      </label>
     </div>
     {children.length ? <ul className="plans-folder-list" aria-label={c.folders}>
       {children.map(folder => <li key={folder.id}><Link to={planFolderHref(folder.id)}><FolderIcon /><span>{folder.name}</span></Link></li>)}

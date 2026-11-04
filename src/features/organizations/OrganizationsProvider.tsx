@@ -62,6 +62,23 @@ export function OrganizationsProvider({ children }: { children: ReactNode }) {
     select(organization.id)
   }
 
+  function remove(organizationId: string) {
+    if (!userKey) return
+    setLoaded((previous) => {
+      const base = previous?.userKey === userKey && previous.organizations ? previous.organizations : []
+      const remaining = base.filter((item) => item.id !== organizationId)
+      return { userKey, request, organizations: remaining }
+    })
+    if (chosen?.userKey === userKey && chosen.id === organizationId) {
+      const remaining = organizations.filter((item) => item.id !== organizationId)
+      if (remaining.length > 0) {
+        select(remaining[0].id)
+      } else {
+        setChosen(null)
+      }
+    }
+  }
+
   return (
     <OrganizationsContext.Provider
       value={{
@@ -70,6 +87,7 @@ export function OrganizationsProvider({ children }: { children: ReactNode }) {
         current,
         select,
         add,
+        remove,
         reload: () => setRequest((value) => value + 1),
       }}
     >

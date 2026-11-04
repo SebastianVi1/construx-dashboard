@@ -2,6 +2,15 @@ import type { ReactNode, SVGProps } from 'react'
 
 type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'>
 
+export function SearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </Icon>
+  )
+}
+
 /** 24px stroke icon; decorative by default because a visible label always sits beside it. */
 function Icon({ children, ...props }: IconProps & { children: ReactNode }) {
   return (
@@ -143,6 +152,33 @@ export function MoonIcon(props: IconProps) {
   return (
     <Icon {...props}>
       <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+    </Icon>
+  )
+}
+
+export function ArrowLeftIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M19 12H5" />
+      <path d="m12 5-7 7 7 7" />
+    </Icon>
+  )
+}
+
+export function DotsVerticalIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
     </Icon>
   )
 }

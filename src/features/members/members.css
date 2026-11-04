@@ -9,7 +9,7 @@
 
 .members-invite {
   position: sticky;
-  top: 72px;
+  top: calc(var(--cx-header-height) + 16px);
   padding: 20px;
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-lg);

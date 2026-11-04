@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, type MouseEvent } from 'react'
+import { Suspense, useEffect, useRef, type MouseEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { DocumentIcon, FolderIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { LoadingState, Notice } from '../../components/page'
@@ -10,13 +10,9 @@ import { useCurrentOrganization } from './organizations-context'
 import { WorkspaceHeader } from './WorkspaceHeader'
 import { workspaceNavItems, type WorkspaceNavItem } from './workspaceNav'
 import { PlanLibraryProvider } from '../plans/PlanLibraryProvider'
-import { PlansNavTree } from '../plans/PlansNavTree'
 import './workspace.css'
 
 const MAIN_ID = 'workspace-main'
-
-// Loaded apart so the workspace does not ship the Excel code to people who never see it.
-const ExcelNavTree = lazy(() => import('../excel/ExcelNavTree').then((module) => ({ default: module.ExcelNavTree })))
 
 const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
   sites: SitesIcon,
@@ -88,13 +84,7 @@ function WorkspaceBody() {
             <Icon className={`${prefix}__icon`} />
             <span className={`${prefix}__label`}>{t[item.key]}</span>
           </NavLink>
-          {item.key === 'plans' && prefix === 'workspace-nav' ? <PlansNavTree /> : null}
-          {item.key === 'excel' && prefix === 'workspace-nav' ? (
-            <Suspense fallback={null}>
-              <ExcelNavTree />
-            </Suspense>
-          ) : null}
-        </li>
+            </li>
       )
     })
 

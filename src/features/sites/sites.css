@@ -281,23 +281,7 @@
     gap: 10px 24px;
   }
 
-  .site-tabs {
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .site-tabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  .site-tab {
-    flex-shrink: 0;
-    padding: 8px 12px;
-    font-size: 0.875rem;
-  }
-
-  .site-tab--desktop {
+  .filter-tabs__tab--desktop {
     display: none;
   }
 
@@ -306,41 +290,16 @@
   }
 }
 
+@media (pointer: coarse) {
+  .filter-select select {
+    min-height: 44px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .filter-select select {
     transition: none;
   }
-}
-
-/* ── Site detail tabs ──────────────────────────────────────────── */
-
-.site-tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--cx-border);
-  margin-bottom: 24px;
-}
-
-.site-tab {
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  color: var(--cx-muted);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.site-tab:hover {
-  color: var(--cx-ink);
-}
-
-.site-tab--active {
-  color: var(--cx-accent);
-  border-bottom-color: var(--cx-accent);
 }
 
 .site-overview {

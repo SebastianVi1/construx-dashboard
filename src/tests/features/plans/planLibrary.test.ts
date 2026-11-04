@@ -7,7 +7,7 @@ const folders = [{ id: 'a', parentId: null, name: 'Structure' }, { id: 'b', pare
 describe('shared plans library', () => {
   it('opens Plans independently without changing existing navigation', () => {
     expect(workspaceNavItems({ seesOwnTasks: true, seesPrices: true, seesBudget: true, managesMembers: true, seesPlans: true }).map(x => x.to))
-      .toEqual(['/sites', '/tasks', '/materials', '/excel', '/plans', '/members'])
+      .toEqual(['/sites', '/tasks', '/materials', '/excel', '/plans', '/documents', '/members'])
     expect(sectionForPath('/plans/folders/a')).toEqual({ key: 'plans', to: '/plans', isRoot: false })
   })
   it('expands nested folders and keeps plans associated with their site', () => {

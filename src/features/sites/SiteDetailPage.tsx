@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { PhaseSchedule } from '../goals/PhasesPage'
 import { SitePhases } from '../goals/SitePhases'
@@ -17,6 +17,7 @@ import { SitePeople } from './SitePeople'
 import { dateText, scheduleText } from './siteDisplay'
 import { siteProgress } from './siteHelpers'
 import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
+import '../../components/filter/filter-tabs.css'
 import './sites.css'
 
 type Tab = 'overview' | 'details' | 'list' | 'gantt' | 'reports'
@@ -48,9 +49,7 @@ export function SiteDetailPage() {
   if (!site.data) {
     return (
       <div className="page">
-        <Link className="page-back" to="/sites">
-          {t.detail.back}
-        </Link>
+        <BackLink to="/sites">{t.detail.back}</BackLink>
         {site.status === 'error' ? (
           <Notice tone="error" action={{ label: t.load.retry, onClick: site.reload }}>
             {loadMessage(t.load, siteErrorKind(site.error))}
@@ -73,9 +72,7 @@ export function SiteDetailPage() {
 
   return (
     <div className="page">
-      <Link className="page-back" to="/sites">
-        {t.detail.back}
-      </Link>
+      <BackLink to="/sites">{t.detail.back}</BackLink>
 
       <header className="site-sheet">
         <div className="page-header">
@@ -117,45 +114,20 @@ export function SiteDetailPage() {
 
       {savedNotice ? <Notice tone="success">{savedNotice}</Notice> : null}
 
-      <nav className="site-tabs" aria-label={t.detail.tabs.overview}>
-        <button
-          type="button"
-          className={`site-tab${tab === 'overview' ? ' site-tab--active' : ''}`}
-          onClick={() => setTab('overview')}
-          aria-current={tab === 'overview' ? 'true' : undefined}
-        >
+      <nav className="filter-tabs" aria-label={t.detail.tabs.overview}>
+        <button type="button" className="filter-tabs__tab" onClick={() => setTab('overview')} aria-pressed={tab === 'overview'}>
           {t.detail.tabs.overview}
         </button>
-        <button
-          type="button"
-          className={`site-tab${tab === 'details' ? ' site-tab--active' : ''}`}
-          onClick={() => setTab('details')}
-          aria-current={tab === 'details' ? 'true' : undefined}
-        >
+        <button type="button" className="filter-tabs__tab" onClick={() => setTab('details')} aria-pressed={tab === 'details'}>
           {t.detail.tabs.details}
         </button>
-        <button
-          type="button"
-          className={`site-tab${tab === 'list' ? ' site-tab--active' : ''}`}
-          onClick={() => setTab('list')}
-          aria-current={tab === 'list' ? 'true' : undefined}
-        >
+        <button type="button" className="filter-tabs__tab" onClick={() => setTab('list')} aria-pressed={tab === 'list'}>
           {t.detail.tabs.list}
         </button>
-        <button
-          type="button"
-          className={`site-tab site-tab--desktop${tab === 'gantt' ? ' site-tab--active' : ''}`}
-          onClick={() => setTab('gantt')}
-          aria-current={tab === 'gantt' ? 'true' : undefined}
-        >
+        <button type="button" className="filter-tabs__tab filter-tabs__tab--desktop" onClick={() => setTab('gantt')} aria-pressed={tab === 'gantt'}>
           {t.detail.tabs.gantt}
         </button>
-        <button
-          type="button"
-          className={`site-tab${tab === 'reports' ? ' site-tab--active' : ''}`}
-          onClick={() => setTab('reports')}
-          aria-current={tab === 'reports' ? 'true' : undefined}
-        >
+        <button type="button" className="filter-tabs__tab" onClick={() => setTab('reports')} aria-pressed={tab === 'reports'}>
           {m.reports.title}
         </button>
       </nav>

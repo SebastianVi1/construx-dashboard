@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
 import { dueText } from '../goals/dueAt'
 import { listGoals } from '../goals/goalsApi'
@@ -45,7 +45,7 @@ function TaskDetail({ at, taskId }: { at: PhaseRef; taskId: string }) {
   const phasePath = `/sites/${encodeURIComponent(at.siteId)}/phases`
 
   return <div className="page">
-    <Link className="table-link" to={phasePath}>{t.detail.back}</Link>
+    <BackLink to={phasePath}>{t.detail.back}</BackLink>
     {data.status === 'error' ? <Notice tone="error" action={{ label: t.retry, onClick: data.reload }}>
       {taskErrorKind(data.error) === 'notFound' ? t.detail.notFound : t.detail.loadError}
     </Notice> : !task || !actions ? <LoadingState label={t.detail.loading} /> : <>
