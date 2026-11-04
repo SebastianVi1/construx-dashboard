@@ -11,6 +11,7 @@ import { WorkspaceHeader } from './WorkspaceHeader'
 import { workspaceNavItems, type WorkspaceNavItem } from './workspaceNav'
 import { PlanLibraryProvider } from '../plans/PlanLibraryProvider'
 import { PlansNavTree } from '../plans/PlansNavTree'
+import { DocumentsNavTree } from '../documents/DocumentsNavTree'
 import './workspace.css'
 
 const MAIN_ID = 'workspace-main'
@@ -89,6 +90,7 @@ function WorkspaceBody() {
             <span className={`${prefix}__label`}>{t[item.key]}</span>
           </NavLink>
           {item.key === 'plans' && prefix === 'workspace-nav' ? <PlansNavTree /> : null}
+          {item.key === 'documents' && prefix === 'workspace-nav' ? <DocumentsNavTree /> : null}
           {item.key === 'excel' && prefix === 'workspace-nav' ? (
             <Suspense fallback={null}>
               <ExcelNavTree />

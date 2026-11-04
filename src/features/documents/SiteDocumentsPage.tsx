@@ -1,0 +1,137 @@
+import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router'
+import { FolderIcon } from '../../components/icons'
+import { useRemoteData } from '../../components/data/useRemoteData'
+import { LoadingState, Notice } from '../../components/page'
+import { useLocale, type Locale } from '../../i18n'
+import { useCurrentOrganization } from '../organizations/organizations-context'
+import { usePermissions } from '../permissions'
+import { getSite } from '../sites/sitesApi'
+import { createDocumentFolder, getDocumentFolders, type DocumentFolder } from './documentFoldersApi'
+import './documents.css'
+
+function folderName(folder: DocumentFolder, locale: Locale) {
+  return locale === 'es' ? folder.nameEs : folder.nameEn
+}
+
+
+/** Folder grid for one site's documents. */
+export function SiteDocumentsPage() {
+  const { siteId = '' } = useParams()
+  const { messages: m, locale } = useLocale()
+  const t = m.documents
+  const org = useCurrentOrganization()
+  const { can } = usePermissions()
+  const canManage = can('MANAGE_PROJECT', siteId)
+  const site = useRemoteData(`${org.id}:${siteId}:site`, () => getSite(org.id, siteId))
+  const remote = useRemoteData(`${org.id}:${siteId}:doc-folders`, () => getDocumentFolders(org.id, siteId))
+
+  const [creating, setCreating] = useState(false)
+  const [nameEn, setNameEn] = useState('')
+  const [nameEs, setNameEs] = useState('')
+  const [createError, setCreateError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const name = site.data?.name ?? t.pageTitle
+    document.title = `${name} · ${m.workspace.documents} | Construx`
+  }, [site.data?.name, t.pageTitle, m.workspace.documents])
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!nameEn.trim() || !nameEs.trim()) return
+    setCreateError(null)
+    try {
+      const folder = await createDocumentFolder(org.id, siteId, nameEn.trim(), nameEs.trim())
+      remote.update((folders) => [...folders, folder])
+      setNameEn('')
+      setNameEs('')
+      setCreating(false)
+    } catch {
+      setCreateError(t.createError)
+    }
+  }
+
+  return (
+    <div className="page documents-page">
+      <header className="page-header">
+        <div className="page-header__text">
+          <h1>{site.data?.name ?? m.workspace.documents}</h1>
+          <p className="page-header__description">{t.foldersDescription}</p>
+        </div>
+        {canManage && (
+          <div className="page-header__actions">
+            <button className="button button--secondary" type="button" onClick={() => setCreating(true)}>
+              {t.newFolder}
+            </button>
+          </div>
+        )}
+      </header>
+
+      {creating && (
+        <form className="inline-form" onSubmit={handleCreate}>
+          <label>
+            <span>{t.folderNameEn}</span>
+            <input
+              className="input"
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
+              maxLength={120}
+              required
+              autoFocus
+            />
+          </label>
+          <label>
+            <span>{t.folderNameEs}</span>
+            <input
+              className="input"
+              value={nameEs}
+              onChange={(e) => setNameEs(e.target.value)}
+              maxLength={120}
+              required
+            />
+          </label>
+          {createError && <p className="form-error">{createError}</p>}
+          <div className="inline-form__actions">
+            <button className="button button--primary" type="submit">{t.create}</button>
+            <button className="button button--ghost" type="button" onClick={() => { setCreating(false); setNameEn(''); setNameEs('') }}>{t.cancel}</button>
+          </div>
+        </form>
+      )}
+
+      {remote.status === 'loading' && <LoadingState label={t.loadingFolders} />}
+      {remote.status === 'error' && (
+        <Notice tone="error" action={{ label: m.workspace.retry, onClick: remote.reload }}>
+          {t.loadFoldersError}
+        </Notice>
+      )}
+      {remote.status === 'ready' && remote.data && (
+        remote.data.length > 0 ? (
+          <ul className="document-folders-grid">
+            {remote.data.map((folder) => (
+              <li key={folder.id}>
+                <Link
+                  className="document-folder-card"
+                  to={`/documents/sites/${encodeURIComponent(siteId)}/folders/${encodeURIComponent(folder.id)}`}
+                >
+                  <FolderIcon className="document-folder-card__icon" />
+                  <span className="document-folder-card__name">{folderName(folder, locale)}</span>
+                  <span className="document-folder-card__count">
+                    {folder.entryCount === 1
+                      ? t.oneFile
+                      : `${folder.entryCount} ${t.files}`}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>{t.noFolders}</p>
+        )
+      )}
+
+      <p style={{ marginTop: 8 }}>
+        <Link to="/documents">← {m.workspace.documents}</Link>
+      </p>
+    </div>
+  )
+}

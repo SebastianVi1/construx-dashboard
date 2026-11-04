@@ -40,6 +40,12 @@ const AcceptInvitationPage = lazy(() =>
 const DocumentsPage = lazy(() =>
   import('./features/documents/DocumentsPage').then((module) => ({ default: module.DocumentsPage })),
 )
+const SiteDocumentsPage = lazy(() =>
+  import('./features/documents/SiteDocumentsPage').then((module) => ({ default: module.SiteDocumentsPage })),
+)
+const DocumentFolderPage = lazy(() =>
+  import('./features/documents/DocumentFolderPage').then((module) => ({ default: module.DocumentFolderPage })),
+)
 
 function App() {
   return (
@@ -70,6 +76,8 @@ function App() {
         <Route path="/plans" element={<PlanLibraryPage />} />
         <Route path="/plans/folders/:folderId" element={<PlanLibraryPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
+        <Route path="/documents/sites/:siteId" element={<SiteDocumentsPage />} />
+        <Route path="/documents/sites/:siteId/folders/:folderId" element={<DocumentFolderPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/account" element={<ProfilePage />} />
       </Route>
