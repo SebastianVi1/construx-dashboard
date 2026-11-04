@@ -165,6 +165,24 @@ export function ArrowLeftIcon(props: IconProps) {
   )
 }
 
+export function DotsVerticalIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+    </Icon>
+  )
+}
+
 /** A page with a folded corner: documents. */
 export function DocumentIcon(props: IconProps) {
   return (

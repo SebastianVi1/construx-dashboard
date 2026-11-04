@@ -12,6 +12,8 @@ export type OrganizationsContextValue = {
   select: (organizationId: string) => void
   /** Add a just-created organization and select it, without refetching. */
   add: (organization: Organization) => void
+  /** Remove a deleted organization from the list; switches current if it was selected. */
+  remove: (organizationId: string) => void
   reload: () => void
 }
 

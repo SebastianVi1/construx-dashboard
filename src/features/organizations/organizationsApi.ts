@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getJson, sendJson } from '../auth/authApi'
+import { deleteJson, getJson, sendJson } from '../auth/authApi'
 
 /**
  * `OrganizationResponse` from the v1 contract. `myRole` is in the contract but
@@ -33,4 +33,9 @@ export function listOrganizations(): Promise<Organization[]> {
 /** One organization; a non-member gets the same 404 as an unknown id. */
 export function getOrganization(organizationId: string): Promise<Organization> {
   return getJson(`/organizations/${encodeURIComponent(organizationId)}`, organizationSchema)
+}
+
+/** Deactivate an organization; only the owner / MANAGE_ORGANIZATION can do this. Resolves on 204. */
+export function deleteOrganization(organizationId: string): Promise<void> {
+  return deleteJson(`/organizations/${encodeURIComponent(organizationId)}`)
 }

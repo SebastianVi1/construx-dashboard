@@ -3,6 +3,7 @@ export {
   CheckIcon,
   ChevronDownIcon,
   DocumentIcon,
+  DotsVerticalIcon,
   FolderIcon,
   MaterialsIcon,
   MoonIcon,
@@ -14,5 +15,6 @@ export {
   SunIcon,
   TasksIcon,
   TeamIcon,
+  TrashIcon,
   UserIcon,
 } from './icons'

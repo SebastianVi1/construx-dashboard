@@ -152,6 +152,11 @@ const en = {
       label: 'Company',
       switch: 'Switch company',
       newCompany: 'New company',
+      moreOptions: 'More options',
+      deleteCompany: 'Delete company',
+      deleteConfirm: 'Delete "{name}"? This cannot be undone.',
+      deleting: 'Deleting…',
+      deleteError: 'Could not delete the company. Try again.',
     },
     create: {
       title: 'Create your company',
@@ -1529,6 +1534,11 @@ const es: Messages = {
       label: 'Empresa',
       switch: 'Cambiar de empresa',
       newCompany: 'Nueva empresa',
+      moreOptions: 'Más opciones',
+      deleteCompany: 'Eliminar empresa',
+      deleteConfirm: '¿Eliminar "{name}"? Esta acción no se puede deshacer.',
+      deleting: 'Eliminando…',
+      deleteError: 'No se pudo eliminar la empresa. Intentá de nuevo.',
     },
     create: {
       title: 'Crea tu empresa',
