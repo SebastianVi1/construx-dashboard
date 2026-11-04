@@ -14,6 +14,7 @@ import { megabytes } from './planDisplay'
 type PlanUploadDialogProps = {
   organizationId: string
   siteId: string
+  folderId: string
   onUploaded: (plan: Plan) => void
   onClose: () => void
 }
@@ -21,7 +22,7 @@ type PlanUploadDialogProps = {
 type Stage = { kind: 'idle' } | { kind: 'compressing' } | { kind: 'uploading'; progress: number } | { kind: 'confirming' }
 
 /** Pick an image, compress it in the browser, send it straight to storage, then confirm it with the API. */
-export function PlanUploadDialog({ organizationId, siteId, onUploaded, onClose }: PlanUploadDialogProps) {
+export function PlanUploadDialog({ organizationId, siteId, folderId, onUploaded, onClose }: PlanUploadDialogProps) {
   const { messages: m } = useLocale()
   const t = m.plans
   const ids = { file: useId(), name: useId(), description: useId() }
@@ -86,6 +87,7 @@ export function PlanUploadDialog({ organizationId, siteId, onUploaded, onClose }
         sizeBytes: upload.size,
         name,
         description,
+        folderId,
       })
       setStage({ kind: 'uploading', progress: 0 })
       await sendToStorage(ticket, upload, (progress) => setStage({ kind: 'uploading', progress }))

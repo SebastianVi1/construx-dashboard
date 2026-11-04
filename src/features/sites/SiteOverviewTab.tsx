@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
@@ -16,6 +17,7 @@ type Props = {
   myMembershipId: string | null
   canViewBudget: boolean
   canViewGoals: boolean
+  canViewPlans: boolean
 }
 
 export function SiteOverviewTab({
@@ -25,6 +27,7 @@ export function SiteOverviewTab({
   myMembershipId,
   canViewBudget,
   canViewGoals,
+  canViewPlans,
 }: Props) {
   const { messages: m } = useLocale()
   const t = m.sites.overview
@@ -56,6 +59,17 @@ export function SiteOverviewTab({
             <h2 id="overview-phases-heading">{t.phasesTitle}</h2>
           </div>
           <PhasesProgressCard organizationId={organizationId} siteId={site.id} />
+        </section>
+      ) : null}
+
+      {canViewPlans ? (
+        <section className="page-section" aria-labelledby="overview-plans-heading">
+          <div className="page-section__header">
+            <h2 id="overview-plans-heading">{m.sites.detail.plans}</h2>
+          </div>
+          <Link className="button" to={`/sites/${encodeURIComponent(site.id)}/plans`}>
+            {m.sites.detail.plans}
+          </Link>
         </section>
       ) : null}
 

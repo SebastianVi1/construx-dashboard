@@ -140,6 +140,7 @@ export function SiteDetailPage() {
           myMembershipId={myMembershipId}
           canViewBudget={can('VIEW_BUDGET')}
           canViewGoals={can('VIEW_GOAL', current.id, { onSite }) ?? false}
+          canViewPlans={can('VIEW_PLAN') ?? false}
         />
       ) : tab === 'details' ? (
         <>
