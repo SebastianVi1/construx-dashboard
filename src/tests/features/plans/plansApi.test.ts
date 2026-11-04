@@ -4,6 +4,7 @@ import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
 import {
   completePlanUpload,
   deletePlan,
+  getSitePlans,
   planErrorKind,
   requestPlanUpload,
   sendToStorage,
@@ -116,6 +117,42 @@ describe('plans API', () => {
     const ticket = { uploadUrl: 'https://bucket.test/put', headers: {} }
     await expect(sendToStorage(ticket, new Blob(['x']), () => {}, () => fakeRequest(403).request)).rejects.toBeInstanceOf(StorageUploadError)
     await expect(sendToStorage(ticket, new Blob(['x']), () => {}, () => fakeRequest(0, true).request)).rejects.toBeInstanceOf(StorageUploadError)
+  })
+
+  it('getSitePlans: GETs plans filtered by folderId', async () => {
+    const { get } = stubApi({ get: () => ({ status: 200, data: [plan] }) })
+    const result = await getSitePlans('o-1', 'p-1', 'f-1')
+    expect(result).toEqual([plan])
+    expect((get.mock.calls[0] as unknown as [string])[0]).toBe(`${base}?folderId=f-1`)
+  })
+
+  it('requestPlanUpload: includes folderId in body when provided', async () => {
+    const ticket = { planId: 'pl-1', uploadUrl: 'https://bucket.test/put', headers: { 'Content-Type': 'image/webp' }, expiresAt: '2030-01-01T00:00:00Z' }
+    const { send } = stubApi({ send: () => ({ status: 201, data: ticket }) })
+    await requestPlanUpload('o-1', 'p-1', {
+      fileName: 'plan.webp',
+      contentType: 'image/webp',
+      sizeBytes: 10,
+      name: 'Level 1',
+      description: '',
+      folderId: 'f-42',
+    })
+    expect((send.mock.calls[0] as unknown as [string, unknown])[1]).toEqual({ fileName: 'plan.webp', contentType: 'image/webp', sizeBytes: 10, name: 'Level 1', folderId: 'f-42' })
+  })
+
+  it('requestPlanUpload: omits folderId from body when null', async () => {
+    const ticket = { planId: 'pl-1', uploadUrl: 'https://bucket.test/put', headers: { 'Content-Type': 'image/webp' }, expiresAt: '2030-01-01T00:00:00Z' }
+    const { send } = stubApi({ send: () => ({ status: 201, data: ticket }) })
+    await requestPlanUpload('o-1', 'p-1', {
+      fileName: 'plan.webp',
+      contentType: 'image/webp',
+      sizeBytes: 10,
+      name: '',
+      description: '',
+      folderId: null,
+    })
+    const body = (send.mock.calls[0] as unknown as [string, unknown])[1] as Record<string, unknown>
+    expect('folderId' in body).toBe(false)
   })
 
   it('planErrorKind: maps server and storage failures to messages', () => {

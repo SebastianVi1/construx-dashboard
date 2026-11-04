@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, sendJson } from '../auth/authApi'
+import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
 import { organizationPath } from '../permissions/permissionsApi'
 
 /** `PlanResponse`. `viewUrl` is a short-lived link to the image; reload the list for a fresh one. */
@@ -36,6 +36,7 @@ export type PlanUploadRequest = {
   sizeBytes: number
   name: string
   description: string
+  folderId: string | null
 }
 
 function plansPath(organizationId: string, siteId: string): string {
@@ -46,8 +47,12 @@ function planPath(organizationId: string, siteId: string, planId: string): strin
   return `${plansPath(organizationId, siteId)}/${encodeURIComponent(planId)}`
 }
 
-/** Ready plans of the site, newest first. */
-/** Step 1: announce the file; blank name and description are left out. */
+/** Plans for a site in a given folder (by document-folder ID), newest first. */
+export function getSitePlans(organizationId: string, siteId: string, folderId: string): Promise<Plan[]> {
+  return getJson(`${plansPath(organizationId, siteId)}?folderId=${encodeURIComponent(folderId)}`, z.array(planSchema))
+}
+
+/** Step 1: announce the file; blank name and description are left out. folderId is omitted when null. */
 export function requestPlanUpload(organizationId: string, siteId: string, request: PlanUploadRequest): Promise<UploadTicket> {
   const body: Record<string, string | number> = {
     fileName: request.fileName,
@@ -58,6 +63,7 @@ export function requestPlanUpload(organizationId: string, siteId: string, reques
   if (name) body.name = name
   const description = request.description.trim()
   if (description) body.description = description
+  if (request.folderId !== null) body.folderId = request.folderId
   return sendJson('post', `${plansPath(organizationId, siteId)}/uploads`, body, 201, uploadTicketSchema)
 }
 
