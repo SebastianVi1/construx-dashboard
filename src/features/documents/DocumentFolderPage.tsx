@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { BackLink, LoadingState, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
@@ -18,6 +18,45 @@ import './documents.css'
 
 function folderName(folder: DocumentFolder, locale: Locale) {
   return locale === 'es' ? folder.nameEs : folder.nameEn
+}
+
+function isImageFile(entry: DocumentEntry): boolean {
+  return !!entry.fileType?.startsWith('image/')
+}
+
+function isPdfFile(entry: DocumentEntry): boolean {
+  return (
+    entry.fileType === 'application/pdf' ||
+    entry.fileName.toLowerCase().endsWith('.pdf')
+  )
+}
+
+function isExcelFile(entry: DocumentEntry): boolean {
+  if (entry.fileType) {
+    return (
+      entry.fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      entry.fileType === 'application/vnd.ms-excel' ||
+      entry.fileType === 'text/csv'
+    )
+  }
+  const ext = entry.fileName.split('.').pop()?.toLowerCase() ?? ''
+  return ext === 'xlsx' || ext === 'xls' || ext === 'csv'
+}
+
+async function downloadFile(url: string, fileName: string): Promise<void> {
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(a.href)
+  } catch {
+    window.open(url, '_blank')
+  }
 }
 
 function formatBytes(bytes: number | null): string {
@@ -45,6 +84,8 @@ export function DocumentFolderPage() {
   const org = useCurrentOrganization()
   const { can } = usePermissions()
   const canManage = can('MANAGE_PROJECT', siteId)
+  const navigate = useNavigate()
+  const [previewEntry, setPreviewEntry] = useState<DocumentEntry | null>(null)
 
   const foldersRemote = useRemoteData(
     `${org.id}:${siteId}:doc-folders`,
@@ -65,6 +106,15 @@ export function DocumentFolderPage() {
     const name = folder ? folderName(folder, locale) : t.folderTitle
     document.title = `${name} · ${m.workspace.documents} | Construx`
   }, [folder, locale, t.folderTitle, m.workspace.documents])
+
+  useEffect(() => {
+    if (!previewEntry) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setPreviewEntry(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [previewEntry])
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -143,19 +193,46 @@ export function DocumentFolderPage() {
           <div className="document-entries-list">
             {entriesRemote.data.map((entry) => (
               <div key={entry.id} className="document-entry">
+                {isImageFile(entry) && (
+                  <div className="document-entry__thumb-wrap">
+                    <img
+                      className="document-entry__thumb"
+                      src={entry.downloadUrl}
+                      alt=""
+                      loading="lazy"
+                    />
+                  </div>
+                )}
                 <span className="document-entry__name" title={entry.fileName}>{entry.fileName}</span>
                 <span className="document-entry__meta">
                   {formatBytes(entry.fileSize)}{entry.fileSize ? ' · ' : ''}{formatDate(entry.createdAt, locale)}
                 </span>
                 <div className="document-entry__actions">
-                  <a
+                  {(isImageFile(entry) || isPdfFile(entry)) && (
+                    <button
+                      className="button button--ghost button--sm"
+                      type="button"
+                      onClick={() => setPreviewEntry(entry)}
+                    >
+                      {t.preview}
+                    </button>
+                  )}
+                  {isExcelFile(entry) && (
+                    <button
+                      className="button button--ghost button--sm"
+                      type="button"
+                      onClick={() => navigate('/excel')}
+                    >
+                      {t.openInExcel}
+                    </button>
+                  )}
+                  <button
                     className="button button--ghost button--sm"
-                    href={entry.downloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    type="button"
+                    onClick={() => downloadFile(entry.downloadUrl, entry.fileName)}
                   >
                     {t.download}
-                  </a>
+                  </button>
                   {canManage && (
                     <button
                       className="button button--ghost button--sm button--danger"
@@ -172,6 +249,39 @@ export function DocumentFolderPage() {
         ) : (
           <p>{t.noFiles}</p>
         )
+      )}
+
+      {previewEntry && (
+        <div
+          className="document-preview-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={previewEntry.fileName}
+          onClick={() => setPreviewEntry(null)}
+        >
+          <button
+            className="document-preview-overlay__close button button--ghost"
+            type="button"
+            onClick={() => setPreviewEntry(null)}
+          >
+            ✕
+          </button>
+          {isPdfFile(previewEntry) ? (
+            <iframe
+              className="document-preview-overlay__pdf"
+              src={previewEntry.downloadUrl}
+              title={previewEntry.fileName}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img
+              className="document-preview-overlay__img"
+              src={previewEntry.downloadUrl}
+              alt={previewEntry.fileName}
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+        </div>
       )}
 
     </div>

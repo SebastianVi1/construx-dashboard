@@ -243,6 +243,8 @@ const en = {
     inFolder: 'In folder',
     deleteFolder: 'Delete folder',
     deleteFolderConfirm: 'Delete this folder and all its files?',
+    preview: 'Preview',
+    openInExcel: 'Open in Excel',
   },
   profile: {
     title: 'Profile',
@@ -1618,6 +1620,8 @@ const es: Messages = {
     inFolder: 'En carpeta',
     deleteFolder: 'Eliminar carpeta',
     deleteFolderConfirm: '¿Eliminar esta carpeta y todos sus archivos?',
+    preview: 'Previsualizar',
+    openInExcel: 'Abrir en Excel',
   },
   profile: {
     title: 'Perfil',

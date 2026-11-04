@@ -260,3 +260,78 @@
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* ── Image thumbnail inside entry card ───────────────────────── */
+
+.document-entry__thumb-wrap {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--cx-radius-sm);
+  overflow: hidden;
+  background: var(--cx-surface-raised);
+  border: 1px solid var(--cx-border);
+}
+
+.document-entry__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Image preview overlay ───────────────────────────────────── */
+
+.document-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  cursor: zoom-out;
+}
+
+.document-preview-overlay__img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--cx-radius-md);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.document-preview-overlay__pdf {
+  width: min(90vw, 960px);
+  height: 88vh;
+  border: none;
+  border-radius: var(--cx-radius-md);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  background: #fff;
+  cursor: default;
+  display: block;
+}
+
+.document-preview-overlay__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: var(--cx-radius-sm);
+  font-size: 16px;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.document-preview-overlay__close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
