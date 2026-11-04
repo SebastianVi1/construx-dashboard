@@ -1,9 +1,9 @@
 import { taskDetailPath } from '../tasks/taskRules'
 import { useEffect, useState } from 'react'
-import { useNavigate, Link, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
 import { FilterTabs } from '../../components/filter'
-import { LoadingState, Notice } from '../../components/page'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { shiftInstant } from '../gantt/drag'
 import { GanttChart, type Reschedule } from '../gantt/GanttChart'
@@ -48,9 +48,7 @@ export function PhasesPage() {
   if (!site.data) {
     return (
       <div className="page">
-        <Link className="page-back" to={`/sites/${encodeURIComponent(siteId)}`}>
-          {m.sites.detail.back}
-        </Link>
+        <BackLink to={`/sites/${encodeURIComponent(siteId)}`}>{m.sites.detail.back}</BackLink>
         {site.status === 'error' ? (
           <Notice tone="error" action={{ label: m.sites.load.retry, onClick: site.reload }}>
             {siteLoadMessage(m.sites.load, siteErrorKind(site.error))}
@@ -67,9 +65,7 @@ export function PhasesPage() {
 
   return (
     <div className="page">
-      <Link className="page-back" to={`/sites/${encodeURIComponent(current.id)}`}>
-        {formatMessage(t.back, { site: current.name })}
-      </Link>
+      <BackLink to={`/sites/${encodeURIComponent(current.id)}`}>{formatMessage(t.back, { site: current.name })}</BackLink>
       <header className="page-header">
         <div className="page-header__text">
           <h1>{t.title}</h1>

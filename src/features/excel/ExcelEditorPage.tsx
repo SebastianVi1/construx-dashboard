@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { Link, useParams } from 'react-router'
-import { LoadingState, Notice } from '../../components/page'
+import { useParams } from 'react-router'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
 import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { ExcelOp, ExcelRecord, GridSheet } from './excelModel'
@@ -139,7 +139,7 @@ export function ExcelEditorPage() {
   if (loadError) {
     return (
       <div className="page">
-        <Link className="page-back" to="/excel">{t.back}</Link>
+        <BackLink to="/excel">{t.back}</BackLink>
         <Notice tone="error">{loadError.cause === NOT_FOUND ? t.notFound : excelErrorMessage(loadError.cause, t)}</Notice>
       </div>
     )
@@ -153,7 +153,7 @@ export function ExcelEditorPage() {
 
   return (
     <div className="page excel-editor">
-      <Link className="page-back" to={folderHref(loaded.record.folderId)}>{t.back}</Link>
+      <BackLink to={folderHref(loaded.record.folderId)}>{t.back}</BackLink>
       <header className="excel-editor__toolbar">
         <h1 className="excel-editor__name">{loaded.record.name}</h1>
         {dirty ? <span className="badge" data-tone="warning">{t.unexported}</span> : null}

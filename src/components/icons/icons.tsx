@@ -156,6 +156,15 @@ export function MoonIcon(props: IconProps) {
   )
 }
 
+export function ArrowLeftIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M19 12H5" />
+      <path d="m12 5-7 7 7 7" />
+    </Icon>
+  )
+}
+
 /** A page with a folded corner: documents. */
 export function DocumentIcon(props: IconProps) {
   return (

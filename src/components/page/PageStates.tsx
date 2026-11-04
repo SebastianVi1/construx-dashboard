@@ -1,5 +1,17 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router'
+import { ArrowLeftIcon } from '../icons'
 import './page.css'
+
+/** Back navigation link with an arrow icon. Drop-in for `<Link className="page-back">`. */
+export function BackLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link className="page-back" to={to}>
+      <ArrowLeftIcon />
+      {children}
+    </Link>
+  )
+}
 
 /** Reserved-height loading placeholder for a dataset. */
 export function LoadingState({ label }: { label: string }) {

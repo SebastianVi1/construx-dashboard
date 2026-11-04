@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -102,6 +102,7 @@ export function DocumentFolderPage() {
 
   return (
     <div className="page">
+      <BackLink to={`/documents/sites/${encodeURIComponent(siteId)}`}>{t.backToFolders}</BackLink>
       <header className="page-header">
         <div className="page-header__text">
           <h1>{displayName}</h1>
@@ -173,11 +174,6 @@ export function DocumentFolderPage() {
         )
       )}
 
-      <p style={{ marginTop: 16 }}>
-        <Link to={`/documents/sites/${encodeURIComponent(siteId)}`}>
-          ← {t.backToFolders}
-        </Link>
-      </p>
     </div>
   )
 }

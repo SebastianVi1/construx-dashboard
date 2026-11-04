@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
-import { LoadingState, Notice } from '../../components/page'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -54,9 +54,7 @@ export function MaterialDetailPage() {
   if (!material.data) {
     return (
       <div className="page">
-        <Link className="page-back" to="/materials">
-          {t.detail.back}
-        </Link>
+        <BackLink to="/materials">{t.detail.back}</BackLink>
         {material.status === 'error' ? (
           <Notice tone="error" action={{ label: t.load.retry, onClick: material.reload }}>
             {t.load[loadKind(pricingErrorKind(material.error))]}
@@ -101,9 +99,7 @@ export function MaterialDetailPage() {
 
   return (
     <div className="page">
-      <Link className="page-back" to="/materials">
-        {t.detail.back}
-      </Link>
+      <BackLink to="/materials">{t.detail.back}</BackLink>
 
       <header className="page-header">
         <div className="page-header__text">

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { FolderIcon, SearchIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -96,6 +96,7 @@ export function SiteDocumentsPage() {
 
   return (
     <div className="page documents-page">
+      <BackLink to="/documents">{m.workspace.documents}</BackLink>
       <header className="page-header">
         <div className="page-header__text">
           <h1>{site.data?.name ?? m.workspace.documents}</h1>
@@ -219,9 +220,6 @@ export function SiteDocumentsPage() {
         </>
       )}
 
-      <p style={{ marginTop: 8 }}>
-        <Link to="/documents">← {m.workspace.documents}</Link>
-      </p>
     </div>
   )
 }

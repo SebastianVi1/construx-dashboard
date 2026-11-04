@@ -2,7 +2,7 @@ import { useId, useState, type DragEvent, type HTMLAttributes } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router'
 import { FolderIcon, SpreadsheetIcon } from '../../components/icons'
 import { ConfirmDialog } from '../../components/modal'
-import { LoadingState, Notice } from '../../components/page'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { DragItem } from './excelDrag'
@@ -298,8 +298,12 @@ export function ExcelLibraryPage() {
   const createIssue = newFolderIssue(library, current)
   const isEmpty = contents.folders.length === 0 && contents.workbooks.length === 0
 
+  const parentHref = path.length > 1 ? folderHref(path[path.length - 2].id) : '/excel'
+  const parentLabel = path.length > 1 ? path[path.length - 2].name : t.title
+
   return (
     <div className="page">
+      {path.length > 0 ? <BackLink to={parentHref}>{parentLabel}</BackLink> : null}
       {path.length > 0 ? (
         <nav className="excel-path" aria-label={t.folderPath}>
           <ol>

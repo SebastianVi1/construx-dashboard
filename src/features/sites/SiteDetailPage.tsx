@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { BackLink, LoadingState, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { PhaseSchedule } from '../goals/PhasesPage'
 import { SitePhases } from '../goals/SitePhases'
@@ -49,9 +49,7 @@ export function SiteDetailPage() {
   if (!site.data) {
     return (
       <div className="page">
-        <Link className="page-back" to="/sites">
-          {t.detail.back}
-        </Link>
+        <BackLink to="/sites">{t.detail.back}</BackLink>
         {site.status === 'error' ? (
           <Notice tone="error" action={{ label: t.load.retry, onClick: site.reload }}>
             {loadMessage(t.load, siteErrorKind(site.error))}
@@ -74,9 +72,7 @@ export function SiteDetailPage() {
 
   return (
     <div className="page">
-      <Link className="page-back" to="/sites">
-        {t.detail.back}
-      </Link>
+      <BackLink to="/sites">{t.detail.back}</BackLink>
 
       <header className="site-sheet">
         <div className="page-header">
