@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { FolderIcon } from '../../components/icons'
+import { FolderIcon, SearchIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
@@ -35,8 +35,7 @@ export function SiteDocumentsPage() {
   const remote = useRemoteData(`${org.id}:${siteId}:doc-folders`, () => getDocumentFolders(org.id, siteId))
 
   const [creating, setCreating] = useState(false)
-  const [nameEn, setNameEn] = useState('')
-  const [nameEs, setNameEs] = useState('')
+  const [name, setName] = useState('')
   const [createError, setCreateError] = useState<string | null>(null)
 
   // Search
@@ -83,13 +82,12 @@ export function SiteDocumentsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    if (!nameEn.trim() || !nameEs.trim()) return
+    if (!name.trim()) return
     setCreateError(null)
     try {
-      const folder = await createDocumentFolder(org.id, siteId, nameEn.trim(), nameEs.trim())
+      const folder = await createDocumentFolder(org.id, siteId, name.trim(), name.trim())
       remote.update((folders) => [...folders, folder])
-      setNameEn('')
-      setNameEs('')
+      setName('')
       setCreating(false)
     } catch {
       setCreateError(t.createError)
@@ -112,42 +110,35 @@ export function SiteDocumentsPage() {
         )}
       </header>
 
-      <input
-        className="input document-search-input"
-        type="search"
-        placeholder={t.searchPlaceholder}
-        value={query}
-        onChange={(e) => handleQueryChange(e.target.value)}
-        aria-label={t.searchPlaceholder}
-      />
+      <div className="document-search">
+        <SearchIcon className="document-search__icon" />
+        <input
+          className="document-search__input"
+          type="search"
+          placeholder={t.searchPlaceholder}
+          value={query}
+          onChange={(e) => handleQueryChange(e.target.value)}
+          aria-label={t.searchPlaceholder}
+        />
+      </div>
 
       {creating && (
         <form className="inline-form" onSubmit={handleCreate}>
           <label>
-            <span>{t.folderNameEn}</span>
+            <span>{t.folderName}</span>
             <input
               className="input"
-              value={nameEn}
-              onChange={(e) => setNameEn(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               maxLength={120}
               required
               autoFocus
             />
           </label>
-          <label>
-            <span>{t.folderNameEs}</span>
-            <input
-              className="input"
-              value={nameEs}
-              onChange={(e) => setNameEs(e.target.value)}
-              maxLength={120}
-              required
-            />
-          </label>
           {createError && <p className="form-error">{createError}</p>}
           <div className="inline-form__actions">
             <button className="button button--primary" type="submit">{t.create}</button>
-            <button className="button button--ghost" type="button" onClick={() => { setCreating(false); setNameEn(''); setNameEs('') }}>{t.cancel}</button>
+            <button className="button button--ghost" type="button" onClick={() => { setCreating(false); setName('') }}>{t.cancel}</button>
           </div>
         </form>
       )}
@@ -199,7 +190,9 @@ export function SiteDocumentsPage() {
                       className="document-folder-card"
                       to={`/documents/sites/${encodeURIComponent(siteId)}/folders/${encodeURIComponent(folder.id)}`}
                     >
-                      <FolderIcon className="document-folder-card__icon" />
+                      <div className="document-folder-card__icon-wrap">
+                        <FolderIcon className="document-folder-card__icon" />
+                      </div>
                       <span className="document-folder-card__name">{folderName(folder, locale)}</span>
                       <span className="document-folder-card__count">
                         {folder.entryCount === 1

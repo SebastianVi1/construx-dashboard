@@ -6,6 +6,7 @@ export {
   MaterialsIcon,
   MoonIcon,
   PlusIcon,
+  SearchIcon,
   SignOutIcon,
   SitesIcon,
   SpreadsheetIcon,

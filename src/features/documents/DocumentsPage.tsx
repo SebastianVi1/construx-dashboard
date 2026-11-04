@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router'
+import { FolderIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { LoadingState, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
@@ -42,6 +43,9 @@ export function DocumentsPage() {
                   className="document-folder-card"
                   to={`/documents/sites/${encodeURIComponent(site.id)}`}
                 >
+                  <div className="document-folder-card__icon-wrap">
+                    <FolderIcon className="document-folder-card__icon" />
+                  </div>
                   <span className="document-folder-card__name">{site.name}</span>
                   <span className="document-folder-card__count">{t.viewFolders}</span>
                 </Link>

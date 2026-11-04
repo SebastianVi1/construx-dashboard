@@ -2,6 +2,15 @@ import type { ReactNode, SVGProps } from 'react'
 
 type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'>
 
+export function SearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </Icon>
+  )
+}
+
 /** 24px stroke icon; decorative by default because a visible label always sits beside it. */
 function Icon({ children, ...props }: IconProps & { children: ReactNode }) {
   return (

@@ -50,44 +50,41 @@
   gap: 24px;
 }
 
-/* ── SiteDocumentsPage (folder grid) ─────────────────────────── */
+/* ── Shared folder grid ───────────────────────────────────────── */
 
 .document-folders-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.document-folder-card {
-  display: grid;
-  gap: 8px;
-  padding: 16px;
-  background: var(--cx-surface);
-  border: 1px solid var(--cx-border);
-  border-radius: var(--cx-radius-lg);
-  color: var(--cx-ink);
-  text-decoration: none;
-  transition: border-color 0.1s;
-}
-
-.document-folder-card:hover {
-  border-color: var(--cx-border-strong);
-}
-
 .document-folder-card-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
-.document-folder-card__delete-btn {
-  font-size: 12px;
-  padding: 2px 8px;
-  color: var(--cx-danger, #dc2626);
-  align-self: flex-start;
+.document-folder-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  box-shadow: 0 1px 3px var(--cx-shadow-color);
+  color: var(--cx-ink);
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.document-folder-card:hover {
+  border-color: var(--cx-primary);
+  box-shadow: 0 4px 12px var(--cx-shadow-color);
+  transform: translateY(-1px);
 }
 
 .document-folder-card:focus-visible {
@@ -95,10 +92,22 @@
   outline-offset: 2px;
 }
 
+/* Icon container — tinted square */
+.document-folder-card__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--cx-primary-subtle);
+  border-radius: var(--cx-radius-sm);
+  flex-shrink: 0;
+}
+
 .document-folder-card__icon {
-  width: 32px;
-  height: 32px;
-  color: var(--cx-ink-secondary);
+  width: 22px;
+  height: 22px;
+  color: var(--cx-primary);
 }
 
 .document-folder-card__name {
@@ -109,10 +118,102 @@
 
 .document-folder-card__count {
   font-size: 12px;
-  color: var(--cx-ink-secondary);
+  color: var(--cx-muted);
 }
 
-/* ── DocumentFolderPage ───────────────────────────────────────── */
+.document-folder-card__delete-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  color: var(--cx-danger);
+  align-self: flex-start;
+}
+
+/* ── Shared input base (used in create-folder form) ──────────── */
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--cx-ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus {
+  border-color: var(--cx-primary);
+  box-shadow: 0 0 0 3px var(--cx-primary-subtle);
+}
+
+.input::placeholder {
+  color: var(--cx-muted);
+}
+
+/* ── SiteDocumentsPage — search ───────────────────────────────── */
+
+.document-search {
+  position: relative;
+  max-width: 480px;
+  margin-bottom: 1.5rem;
+}
+
+.document-search__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--cx-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.document-search__input {
+  display: block;
+  width: 100%;
+  padding: 9px 12px 9px 38px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--cx-ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.document-search__input:focus {
+  border-color: var(--cx-primary);
+  box-shadow: 0 0 0 3px var(--cx-primary-subtle);
+}
+
+.document-search__input::placeholder {
+  color: var(--cx-muted);
+}
+
+.document-search__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.document-search-results {
+  margin-bottom: 2rem;
+}
+
+.document-search-results__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cx-muted);
+  margin-bottom: 0.75rem;
+}
+
+/* ── DocumentFolderPage — file list ───────────────────────────── */
 
 .document-entries-list {
   display: grid;
@@ -123,24 +224,12 @@
   overflow: hidden;
 }
 
-.document-search-input {
-  display: block;
-  width: 100%;
-  max-width: 480px;
-  margin-bottom: 1.5rem;
-}
-
-.document-search-results {
-  margin-bottom: 2rem;
-}
-
-.document-search-results__title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--cx-color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 0.75rem;
+.document-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--cx-surface);
 }
 
 .document-entry--clickable {
@@ -148,15 +237,7 @@
 }
 
 .document-entry--clickable:hover {
-  background: var(--cx-color-surface-raised);
-}
-
-.document-entry {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--cx-surface);
+  background: var(--cx-surface-raised);
 }
 
 .document-entry__name {
@@ -170,7 +251,7 @@
 
 .document-entry__meta {
   font-size: 12px;
-  color: var(--cx-ink-secondary);
+  color: var(--cx-muted);
   white-space: nowrap;
 }
 
