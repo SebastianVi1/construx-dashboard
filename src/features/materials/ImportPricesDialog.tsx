@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type ChangeEvent } from 'react'
 import { Modal } from '../../components/modal'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
 import {
   PRICE_IMPORT_TEMPLATE_NAME,
@@ -111,7 +111,7 @@ export function ImportPricesDialog({ organizationId, onImported, onClose }: Impo
           </Notice>
         ) : null}
 
-        {phase === 'checking' ? <LoadingState label={ti.checking} /> : null}
+        {phase === 'checking' ? <SkeletonList /> : null}
         {report && phase !== 'checking' ? <ImportPreview report={report} t={ti} locale={locale} /> : null}
       </div>
 

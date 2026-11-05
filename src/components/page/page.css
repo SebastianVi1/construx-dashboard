@@ -388,6 +388,37 @@ a.button--primary {
   }
 }
 
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.skeleton-list {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  min-height: 120px;
+  align-content: start;
+}
+
+.skeleton-block {
+  height: 14px;
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-surface-raised);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.skeleton-block:nth-child(8n+1) { width: 85%; }
+.skeleton-block:nth-child(8n+2) { width: 68%; }
+.skeleton-block:nth-child(8n+3) { width: 92%; }
+.skeleton-block:nth-child(8n+4) { width: 60%; }
+.skeleton-block:nth-child(8n+5) { width: 78%; }
+.skeleton-block:nth-child(8n+6) { width: 88%; }
+.skeleton-block:nth-child(8n+7) { width: 72%; }
+.skeleton-block:nth-child(8n+8) { width: 55%; }
+
 .modal-actions {
   margin-top: 16px;
 }
@@ -399,6 +430,10 @@ a.button--primary {
 
   .loading-state__spinner {
     animation-duration: 2400ms;
+  }
+
+  .skeleton-block {
+    animation: none;
   }
 }
 

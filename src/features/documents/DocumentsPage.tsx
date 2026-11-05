@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router'
 import { FolderIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { listSites } from '../sites/sitesApi'
@@ -28,7 +28,7 @@ export function DocumentsPage() {
         </div>
       </header>
 
-      {sites.status === 'loading' && <LoadingState label={t.loadingSites} />}
+      {sites.status === 'loading' && <SkeletonList />}
       {sites.status === 'error' && (
         <Notice tone="error" action={{ label: m.workspace.retry, onClick: sites.reload }}>
           {t.loadSitesError}

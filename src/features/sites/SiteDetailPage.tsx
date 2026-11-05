@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { PhaseSchedule } from '../goals/PhasesPage'
 import { SitePhases } from '../goals/SitePhases'
@@ -59,7 +59,7 @@ export function SiteDetailPage() {
             {loadMessage(t.load, siteErrorKind(site.error))}
           </Notice>
         ) : (
-          <LoadingState label={t.loading} />
+          <SkeletonList />
         )}
       </div>
     )

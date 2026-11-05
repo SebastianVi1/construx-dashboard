@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { FilterTabs, type FilterOption } from '../../components/filter'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -117,7 +117,7 @@ export function MyTasksPage() {
             {t.loadError}
           </Notice>
         ) : (
-          <LoadingState label={t.loading} />
+          <SkeletonList />
         )}
       </section>
     </div>

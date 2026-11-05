@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { FilterTabs, filterCounts, type FilterOption } from '../../components/filter'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -116,7 +116,7 @@ export function MaterialsPage() {
             {t.load[loadKind(pricingErrorKind(materials.error))]}
           </Notice>
         ) : (
-          <LoadingState label={t.loading} />
+          <SkeletonList />
         )}
       </section>
 

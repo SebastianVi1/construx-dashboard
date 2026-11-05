@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import '../../components/switcher/segmented-switch.css'
 import { formatMessage, useLocale } from '../../i18n'
 import { budgetText } from '../sites/budgetRules'
@@ -65,7 +65,7 @@ export function BudgetBurnChart({ organizationId }: BudgetBurnChartProps) {
             {t.loadError}
           </Notice>
         ) : !layout || !monthly.data ? (
-          <LoadingState label={t.loading} />
+          <SkeletonList />
         ) : !hasSpend ? (
           <p className="org-finance__empty">{t.empty}</p>
         ) : (
