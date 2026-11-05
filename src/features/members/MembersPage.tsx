@@ -12,8 +12,11 @@ import {
   listInvitations,
   listMembers,
   listRoles,
+  memberActionErrorKind,
+  removeMember,
   revokeErrorKind,
   revokeInvitation,
+  suspendMember,
   type Invitation,
   type Member,
 } from './membersApi'
@@ -96,6 +99,9 @@ function MembersContent() {
     }
   }
 
+  const { access } = usePermissions()
+  const myMembershipId = access?.membershipId ?? null
+
   // Without the site list the invite still works, just without a site field. Wait
   // for it to settle so the form does not remount under the user's typing.
   const siteOptions = canInviteToSite ? (sites.data ?? null) : null
@@ -150,7 +156,21 @@ function MembersContent() {
             m={m}
             locale={locale}
           />
-          <MemberList members={members} m={m} />
+          <MemberList
+            members={members}
+            m={m}
+            organizationId={orgId}
+            canManage={can('MANAGE_MEMBERS')}
+            myMembershipId={myMembershipId}
+            onMemberUpdated={(updated) =>
+              members.update((list) =>
+                list.map((item) => (item.membershipId === updated.membershipId ? updated : item)),
+              )
+            }
+            onMemberRemoved={(membershipId) =>
+              members.update((list) => list.filter((item) => item.membershipId !== membershipId))
+            }
+          />
         </div>
       </div>
     </div>
@@ -244,36 +264,137 @@ function PendingInvitations({ invitations, sites, busyId, onResend, onRevoke, m,
   )
 }
 
-function MemberList({ members, m }: { members: RemoteData<Member[]>; m: Messages }) {
+type MemberListProps = {
+  members: RemoteData<Member[]>
+  m: Messages
+  organizationId: string
+  canManage: boolean
+  myMembershipId: string | null
+  onMemberUpdated: (member: Member) => void
+  onMemberRemoved: (membershipId: string) => void
+}
+
+function MemberList({
+  members,
+  m,
+  organizationId,
+  canManage,
+  myMembershipId,
+  onMemberUpdated,
+  onMemberRemoved,
+}: MemberListProps) {
   const t = m.members.list
+  const [search, setSearch] = useState('')
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
+
+  const filtered = members.data
+    ? members.data.filter((member) => {
+        if (!search) return true
+        const q = search.toLowerCase()
+        return member.fullName?.toLowerCase().includes(q) || member.email.toLowerCase().includes(q)
+      })
+    : null
+
+  async function suspend(member: Member) {
+    setBusyId(member.membershipId)
+    setFeedback(null)
+    try {
+      const updated = await suspendMember(organizationId, member.membershipId)
+      onMemberUpdated(updated)
+      onMemberRemoved(updated.membershipId)
+      setFeedback({ tone: 'success', text: formatMessage(t.suspended, { name: member.fullName || member.email }) })
+    } catch (error) {
+      setFeedback({ tone: 'error', text: t.statusError[memberActionErrorKind(error)] })
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function remove(member: Member) {
+    setBusyId(member.membershipId)
+    setFeedback(null)
+    try {
+      await removeMember(organizationId, member.membershipId)
+      onMemberRemoved(member.membershipId)
+      setFeedback({ tone: 'success', text: formatMessage(t.removed, { name: member.fullName || member.email }) })
+    } catch (error) {
+      setFeedback({ tone: 'error', text: t.removeError[memberActionErrorKind(error)] })
+    } finally {
+      setBusyId(null)
+    }
+  }
 
   return (
     <section className="page-section" aria-labelledby="members-heading">
       <div className="page-section__header">
         <h2 id="members-heading">{t.title}</h2>
       </div>
+      {feedback ? <Notice tone={feedback.tone}>{feedback.text}</Notice> : null}
       {members.data ? (
         members.data.length > 0 ? (
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th scope="col">{t.column.name}</th>
-                  <th scope="col">{t.column.email}</th>
-                  <th scope="col">{t.column.role}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.data.map((member) => (
-                  <tr key={member.membershipId}>
-                    <td className={member.fullName ? undefined : 'cell-muted'}>{member.fullName || t.unnamed}</td>
-                    <td className="members-email">{member.email}</td>
-                    <td>{roleLabel(member.role, m.roles)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="members-search">
+              <input
+                type="search"
+                className="members-search-input"
+                placeholder={t.search}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            {filtered && filtered.length > 0 ? (
+              <div className="member-rows">
+                {filtered.map((member) => {
+                  const name = member.fullName || t.unnamed
+                  const isOwner = member.role.code === 'OWNER'
+                  const isSelf = member.membershipId === myMembershipId
+                  const canAct = canManage && !isOwner && !isSelf
+                  const busy = busyId === member.membershipId
+                  return (
+                    <div key={member.membershipId} className="member-row">
+                      <span className="member-avatar" aria-hidden="true">
+                        {memberInitials(member.fullName)}
+                      </span>
+                      <div className="member-info">
+                        <span className={`member-name${member.fullName ? '' : ' member-name--unnamed'}`}>{name}</span>
+                        <span className="member-email">{member.email}</span>
+                      </div>
+                      <div className="member-row__end">
+                        <span className="member-role">{roleLabel(member.role, m.roles)}</span>
+                        {canAct ? (
+                          <div className="button-row">
+                            <button
+                              type="button"
+                              className="button button--small"
+                              disabled={busyId !== null}
+                              aria-label={formatMessage(t.suspendLabel, { name })}
+                              onClick={() => void suspend(member)}
+                            >
+                              {busy ? t.working : t.suspend}
+                            </button>
+                            <button
+                              type="button"
+                              className="button button--small button--danger"
+                              disabled={busyId !== null}
+                              aria-label={formatMessage(t.removeLabel, { name })}
+                              onClick={() => void remove(member)}
+                            >
+                              {busy ? t.working : t.remove}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <p>{t.empty}</p>
+              </div>
+            )}
+          </>
         ) : (
           <div className="empty-state">
             <p>{t.empty}</p>
@@ -288,6 +409,16 @@ function MemberList({ members, m }: { members: RemoteData<Member[]>; m: Messages
       )}
     </section>
   )
+}
+
+function memberInitials(fullName: string | null): string {
+  if (!fullName) return '?'
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('')
 }
 
 function formatInstant(format: Intl.DateTimeFormat, instant: string): string {

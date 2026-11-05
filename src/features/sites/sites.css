@@ -242,6 +242,10 @@
   line-height: 18px;
 }
 
+.site-people-filter {
+  margin-bottom: 8px;
+}
+
 .assign-person {
   display: grid;
   gap: 8px;
