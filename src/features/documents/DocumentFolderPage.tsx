@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -182,7 +182,7 @@ export function DocumentFolderPage() {
         <Notice tone="error">{uploadError}</Notice>
       )}
 
-      {entriesRemote.status === 'loading' && <LoadingState label={t.loadingFiles} />}
+      {entriesRemote.status === 'loading' && <SkeletonList />}
       {entriesRemote.status === 'error' && (
         <Notice tone="error" action={{ label: m.workspace.retry, onClick: entriesRemote.reload }}>
           {t.loadFilesError}

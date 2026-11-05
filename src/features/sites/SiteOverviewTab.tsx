@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { getBudgetSummary } from '../finance/financeApi'
 import { BudgetOverview } from './SiteBudget'
@@ -42,7 +42,7 @@ export function SiteOverviewTab({
             <h2 id="overview-budget-heading">{t.budgetTitle}</h2>
           </div>
           {budget.status === 'loading' ? (
-            <LoadingState label={m.finance.loading} />
+            <SkeletonList />
           ) : budget.status === 'error' ? (
             <Notice tone="error" action={{ label: m.sites.load.retry, onClick: budget.reload }}>
               {m.finance.loadError}

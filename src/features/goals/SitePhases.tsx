@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import { usePermissions } from '../permissions'
@@ -275,7 +275,7 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
           {t.loadError}
         </Notice>
       ) : (
-        <LoadingState label={t.loading} />
+        <SkeletonList />
       )}
 
       {dialog?.kind === 'create' || dialog?.kind === 'edit' ? (

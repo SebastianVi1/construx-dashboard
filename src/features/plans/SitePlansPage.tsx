@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 import { FolderIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -108,7 +108,7 @@ export function SitePlansPage() {
         </form>
       )}
 
-      {remote.status === 'loading' && <LoadingState label={t.loading} />}
+      {remote.status === 'loading' && <SkeletonList />}
       {remote.status === 'error' && (
         <Notice tone="error" action={{ label: t.retry, onClick: remote.reload }}>
           {t.loadError}

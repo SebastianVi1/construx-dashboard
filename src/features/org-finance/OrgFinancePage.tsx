@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { AuthApiError } from '../auth/authApi'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -53,7 +53,7 @@ function OrgFinanceDashboard() {
           </Notice>
         )
       ) : !summary.data ? (
-        <LoadingState label={t.loading} />
+        <SkeletonList />
       ) : (
         <>
           {overBudget.length > 0 ? (

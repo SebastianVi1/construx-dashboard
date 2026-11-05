@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
@@ -141,7 +141,7 @@ function MembersContent() {
               {t.invite.rolesError}
             </Notice>
           ) : (
-            <LoadingState label={m.workspace.loading} />
+            <SkeletonList />
           )}
         </section>
 
@@ -258,7 +258,7 @@ function PendingInvitations({ invitations, sites, busyId, onResend, onRevoke, m,
           {m.members.loadError}
         </Notice>
       ) : (
-        <LoadingState label={m.workspace.loading} />
+        <SkeletonList />
       )}
     </section>
   )
@@ -405,7 +405,7 @@ function MemberList({
           {m.members.loadError}
         </Notice>
       ) : (
-        <LoadingState label={m.workspace.loading} />
+        <SkeletonList />
       )}
     </section>
   )

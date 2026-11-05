@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
 import { dueText } from '../goals/dueAt'
 import { listGoals } from '../goals/goalsApi'
@@ -48,7 +48,7 @@ function TaskDetail({ at, taskId }: { at: PhaseRef; taskId: string }) {
     <BackLink to={phasePath}>{t.detail.back}</BackLink>
     {data.status === 'error' ? <Notice tone="error" action={{ label: t.retry, onClick: data.reload }}>
       {taskErrorKind(data.error) === 'notFound' ? t.detail.notFound : t.detail.loadError}
-    </Notice> : !task || !actions ? <LoadingState label={t.detail.loading} /> : <>
+    </Notice> : !task || !actions ? <SkeletonList /> : <>
       <header className="page-header">
         <div className="page-header__text"><h1>{task.name}</h1><TaskStatusBadge status={task.status} labels={t.status} /></div>
         <div className="button-row">
@@ -76,7 +76,7 @@ function TaskDetail({ at, taskId }: { at: PhaseRef; taskId: string }) {
       </section>
       {taskMoneyActions(access, task).view ? <TaskSpending key={`${task.id}:${access?.membershipId}:${JSON.stringify(task.assignees)}`} at={at} task={task} access={access} /> : null}
       {editing && (goals.status === 'error' || people.status === 'error') ? <Notice tone="error" action={{ label: t.retry, onClick: () => { goals.reload(); people.reload() } }}>{t.loadError}</Notice> : null}
-      {editing && goals.status !== 'error' && (!goal || (actions.reassign && !people.data)) ? <LoadingState label={t.loading} /> : null}
+      {editing && goals.status !== 'error' && (!goal || (actions.reassign && !people.data)) ? <SkeletonList /> : null}
       {editing && goal && (!actions.reassign || people.data) ? <TaskDialog
         at={at} goal={goal} people={people.data ?? []} task={task} canEdit={actions.edit} canReassign={actions.reassign}
         onClose={() => setEditing(false)} onUpdated={(updated) => data.update(() => updated)}

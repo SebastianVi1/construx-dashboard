@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useAuth } from '../auth/auth-context'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -83,7 +83,7 @@ export function ProfilePage() {
             <ProfileField label={t.role} value={role} empty={t.notSet} />
           </dl>
         ) : (
-          <LoadingState label={m.workspace.loading} />
+          <SkeletonList />
         )}
       </section>
 
@@ -117,7 +117,7 @@ export function ProfilePage() {
             </div>
           )
         ) : (
-          <LoadingState label={m.workspace.loading} />
+          <SkeletonList />
         )}
       </section>
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -60,7 +60,7 @@ export function MaterialDetailPage() {
             {t.load[loadKind(pricingErrorKind(material.error))]}
           </Notice>
         ) : (
-          <LoadingState label={t.detail.loading} />
+          <SkeletonList />
         )}
       </div>
     )

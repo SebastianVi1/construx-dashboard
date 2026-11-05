@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useRef, type MouseEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { DocumentIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { PermissionsProvider, usePermissions } from '../permissions'
 import { seesWorkbooks } from '../excel/excelAccess'
@@ -99,7 +99,7 @@ function WorkspaceBody() {
           <Suspense
             fallback={
               <div className="page">
-                <LoadingState label={t.loading} />
+                <SkeletonList />
               </div>
             }
           >
@@ -113,7 +113,7 @@ function WorkspaceBody() {
           </div>
         ) : (
           <div className="page">
-            <LoadingState label={t.loading} />
+            <SkeletonList />
           </div>
         )}
       </main>

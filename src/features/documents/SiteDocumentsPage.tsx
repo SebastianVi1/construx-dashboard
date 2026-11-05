@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { FolderIcon, SearchIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -148,7 +148,7 @@ export function SiteDocumentsPage() {
       {query.trim() && (
         <section className="document-search-results">
           <h2 className="document-search-results__title">{t.searchResults}</h2>
-          {searching && <LoadingState label={t.searchPlaceholder} />}
+          {searching && <SkeletonList />}
           {!searching && searchHits !== null && (
             searchHits.length > 0 ? (
               <ul className="document-entries-list">
@@ -176,7 +176,7 @@ export function SiteDocumentsPage() {
       {/* Folder grid (hidden while searching) */}
       {!query.trim() && (
         <>
-          {remote.status === 'loading' && <LoadingState label={t.loadingFolders} />}
+          {remote.status === 'loading' && <SkeletonList />}
           {remote.status === 'error' && (
             <Notice tone="error" action={{ label: m.workspace.retry, onClick: remote.reload }}>
               {t.loadFoldersError}

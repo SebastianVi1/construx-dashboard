@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import { BudgetChart } from '../finance/BudgetChart'
@@ -76,7 +76,7 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
           {t.loadError}
         </Notice>
       ) : !summary.data || !expenses.data ? (
-        <LoadingState label={t.loading} />
+        <SkeletonList />
       ) : (
         <>
           <BudgetOverview summary={summary.data} />

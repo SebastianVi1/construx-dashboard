@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import type { Goal } from '../goals/goalsApi'
@@ -309,7 +309,7 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
           {t.loadError}
         </Notice>
       ) : (
-        <LoadingState label={t.loading} />
+        <SkeletonList />
       )}
 
       {dialog?.kind === 'create' || dialog?.kind === 'edit' ? (

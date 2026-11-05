@@ -2,7 +2,7 @@ import { useId, useState, type DragEvent, type HTMLAttributes } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router'
 import { FolderIcon, SpreadsheetIcon } from '../../components/icons'
 import { ConfirmDialog } from '../../components/modal'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { DragItem } from './excelDrag'
@@ -285,7 +285,7 @@ export function ExcelLibraryPage() {
   if (!library) {
     if (loadError) return <div className="page"><Notice tone="error">{loadError}</Notice></div>
     if (error) return <div className="page"><Notice tone="error">{error}</Notice></div>
-    return <LoadingState label={m.workspace.loading} />
+    return <SkeletonList />
   }
 
   const path = folderPath(library.folders, current)

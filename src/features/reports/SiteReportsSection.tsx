@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
 import { formatDate } from '../home/format'
 import { getDownloadUrl, listReports, type SiteReport } from './reportApi'
@@ -72,7 +72,7 @@ export function SiteReportsSection({ organizationId, siteId, canGenerate }: Prop
       {downloadError ? <Notice tone="error">{downloadError}</Notice> : null}
 
       {remote.status === 'loading' ? (
-        <LoadingState label={t.loading} />
+        <SkeletonList />
       ) : remote.status === 'error' ? (
         <Notice tone="error" action={{ label: m.sites.load.retry, onClick: remote.reload }}>
           {t.loadError}

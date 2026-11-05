@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { listMembers, type Member } from '../members/membersApi'
 import { roleLabel } from '../permissions'
@@ -131,7 +131,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
           {t.loadError}
         </Notice>
       ) : (
-        <LoadingState label={t.loading} />
+        <SkeletonList />
       )}
 
       {canManage ? (
@@ -168,7 +168,7 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
   const [busy, setBusy] = useState(false)
 
   if (!members.data) {
-    if (members.status !== 'error') return <LoadingState label={m.workspace.loading} />
+    if (members.status !== 'error') return <SkeletonList />
     const forbidden = members.error instanceof AuthApiError && members.error.status === 403
     return <Notice>{forbidden ? t.membersForbidden : t.membersError}</Notice>
   }

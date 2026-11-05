@@ -1,5 +1,5 @@
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { LoadingState, Notice } from '../../components/page'
+import { SkeletonList, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
 import { formatDate } from '../home/format'
 import { listGoals } from '../goals/goalsApi'
@@ -15,7 +15,7 @@ export function PhasesProgressCard({ organizationId, siteId }: Props) {
   const key = `${organizationId}:${siteId}:goals-progress`
   const goals = useRemoteData(key, () => listGoals(organizationId, siteId))
 
-  if (goals.status === 'loading') return <LoadingState label={m.goals.loading} />
+  if (goals.status === 'loading') return <SkeletonList />
   if (goals.status === 'error') {
     return (
       <Notice tone="error" action={{ label: m.sites.load.retry, onClick: goals.reload }}>

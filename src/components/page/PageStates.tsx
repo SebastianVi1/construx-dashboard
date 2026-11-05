@@ -23,6 +23,17 @@ export function LoadingState({ label }: { label: string }) {
   )
 }
 
+/** Skeleton placeholder shown while a dataset is loading. */
+export function SkeletonList({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className="skeleton-list" role="status" aria-busy="true">
+      {Array.from({ length: rows }, (_, i) => (
+        <span key={i} className="skeleton-block" aria-hidden="true" />
+      ))}
+    </div>
+  )
+}
+
 type NoticeProps = {
   tone?: 'info' | 'error' | 'success'
   children: ReactNode

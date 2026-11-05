@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
 import { FilterTabs } from '../../components/filter'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { shiftInstant } from '../gantt/drag'
 import { GanttChart, type Reschedule } from '../gantt/GanttChart'
@@ -54,7 +54,7 @@ export function PhasesPage() {
             {siteLoadMessage(m.sites.load, siteErrorKind(site.error))}
           </Notice>
         ) : (
-          <LoadingState label={t.loading} />
+          <SkeletonList />
         )}
       </div>
     )
@@ -233,7 +233,7 @@ export function PhaseSchedule({ organizationId, site, people, onSite }: PhaseSch
           {m.goals.loadError}
         </Notice>
       ) : (
-        <LoadingState label={m.goals.loading} />
+        <SkeletonList />
       )
   } else if (goals.data.length === 0) {
     body = (

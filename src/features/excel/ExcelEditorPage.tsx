@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useParams } from 'react-router'
-import { BackLink, LoadingState, Notice } from '../../components/page'
+import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
 import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { ExcelOp, ExcelRecord, GridSheet } from './excelModel'
@@ -144,7 +144,7 @@ export function ExcelEditorPage() {
       </div>
     )
   }
-  if (!loaded || !view) return <LoadingState label={m.workspace.loading} />
+  if (!loaded || !view) return <SkeletonList />
 
   const saveLabel =
     saveState.state === 'pending' || saveState.state === 'saving' ? t.saving
