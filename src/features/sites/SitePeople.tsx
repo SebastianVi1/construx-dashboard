@@ -24,6 +24,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
   const [busyId, setBusyId] = useState<string | null>(null)
   const [errorKind, setErrorKind] = useState<AccessErrorKind | null>(null)
   const [done, setDone] = useState<string | null>(null)
+  const [filterRole, setFilterRole] = useState('')
 
   const nameOf = (person: { fullName: string | null }) => person.fullName || t.unnamed
 
@@ -61,6 +62,25 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
 
       {people.data ? (
         people.data.length > 0 ? (
+          <>
+            {people.data.length > 1 ? (
+              <div className="site-people-filter">
+                <span className="filter-select">
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    aria-label={t.filterRole}
+                  >
+                    <option value="">{t.filterAll}</option>
+                    {Array.from(new Map(people.data.map((p) => [p.role.code, p.role])).values()).map((role) => (
+                      <option key={role.code} value={role.code}>
+                        {roleLabel(role, m.roles)}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              </div>
+            ) : null}
           <div className="table-scroll">
             <table className="data-table data-table--compact">
               <thead>
@@ -75,7 +95,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
                 </tr>
               </thead>
               <tbody>
-                {people.data.map((person) => (
+                {people.data.filter((p) => !filterRole || p.role.code === filterRole).map((person) => (
                   <tr key={person.accessId}>
                     <td className={person.fullName ? undefined : 'cell-muted'}>
                       {nameOf(person)}
@@ -100,6 +120,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
               </tbody>
             </table>
           </div>
+          </>
         ) : (
           <div className="empty-state">
             <p>{t.empty}</p>

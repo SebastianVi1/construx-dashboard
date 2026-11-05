@@ -69,6 +69,41 @@ export function revokeInvitation(organizationId: string, invitationId: string): 
   return deleteJson(`${organizationPath(organizationId)}/invitations/${encodeURIComponent(invitationId)}`)
 }
 
+export function suspendMember(organizationId: string, membershipId: string): Promise<Member> {
+  return sendJson(
+    'patch',
+    `${organizationPath(organizationId)}/members/${encodeURIComponent(membershipId)}/status`,
+    { status: 'SUSPENDED' },
+    200,
+    memberSchema,
+  )
+}
+
+export function reactivateMember(organizationId: string, membershipId: string): Promise<Member> {
+  return sendJson(
+    'patch',
+    `${organizationPath(organizationId)}/members/${encodeURIComponent(membershipId)}/status`,
+    { status: 'ACTIVE' },
+    200,
+    memberSchema,
+  )
+}
+
+export function removeMember(organizationId: string, membershipId: string): Promise<void> {
+  return deleteJson(`${organizationPath(organizationId)}/members/${encodeURIComponent(membershipId)}`)
+}
+
+export type MemberActionErrorKind = 'conflict' | 'session' | 'forbidden' | 'notFound' | 'generic'
+
+export function memberActionErrorKind(error: unknown): MemberActionErrorKind {
+  if (!(error instanceof AuthApiError)) return 'generic'
+  if (error.status === 409) return 'conflict'
+  if (error.status === 401) return 'session'
+  if (error.status === 403) return 'forbidden'
+  if (error.status === 404) return 'notFound'
+  return 'generic'
+}
+
 export type InviteValidationMessages = { emailRequired: string; emailInvalid: string; roleRequired: string }
 
 export function makeInviteSchema(messages: InviteValidationMessages) {
