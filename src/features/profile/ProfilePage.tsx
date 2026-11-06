@@ -127,32 +127,45 @@ export function ProfilePage() {
         <div className="page-section__header">
           <h2 id="profile-security">{t.security.title}</h2>
         </div>
-        <div className="profile-details">
-          <div className="profile-details__row">
-            <dt>{t.security.passwordTitle}</dt>
-            <dd>
-              <p>{t.security.passwordDescription}</p>
-              {resetState === 'sent' ? (
-                <p role="status">{formatMessage(t.security.linkSent, { email: user.email })}</p>
-              ) : (
-                <button
-                  type="button"
-                  className="button"
-                  disabled={resetState === 'pending'}
-                  onClick={() => {
-                    setResetState('pending')
-                    forgotPassword(user.email)
-                      .then(() => setResetState('sent'))
-                      .catch(() => setResetState('error'))
-                  }}
-                >
-                  {resetState === 'pending' ? t.security.sendLinkPending : t.security.sendLink}
-                </button>
-              )}
-              {resetState === 'error' ? (
-                <p role="alert" className="form-error">{t.security.linkError}</p>
-              ) : null}
-            </dd>
+        <div className="security-card">
+          <div className="security-card__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="9" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="10" cy="14" r="1.25" fill="currentColor" />
+            </svg>
+          </div>
+          <div className="security-card__body">
+            <h3 className="security-card__title">{t.security.passwordTitle}</h3>
+            <p className="security-card__description">
+              {t.security.passwordDescription}
+            </p>
+            {resetState === 'sent' ? (
+              <p role="status" className="security-card__sent">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {formatMessage(t.security.linkSent, { email: user.email })}
+              </p>
+            ) : (
+              <button
+                type="button"
+                className="button security-card__action"
+                disabled={resetState === 'pending'}
+                onClick={() => {
+                  setResetState('pending')
+                  forgotPassword(user.email)
+                    .then(() => setResetState('sent'))
+                    .catch(() => setResetState('error'))
+                }}
+              >
+                {resetState === 'pending' ? t.security.sendLinkPending : t.security.sendLink}
+              </button>
+            )}
+            {resetState === 'error' ? (
+              <p role="alert" className="form-error security-card__error">{t.security.linkError}</p>
+            ) : null}
           </div>
         </div>
       </section>
