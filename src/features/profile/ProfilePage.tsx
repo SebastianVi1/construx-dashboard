@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
+import { forgotPassword } from '../auth/authApi'
 import { useAuth } from '../auth/auth-context'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
@@ -26,6 +27,7 @@ export function ProfilePage() {
   const orgId = organization.id
   const sites = useRemoteData(`${orgId}:sites`, () => listSites(orgId))
   const [editing, setEditing] = useState(false)
+  const [resetState, setResetState] = useState<'idle' | 'pending' | 'sent' | 'error'>('idle')
 
   useEffect(() => {
     document.title = `${t.title} | Construx`
@@ -119,6 +121,40 @@ export function ProfilePage() {
         ) : (
           <SkeletonList />
         )}
+      </section>
+
+      <section className="page-section" aria-labelledby="profile-security">
+        <div className="page-section__header">
+          <h2 id="profile-security">{t.security.title}</h2>
+        </div>
+        <div className="profile-details">
+          <div className="profile-details__row">
+            <dt>{t.security.passwordTitle}</dt>
+            <dd>
+              <p>{t.security.passwordDescription}</p>
+              {resetState === 'sent' ? (
+                <p role="status">{formatMessage(t.security.linkSent, { email: user.email })}</p>
+              ) : (
+                <button
+                  type="button"
+                  className="button"
+                  disabled={resetState === 'pending'}
+                  onClick={() => {
+                    setResetState('pending')
+                    forgotPassword(user.email)
+                      .then(() => setResetState('sent'))
+                      .catch(() => setResetState('error'))
+                  }}
+                >
+                  {resetState === 'pending' ? t.security.sendLinkPending : t.security.sendLink}
+                </button>
+              )}
+              {resetState === 'error' ? (
+                <p role="alert" className="form-error">{t.security.linkError}</p>
+              ) : null}
+            </dd>
+          </div>
+        </div>
       </section>
 
       {editing && profile.data ? (

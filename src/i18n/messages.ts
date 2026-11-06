@@ -276,6 +276,15 @@ const en = {
       countries: 'Countries',
       noResults: 'No country matches.',
     },
+    security: {
+      title: 'Security',
+      passwordTitle: 'Password',
+      passwordDescription: 'We will send a link to your email address so you can choose a new password.',
+      sendLink: 'Send reset link',
+      sendLinkPending: 'Sending…',
+      linkSent: 'Check your inbox. We sent a link to {email} to reset your password.',
+      linkError: 'We could not send the link. Try again.',
+    },
     edit: {
       open: 'Edit profile',
       title: 'Edit profile',
@@ -1746,6 +1755,15 @@ const es: Messages = {
       search: 'Busca un país o código',
       countries: 'Países',
       noResults: 'Ningún país coincide.',
+    },
+    security: {
+      title: 'Seguridad',
+      passwordTitle: 'Contraseña',
+      passwordDescription: 'Te enviaremos un enlace a tu correo para que puedas elegir una nueva contraseña.',
+      sendLink: 'Enviar enlace',
+      sendLinkPending: 'Enviando…',
+      linkSent: 'Revisa tu bandeja. Enviamos un enlace a {email} para restablecer tu contraseña.',
+      linkError: 'No pudimos enviar el enlace. Inténtalo de nuevo.',
     },
     edit: {
       open: 'Editar perfil',
