@@ -325,6 +325,7 @@ export function FloorPlanPage() {
               {selectedZone ? (
                 <ZonePanel
                   zone={selectedZone}
+                  allZones={zones}
                   organizationId={orgId}
                   siteId={siteId}
                   floorPlanId={floorPlanId}
