@@ -67,9 +67,14 @@ export function SiteOverviewTab({
           <div className="page-section__header">
             <h2 id="overview-plans-heading">{m.sites.detail.plans}</h2>
           </div>
-          <Link className="button" to={`/sites/${encodeURIComponent(site.id)}/plans`}>
-            {m.sites.detail.plans}
-          </Link>
+          <div className="button-row">
+            <Link className="button" to={`/sites/${encodeURIComponent(site.id)}/plans`}>
+              {m.sites.detail.plans}
+            </Link>
+            <Link className="button" to={`/sites/${encodeURIComponent(site.id)}/floor-plans`}>
+              {m.sites.detail.floorPlans}
+            </Link>
+          </div>
         </section>
       ) : null}
 
