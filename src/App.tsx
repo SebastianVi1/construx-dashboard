@@ -54,6 +54,18 @@ const SitePlansPage = lazy(() =>
 const SitePlanFolderPage = lazy(() =>
   import('./features/plans/SitePlanFolderPage').then((module) => ({ default: module.SitePlanFolderPage })),
 )
+const SiteFloorPlansPage = lazy(() =>
+  import('./features/floor-plans/SiteFloorPlansPage').then((module) => ({ default: module.SiteFloorPlansPage })),
+)
+const FloorPlanPage = lazy(() =>
+  import('./features/floor-plans/FloorPlanPage').then((module) => ({ default: module.FloorPlanPage })),
+)
+const CrewsPage = lazy(() =>
+  import('./features/crews/CrewsPage').then((module) => ({ default: module.CrewsPage })),
+)
+const EquipmentPage = lazy(() =>
+  import('./features/crews/EquipmentPage').then((module) => ({ default: module.EquipmentPage })),
+)
 
 function App() {
   return (
@@ -87,6 +99,10 @@ function App() {
         <Route path="/documents/sites/:siteId/folders/:folderId" element={<DocumentFolderPage />} />
         <Route path="/sites/:siteId/plans" element={<SitePlansPage />} />
         <Route path="/sites/:siteId/plans/folders/:folderId" element={<SitePlanFolderPage />} />
+        <Route path="/sites/:siteId/floor-plans" element={<SiteFloorPlansPage />} />
+        <Route path="/sites/:siteId/floor-plans/:floorPlanId" element={<FloorPlanPage />} />
+        <Route path="/crews" element={<CrewsPage />} />
+        <Route path="/equipment" element={<EquipmentPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/account" element={<ProfilePage />} />
       </Route>
