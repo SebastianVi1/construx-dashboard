@@ -46,8 +46,12 @@ function gridCell(cell: ExcelJS.Cell): GridCell {
   switch (cell.type) {
     case ExcelJS.ValueType.Number:
       return { value: cell.value as number, type: 'number', numFmt, readOnly: false }
-    case ExcelJS.ValueType.Date:
-      return { value: cell.value as Date, type: 'date', numFmt, readOnly: false }
+    case ExcelJS.ValueType.Date: {
+      const d = cell.value as Date
+      return Number.isNaN(d.getTime())
+        ? emptyCell
+        : { value: d, type: 'date', numFmt, readOnly: false }
+    }
     case ExcelJS.ValueType.Boolean:
       return { value: cell.value as boolean, type: 'boolean', numFmt, readOnly: false }
     case ExcelJS.ValueType.String:
