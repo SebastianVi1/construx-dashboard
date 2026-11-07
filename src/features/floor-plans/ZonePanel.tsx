@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { z } from 'zod'
 import { useLocale } from '../../i18n'
 import type { Messages } from '../../i18n/messages'
+import { useForm } from '../../components/form'
 import { updateZone, deleteZone } from './zonesApi'
 import type { Zone, ZoneStatus } from './zonesApi'
 import { listAssignments, closeAssignment, reassignToZone } from './zoneAssignmentsApi'
@@ -47,13 +49,42 @@ export function ZonePanel({
 
   const [activeTab, setActiveTab] = useState<Tab>('assignments')
   const [editing, setEditing] = useState(false)
-  const [name, setName] = useState(zone.name)
-  const [description, setDescription] = useState(zone.description ?? '')
-  const [status, setStatus] = useState<ZoneStatus>(zone.status)
-  const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [editError, setEditError] = useState<string | null>(null)
+
+  const editSchema = z.object({
+    name: z.string().min(1).max(120),
+    description: z.string().max(500),
+    status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'ON_HOLD', 'DONE']),
+  })
+
+  const editForm = useForm({
+    initialValues: { name: zone.name, description: zone.description ?? '', status: zone.status as string },
+    schema: editSchema,
+    onSubmit: async (values) => {
+      setEditError(null)
+      try {
+        const updated = await updateZone(organizationId, siteId, floorPlanId, zone.id, {
+          name: values.name.trim(),
+          description: values.description.trim() || null,
+          status: values.status as ZoneStatus,
+          points: zone.points,
+          version: zone.version,
+        })
+        onUpdated(updated)
+        setEditing(false)
+      } catch (err: unknown) {
+        const apiError = err as { status?: number }
+        if (apiError?.status === 409) {
+          onConflict()
+        } else {
+          setEditError(t.updateError)
+          throw err
+        }
+      }
+    },
+  })
 
   const [assignments, setAssignments] = useState<AssignmentData[]>([])
   const [assignmentsLoading, setAssignmentsLoading] = useState(false)
@@ -80,50 +111,23 @@ export function ZonePanel({
     return () => { cancelled = true }
   }, [activeTab, zone.id, organizationId, siteId, floorPlanId, ta.error, th.loadError])
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setError(null)
-    try {
-      const updated = await updateZone(organizationId, siteId, floorPlanId, zone.id, {
-        name: name.trim(),
-        description: description.trim() || null,
-        status,
-        points: zone.points,
-        version: zone.version,
-      })
-      onUpdated(updated)
-      setEditing(false)
-    } catch (err: unknown) {
-      const apiError = err as { status?: number }
-      if (apiError?.status === 409) {
-        onConflict()
-      } else {
-        setError(t.updateError)
-      }
-    } finally {
-      setSaving(false)
-    }
-  }
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const handleDelete = async () => {
     setDeleting(true)
-    setError(null)
+    setDeleteError(null)
     try {
       await deleteZone(organizationId, siteId, floorPlanId, zone.id)
       onDeleted(zone.id)
     } catch {
-      setError(t.deleteError)
+      setDeleteError(t.deleteError)
       setDeleting(false)
       setConfirmDelete(false)
     }
   }
 
   const handleCancelEdit = () => {
-    setName(zone.name)
-    setDescription(zone.description ?? '')
-    setStatus(zone.status)
-    setError(null)
+    setEditError(null)
     setEditing(false)
   }
 
@@ -185,7 +189,7 @@ export function ZonePanel({
 
       {!editing ? (
         <>
-          {error ? <p className="error-text">{error}</p> : null}
+          {deleteError ? <p className="error-text">{deleteError}</p> : null}
           {confirmDelete ? (
             <div className="zone-panel__confirm-delete">
               <p>{t.deleteConfirmBody}</p>
@@ -339,47 +343,58 @@ export function ZonePanel({
           )}
         </>
       ) : (
-        <form onSubmit={handleSave}>
-          <label className="field">
-            <span className="field__label">{t.nameLabel}</span>
+        <form onSubmit={editForm.onSubmit}>
+          <div className="form-field">
+            <label className="form-field__label" htmlFor="zone-edit-name">{t.nameLabel}</label>
             <input
-              className="field__input"
+              id="zone-edit-name"
+              className="form-field__control"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={editForm.values.name}
+              onChange={(e) => editForm.onChange('name', e.target.value)}
+              onBlur={() => editForm.onBlur('name')}
               maxLength={120}
               required
+              disabled={editForm.isSubmitting}
+              aria-invalid={Boolean(editForm.errors.name)}
             />
-          </label>
-          <label className="field">
-            <span className="field__label">{t.descriptionLabel}</span>
+            {editForm.errors.name ? <p className="form-field__error">{editForm.errors.name}</p> : null}
+          </div>
+          <div className="form-field">
+            <label className="form-field__label" htmlFor="zone-edit-description">{t.descriptionLabel}</label>
             <input
-              className="field__input"
+              id="zone-edit-description"
+              className="form-field__control"
               type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={editForm.values.description}
+              onChange={(e) => editForm.onChange('description', e.target.value)}
+              onBlur={() => editForm.onBlur('description')}
               maxLength={500}
+              disabled={editForm.isSubmitting}
             />
-          </label>
-          <label className="field">
-            <span className="field__label">{t.statusLabel}</span>
+          </div>
+          <div className="form-field">
+            <label className="form-field__label" htmlFor="zone-edit-status">{t.statusLabel}</label>
             <select
-              className="field__select"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ZoneStatus)}
+              id="zone-edit-status"
+              className="form-field__control"
+              value={editForm.values.status}
+              onChange={(e) => editForm.onChange('status', e.target.value)}
+              onBlur={() => editForm.onBlur('status')}
+              disabled={editForm.isSubmitting}
             >
               <option value="NOT_STARTED">{t.status.NOT_STARTED}</option>
               <option value="IN_PROGRESS">{t.status.IN_PROGRESS}</option>
               <option value="ON_HOLD">{t.status.ON_HOLD}</option>
               <option value="DONE">{t.status.DONE}</option>
             </select>
-          </label>
-          {error ? <p className="error-text">{error}</p> : null}
+          </div>
+          {editError ? <p className="error-text">{editError}</p> : null}
           <div className="zone-panel__actions">
-            <button type="submit" className="button button--primary" disabled={saving || !name.trim()}>
-              {saving ? t.saving : t.save}
+            <button type="submit" className="button button--primary" disabled={editForm.isSubmitting || !editForm.values.name.trim()}>
+              {editForm.isSubmitting ? t.saving : t.save}
             </button>
-            <button type="button" className="button" onClick={handleCancelEdit} disabled={saving}>
+            <button type="button" className="button" onClick={handleCancelEdit} disabled={editForm.isSubmitting}>
               {t.cancel}
             </button>
           </div>

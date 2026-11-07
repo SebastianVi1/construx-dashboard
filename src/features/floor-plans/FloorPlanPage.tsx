@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import L from 'leaflet'
 import { useLocale } from '../../i18n'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { useCurrentOrganization } from '../organizations/organizations-context'
+import { usePermissions } from '../permissions'
 import { getFloorPlan, viewUrlExpiresSoon } from './floorPlansApi'
 import { FloorPlanViewer } from './FloorPlanViewer'
 import { CalibrationTool } from './CalibrationTool'
@@ -25,6 +26,9 @@ export function FloorPlanPage() {
   const { messages: m } = useLocale()
   const t = m.floorPlans
   const organization = useCurrentOrganization()
+
+  const { can } = usePermissions()
+  const canManagePlan = can('MANAGE_PLAN') ?? false
 
   const orgId = organization?.id ?? ''
   const remote = useRemoteData(`floor-plan-${floorPlanId}`, () => getFloorPlan(orgId, siteId, floorPlanId))
@@ -72,11 +76,11 @@ export function FloorPlanPage() {
       .catch(() => {})
   }, [floorPlan, calibration, orgId, siteId, floorPlanId])
 
-  const reloadAssignmentCounts = useCallback(() => {
+  const reloadAssignmentCounts = () => {
     getZoneAssignmentCounts(orgId, siteId, floorPlanId)
       .then((counts) => setAssignmentCounts(counts))
       .catch(() => {})
-  }, [orgId, siteId, floorPlanId])
+  }
 
   // Poll every 3 seconds while PENDING or PROCESSING
   useEffect(() => {
@@ -98,9 +102,9 @@ export function FloorPlanPage() {
     }
   }, [shouldPoll, remote])
 
-  const handleRefreshNeeded = useCallback(() => {
+  const handleRefreshNeeded = () => {
     remote.reload()
-  }, [remote])
+  }
 
   // Refresh when the view URL is about to expire
   useEffect(() => {
@@ -113,37 +117,37 @@ export function FloorPlanPage() {
     return () => clearInterval(interval)
   }, [floorPlan, remote])
 
-  const handleMapReady = useCallback((map: L.Map) => {
+  const handleMapReady = (map: L.Map) => {
     setMapInstance(map)
-  }, [])
+  }
 
-  const handleCalibrated = useCallback((cal: Calibration) => {
+  const handleCalibrated = (cal: Calibration) => {
     setCalibration(cal)
     setCalibrating(false)
-  }, [])
+  }
 
-  const handleCancelCalibration = useCallback(() => {
+  const handleCancelCalibration = () => {
     setCalibrating(false)
-  }, [])
+  }
 
-  const handleZoneCreated = useCallback((zone: Zone) => {
+  const handleZoneCreated = (zone: Zone) => {
     setZones((prev) => [...prev, zone])
-  }, [])
+  }
 
-  const handleZoneUpdated = useCallback((zone: Zone) => {
+  const handleZoneUpdated = (zone: Zone) => {
     setZones((prev) => prev.map((z) => (z.id === zone.id ? zone : z)))
     setSelectedZone(zone)
-  }, [])
+  }
 
-  const handleZoneDeleted = useCallback((zoneId: string) => {
+  const handleZoneDeleted = (zoneId: string) => {
     setZones((prev) => prev.filter((z) => z.id !== zoneId))
     setSelectedZone(null)
-  }, [])
+  }
 
-  const handleZoneConflict = useCallback(() => {
+  const handleZoneConflict = () => {
     setZoneConflictBanner(true)
     setSelectedZone(null)
-  }, [])
+  }
 
   if (!siteId || !floorPlanId || !organization) return null
 
@@ -232,7 +236,7 @@ export function FloorPlanPage() {
                       {t.zones.toggleVisibility}
                     </button>
                   ) : null}
-                  {hasCalibration ? (
+                  {hasCalibration && canManagePlan ? (
                     <button
                       type="button"
                       className={`button${assignmentPanelOpen ? ' button--active' : ''}`}

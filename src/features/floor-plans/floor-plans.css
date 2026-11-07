@@ -70,13 +70,13 @@
 }
 
 .floor-plan-card__status--error {
-  color: #c0392b;
-  background: #fdf0ef;
+  color: var(--cx-danger);
+  background: var(--cx-danger-subtle);
 }
 
 .floor-plan-card__status--ready {
-  color: #1a7a4e;
-  background: #edf7f1;
+  color: var(--cx-success);
+  background: var(--cx-success-subtle);
 }
 
 .floor-plan-upload {
@@ -138,13 +138,13 @@
 }
 
 .floor-plan-status-badge--ready {
-  background: #edf7f1;
-  color: #1a7a4e;
+  background: var(--cx-success-subtle);
+  color: var(--cx-success);
 }
 
 .floor-plan-status-badge--error {
-  background: #fdf0ef;
-  color: #c0392b;
+  background: var(--cx-danger-subtle);
+  color: var(--cx-danger);
 }
 
 .floor-plan-processing-notice {
@@ -158,11 +158,11 @@
 }
 
 .floor-plan-error-banner {
-  background: #fdf0ef;
+  background: var(--cx-danger-subtle);
   border: 1px solid #f1a9a0;
   border-radius: var(--cx-radius-md);
   padding: 1rem;
-  color: #c0392b;
+  color: var(--cx-danger);
 }
 
 .floor-plan-calibration-banner {
@@ -221,7 +221,7 @@
 }
 
 .calibration-tool-panel__error {
-  color: #c0392b;
+  color: var(--cx-danger);
   font-size: 0.875rem;
   margin: 0;
 }
