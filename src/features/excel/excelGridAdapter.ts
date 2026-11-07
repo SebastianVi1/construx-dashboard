@@ -14,8 +14,8 @@ export function toGridData(sheet: GridSheet): HotValue[][] {
   return sheet.cells.map((row) => row.map((cell) => (cell.value instanceof Date ? isoDayOf(cell.value) : cell.value)))
 }
 
-function isoDayOf(date: Date): string {
-  return date.toISOString().slice(0, 10)
+function isoDayOf(date: Date): string | null {
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10)
 }
 
 /** Turns what the editor produced back into a cell value, keeping the cell's type when the input fits it. */
