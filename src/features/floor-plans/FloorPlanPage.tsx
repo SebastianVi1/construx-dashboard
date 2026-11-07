@@ -7,8 +7,13 @@ import { useCurrentOrganization } from '../organizations/organizations-context'
 import { getFloorPlan, viewUrlExpiresSoon } from './floorPlansApi'
 import { FloorPlanViewer } from './FloorPlanViewer'
 import { CalibrationTool } from './CalibrationTool'
+import { ZoneLayer } from './ZoneLayer'
+import { ZoneDrawTool } from './ZoneDrawTool'
+import { ZonePanel } from './ZonePanel'
 import { getCalibration } from './calibrationApi'
 import type { Calibration } from './calibrationApi'
+import { listZones } from './zonesApi'
+import type { Zone } from './zonesApi'
 import './floor-plans.css'
 
 export function FloorPlanPage() {
@@ -29,6 +34,13 @@ export function FloorPlanPage() {
   const [calibrationLoaded, setCalibrationLoaded] = useState(false)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
 
+  // Zone state
+  const [zones, setZones] = useState<Zone[]>([])
+  const zonesLoadedRef = useRef(false)
+  const [zonesVisible, setZonesVisible] = useState(true)
+  const [selectedZone, setSelectedZone] = useState<Zone | null>(null)
+  const [zoneConflictBanner, setZoneConflictBanner] = useState(false)
+
   // Load existing calibration when floor plan is READY
   useEffect(() => {
     if (!floorPlan || floorPlan.status !== 'READY' || calibrationLoaded) return
@@ -37,6 +49,15 @@ export function FloorPlanPage() {
       .then((cal) => setCalibration(cal))
       .catch(() => setCalibration(null))
   }, [floorPlan, orgId, siteId, floorPlanId, calibrationLoaded])
+
+  // Load zones when floor plan is READY and calibration exists
+  useEffect(() => {
+    if (!floorPlan || floorPlan.status !== 'READY' || !calibration || zonesLoadedRef.current) return
+    zonesLoadedRef.current = true
+    listZones(orgId, siteId, floorPlanId)
+      .then((zs) => setZones(zs))
+      .catch(() => setZones([]))
+  }, [floorPlan, calibration, orgId, siteId, floorPlanId])
 
   // Poll every 3 seconds while PENDING or PROCESSING
   useEffect(() => {
@@ -86,6 +107,25 @@ export function FloorPlanPage() {
     setCalibrating(false)
   }, [])
 
+  const handleZoneCreated = useCallback((zone: Zone) => {
+    setZones((prev) => [...prev, zone])
+  }, [])
+
+  const handleZoneUpdated = useCallback((zone: Zone) => {
+    setZones((prev) => prev.map((z) => (z.id === zone.id ? zone : z)))
+    setSelectedZone(zone)
+  }, [])
+
+  const handleZoneDeleted = useCallback((zoneId: string) => {
+    setZones((prev) => prev.filter((z) => z.id !== zoneId))
+    setSelectedZone(null)
+  }, [])
+
+  const handleZoneConflict = useCallback(() => {
+    setZoneConflictBanner(true)
+    setSelectedZone(null)
+  }, [])
+
   if (!siteId || !floorPlanId || !organization) return null
 
   const isReady = floorPlan?.status === 'READY'
@@ -117,6 +157,15 @@ export function FloorPlanPage() {
         {floorPlan?.level ? <p className="page-header__description">{floorPlan.level}</p> : null}
         {floorPlan?.description ? <p className="page-header__description">{floorPlan.description}</p> : null}
       </header>
+
+      {zoneConflictBanner ? (
+        <div className="floor-plan-calibration-banner" role="alert">
+          <p>{t.zones.conflictWarning}</p>
+          <button type="button" className="button" onClick={() => { setZoneConflictBanner(false); zonesLoadedRef.current = false; listZones(orgId, siteId, floorPlanId).then((zs) => setZones(zs)).catch(() => {}) }}>
+            {t.retry}
+          </button>
+        </div>
+      ) : null}
 
       {remote.status === 'loading' ? (
         <p className="loading-text">{t.loading}</p>
@@ -155,6 +204,15 @@ export function FloorPlanPage() {
                   >
                     {calibrating ? t.calibration.calibrating : t.calibration.calibrate}
                   </button>
+                  {hasCalibration ? (
+                    <button
+                      type="button"
+                      className={`button${zonesVisible ? '' : ' button--muted'}`}
+                      onClick={() => setZonesVisible((v) => !v)}
+                    >
+                      {t.zones.toggleVisibility}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -169,13 +227,46 @@ export function FloorPlanPage() {
                 />
               ) : null}
 
+              {isReady && hasCalibration && mapInstance && !calibrating ? (
+                <ZoneDrawTool
+                  map={mapInstance}
+                  metersPerPx={calibration.metersPerPx}
+                  organizationId={orgId}
+                  siteId={siteId}
+                  floorPlanId={floorPlanId}
+                  onZoneCreated={handleZoneCreated}
+                />
+              ) : null}
+
               <div className="floor-plan-viewer-wrap">
                 <FloorPlanViewer
                   floorPlan={floorPlan}
                   onRefreshNeeded={handleRefreshNeeded}
                   onMapReady={handleMapReady}
                 />
+                {mapInstance && hasCalibration ? (
+                  <ZoneLayer
+                    map={mapInstance}
+                    zones={zones}
+                    metersPerPx={calibration.metersPerPx}
+                    visible={zonesVisible}
+                    onZoneClick={setSelectedZone}
+                  />
+                ) : null}
               </div>
+
+              {selectedZone ? (
+                <ZonePanel
+                  zone={selectedZone}
+                  organizationId={orgId}
+                  siteId={siteId}
+                  floorPlanId={floorPlanId}
+                  onUpdated={handleZoneUpdated}
+                  onDeleted={handleZoneDeleted}
+                  onClose={() => setSelectedZone(null)}
+                  onConflict={handleZoneConflict}
+                />
+              ) : null}
             </>
           )}
         </>
