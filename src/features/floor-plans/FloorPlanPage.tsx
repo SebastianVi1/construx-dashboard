@@ -59,6 +59,7 @@ export function FloorPlanPage() {
   // Load existing calibration when floor plan is READY
   useEffect(() => {
     if (!floorPlan || floorPlan.status !== 'READY' || calibrationLoaded) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCalibrationLoaded(true)
     getCalibration(orgId, siteId, floorPlanId)
       .then((cal) => setCalibration(cal))

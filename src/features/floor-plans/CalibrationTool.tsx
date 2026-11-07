@@ -26,9 +26,6 @@ export function CalibrationTool({
   const { messages: m, locale } = useLocale()
   const t = m.floorPlans.calibration
 
-  // Read the design-system danger token so Leaflet layers match the theme.
-  const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('--cx-danger').trim() || '#c23b3b'
-
   const [state, setState] = useState<ToolState>('firstPoint')
   const [distance, setDistance] = useState('')
   const [distanceError, setDistanceError] = useState('')
@@ -52,6 +49,8 @@ export function CalibrationTool({
 
   // Click handler
   useEffect(() => {
+    const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('--cx-danger').trim()
+
     function onClick(e: L.LeafletMouseEvent) {
       if (state === 'firstPoint') {
         pointARef.current = e.latlng

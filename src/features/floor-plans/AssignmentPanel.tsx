@@ -25,6 +25,7 @@ export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: Assi
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     Promise.all([
       listMembers(organizationId),

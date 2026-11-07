@@ -42,7 +42,7 @@ describe('calibrationSchema', () => {
   })
 
   it('rejects missing id', () => {
-    const { id: _id, ...rest } = validData
+    const { id: _id, ...rest } = validData // eslint-disable-line @typescript-eslint/no-unused-vars
     const result = calibrationSchema.safeParse(rest)
     expect(result.success).toBe(false)
   })
