@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import L from 'leaflet'
 import { useLocale } from '../../i18n'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { getFloorPlan, viewUrlExpiresSoon } from './floorPlansApi'
 import { FloorPlanViewer } from './FloorPlanViewer'
+import { CalibrationTool } from './CalibrationTool'
+import { getCalibration } from './calibrationApi'
+import type { Calibration } from './calibrationApi'
 import './floor-plans.css'
 
 export function FloorPlanPage() {
@@ -19,6 +23,20 @@ export function FloorPlanPage() {
 
   const floorPlan = remote.data
   const shouldPoll = floorPlan?.status === 'PENDING' || floorPlan?.status === 'PROCESSING'
+
+  const [calibrating, setCalibrating] = useState(false)
+  const [calibration, setCalibration] = useState<Calibration | null>(null)
+  const [calibrationLoaded, setCalibrationLoaded] = useState(false)
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
+
+  // Load existing calibration when floor plan is READY
+  useEffect(() => {
+    if (!floorPlan || floorPlan.status !== 'READY' || calibrationLoaded) return
+    setCalibrationLoaded(true)
+    getCalibration(orgId, siteId, floorPlanId)
+      .then((cal) => setCalibration(cal))
+      .catch(() => setCalibration(null))
+  }, [floorPlan, orgId, siteId, floorPlanId, calibrationLoaded])
 
   // Poll every 3 seconds while PENDING or PROCESSING
   useEffect(() => {
@@ -55,7 +73,23 @@ export function FloorPlanPage() {
     return () => clearInterval(interval)
   }, [floorPlan, remote])
 
+  const handleMapReady = useCallback((map: L.Map) => {
+    setMapInstance(map)
+  }, [])
+
+  const handleCalibrated = useCallback((cal: Calibration) => {
+    setCalibration(cal)
+    setCalibrating(false)
+  }, [])
+
+  const handleCancelCalibration = useCallback(() => {
+    setCalibrating(false)
+  }, [])
+
   if (!siteId || !floorPlanId || !organization) return null
+
+  const isReady = floorPlan?.status === 'READY'
+  const hasCalibration = calibration !== null
 
   return (
     <main className="page-content">
@@ -105,9 +139,44 @@ export function FloorPlanPage() {
               {floorPlan.errorReason ? <p><code>{floorPlan.errorReason}</code></p> : null}
             </div>
           ) : (
-            <div className="floor-plan-viewer-wrap">
-              <FloorPlanViewer floorPlan={floorPlan} onRefreshNeeded={handleRefreshNeeded} />
-            </div>
+            <>
+              {isReady && !hasCalibration ? (
+                <div className="floor-plan-calibration-banner" role="status">
+                  <p>{t.calibration.notCalibrated}</p>
+                </div>
+              ) : null}
+
+              {isReady ? (
+                <div className="floor-plan-toolbar">
+                  <button
+                    type="button"
+                    className={`button${calibrating ? ' button--active' : ''}`}
+                    onClick={() => setCalibrating((v) => !v)}
+                  >
+                    {calibrating ? t.calibration.calibrating : t.calibration.calibrate}
+                  </button>
+                </div>
+              ) : null}
+
+              {calibrating && mapInstance ? (
+                <CalibrationTool
+                  map={mapInstance}
+                  organizationId={orgId}
+                  siteId={siteId}
+                  floorPlanId={floorPlanId}
+                  onCalibrated={handleCalibrated}
+                  onCancel={handleCancelCalibration}
+                />
+              ) : null}
+
+              <div className="floor-plan-viewer-wrap">
+                <FloorPlanViewer
+                  floorPlan={floorPlan}
+                  onRefreshNeeded={handleRefreshNeeded}
+                  onMapReady={handleMapReady}
+                />
+              </div>
+            </>
           )}
         </>
       ) : null}
