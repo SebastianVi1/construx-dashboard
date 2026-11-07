@@ -7,10 +7,11 @@ import { viewUrlExpiresSoon } from './floorPlansApi'
 interface FloorPlanViewerProps {
   floorPlan: FloorPlan
   onRefreshNeeded: () => void
+  onMapReady?: (map: L.Map) => void
 }
 
 /** Leaflet CRS.Simple viewer for a rendered floor plan PNG. */
-export function FloorPlanViewer({ floorPlan, onRefreshNeeded }: FloorPlanViewerProps) {
+export function FloorPlanViewer({ floorPlan, onRefreshNeeded, onMapReady }: FloorPlanViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
 
@@ -45,10 +46,11 @@ export function FloorPlanViewer({ floorPlan, onRefreshNeeded }: FloorPlanViewerP
         L.imageOverlay(viewUrl, bounds).addTo(map)
         map.fitBounds(bounds)
         L.control.zoom({ position: 'topright' }).addTo(map)
+        onMapReady?.(map)
       }
       img.src = viewUrl
     },
-    [],
+    [onMapReady],
   )
 
   useEffect(() => {

@@ -164,3 +164,70 @@
   padding: 1rem;
   color: #c0392b;
 }
+
+.floor-plan-calibration-banner {
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  padding: 0.75rem 1rem;
+  color: var(--cx-muted);
+  margin-bottom: 0.5rem;
+}
+
+.floor-plan-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+.calibration-tool-panel {
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.calibration-tool-panel__hint {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 0.9rem;
+}
+
+.calibration-tool-panel__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.calibration-tool-panel__label {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.calibration-tool-panel__input {
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  width: 100%;
+  max-width: 220px;
+}
+
+.calibration-tool-panel__error {
+  color: #c0392b;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.calibration-tool-panel__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
