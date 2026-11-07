@@ -10,10 +10,14 @@ import { CalibrationTool } from './CalibrationTool'
 import { ZoneLayer } from './ZoneLayer'
 import { ZoneDrawTool } from './ZoneDrawTool'
 import { ZonePanel } from './ZonePanel'
+import { AssignmentPanel } from './AssignmentPanel'
+import { AssignmentForm } from './AssignmentForm'
 import { getCalibration } from './calibrationApi'
 import type { Calibration } from './calibrationApi'
 import { listZones } from './zonesApi'
 import type { Zone } from './zonesApi'
+import { getZoneAssignmentCounts } from './zoneAssignmentsApi'
+import type { DraggableResource } from './zoneAssignmentsApi'
 import './floor-plans.css'
 
 export function FloorPlanPage() {
@@ -41,6 +45,12 @@ export function FloorPlanPage() {
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null)
   const [zoneConflictBanner, setZoneConflictBanner] = useState(false)
 
+  // Assignment state
+  const [assignmentPanelOpen, setAssignmentPanelOpen] = useState(false)
+  const [draggingResource, setDraggingResource] = useState<DraggableResource | null>(null)
+  const [assignmentTarget, setAssignmentTarget] = useState<{ zone: Zone; resource: DraggableResource } | null>(null)
+  const [assignmentCounts, setAssignmentCounts] = useState<Record<string, number>>({})
+
   // Load existing calibration when floor plan is READY
   useEffect(() => {
     if (!floorPlan || floorPlan.status !== 'READY' || calibrationLoaded) return
@@ -57,7 +67,16 @@ export function FloorPlanPage() {
     listZones(orgId, siteId, floorPlanId)
       .then((zs) => setZones(zs))
       .catch(() => setZones([]))
+    getZoneAssignmentCounts(orgId, siteId, floorPlanId)
+      .then((counts) => setAssignmentCounts(counts))
+      .catch(() => {})
   }, [floorPlan, calibration, orgId, siteId, floorPlanId])
+
+  const reloadAssignmentCounts = useCallback(() => {
+    getZoneAssignmentCounts(orgId, siteId, floorPlanId)
+      .then((counts) => setAssignmentCounts(counts))
+      .catch(() => {})
+  }, [orgId, siteId, floorPlanId])
 
   // Poll every 3 seconds while PENDING or PROCESSING
   useEffect(() => {
@@ -213,6 +232,15 @@ export function FloorPlanPage() {
                       {t.zones.toggleVisibility}
                     </button>
                   ) : null}
+                  {hasCalibration ? (
+                    <button
+                      type="button"
+                      className={`button${assignmentPanelOpen ? ' button--active' : ''}`}
+                      onClick={() => setAssignmentPanelOpen((v) => !v)}
+                    >
+                      {t.assignments.panelTitle}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -238,22 +266,61 @@ export function FloorPlanPage() {
                 />
               ) : null}
 
-              <div className="floor-plan-viewer-wrap">
-                <FloorPlanViewer
-                  floorPlan={floorPlan}
-                  onRefreshNeeded={handleRefreshNeeded}
-                  onMapReady={handleMapReady}
-                />
-                {mapInstance && hasCalibration ? (
-                  <ZoneLayer
-                    map={mapInstance}
-                    zones={zones}
-                    metersPerPx={calibration.metersPerPx}
-                    visible={zonesVisible}
-                    onZoneClick={setSelectedZone}
+              <div className="floor-plan-layout">
+                {assignmentPanelOpen ? (
+                  <AssignmentPanel
+                    organizationId={orgId}
+                    onDragStart={(res) => setDraggingResource(res)}
+                    onDragEnd={() => setDraggingResource(null)}
                   />
                 ) : null}
+                <div className="floor-plan-viewer-wrap">
+                  <FloorPlanViewer
+                    floorPlan={floorPlan}
+                    onRefreshNeeded={handleRefreshNeeded}
+                    onMapReady={handleMapReady}
+                  />
+                  {mapInstance && hasCalibration ? (
+                    <ZoneLayer
+                      map={mapInstance}
+                      zones={zones}
+                      metersPerPx={calibration.metersPerPx}
+                      visible={zonesVisible}
+                      onZoneClick={(zone) => {
+                        if (draggingResource) {
+                          setAssignmentTarget({ zone, resource: draggingResource })
+                          setDraggingResource(null)
+                        } else {
+                          setSelectedZone(zone)
+                        }
+                      }}
+                      assignmentCounts={assignmentCounts}
+                      draggingResource={draggingResource !== null}
+                      onDropOnZone={(zone) => {
+                        if (draggingResource) {
+                          setAssignmentTarget({ zone, resource: draggingResource })
+                          setDraggingResource(null)
+                        }
+                      }}
+                    />
+                  ) : null}
+                </div>
               </div>
+
+              {assignmentTarget ? (
+                <AssignmentForm
+                  organizationId={orgId}
+                  siteId={siteId}
+                  floorPlanId={floorPlanId}
+                  zoneId={assignmentTarget.zone.id}
+                  resource={assignmentTarget.resource}
+                  onAssigned={() => {
+                    setAssignmentTarget(null)
+                    reloadAssignmentCounts()
+                  }}
+                  onCancel={() => setAssignmentTarget(null)}
+                />
+              ) : null}
 
               {selectedZone ? (
                 <ZonePanel
