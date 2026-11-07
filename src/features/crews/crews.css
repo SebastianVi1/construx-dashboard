@@ -187,6 +187,6 @@
 }
 
 .field-error {
-  color: var(--cx-error, #c0392b);
+  color: var(--cx-danger);
   font-size: 0.75rem;
 }
