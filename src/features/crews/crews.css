@@ -1,0 +1,192 @@
+/* Crew catalog */
+
+.crews-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.crew-card {
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  padding: 1rem;
+}
+
+.crew-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.crew-card__name {
+  display: block;
+  font-size: 1rem;
+  color: var(--cx-ink);
+}
+
+.crew-card__leader {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--cx-muted);
+  margin-top: 0.25rem;
+}
+
+.crew-members {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.crew-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--cx-ink);
+}
+
+.crew-member--empty {
+  color: var(--cx-muted);
+}
+
+.crew-member__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--cx-muted);
+  padding: 0 0.25rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.crew-member__remove:hover {
+  color: var(--cx-ink);
+}
+
+.crew-add-member {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.crews-empty {
+  color: var(--cx-muted);
+}
+
+/* Equipment catalog */
+
+.equipment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.equipment-table th,
+.equipment-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.equipment-table th {
+  color: var(--cx-muted);
+  font-weight: 500;
+}
+
+.equipment-row--inactive td {
+  opacity: 0.55;
+}
+
+.equipment-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--cx-radius-md);
+}
+
+.equipment-badge--active {
+  background: color-mix(in srgb, var(--cx-primary) 15%, transparent);
+  color: var(--cx-primary);
+}
+
+.equipment-badge--inactive {
+  background: color-mix(in srgb, var(--cx-muted) 15%, transparent);
+  color: var(--cx-muted);
+}
+
+.equipment-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.equipment-empty {
+  color: var(--cx-muted);
+}
+
+/* Dialog */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.dialog {
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  padding: 1.5rem;
+  width: min(480px, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dialog h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--cx-ink);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--cx-ink);
+}
+
+.field input,
+.field select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font-size: 0.875rem;
+}
+
+.field-error {
+  color: var(--cx-error, #c0392b);
+  font-size: 0.75rem;
+}
