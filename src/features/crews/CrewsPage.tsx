@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { z } from 'zod'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { Field, useForm } from '../../components/form'
 import { Notice, SkeletonList } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -207,53 +209,52 @@ function CreateCrewDialog({
 }) {
   const { messages: m } = useLocale()
   const t = m.crews
-  const [name, setName] = useState('')
-  const [leaderId, setLeaderId] = useState('')
-  const [errors, setErrors] = useState<{ name?: string; leader?: string }>({})
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault()
-    const errs: typeof errors = {}
-    if (!name.trim()) errs.name = t.validation.nameRequired
-    else if (name.trim().length > 120) errs.name = t.validation.nameMax
-    if (!leaderId) errs.leader = t.validation.leaderRequired
-    setErrors(errs)
-    if (Object.keys(errs).length > 0) return
-    onSubmit(name.trim(), leaderId)
-  }
+  const leaderOptions = [
+    { value: '', label: t.leaderPlaceholder },
+    ...members.map((mem) => ({ value: mem.membershipId, label: mem.fullName ?? mem.email })),
+  ]
+
+  const schema = z.object({
+    name: z.string().min(1, t.validation.nameRequired).max(120, t.validation.nameMax),
+    leaderId: z.string().min(1, t.validation.leaderRequired),
+  })
+
+  const form = useForm({
+    initialValues: { name: '', leaderId: '' },
+    schema,
+    onSubmit: async (values) => {
+      onSubmit(values.name.trim(), values.leaderId)
+    },
+  })
 
   return (
     <div className="dialog-overlay">
-      <form className="dialog" onSubmit={submit}>
+      <form className="dialog" onSubmit={form.onSubmit} noValidate>
         <h2>{t.add}</h2>
-        <label className="field">
-          <span>{t.name}</span>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t.namePlaceholder}
-            maxLength={120}
-          />
-          {errors.name && <span className="field-error">{errors.name}</span>}
-        </label>
-        <label className="field">
-          <span>{t.leader}</span>
-          <select value={leaderId} onChange={(e) => setLeaderId(e.target.value)}>
-            <option value="">{t.leaderPlaceholder}</option>
-            {members.map((mem) => (
-              <option key={mem.membershipId} value={mem.membershipId}>
-                {mem.fullName ?? mem.email}
-              </option>
-            ))}
-          </select>
-          {errors.leader && <span className="field-error">{errors.leader}</span>}
-        </label>
+        <Field
+          config={{ name: 'name', label: t.name, placeholder: t.namePlaceholder }}
+          value={form.values.name}
+          error={form.errors.name}
+          valid={form.valid.name}
+          disabled={busy}
+          onChange={(v) => form.onChange('name', v)}
+          onBlur={() => form.onBlur('name')}
+        />
+        <Field
+          config={{ name: 'leaderId', label: t.leader, type: 'select', options: leaderOptions }}
+          value={form.values.leaderId}
+          error={form.errors.leaderId}
+          valid={form.valid.leaderId}
+          disabled={busy}
+          onChange={(v) => form.onChange('leaderId', v)}
+          onBlur={() => form.onBlur('leaderId')}
+        />
         <div className="dialog-actions">
           <button type="button" className="button" onClick={onCancel} disabled={busy}>
-            {'Cancel'}
+            {t.cancel}
           </button>
-          <button type="submit" className="button button--primary" disabled={busy}>
+          <button type="submit" className="button button--primary" disabled={busy || form.isSubmitting}>
             {t.add}
           </button>
         </div>

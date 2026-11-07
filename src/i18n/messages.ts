@@ -1655,6 +1655,7 @@ const en = {
     deleted: 'Crew deleted.',
     memberAdded: 'Member added.',
     memberRemoved: 'Member removed.',
+    cancel: 'Cancel',
     forbidden: 'You do not have permission to manage crews.',
     validation: {
       nameRequired: 'Enter a crew name.',
@@ -1691,6 +1692,7 @@ const en = {
     deleted: 'Equipment deleted.',
     deactivated: 'Equipment deactivated.',
     reactivated: 'Equipment reactivated.',
+    cancel: 'Cancel',
     forbidden: 'You do not have permission to manage equipment.',
     validation: {
       typeRequired: 'Enter a type.',
@@ -3366,6 +3368,7 @@ const es: Messages = {
     deleted: 'Cuadrilla eliminada.',
     memberAdded: 'Miembro agregado.',
     memberRemoved: 'Miembro eliminado.',
+    cancel: 'Cancelar',
     forbidden: 'No tienes permiso para gestionar cuadrillas.',
     validation: {
       nameRequired: 'Escribe el nombre de la cuadrilla.',
@@ -3402,6 +3405,7 @@ const es: Messages = {
     deleted: 'Equipo eliminado.',
     deactivated: 'Equipo desactivado.',
     reactivated: 'Equipo reactivado.',
+    cancel: 'Cancelar',
     forbidden: 'No tienes permiso para gestionar el equipo.',
     validation: {
       typeRequired: 'Escribe el tipo.',

@@ -26,6 +26,9 @@ export function CalibrationTool({
   const { messages: m, locale } = useLocale()
   const t = m.floorPlans.calibration
 
+  // Read the design-system danger token so Leaflet layers match the theme.
+  const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('--cx-danger').trim() || '#c23b3b'
+
   const [state, setState] = useState<ToolState>('firstPoint')
   const [distance, setDistance] = useState('')
   const [distanceError, setDistanceError] = useState('')
@@ -55,9 +58,9 @@ export function CalibrationTool({
         if (markerARef.current) markerARef.current.remove()
         markerARef.current = L.circleMarker(e.latlng, {
           radius: 6,
-          color: '#e44',
+          color: dangerColor,
           fill: true,
-          fillColor: '#e44',
+          fillColor: dangerColor,
           fillOpacity: 1,
         }).addTo(map)
         setState('secondPoint')
@@ -66,14 +69,14 @@ export function CalibrationTool({
         if (markerBRef.current) markerBRef.current.remove()
         markerBRef.current = L.circleMarker(e.latlng, {
           radius: 6,
-          color: '#e44',
+          color: dangerColor,
           fill: true,
-          fillColor: '#e44',
+          fillColor: dangerColor,
           fillOpacity: 1,
         }).addTo(map)
         if (lineRef.current) lineRef.current.remove()
         lineRef.current = L.polyline([pointARef.current!, e.latlng], {
-          color: '#e44',
+          color: dangerColor,
           dashArray: '8 4',
           weight: 2,
         }).addTo(map)

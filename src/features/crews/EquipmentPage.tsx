@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { z } from 'zod'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { Field, useForm } from '../../components/form'
 import { Notice, SkeletonList } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -169,74 +171,61 @@ function CreateEquipmentDialog({
 }) {
   const { messages: m } = useLocale()
   const t = m.equipment
-  const [type, setType] = useState('')
-  const [identifier, setIdentifier] = useState('')
-  const [dailyCost, setDailyCost] = useState('')
-  const [errors, setErrors] = useState<{ type?: string; identifier?: string; dailyCost?: string }>({})
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault()
-    const errs: typeof errors = {}
-    if (!type.trim()) errs.type = t.validation.typeRequired
-    else if (type.trim().length > 80) errs.type = t.validation.typeMax
-    if (!identifier.trim()) errs.identifier = t.validation.identifierRequired
-    else if (identifier.trim().length > 80) errs.identifier = t.validation.identifierMax
-    let costCents: number | null = null
-    if (dailyCost.trim()) {
-      const parsed = Number(dailyCost)
-      if (!Number.isInteger(parsed) || parsed < 0) {
-        errs.dailyCost = t.validation.dailyCostInvalid
-      } else {
-        costCents = parsed
-      }
-    }
-    setErrors(errs)
-    if (Object.keys(errs).length > 0) return
-    onSubmit(type.trim(), identifier.trim(), costCents)
-  }
+  const schema = z.object({
+    type: z.string().min(1, t.validation.typeRequired).max(80, t.validation.typeMax),
+    identifier: z.string().min(1, t.validation.identifierRequired).max(80, t.validation.identifierMax),
+    dailyCost: z.string().refine(
+      (v) => v === '' || (Number.isInteger(Number(v)) && Number(v) >= 0),
+      t.validation.dailyCostInvalid,
+    ),
+  })
+
+  const form = useForm({
+    initialValues: { type: '', identifier: '', dailyCost: '' },
+    schema,
+    onSubmit: async (values) => {
+      const costCents = values.dailyCost.trim() ? Number(values.dailyCost) : null
+      onSubmit(values.type.trim(), values.identifier.trim(), costCents)
+    },
+  })
 
   return (
     <div className="dialog-overlay">
-      <form className="dialog" onSubmit={submit}>
+      <form className="dialog" onSubmit={form.onSubmit} noValidate>
         <h2>{t.add}</h2>
-        <label className="field">
-          <span>{t.type}</span>
-          <input
-            type="text"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            placeholder={t.typePlaceholder}
-            maxLength={80}
-          />
-          {errors.type && <span className="field-error">{errors.type}</span>}
-        </label>
-        <label className="field">
-          <span>{t.identifier}</span>
-          <input
-            type="text"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            placeholder={t.identifierPlaceholder}
-            maxLength={80}
-          />
-          {errors.identifier && <span className="field-error">{errors.identifier}</span>}
-        </label>
-        <label className="field">
-          <span>{t.dailyCost}</span>
-          <input
-            type="number"
-            value={dailyCost}
-            onChange={(e) => setDailyCost(e.target.value)}
-            placeholder={t.dailyCostPlaceholder}
-            min="0"
-          />
-          {errors.dailyCost && <span className="field-error">{errors.dailyCost}</span>}
-        </label>
+        <Field
+          config={{ name: 'type', label: t.type, placeholder: t.typePlaceholder }}
+          value={form.values.type}
+          error={form.errors.type}
+          valid={form.valid.type}
+          disabled={busy}
+          onChange={(v) => form.onChange('type', v)}
+          onBlur={() => form.onBlur('type')}
+        />
+        <Field
+          config={{ name: 'identifier', label: t.identifier, placeholder: t.identifierPlaceholder }}
+          value={form.values.identifier}
+          error={form.errors.identifier}
+          valid={form.valid.identifier}
+          disabled={busy}
+          onChange={(v) => form.onChange('identifier', v)}
+          onBlur={() => form.onBlur('identifier')}
+        />
+        <Field
+          config={{ name: 'dailyCost', label: t.dailyCost, type: 'number', placeholder: t.dailyCostPlaceholder, min: '0' }}
+          value={form.values.dailyCost}
+          error={form.errors.dailyCost}
+          valid={form.valid.dailyCost}
+          disabled={busy}
+          onChange={(v) => form.onChange('dailyCost', v)}
+          onBlur={() => form.onBlur('dailyCost')}
+        />
         <div className="dialog-actions">
           <button type="button" className="button" onClick={onCancel} disabled={busy}>
-            Cancel
+            {t.cancel}
           </button>
-          <button type="submit" className="button button--primary" disabled={busy}>
+          <button type="submit" className="button button--primary" disabled={busy || form.isSubmitting}>
             {t.add}
           </button>
         </div>
