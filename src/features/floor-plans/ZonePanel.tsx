@@ -6,7 +6,7 @@ import { useForm } from '../../components/form'
 import { updateZone, deleteZone } from './zonesApi'
 import type { Zone, ZoneStatus } from './zonesApi'
 import { listAssignments, closeAssignment, reassignToZone } from './zoneAssignmentsApi'
-import type { AssignmentData } from './zoneAssignmentsApi'
+import type { AssignmentData, ReassignDrag } from './zoneAssignmentsApi'
 import { getZoneAudit } from './auditApi'
 import type { AuditEvent } from './auditApi'
 
@@ -20,6 +20,8 @@ interface ZonePanelProps {
   onDeleted: (zoneId: string) => void
   onClose: () => void
   onConflict: () => void
+  onReassignDragStart?: (drag: ReassignDrag) => void
+  onReassignDragEnd?: () => void
 }
 
 type Tab = 'assignments' | 'history'
@@ -41,6 +43,8 @@ export function ZonePanel({
   onDeleted,
   onClose,
   onConflict,
+  onReassignDragStart,
+  onReassignDragEnd,
 }: ZonePanelProps) {
   const { messages: m } = useLocale()
   const t = m.floorPlans.zones
@@ -259,7 +263,23 @@ export function ZonePanel({
               ) : (
                 <ul className="assignment-list">
                   {assignments.map((a) => (
-                    <li key={a.id} className="assignment-list__item">
+                    <li
+                      key={a.id}
+                      className="assignment-list__item"
+                      draggable={Boolean(onReassignDragStart)}
+                      onDragStart={(e) => {
+                        if (!onReassignDragStart) return
+                        const drag: ReassignDrag = {
+                          assignmentId: a.id,
+                          sourceZoneId: zone.id,
+                          label: a.activity,
+                        }
+                        e.dataTransfer.setData('application/json', JSON.stringify(drag))
+                        e.dataTransfer.effectAllowed = 'move'
+                        onReassignDragStart(drag)
+                      }}
+                      onDragEnd={onReassignDragEnd}
+                    >
                       <div className="assignment-list__info">
                         <span className="assignment-list__activity">{a.activity}</span>
                         <span className="assignment-list__dates">

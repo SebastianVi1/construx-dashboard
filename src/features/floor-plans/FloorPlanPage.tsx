@@ -17,8 +17,8 @@ import { getCalibration } from './calibrationApi'
 import type { Calibration } from './calibrationApi'
 import { listZones } from './zonesApi'
 import type { Zone } from './zonesApi'
-import { getZoneAssignmentCounts } from './zoneAssignmentsApi'
-import type { DraggableResource } from './zoneAssignmentsApi'
+import { getZoneAssignmentCounts, reassignToZone } from './zoneAssignmentsApi'
+import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
 import './floor-plans.css'
 
 export function FloorPlanPage() {
@@ -52,6 +52,7 @@ export function FloorPlanPage() {
   // Assignment state
   const [assignmentPanelOpen, setAssignmentPanelOpen] = useState(false)
   const [draggingResource, setDraggingResource] = useState<DraggableResource | null>(null)
+  const [draggingReassign, setDraggingReassign] = useState<ReassignDrag | null>(null)
   const [assignmentTarget, setAssignmentTarget] = useState<{ zone: Zone; resource: DraggableResource } | null>(null)
   const [assignmentCounts, setAssignmentCounts] = useState<Record<string, number>>({})
 
@@ -106,15 +107,25 @@ export function FloorPlanPage() {
     remote.reload()
   }
 
-  // Refresh when the view URL is about to expire
+  // Refresh when the view URL is about to expire.
+  // Also re-checks on tab restore so a backgrounded tab never shows a broken image.
   useEffect(() => {
     if (!floorPlan) return
-    const interval = setInterval(() => {
-      if (viewUrlExpiresSoon(floorPlan)) {
-        remote.reload()
-      }
-    }, 60_000)
-    return () => clearInterval(interval)
+
+    function checkRefresh() {
+      if (viewUrlExpiresSoon(floorPlan!)) remote.reload()
+    }
+
+    function onVisibilityChange() {
+      if (!document.hidden) checkRefresh()
+    }
+
+    const interval = setInterval(checkRefresh, 60_000)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
   }, [floorPlan, remote])
 
   const handleMapReady = (map: L.Map) => {
@@ -306,6 +317,19 @@ export function FloorPlanPage() {
                           setDraggingResource(null)
                         }
                       }}
+                      draggingReassign={draggingReassign !== null}
+                      onReassignDrop={(targetZone) => {
+                        if (!draggingReassign) return
+                        const { assignmentId, sourceZoneId } = draggingReassign
+                        if (targetZone.id === sourceZoneId) {
+                          setDraggingReassign(null)
+                          return
+                        }
+                        reassignToZone(orgId, siteId, floorPlanId, sourceZoneId, assignmentId, targetZone.id)
+                          .then(() => reloadAssignmentCounts())
+                          .catch(() => {})
+                        setDraggingReassign(null)
+                      }}
                     />
                   ) : null}
                 </div>
@@ -337,6 +361,8 @@ export function FloorPlanPage() {
                   onDeleted={handleZoneDeleted}
                   onClose={() => setSelectedZone(null)}
                   onConflict={handleZoneConflict}
+                  onReassignDragStart={(drag) => setDraggingReassign(drag)}
+                  onReassignDragEnd={() => setDraggingReassign(null)}
                 />
               ) : null}
             </>

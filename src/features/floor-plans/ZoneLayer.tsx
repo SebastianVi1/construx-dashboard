@@ -12,6 +12,9 @@ interface ZoneLayerProps {
   assignmentCounts?: Record<string, number>
   draggingResource?: boolean
   onDropOnZone?: (zone: Zone) => void
+  /** Set while an already-assigned chip is being dragged for reassignment. */
+  draggingReassign?: boolean
+  onReassignDrop?: (targetZone: Zone) => void
 }
 
 /** Renders floor plan zones as filled Leaflet polygons in pixel coordinate space. */
@@ -24,6 +27,8 @@ export function ZoneLayer({
   assignmentCounts,
   draggingResource,
   onDropOnZone,
+  draggingReassign,
+  onReassignDrop,
 }: ZoneLayerProps) {
   const layerGroupRef = useRef<L.LayerGroup | null>(null)
   const badgeGroupRef = useRef<L.LayerGroup | null>(null)
@@ -81,7 +86,7 @@ export function ZoneLayer({
     }
   }, [map, zones, metersPerPx, visible, onZoneClick, assignmentCounts])
 
-  // Drop overlay rectangles while dragging a resource
+  // Drop overlay polygons while dragging a resource (new assignment) or a reassign drag
   useEffect(() => {
     if (!dropOverlayGroupRef.current) {
       dropOverlayGroupRef.current = L.layerGroup().addTo(map)
@@ -89,7 +94,9 @@ export function ZoneLayer({
     const overlayGroup = dropOverlayGroupRef.current
     overlayGroup.clearLayers()
 
-    if (!draggingResource || !visible || !onDropOnZone) return
+    const isAssignDrag = draggingResource && onDropOnZone
+    const isReassignDrag = draggingReassign && onReassignDrop
+    if (!visible || (!isAssignDrag && !isReassignDrag)) return
 
     for (const zone of zones) {
       const latlngs = zone.points.map(([x, y]) => L.latLng(y / metersPerPx, x / metersPerPx))
@@ -100,14 +107,20 @@ export function ZoneLayer({
         weight: 3,
         dashArray: '6 4',
       })
-      overlay.on('click', () => onDropOnZone(zone))
+      overlay.on('click', () => {
+        if (isReassignDrag) {
+          onReassignDrop!(zone)
+        } else if (isAssignDrag) {
+          onDropOnZone!(zone)
+        }
+      })
       overlayGroup.addLayer(overlay)
     }
 
     return () => {
       overlayGroup.clearLayers()
     }
-  }, [map, zones, metersPerPx, visible, draggingResource, onDropOnZone])
+  }, [map, zones, metersPerPx, visible, draggingResource, onDropOnZone, draggingReassign, onReassignDrop])
 
   // Remove layer groups on unmount
   useEffect(() => {

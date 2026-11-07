@@ -34,6 +34,13 @@ export type DraggableResource = {
   name: string
 }
 
+/** Payload set on a drag that moves an existing assignment to a different zone. */
+export type ReassignDrag = {
+  assignmentId: string
+  sourceZoneId: string
+  label: string
+}
+
 export type CreateAssignmentRequest = {
   membershipId?: string | null
   crewId?: string | null
