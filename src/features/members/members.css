@@ -7,9 +7,14 @@
   align-items: start;
 }
 
+/* Left column: inviting and crews, the two things you build; the lists sit beside them. */
+.members-side {
+  display: grid;
+  gap: var(--cx-section-gap);
+  min-width: 0;
+}
+
 .members-invite {
-  position: sticky;
-  top: calc(var(--cx-header-height) + 16px);
   padding: 20px;
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-lg);
@@ -138,9 +143,5 @@
 @media (max-width: 960px) {
   .members-columns {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .members-invite {
-    position: static;
   }
 }

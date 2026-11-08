@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { formatMessage, useLocale } from '../../i18n'
+import { usePermissions } from '../permissions'
 import { listMembers } from '../members/membersApi'
 import type { Member } from '../members/membersApi'
 import { listCrews, listEquipment } from '../crews/crewsApi'
@@ -26,6 +28,9 @@ function initials(name: string): string {
 export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: AssignmentPanelProps) {
   const { messages: m } = useLocale()
   const t = m.floorPlans.assignments
+  const { can } = usePermissions()
+  // Crews are managed on the Team page; planners without it have the crews page of their own.
+  const crewsHref = can('MANAGE_MEMBERS') ? '/members#crews' : '/crews'
 
   const [tab, setTab] = useState<Tab>('people')
   const [members, setMembers] = useState<Member[]>([])
@@ -112,7 +117,15 @@ export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: Assi
           )
         ) : tab === 'crews' ? (
           crews.length === 0 ? (
-            <p className="assignment-panel__empty">{t.emptyCrews}</p>
+            <p className="assignment-panel__empty">
+              {t.emptyCrews}
+              {can('MANAGE_PLAN') ? (
+                <>
+                  {' '}
+                  <Link to={crewsHref}>{t.createCrews}</Link>
+                </>
+              ) : null}
+            </p>
           ) : (
             crews.map((crew) => (
               <div

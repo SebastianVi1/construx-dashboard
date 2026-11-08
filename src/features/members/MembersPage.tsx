@@ -4,6 +4,7 @@ import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
+import { CrewsSection } from '../crews/CrewsSection'
 import { listSites, type Site } from '../sites/sitesApi'
 import { InviteForm } from './InviteForm'
 import {
@@ -117,33 +118,38 @@ function MembersContent() {
       </header>
 
       <div className="members-columns">
-        <section className="page-section members-invite" aria-labelledby="invite-heading">
-          <div className="page-section__header">
-            <div>
-              <h2 id="invite-heading">{t.invite.title}</h2>
-              <p>{t.invite.description}</p>
+        <div className="members-side">
+          <section className="page-section members-invite" aria-labelledby="invite-heading">
+            <div className="page-section__header">
+              <div>
+                <h2 id="invite-heading">{t.invite.title}</h2>
+                <p>{t.invite.description}</p>
+              </div>
             </div>
-          </div>
-          {roles.data && sitesSettled ? (
-            <InviteForm
-              key={formVersion}
-              organizationId={orgId}
-              roles={roles.data}
-              sites={siteOptions}
-              onInvited={(invitation, message) => {
-                upsert(invitation)
-                setFormVersion((version) => version + 1)
-                setFeedback({ tone: 'success', text: message })
-              }}
-            />
-          ) : roles.status === 'error' ? (
-            <Notice tone="error" action={{ label: t.retry, onClick: roles.reload }}>
-              {t.invite.rolesError}
-            </Notice>
-          ) : (
-            <SkeletonList />
-          )}
-        </section>
+            {roles.data && sitesSettled ? (
+              <InviteForm
+                key={formVersion}
+                organizationId={orgId}
+                roles={roles.data}
+                sites={siteOptions}
+                onInvited={(invitation, message) => {
+                  upsert(invitation)
+                  setFormVersion((version) => version + 1)
+                  setFeedback({ tone: 'success', text: message })
+                }}
+              />
+            ) : roles.status === 'error' ? (
+              <Notice tone="error" action={{ label: t.retry, onClick: roles.reload }}>
+                {t.invite.rolesError}
+              </Notice>
+            ) : (
+              <SkeletonList />
+            )}
+          </section>
+          {can('VIEW_PLAN') && members.data ? (
+            <CrewsSection organizationId={orgId} members={members.data} canManage={can('MANAGE_PLAN')} />
+          ) : null}
+        </div>
 
         <div className="members-lists">
           {feedback ? <Notice tone={feedback.tone}>{feedback.text}</Notice> : null}
