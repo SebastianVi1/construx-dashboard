@@ -31,6 +31,20 @@ export function pointInPolygon([px, py]: [number, number], polygon: [number, num
   return inside
 }
 
+/** Smallest area a zone may enclose, in m²; the backend rejects anything smaller (ZONE_NO_AREA). */
+export const MIN_ZONE_AREA_M2 = 0.01
+
+/** Shoelace area of a polygon, in the square of its coordinates' unit. */
+export function polygonArea(points: [number, number][]): number {
+  let sum = 0
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i]
+    const [x2, y2] = points[(i + 1) % points.length]
+    sum += x1 * y2 - x2 * y1
+  }
+  return Math.abs(sum) / 2
+}
+
 /** The zone under a point in metres; when zones overlap, the smallest one wins. */
 export function zoneAtPoint(zones: Zone[], point: [number, number]): Zone | null {
   let best: Zone | null = null

@@ -472,6 +472,10 @@
   line-height: 18px;
 }
 
+.fp-hint--error {
+  border-left-color: var(--cx-danger);
+}
+
 .fp-hint p,
 .calibration-tool__hint {
   margin: 0;

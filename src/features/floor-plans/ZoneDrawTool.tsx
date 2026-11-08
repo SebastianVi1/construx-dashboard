@@ -4,7 +4,9 @@ import L from 'leaflet'
 import 'leaflet-draw'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import { useLocale } from '../../i18n'
+import { AuthApiError } from '../auth/authApi'
 import { createZone } from './zonesApi'
+import { MIN_ZONE_AREA_M2, polygonArea } from './zoneOccupants'
 import type { Zone, ZoneStatus } from './zonesApi'
 import { PolygonIcon, RectangleIcon } from './floorPlanIcons'
 import '../../components/form/form.css'
@@ -83,15 +85,21 @@ export function ZoneDrawTool({
         ll.lng * metersPerPx,
         ll.lat * metersPerPx,
       ])
-      setPendingPoints(metres)
       map.removeLayer(event.layer)
+      // A click instead of a drag, or a polygon closed on a line, has no area: ask to draw it again
+      if (polygonArea(metres) < MIN_ZONE_AREA_M2) {
+        setError(t.noAreaError)
+        return
+      }
+      setError(null)
+      setPendingPoints(metres)
     }
 
     map.on(L.Draw.Event.CREATED, onCreated)
     return () => {
       map.off(L.Draw.Event.CREATED, onCreated)
     }
-  }, [map, metersPerPx])
+  }, [map, metersPerPx, t.noAreaError])
 
   const handleCancel = () => {
     setDrawMode(null)
@@ -123,8 +131,8 @@ export function ZoneDrawTool({
       setName('')
       setDescription('')
       setStatus('NOT_STARTED')
-    } catch {
-      setError(t.createError)
+    } catch (err) {
+      setError(err instanceof AuthApiError && err.code === 'ZONE_NO_AREA' ? t.noAreaError : t.createError)
     } finally {
       setSubmitting(false)
     }
@@ -189,6 +197,13 @@ export function ZoneDrawTool({
         </button>
       </div>
     </form>
+  ) : error ? (
+    <div className="fp-hint fp-hint--error" role="alert">
+      <p>{error}</p>
+      <button type="button" className="fp-hint__action" onClick={() => setError(null)}>
+        {m.floorPlans.assignments.dismiss}
+      </button>
+    </div>
   ) : drawMode ? (
     <p className="fp-hint" role="status">
       {drawMode === 'polygon' ? t.polygonHint : t.rectangleHint}
@@ -201,7 +216,10 @@ export function ZoneDrawTool({
         type="button"
         className="fp-tool"
         aria-pressed={drawMode === 'polygon'}
-        onClick={() => setDrawMode((m) => (m === 'polygon' ? null : 'polygon'))}
+        onClick={() => {
+          setError(null)
+          setDrawMode((mode) => (mode === 'polygon' ? null : 'polygon'))
+        }}
         disabled={pendingPoints !== null}
       >
         <PolygonIcon />
@@ -211,7 +229,10 @@ export function ZoneDrawTool({
         type="button"
         className="fp-tool"
         aria-pressed={drawMode === 'rectangle'}
-        onClick={() => setDrawMode((m) => (m === 'rectangle' ? null : 'rectangle'))}
+        onClick={() => {
+          setError(null)
+          setDrawMode((mode) => (mode === 'rectangle' ? null : 'rectangle'))
+        }}
         disabled={pendingPoints !== null}
       >
         <RectangleIcon />

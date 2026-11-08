@@ -7,6 +7,8 @@ import {
   assignmentLabel,
   crewsOf,
   escapeHtml,
+  MIN_ZONE_AREA_M2,
+  polygonArea,
   parseDropPayload,
   pointInPolygon,
   zoneAtPoint,
@@ -177,5 +179,17 @@ describe('activeTasksOf', () => {
       task({ id: 'other', assignees: [{ accessId: 'x2', membershipId: 'm2', fullName: null, taskRole: 'LEAD' }] }),
     ])
     expect(result.map((r) => [r.task.id, r.taskRole])).toEqual([['soon', 'LEAD'], ['late', 'CREW']])
+  })
+})
+
+describe('polygonArea', () => {
+  it('measures a square and a triangle in either winding', () => {
+    expect(polygonArea(square)).toBe(100)
+    expect(polygonArea([[0, 0], [0, 4], [3, 0]])).toBe(6)
+  })
+
+  it('finds no area in a click or a line, which the backend would reject', () => {
+    expect(polygonArea([[3, 3], [3, 3], [3, 3], [3, 3]])).toBeLessThan(MIN_ZONE_AREA_M2)
+    expect(polygonArea([[0, 0], [5, 0], [10, 0]])).toBeLessThan(MIN_ZONE_AREA_M2)
   })
 })
