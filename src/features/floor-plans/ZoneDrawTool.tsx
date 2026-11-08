@@ -47,10 +47,12 @@ export function ZoneDrawTool({
 
     if (!drawMode) return
 
+    // showArea is off because leaflet-draw 1.0.4's readableArea throws
+    // "type is not defined" in strict mode, which freezes the rectangle mid-drag.
     const handler =
       drawMode === 'polygon'
-        ? new L.Draw.Polygon(map as L.DrawMap)
-        : new L.Draw.Rectangle(map as L.DrawMap)
+        ? new L.Draw.Polygon(map as L.DrawMap, { showArea: false })
+        : new L.Draw.Rectangle(map as L.DrawMap, { showArea: false })
     handler.enable()
     drawRef.current = handler
 
