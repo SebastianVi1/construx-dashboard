@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { useLocale } from '../../i18n'
-import type { Messages } from '../../i18n/messages'
 import { useForm } from '../../components/form'
 import { updateZone, deleteZone } from './zonesApi'
 import type { Zone, ZoneStatus } from './zonesApi'
@@ -22,15 +21,13 @@ interface ZonePanelProps {
   onConflict: () => void
   onReassignDragStart?: (drag: ReassignDrag) => void
   onReassignDragEnd?: () => void
+  /** Called after an assignment is closed or moved from this panel. */
+  onAssignmentsChanged?: () => void
+  /** Name of the person, crew or equipment an assignment is for. */
+  labelFor?: (assignment: AssignmentData) => string
 }
 
 type Tab = 'assignments' | 'history'
-
-function shiftLabel(ta: Messages['floorPlans']['assignments'], shift: string): string {
-  if (shift === 'MORNING') return ta.shiftMorning
-  if (shift === 'AFTERNOON') return ta.shiftAfternoon
-  return ta.shiftFullDay
-}
 
 /** Side panel for viewing, editing, and deleting a selected zone, with Assignments and History tabs. */
 export function ZonePanel({
@@ -45,6 +42,8 @@ export function ZonePanel({
   onConflict,
   onReassignDragStart,
   onReassignDragEnd,
+  onAssignmentsChanged,
+  labelFor,
 }: ZonePanelProps) {
   const { messages: m } = useLocale()
   const t = m.floorPlans.zones
@@ -140,6 +139,7 @@ export function ZonePanel({
     try {
       await closeAssignment(organizationId, siteId, floorPlanId, zone.id, assignmentId)
       setAssignments((prev) => prev.filter((a) => a.id !== assignmentId))
+      onAssignmentsChanged?.()
     } catch {
       setAssignmentsError(ta.error)
     } finally {
@@ -153,6 +153,7 @@ export function ZonePanel({
     try {
       await reassignToZone(organizationId, siteId, floorPlanId, zone.id, assignmentId, moveTargetId)
       setAssignments((prev) => prev.filter((a) => a.id !== assignmentId))
+      onAssignmentsChanged?.()
       setMovingId(null)
       setMoveTargetId('')
     } catch {
@@ -272,7 +273,7 @@ export function ZonePanel({
                         const drag: ReassignDrag = {
                           assignmentId: a.id,
                           sourceZoneId: zone.id,
-                          label: a.activity,
+                          label: labelFor?.(a) ?? a.activity ?? '',
                         }
                         e.dataTransfer.setData('application/json', JSON.stringify(drag))
                         e.dataTransfer.effectAllowed = 'move'
@@ -281,12 +282,7 @@ export function ZonePanel({
                       onDragEnd={onReassignDragEnd}
                     >
                       <div className="assignment-list__info">
-                        <span className="assignment-list__activity">{a.activity}</span>
-                        <span className="assignment-list__dates">
-                          {a.startDate}
-                          {a.endDate ? ` → ${a.endDate}` : ''}
-                        </span>
-                        <span className="assignment-list__shift">{shiftLabel(ta, a.shift)}</span>
+                        <span className="assignment-list__activity">{labelFor?.(a) || a.activity}</span>
                       </div>
                       <div className="assignment-list__actions">
                         <button

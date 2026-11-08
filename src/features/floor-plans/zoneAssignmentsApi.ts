@@ -11,7 +11,7 @@ export const assignmentDataSchema = z.object({
   membershipId: z.string().nullable(),
   crewId: z.string().nullable(),
   equipmentId: z.string().nullable(),
-  activity: z.string(),
+  activity: z.string().nullable(),
   startDate: z.string(),
   endDate: z.string().nullable(),
   shift: shiftSchema,
@@ -41,14 +41,15 @@ export type ReassignDrag = {
   label: string
 }
 
+/** Only the resource is required; the server starts the assignment today for the full day. */
 export type CreateAssignmentRequest = {
   membershipId?: string | null
   crewId?: string | null
   equipmentId?: string | null
-  activity: string
-  startDate: string
+  activity?: string | null
+  startDate?: string
   endDate?: string | null
-  shift: Shift
+  shift?: Shift
 }
 
 function assignmentsPath(orgId: string, siteId: string, floorPlanId: string, zoneId: string): string {
@@ -121,5 +122,17 @@ export function getZoneAssignmentCounts(
   return getJson(
     `${organizationPath(orgId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/zones/assignment-counts`,
     z.record(z.string(), z.number()),
+  )
+}
+
+/** Active assignments across every zone of a floor plan. */
+export function listFloorPlanAssignments(
+  orgId: string,
+  siteId: string,
+  floorPlanId: string,
+): Promise<AssignmentData[]> {
+  return getJson(
+    `${organizationPath(orgId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/assignments`,
+    z.array(assignmentDataSchema),
   )
 }

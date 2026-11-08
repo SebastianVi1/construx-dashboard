@@ -2,6 +2,9 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import type { Zone } from './zonesApi'
 import { ZONE_STATUS_COLORS } from './zonesApi'
+import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
+import type { Occupant } from './zoneOccupants'
+import { escapeHtml, parseDropPayload, zoneAtPoint } from './zoneOccupants'
 
 interface ZoneLayerProps {
   map: L.Map
@@ -9,12 +12,33 @@ interface ZoneLayerProps {
   metersPerPx: number
   visible: boolean
   onZoneClick: (zone: Zone) => void
-  assignmentCounts?: Record<string, number>
-  draggingResource?: boolean
-  onDropOnZone?: (zone: Zone) => void
-  /** Set while an already-assigned chip is being dragged for reassignment. */
-  draggingReassign?: boolean
-  onReassignDrop?: (targetZone: Zone) => void
+  /** Workers and equipment to draw inside each zone, keyed by zone id. */
+  occupants?: Record<string, Occupant[]>
+  /** True while a resource or an assignment is being dragged, to highlight the drop targets. */
+  dragging?: boolean
+  onDropResource?: (zone: Zone, resource: DraggableResource) => void
+  onReassignDrop?: (zone: Zone, drag: ReassignDrag) => void
+}
+
+/** Most figures drawn in one zone before the rest collapse into a "+N" chip. */
+const MAX_FIGURES = 12
+
+const PERSON_SVG =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6" r="4"/><path d="M4 22v-3a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v3z"/></svg>'
+const EQUIPMENT_SVG =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 17V9h11l3 4h4a2 2 0 0 1 2 2v2h-2a3 3 0 0 0-6 0H9a3 3 0 0 0-6 0z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>'
+
+function occupantsHtml(list: Occupant[]): string {
+  const shown = list.slice(0, MAX_FIGURES)
+  const figures = shown
+    .map((o) => {
+      const svg = o.kind === 'person' ? PERSON_SVG : EQUIPMENT_SVG
+      return `<span class="zone-occupant zone-occupant--${o.kind}" title="${escapeHtml(o.label)}">${svg}</span>`
+    })
+    .join('')
+  const rest = list.length - shown.length
+  const more = rest > 0 ? `<span class="zone-occupant-more">+${rest}</span>` : ''
+  return `<div class="zone-occupants">${figures}${more}</div>`
 }
 
 /** Renders floor plan zones as filled Leaflet polygons in pixel coordinate space. */
@@ -24,27 +48,26 @@ export function ZoneLayer({
   metersPerPx,
   visible,
   onZoneClick,
-  assignmentCounts,
-  draggingResource,
-  onDropOnZone,
-  draggingReassign,
+  occupants,
+  dragging,
+  onDropResource,
   onReassignDrop,
 }: ZoneLayerProps) {
   const layerGroupRef = useRef<L.LayerGroup | null>(null)
-  const badgeGroupRef = useRef<L.LayerGroup | null>(null)
+  const occupantGroupRef = useRef<L.LayerGroup | null>(null)
   const dropOverlayGroupRef = useRef<L.LayerGroup | null>(null)
 
   useEffect(() => {
     if (!layerGroupRef.current) {
       layerGroupRef.current = L.layerGroup().addTo(map)
     }
-    if (!badgeGroupRef.current) {
-      badgeGroupRef.current = L.layerGroup().addTo(map)
+    if (!occupantGroupRef.current) {
+      occupantGroupRef.current = L.layerGroup().addTo(map)
     }
     const group = layerGroupRef.current
-    const badgeGroup = badgeGroupRef.current
+    const occupantGroup = occupantGroupRef.current
     group.clearLayers()
-    badgeGroup.clearLayers()
+    occupantGroup.clearLayers()
 
     if (!visible) return
 
@@ -62,80 +85,90 @@ export function ZoneLayer({
       polygon.on('click', () => onZoneClick(zone))
       group.addLayer(polygon)
 
-      // Badge showing active assignment count
-      const count = assignmentCounts?.[zone.id] ?? 0
-      if (count > 0) {
-        // Compute centroid from points
-        const pts = zone.points
-        const cx = pts.reduce((s, [x]) => s + x, 0) / pts.length
-        const cy = pts.reduce((s, [, y]) => s + y, 0) / pts.length
-        const badgeIcon = L.divIcon({
-          className: '',
-          html: `<div class="zone-assignment-badge">${count}</div>`,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
-        })
-        const marker = L.marker(L.latLng(cy / metersPerPx, cx / metersPerPx), { icon: badgeIcon })
-        badgeGroup.addLayer(marker)
+      const list = occupants?.[zone.id] ?? []
+      if (list.length > 0) {
+        const icon = L.divIcon({ className: 'zone-occupants-icon', html: occupantsHtml(list), iconSize: undefined })
+        const marker = L.marker(polygon.getBounds().getCenter(), { icon, keyboard: false })
+        marker.on('click', () => onZoneClick(zone))
+        occupantGroup.addLayer(marker)
       }
     }
 
     return () => {
       group.clearLayers()
-      badgeGroup.clearLayers()
+      occupantGroup.clearLayers()
     }
-  }, [map, zones, metersPerPx, visible, onZoneClick, assignmentCounts])
+  }, [map, zones, metersPerPx, visible, onZoneClick, occupants])
 
-  // Drop overlay polygons while dragging a resource (new assignment) or a reassign drag
+  // Highlight every zone as a drop target while something is being dragged
   useEffect(() => {
     if (!dropOverlayGroupRef.current) {
       dropOverlayGroupRef.current = L.layerGroup().addTo(map)
     }
     const overlayGroup = dropOverlayGroupRef.current
     overlayGroup.clearLayers()
+    if (!visible || !dragging) return
 
-    const isAssignDrag = draggingResource && onDropOnZone
-    const isReassignDrag = draggingReassign && onReassignDrop
-    if (!visible || (!isAssignDrag && !isReassignDrag)) return
-
+    const primary = getComputedStyle(document.documentElement).getPropertyValue('--cx-primary').trim()
     for (const zone of zones) {
       const latlngs = zone.points.map(([x, y]) => L.latLng(y / metersPerPx, x / metersPerPx))
-      const overlay = L.polygon(latlngs, {
-        color: 'var(--cx-primary, #2563eb)',
-        fillColor: 'var(--cx-primary, #2563eb)',
-        fillOpacity: 0.15,
-        weight: 3,
-        dashArray: '6 4',
-      })
-      overlay.on('click', () => {
-        if (isReassignDrag) {
-          onReassignDrop!(zone)
-        } else if (isAssignDrag) {
-          onDropOnZone!(zone)
-        }
-      })
-      overlayGroup.addLayer(overlay)
+      overlayGroup.addLayer(
+        L.polygon(latlngs, {
+          color: primary,
+          fillColor: primary,
+          fillOpacity: 0.15,
+          weight: 3,
+          dashArray: '6 4',
+          interactive: false,
+        }),
+      )
     }
 
     return () => {
       overlayGroup.clearLayers()
     }
-  }, [map, zones, metersPerPx, visible, draggingResource, onDropOnZone, draggingReassign, onReassignDrop])
+  }, [map, zones, metersPerPx, visible, dragging])
+
+  // HTML5 drops never reach Leaflet as clicks, so resolve the zone under the cursor ourselves
+  useEffect(() => {
+    if (!visible) return
+    const container = map.getContainer()
+
+    function zoneUnder(e: DragEvent): Zone | null {
+      const { lat, lng } = map.mouseEventToLatLng(e)
+      return zoneAtPoint(zones, [lng * metersPerPx, lat * metersPerPx])
+    }
+
+    function onDragOver(e: DragEvent) {
+      if (!e.dataTransfer?.types.includes('application/json')) return
+      e.preventDefault()
+      e.dataTransfer.dropEffect = zoneUnder(e) ? 'move' : 'none'
+    }
+
+    function onDrop(e: DragEvent) {
+      const payload = parseDropPayload(e.dataTransfer?.getData('application/json') ?? '')
+      if (!payload) return
+      e.preventDefault()
+      const zone = zoneUnder(e)
+      if (!zone) return
+      if ('assignmentId' in payload) onReassignDrop?.(zone, payload)
+      else onDropResource?.(zone, payload)
+    }
+
+    container.addEventListener('dragover', onDragOver)
+    container.addEventListener('drop', onDrop)
+    return () => {
+      container.removeEventListener('dragover', onDragOver)
+      container.removeEventListener('drop', onDrop)
+    }
+  }, [map, zones, metersPerPx, visible, onDropResource, onReassignDrop])
 
   // Remove layer groups on unmount
   useEffect(() => {
     return () => {
-      if (layerGroupRef.current) {
-        layerGroupRef.current.remove()
-        layerGroupRef.current = null
-      }
-      if (badgeGroupRef.current) {
-        badgeGroupRef.current.remove()
-        badgeGroupRef.current = null
-      }
-      if (dropOverlayGroupRef.current) {
-        dropOverlayGroupRef.current.remove()
-        dropOverlayGroupRef.current = null
+      for (const ref of [layerGroupRef, occupantGroupRef, dropOverlayGroupRef]) {
+        ref.current?.remove()
+        ref.current = null
       }
     }
   }, [map])

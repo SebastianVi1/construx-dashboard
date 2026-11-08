@@ -12,13 +12,16 @@ import { ZoneLayer } from './ZoneLayer'
 import { ZoneDrawTool } from './ZoneDrawTool'
 import { ZonePanel } from './ZonePanel'
 import { AssignmentPanel } from './AssignmentPanel'
-import { AssignmentForm } from './AssignmentForm'
 import { getCalibration } from './calibrationApi'
 import type { Calibration } from './calibrationApi'
 import { listZones } from './zonesApi'
 import type { Zone } from './zonesApi'
-import { getZoneAssignmentCounts, reassignToZone } from './zoneAssignmentsApi'
-import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
+import { createAssignment, listFloorPlanAssignments, reassignToZone } from './zoneAssignmentsApi'
+import type { AssignmentData, DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
+import { assignmentLabel, zoneOccupants } from './zoneOccupants'
+import type { OccupantDirectory } from './zoneOccupants'
+import { listMembers } from '../members/membersApi'
+import { listCrews, listEquipment } from '../crews/crewsApi'
 import './floor-plans.css'
 
 export function FloorPlanPage() {
@@ -53,8 +56,9 @@ export function FloorPlanPage() {
   const [assignmentPanelOpen, setAssignmentPanelOpen] = useState(false)
   const [draggingResource, setDraggingResource] = useState<DraggableResource | null>(null)
   const [draggingReassign, setDraggingReassign] = useState<ReassignDrag | null>(null)
-  const [assignmentTarget, setAssignmentTarget] = useState<{ zone: Zone; resource: DraggableResource } | null>(null)
-  const [assignmentCounts, setAssignmentCounts] = useState<Record<string, number>>({})
+  const [assignError, setAssignError] = useState(false)
+  const [assignments, setAssignments] = useState<AssignmentData[]>([])
+  const [directory, setDirectory] = useState<OccupantDirectory>({ members: [], crews: [], equipment: [] })
 
   // Load existing calibration when floor plan is READY
   useEffect(() => {
@@ -73,14 +77,20 @@ export function FloorPlanPage() {
     listZones(orgId, siteId, floorPlanId)
       .then((zs) => setZones(zs))
       .catch(() => setZones([]))
-    getZoneAssignmentCounts(orgId, siteId, floorPlanId)
-      .then((counts) => setAssignmentCounts(counts))
+    listFloorPlanAssignments(orgId, siteId, floorPlanId)
+      .then((as) => setAssignments(as))
       .catch(() => {})
+    // Names for the figures drawn in each zone; a failed list just leaves the tooltip blank
+    Promise.all([
+      listMembers(orgId).catch(() => []),
+      listCrews(orgId).catch(() => []),
+      listEquipment(orgId).catch(() => []),
+    ]).then(([members, crews, equipment]) => setDirectory({ members, crews, equipment }))
   }, [floorPlan, calibration, orgId, siteId, floorPlanId])
 
-  const reloadAssignmentCounts = () => {
-    getZoneAssignmentCounts(orgId, siteId, floorPlanId)
-      .then((counts) => setAssignmentCounts(counts))
+  const reloadAssignments = () => {
+    listFloorPlanAssignments(orgId, siteId, floorPlanId)
+      .then((as) => setAssignments(as))
       .catch(() => {})
   }
 
@@ -188,6 +198,15 @@ export function FloorPlanPage() {
           {floorPlan?.description ? <p>{floorPlan.description}</p> : null}
         </div>
       </header>
+
+      {assignError ? (
+        <div className="floor-plan-calibration-banner" role="alert">
+          <p>{t.assignments.error}</p>
+          <button type="button" className="button" onClick={() => setAssignError(false)}>
+            {t.assignments.dismiss}
+          </button>
+        </div>
+      ) : null}
 
       {zoneConflictBanner ? (
         <div className="floor-plan-calibration-banner" role="alert">
@@ -298,54 +317,31 @@ export function FloorPlanPage() {
                       zones={zones}
                       metersPerPx={calibration.metersPerPx}
                       visible={zonesVisible}
-                      onZoneClick={(zone) => {
-                        if (draggingResource) {
-                          setAssignmentTarget({ zone, resource: draggingResource })
-                          setDraggingResource(null)
-                        } else {
-                          setSelectedZone(zone)
-                        }
+                      onZoneClick={(zone) => setSelectedZone(zone)}
+                      occupants={zoneOccupants(assignments, directory)}
+                      dragging={draggingResource !== null || draggingReassign !== null}
+                      onDropResource={(zone, resource) => {
+                        setDraggingResource(null)
+                        setAssignError(false)
+                        createAssignment(orgId, siteId, floorPlanId, zone.id, {
+                          membershipId: resource.type === 'membership' ? resource.id : null,
+                          crewId: resource.type === 'crew' ? resource.id : null,
+                          equipmentId: resource.type === 'equipment' ? resource.id : null,
+                        })
+                          .then(() => reloadAssignments())
+                          .catch(() => setAssignError(true))
                       }}
-                      assignmentCounts={assignmentCounts}
-                      draggingResource={draggingResource !== null}
-                      onDropOnZone={(zone) => {
-                        if (draggingResource) {
-                          setAssignmentTarget({ zone, resource: draggingResource })
-                          setDraggingResource(null)
-                        }
-                      }}
-                      draggingReassign={draggingReassign !== null}
-                      onReassignDrop={(targetZone) => {
-                        if (!draggingReassign) return
-                        const { assignmentId, sourceZoneId } = draggingReassign
-                        if (targetZone.id === sourceZoneId) {
-                          setDraggingReassign(null)
-                          return
-                        }
-                        reassignToZone(orgId, siteId, floorPlanId, sourceZoneId, assignmentId, targetZone.id)
-                          .then(() => reloadAssignmentCounts())
-                          .catch(() => {})
+                      onReassignDrop={(targetZone, drag) => {
                         setDraggingReassign(null)
+                        if (targetZone.id === drag.sourceZoneId) return
+                        reassignToZone(orgId, siteId, floorPlanId, drag.sourceZoneId, drag.assignmentId, targetZone.id)
+                          .then(() => reloadAssignments())
+                          .catch(() => setAssignError(true))
                       }}
                     />
                   ) : null}
                 </div>
               </div>
-
-              {assignmentTarget ? (
-                <AssignmentForm
-                  organizationId={orgId}
-                  siteId={siteId}
-                  floorPlanId={floorPlanId}
-                  zoneId={assignmentTarget.zone.id}
-                  resource={assignmentTarget.resource}
-                  onAssigned={() => {
-                    setAssignmentTarget(null)
-                    reloadAssignmentCounts()
-                  }}
-                  onCancel={() => setAssignmentTarget(null)}
-                />
-              ) : null}
 
               {selectedZone ? (
                 <ZonePanel
@@ -360,6 +356,8 @@ export function FloorPlanPage() {
                   onConflict={handleZoneConflict}
                   onReassignDragStart={(drag) => setDraggingReassign(drag)}
                   onReassignDragEnd={() => setDraggingReassign(null)}
+                  onAssignmentsChanged={reloadAssignments}
+                  labelFor={(a) => assignmentLabel(a, directory)}
                 />
               ) : null}
             </>
