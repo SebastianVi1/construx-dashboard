@@ -11,6 +11,11 @@
   color: var(--cx-ink);
 }
 
+/* Work surfaces (a floor plan, a timeline) that need the whole screen width */
+.page--wide {
+  max-width: 1680px;
+}
+
 .page-header {
   display: flex;
   flex-wrap: wrap;

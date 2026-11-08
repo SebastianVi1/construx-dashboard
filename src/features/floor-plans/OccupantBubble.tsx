@@ -114,7 +114,7 @@ export function OccupantBubble({
           <h2 className="occupant-bubble__title">{title}</h2>
           <p className="occupant-bubble__muted">{subtitle}</p>
         </div>
-        <button type="button" className="occupant-bubble__close" aria-label={t.close} onClick={onClose}>
+        <button type="button" className="fp-close" aria-label={t.close} onClick={onClose}>
           ×
         </button>
       </header>

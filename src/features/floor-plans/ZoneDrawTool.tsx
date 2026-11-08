@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import L from 'leaflet'
 import 'leaflet-draw'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import { useLocale } from '../../i18n'
 import { createZone } from './zonesApi'
 import type { Zone, ZoneStatus } from './zonesApi'
+import { PolygonIcon, RectangleIcon } from './floorPlanIcons'
 import '../../components/form/form.css'
 
 interface ZoneDrawToolProps {
@@ -14,6 +16,8 @@ interface ZoneDrawToolProps {
   siteId: string
   floorPlanId: string
   onZoneCreated: (zone: Zone) => void
+  /** Element over the plan where the drawing hint and the new-zone form float. */
+  overlayHost: HTMLElement | null
 }
 
 type DrawMode = 'polygon' | 'rectangle' | null
@@ -26,6 +30,7 @@ export function ZoneDrawTool({
   siteId,
   floorPlanId,
   onZoneCreated,
+  overlayHost,
 }: ZoneDrawToolProps) {
   const { messages: m } = useLocale()
   const t = m.floorPlans.zones
@@ -125,86 +130,94 @@ export function ZoneDrawTool({
     }
   }
 
-  return (
-    <div className="zone-draw-tool">
-      <div className="zone-draw-tool__buttons">
-        <button
-          type="button"
-          className={`button${drawMode === 'polygon' ? ' button--active' : ''}`}
-          onClick={() => setDrawMode((m) => (m === 'polygon' ? null : 'polygon'))}
-          disabled={pendingPoints !== null}
-        >
-          {t.drawPolygon}
+  const form = pendingPoints ? (
+    <form className="fp-float form" onSubmit={handleSubmit}>
+      <h2 className="fp-float__title">{t.newZone}</h2>
+      <div className="form-field">
+        <label className="form-field__label" htmlFor="zdzone-name">{t.nameLabel}</label>
+        <div className="form-field__box">
+          <input
+            id="zdzone-name"
+            className="form-field__control"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t.namePlaceholder}
+            maxLength={120}
+            required
+            autoFocus
+          />
+        </div>
+      </div>
+      <div className="form-field">
+        <label className="form-field__label" htmlFor="zdzone-desc">{t.descriptionLabel}</label>
+        <div className="form-field__box">
+          <input
+            id="zdzone-desc"
+            className="form-field__control"
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t.descriptionPlaceholder}
+            maxLength={500}
+          />
+        </div>
+      </div>
+      <div className="form-field" data-type="select">
+        <label className="form-field__label" htmlFor="zdzone-status">{t.statusLabel}</label>
+        <div className="form-field__box">
+          <select
+            id="zdzone-status"
+            className="form-field__control"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as ZoneStatus)}
+          >
+            <option value="NOT_STARTED">{t.status.NOT_STARTED}</option>
+            <option value="IN_PROGRESS">{t.status.IN_PROGRESS}</option>
+            <option value="ON_HOLD">{t.status.ON_HOLD}</option>
+            <option value="DONE">{t.status.DONE}</option>
+          </select>
+        </div>
+      </div>
+      {error ? <p className="fp-float__error" role="alert">{error}</p> : null}
+      <div className="fp-float__actions">
+        <button type="button" className="button button--small" onClick={handleCancel} disabled={submitting}>
+          {t.cancel}
         </button>
-        <button
-          type="button"
-          className={`button${drawMode === 'rectangle' ? ' button--active' : ''}`}
-          onClick={() => setDrawMode((m) => (m === 'rectangle' ? null : 'rectangle'))}
-          disabled={pendingPoints !== null}
-        >
-          {t.drawRectangle}
+        <button type="submit" className="button button--small button--primary" disabled={submitting || !name.trim()}>
+          {submitting ? t.saving : t.saveZone}
         </button>
       </div>
+    </form>
+  ) : drawMode ? (
+    <p className="fp-hint" role="status">
+      {drawMode === 'polygon' ? t.polygonHint : t.rectangleHint}
+    </p>
+  ) : null
 
-      {pendingPoints ? (
-        <form className="zone-draw-tool__form form" onSubmit={handleSubmit}>
-          <div className="form-field">
-            <label className="form-field__label" htmlFor="zdzone-name">{t.nameLabel}</label>
-            <div className="form-field__box">
-              <input
-                id="zdzone-name"
-                className="form-field__control"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t.namePlaceholder}
-                maxLength={120}
-                required
-                autoFocus
-              />
-            </div>
-          </div>
-          <div className="form-field">
-            <label className="form-field__label" htmlFor="zdzone-desc">{t.descriptionLabel}</label>
-            <div className="form-field__box">
-              <input
-                id="zdzone-desc"
-                className="form-field__control"
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={t.descriptionPlaceholder}
-                maxLength={500}
-              />
-            </div>
-          </div>
-          <div className="form-field" data-type="select">
-            <label className="form-field__label" htmlFor="zdzone-status">{t.statusLabel}</label>
-            <div className="form-field__box">
-              <select
-                id="zdzone-status"
-                className="form-field__control"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as ZoneStatus)}
-              >
-                <option value="NOT_STARTED">{t.status.NOT_STARTED}</option>
-                <option value="IN_PROGRESS">{t.status.IN_PROGRESS}</option>
-                <option value="ON_HOLD">{t.status.ON_HOLD}</option>
-                <option value="DONE">{t.status.DONE}</option>
-              </select>
-            </div>
-          </div>
-          {error ? <p className="form-error">{error}</p> : null}
-          <div className="zone-draw-tool__actions">
-            <button type="submit" className="button button--primary" disabled={submitting || !name.trim()}>
-              {submitting ? t.saving : t.saveZone}
-            </button>
-            <button type="button" className="button" onClick={handleCancel} disabled={submitting}>
-              {t.cancel}
-            </button>
-          </div>
-        </form>
-      ) : null}
+  return (
+    <div className="floor-plan-toolbar__group">
+      <button
+        type="button"
+        className="fp-tool"
+        aria-pressed={drawMode === 'polygon'}
+        onClick={() => setDrawMode((m) => (m === 'polygon' ? null : 'polygon'))}
+        disabled={pendingPoints !== null}
+      >
+        <PolygonIcon />
+        {t.drawPolygon}
+      </button>
+      <button
+        type="button"
+        className="fp-tool"
+        aria-pressed={drawMode === 'rectangle'}
+        onClick={() => setDrawMode((m) => (m === 'rectangle' ? null : 'rectangle'))}
+        disabled={pendingPoints !== null}
+      >
+        <RectangleIcon />
+        {t.drawRectangle}
+      </button>
+      {form && overlayHost ? createPortal(form, overlayHost) : null}
     </div>
   )
 }

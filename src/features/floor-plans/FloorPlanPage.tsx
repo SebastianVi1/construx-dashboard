@@ -23,6 +23,7 @@ import { assignmentLabel, occupantAnchorKey, zoneOccupants } from './zoneOccupan
 import type { Occupant, OccupantDirectory } from './zoneOccupants'
 import { listMembers } from '../members/membersApi'
 import { listCrews, listEquipment } from '../crews/crewsApi'
+import { ScaleIcon } from './floorPlanIcons'
 import './floor-plans.css'
 
 export function FloorPlanPage() {
@@ -59,6 +60,7 @@ export function FloorPlanPage() {
   const [assignError, setAssignError] = useState(false)
   const [assignments, setAssignments] = useState<AssignmentData[]>([])
   const [directory, setDirectory] = useState<OccupantDirectory>({ members: [], crews: [], equipment: [] })
+  const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null)
   const [selectedOccupant, setSelectedOccupant] = useState<{ zone: Zone; occupant: Occupant } | null>(null)
 
   // Load existing calibration when floor plan is READY
@@ -176,9 +178,10 @@ export function FloorPlanPage() {
 
   const isReady = floorPlan?.status === 'READY'
   const hasCalibration = calibration !== null
+  const showRoster = hasCalibration && canManagePlan
 
   return (
-    <div className="page">
+    <div className="page page--wide">
       <header className="page-header">
         <div className="page-header__text">
           <nav aria-label="breadcrumb">
@@ -201,7 +204,7 @@ export function FloorPlanPage() {
       </header>
 
       {assignError ? (
-        <div className="floor-plan-calibration-banner" role="alert">
+        <div className="floor-plan-notice" role="alert">
           <p>{t.assignments.error}</p>
           <button type="button" className="button" onClick={() => setAssignError(false)}>
             {t.assignments.dismiss}
@@ -210,7 +213,7 @@ export function FloorPlanPage() {
       ) : null}
 
       {zoneConflictBanner ? (
-        <div className="floor-plan-calibration-banner" role="alert">
+        <div className="floor-plan-notice" role="alert">
           <p>{t.zones.conflictWarning}</p>
           <button type="button" className="button" onClick={() => { setZoneConflictBanner(false); zonesLoadedRef.current = false; listZones(orgId, siteId, floorPlanId).then((zs) => setZones(zs)).catch(() => {}) }}>
             {t.retry}
@@ -240,69 +243,79 @@ export function FloorPlanPage() {
             </div>
           ) : (
             <>
-              {isReady && !hasCalibration ? (
-                <div className="floor-plan-calibration-banner" role="status">
-                  <p>{t.calibration.notCalibrated}</p>
-                </div>
-              ) : null}
+              <section
+                className={`floor-plan-workspace${showRoster ? ' floor-plan-workspace--roster' : ''}`}
+                aria-label={floorPlan.name}
+              >
+                {isReady ? (
+                  <div className="floor-plan-toolbar" role="toolbar" aria-label={t.zones.toolsLabel}>
+                    <div className="floor-plan-toolbar__group">
+                      <button
+                        type="button"
+                        className="fp-tool"
+                        aria-pressed={calibrating}
+                        onClick={() => setCalibrating((v) => !v)}
+                      >
+                        <ScaleIcon />
+                        {t.calibration.calibrate}
+                      </button>
+                    </div>
+                    {isReady && hasCalibration && mapInstance && !calibrating ? (
+                      <ZoneDrawTool
+                        map={mapInstance}
+                        metersPerPx={calibration.metersPerPx}
+                        organizationId={orgId}
+                        siteId={siteId}
+                        floorPlanId={floorPlanId}
+                        onZoneCreated={handleZoneCreated}
+                        overlayHost={overlayHost}
+                      />
+                    ) : null}
+                    {hasCalibration ? (
+                      <div className="floor-plan-toolbar__group floor-plan-toolbar__group--end">
+                        <button
+                          type="button"
+                          className="fp-switch"
+                          aria-pressed={zonesVisible}
+                          onClick={() => setZonesVisible((v) => !v)}
+                        >
+                          <span className="fp-switch__track" aria-hidden />
+                          {t.zones.toggleVisibility}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="floor-plan-toolbar__note" role="status">{t.calibration.notCalibrated}</p>
+                    )}
+                  </div>
+                ) : null}
 
-              {isReady ? (
-                <div className="floor-plan-toolbar">
-                  <button
-                    type="button"
-                    className={`button${calibrating ? ' button--active' : ''}`}
-                    onClick={() => setCalibrating((v) => !v)}
-                  >
-                    {calibrating ? t.calibration.calibrating : t.calibration.calibrate}
-                  </button>
-                  {hasCalibration ? (
-                    <button
-                      type="button"
-                      className={`button${zonesVisible ? '' : ' button--muted'}`}
-                      onClick={() => setZonesVisible((v) => !v)}
-                    >
-                      {t.zones.toggleVisibility}
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {calibrating && mapInstance ? (
-                <CalibrationTool
-                  map={mapInstance}
-                  organizationId={orgId}
-                  siteId={siteId}
-                  floorPlanId={floorPlanId}
-                  onCalibrated={handleCalibrated}
-                  onCancel={handleCancelCalibration}
-                />
-              ) : null}
-
-              {isReady && hasCalibration && mapInstance && !calibrating ? (
-                <ZoneDrawTool
-                  map={mapInstance}
-                  metersPerPx={calibration.metersPerPx}
-                  organizationId={orgId}
-                  siteId={siteId}
-                  floorPlanId={floorPlanId}
-                  onZoneCreated={handleZoneCreated}
-                />
-              ) : null}
-
-              <div className="floor-plan-layout">
-                {hasCalibration && canManagePlan ? (
+                {showRoster ? (
                   <AssignmentPanel
                     organizationId={orgId}
                     onDragStart={(res) => setDraggingResource(res)}
                     onDragEnd={() => setDraggingResource(null)}
                   />
                 ) : null}
-                <div className="floor-plan-viewer-wrap">
+
+                <div className="floor-plan-canvas">
                   <FloorPlanViewer
                     floorPlan={floorPlan}
                     onRefreshNeeded={handleRefreshNeeded}
                     onMapReady={handleMapReady}
                   />
+                  {/* Floating cards over the plan (drawing, calibration); tools portal into it */}
+                  <div ref={setOverlayHost} className="floor-plan-canvas__overlay">
+                    {calibrating && mapInstance ? (
+                      <CalibrationTool
+                        map={mapInstance}
+                        organizationId={orgId}
+                        siteId={siteId}
+                        floorPlanId={floorPlanId}
+                        onCalibrated={handleCalibrated}
+                        onCancel={handleCancelCalibration}
+                      />
+                    ) : null}
+                  </div>
                   {mapInstance && hasCalibration ? (
                     <ZoneLayer
                       map={mapInstance}
@@ -344,7 +357,34 @@ export function FloorPlanPage() {
                     />
                   ) : null}
                 </div>
-              </div>
+
+                {selectedZone ? (
+                  <ZonePanel
+                    key={selectedZone.id}
+                    zone={selectedZone}
+                    allZones={zones}
+                    organizationId={orgId}
+                    siteId={siteId}
+                    floorPlanId={floorPlanId}
+                    onUpdated={handleZoneUpdated}
+                    onDeleted={handleZoneDeleted}
+                    onClose={() => setSelectedZone(null)}
+                    onConflict={handleZoneConflict}
+                    onReassignDragStart={(drag) => setDraggingReassign(drag)}
+                    onReassignDragEnd={() => setDraggingReassign(null)}
+                    onAssignmentsChanged={reloadAssignments}
+                    labelFor={(a) => assignmentLabel(a, directory)}
+                    nameFor={(id) => {
+                      const member = directory.members.find((x) => x.membershipId === id)
+                      return member ? (member.fullName ?? member.email) : ''
+                    }}
+                  />
+                ) : (
+                  <aside className="zone-panel zone-panel--empty">
+                    <p>{hasCalibration ? t.zones.inspectorEmpty : t.calibration.notCalibrated}</p>
+                  </aside>
+                )}
+              </section>
 
               {selectedOccupant ? (
                 <OccupantBubble
@@ -368,23 +408,6 @@ export function FloorPlanPage() {
                 />
               ) : null}
 
-              {selectedZone ? (
-                <ZonePanel
-                  zone={selectedZone}
-                  allZones={zones}
-                  organizationId={orgId}
-                  siteId={siteId}
-                  floorPlanId={floorPlanId}
-                  onUpdated={handleZoneUpdated}
-                  onDeleted={handleZoneDeleted}
-                  onClose={() => setSelectedZone(null)}
-                  onConflict={handleZoneConflict}
-                  onReassignDragStart={(drag) => setDraggingReassign(drag)}
-                  onReassignDragEnd={() => setDraggingReassign(null)}
-                  onAssignmentsChanged={reloadAssignments}
-                  labelFor={(a) => assignmentLabel(a, directory)}
-                />
-              ) : null}
             </>
           )}
         </>

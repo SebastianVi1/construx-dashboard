@@ -23,7 +23,7 @@ export function CalibrationTool({
   onCalibrated,
   onCancel,
 }: CalibrationToolProps) {
-  const { messages: m, locale } = useLocale()
+  const { messages: m } = useLocale()
   const t = m.floorPlans.calibration
 
   const [state, setState] = useState<ToolState>('firstPoint')
@@ -134,54 +134,55 @@ export function CalibrationTool({
   }
 
   return (
-    <div className="calibration-tool-panel">
+    <div className={state === 'enterDistance' ? 'fp-float calibration-tool' : 'fp-hint calibration-tool'}>
       {state === 'firstPoint' || state === 'secondPoint' ? (
-        <p className="calibration-tool-panel__hint">
-          {state === 'firstPoint'
-            ? t.calibrating
-            : locale === 'es'
-              ? 'Haz clic en el segundo punto.'
-              : 'Click the second point.'}
+        <p className="calibration-tool__hint" role="status">
+          {state === 'firstPoint' ? t.calibrating : t.secondPoint}
         </p>
       ) : null}
 
       {state === 'enterDistance' ? (
-        <form onSubmit={handleSubmit} className="calibration-tool-panel__form">
-          <label htmlFor="calibration-distance" className="calibration-tool-panel__label">
-            {t.distanceLabel}
-          </label>
-          <input
-            id="calibration-distance"
-            type="number"
-            min="0.001"
-            step="any"
-            className="calibration-tool-panel__input"
-            placeholder={t.distancePlaceholder}
-            value={distance}
-            onChange={(e) => setDistance(e.target.value)}
-            autoFocus
-          />
+        <form onSubmit={handleSubmit} className="form">
+          <h2 className="fp-float__title">{t.calibrate}</h2>
+          <div className="form-field">
+            <label htmlFor="calibration-distance" className="form-field__label">
+              {t.distanceLabel}
+            </label>
+            <div className="form-field__box">
+              <input
+                id="calibration-distance"
+                type="number"
+                min="0.001"
+                step="any"
+                className="form-field__control"
+                placeholder={t.distancePlaceholder}
+                value={distance}
+                onChange={(e) => setDistance(e.target.value)}
+                autoFocus
+              />
+            </div>
+          </div>
           {distanceError ? (
-            <p className="calibration-tool-panel__error" role="alert">
+            <p className="fp-float__error" role="alert">
               {distanceError}
             </p>
           ) : null}
           {saveError ? (
-            <p className="calibration-tool-panel__error" role="alert">
+            <p className="fp-float__error" role="alert">
               {saveError}
             </p>
           ) : null}
-          <div className="calibration-tool-panel__actions">
-            <button type="submit" className="button" disabled={saving}>
-              {saving ? m.floorPlans.dialog.confirming : t.save}
-            </button>
-            <button type="button" className="button button--ghost" onClick={handleCancel}>
+          <div className="fp-float__actions">
+            <button type="button" className="button button--small" onClick={handleCancel}>
               {t.cancel}
+            </button>
+            <button type="submit" className="button button--small button--primary" disabled={saving}>
+              {saving ? m.floorPlans.dialog.confirming : t.save}
             </button>
           </div>
         </form>
       ) : (
-        <button type="button" className="button button--ghost" onClick={handleCancel}>
+        <button type="button" className="fp-hint__action" onClick={handleCancel}>
           {t.cancel}
         </button>
       )}

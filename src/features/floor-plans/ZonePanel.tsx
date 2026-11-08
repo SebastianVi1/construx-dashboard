@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { useLocale } from '../../i18n'
 import { useForm } from '../../components/form'
-import { updateZone, deleteZone } from './zonesApi'
+import { updateZone, deleteZone, ZONE_STATUS_COLORS } from './zonesApi'
 import type { Zone, ZoneStatus } from './zonesApi'
 import { listAssignments, closeAssignment, reassignToZone } from './zoneAssignmentsApi'
 import type { AssignmentData, ReassignDrag } from './zoneAssignmentsApi'
 import { getZoneAudit } from './auditApi'
 import type { AuditEvent } from './auditApi'
+import '../../components/form/form.css'
 
 interface ZonePanelProps {
   zone: Zone
@@ -25,6 +26,8 @@ interface ZonePanelProps {
   onAssignmentsChanged?: () => void
   /** Name of the person, crew or equipment an assignment is for. */
   labelFor?: (assignment: AssignmentData) => string
+  /** Name of the member behind a membership id, for the history. */
+  nameFor?: (membershipId: string) => string
 }
 
 type Tab = 'assignments' | 'history'
@@ -44,6 +47,7 @@ export function ZonePanel({
   onReassignDragEnd,
   onAssignmentsChanged,
   labelFor,
+  nameFor,
 }: ZonePanelProps) {
   const { messages: m } = useLocale()
   const t = m.floorPlans.zones
@@ -165,32 +169,28 @@ export function ZonePanel({
   const otherZones = allZones.filter((z) => z.id !== zone.id)
 
   return (
-    <aside className="zone-panel">
+    <aside className="zone-panel" style={{ ['--zone-color' as string]: ZONE_STATUS_COLORS[zone.status] }}>
       <div className="zone-panel__header">
-        <h2 className="zone-panel__title">{zone.name}</h2>
-        <button type="button" className="zone-panel__close" onClick={onClose} aria-label={t.close}>
+        <div className="zone-panel__heading">
+          <h2 className="zone-panel__title">{zone.name}</h2>
+          <span className="zone-panel__status">
+            <span className="zone-panel__dot" style={{ background: ZONE_STATUS_COLORS[zone.status] }} aria-hidden />
+            <span className="visually-hidden">{t.statusLabel}: </span>
+            {t.status[zone.status]}
+          </span>
+        </div>
+        <button type="button" className="fp-close" onClick={onClose} aria-label={t.close}>
           ×
         </button>
       </div>
 
       <dl className="zone-panel__details">
-        <dt>{t.statusLabel}</dt>
-        <dd>
-          <span className={`zone-status-badge zone-status-badge--${zone.status.toLowerCase()}`}>
-            {t.status[zone.status]}
-          </span>
-        </dd>
         <dt>{t.areaLabel}</dt>
-        <dd>{zone.areaMSquared.toFixed(1)} m²</dd>
+        <dd className="zone-panel__number">{zone.areaMSquared.toFixed(1)} m²</dd>
         <dt>{t.perimeterLabel}</dt>
-        <dd>{zone.perimeterMeters.toFixed(1)} m</dd>
-        {zone.description ? (
-          <>
-            <dt>{t.descriptionLabel}</dt>
-            <dd>{zone.description}</dd>
-          </>
-        ) : null}
+        <dd className="zone-panel__number">{zone.perimeterMeters.toFixed(1)} m</dd>
       </dl>
+      {zone.description ? <p className="zone-panel__description">{zone.description}</p> : null}
 
       {!editing ? (
         <>
@@ -201,7 +201,7 @@ export function ZonePanel({
               <div className="zone-panel__actions">
                 <button
                   type="button"
-                  className="button button--danger"
+                  className="button button--small button--danger"
                   onClick={handleDelete}
                   disabled={deleting}
                 >
@@ -209,7 +209,7 @@ export function ZonePanel({
                 </button>
                 <button
                   type="button"
-                  className="button"
+                  className="button button--small"
                   onClick={() => setConfirmDelete(false)}
                   disabled={deleting}
                 >
@@ -219,12 +219,12 @@ export function ZonePanel({
             </div>
           ) : (
             <div className="zone-panel__actions">
-              <button type="button" className="button button--primary" onClick={() => setEditing(true)}>
+              <button type="button" className="button button--small" onClick={() => setEditing(true)}>
                 {t.edit}
               </button>
               <button
                 type="button"
-                className="button button--danger"
+                className="button button--small button--danger"
                 onClick={() => setConfirmDelete(true)}
               >
                 {t.delete}
@@ -232,12 +232,12 @@ export function ZonePanel({
             </div>
           )}
 
-          <div className="zone-panel__tabs" role="tablist">
+          <div className="fp-segmented" role="tablist">
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === 'assignments'}
-              className={`zone-panel__tab${activeTab === 'assignments' ? ' zone-panel__tab--active' : ''}`}
+              className="fp-segmented__option"
               onClick={() => setActiveTab('assignments')}
             >
               {th.assignmentsTab}
@@ -246,7 +246,7 @@ export function ZonePanel({
               type="button"
               role="tab"
               aria-selected={activeTab === 'history'}
-              className={`zone-panel__tab${activeTab === 'history' ? ' zone-panel__tab--active' : ''}`}
+              className="fp-segmented__option"
               onClick={() => setActiveTab('history')}
             >
               {th.historyTab}
@@ -287,7 +287,7 @@ export function ZonePanel({
                       <div className="assignment-list__actions">
                         <button
                           type="button"
-                          className="button button--sm"
+                          className="button button--small"
                           disabled={closingId === a.id}
                           onClick={() => handleClose(a.id)}
                         >
@@ -296,7 +296,7 @@ export function ZonePanel({
                         {otherZones.length > 0 ? (
                           <div className="assignment-list__move">
                             <select
-                              className="field__select field__select--sm"
+                              className="form-field__control zone-panel__select"
                               value={movingId === a.id ? moveTargetId : ''}
                               onChange={(e) => {
                                 setMoveTargetId(e.target.value)
@@ -314,7 +314,7 @@ export function ZonePanel({
                             {movingId === a.id && moveTargetId ? (
                               <button
                                 type="button"
-                                className="button button--sm button--primary"
+                                className="button button--small button--primary"
                                 onClick={() => handleMove(a.id)}
                               >
                                 {th.confirmMove}
@@ -348,7 +348,7 @@ export function ZonePanel({
                       </span>
                       {e.actorMembershipId ? (
                         <span className="audit-list__actor">
-                          {e.actorMembershipId.slice(0, 8)}…
+                          {nameFor?.(e.actorMembershipId) || `${e.actorMembershipId.slice(0, 8)}…`}
                         </span>
                       ) : null}
                     </li>
@@ -359,7 +359,7 @@ export function ZonePanel({
           )}
         </>
       ) : (
-        <form onSubmit={editForm.onSubmit}>
+        <form className="zone-panel__form" onSubmit={editForm.onSubmit}>
           <div className="form-field">
             <label className="form-field__label" htmlFor="zone-edit-name">{t.nameLabel}</label>
             <input

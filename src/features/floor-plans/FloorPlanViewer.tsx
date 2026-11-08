@@ -74,9 +74,6 @@ export function FloorPlanViewer({ floorPlan, onRefreshNeeded, onMapReady }: Floo
   if (!floorPlan.viewUrl) return null
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width: '100%', height: '600px', background: 'var(--cx-paper-dim)' }}
-    />
+    <div ref={containerRef} className="floor-plan-viewer" />
   )
 }
