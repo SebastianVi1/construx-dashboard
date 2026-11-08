@@ -18,5 +18,25 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+          message: 'Use var(--cx-*) design tokens, not raw hex values.',
+        },
+      ],
+    },
+  },
+  // Tests, theme token definitions, and Leaflet/SVG color consumers may use raw hex
+  {
+    files: [
+      'src/tests/**',
+      'src/theme/**',
+      'src/features/auth/AuthForm.tsx',
+      'src/features/floor-plans/zonesApi.ts',
+      'src/features/gantt/BarColorPicker.tsx',
+    ],
+    rules: { 'no-restricted-syntax': 'off' },
   },
 ])

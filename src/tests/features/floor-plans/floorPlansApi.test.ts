@@ -64,7 +64,7 @@ describe('floorPlanSchema', () => {
   })
 
   it('rejects a missing id', () => {
-    const { id: _id, ...rest } = baseFloorPlan
+    const { id: _id, ...rest } = baseFloorPlan // eslint-disable-line @typescript-eslint/no-unused-vars
     const result = floorPlanSchema.safeParse(rest)
     expect(result.success).toBe(false)
   })

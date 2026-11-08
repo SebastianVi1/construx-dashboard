@@ -45,39 +45,36 @@ export function SiteFloorPlansPage() {
   }
 
   return (
-    <main className="page-content">
+    <div className="page">
       <header className="page-header">
-        <nav aria-label="breadcrumb" className="breadcrumb">
-          <Link to={`/sites/${encodeURIComponent(siteId)}`}>{m.sites.detail.back}</Link>
-          <span aria-hidden>›</span>
-          <span>{t.title}</span>
-        </nav>
-        <div className="page-header__row">
+        <div className="page-header__text">
+          <nav aria-label="breadcrumb">
+            <Link className="page-back" to={`/sites/${encodeURIComponent(siteId)}`}>{m.sites.detail.back}</Link>
+          </nav>
           <h1>{t.title}</h1>
-          {canManage ? (
-            <button type="button" className="button button--primary" onClick={() => setShowUpload(true)}>
-              {t.upload}
-            </button>
-          ) : null}
+          <p>{t.description}</p>
         </div>
-        <p className="page-header__description">{t.description}</p>
+        {canManage ? (
+          <button type="button" className="button button--primary" onClick={() => setShowUpload(true)}>
+            {t.upload}
+          </button>
+        ) : null}
       </header>
 
-      {notice ? <div className="notice notice--success" role="status">{notice}</div> : null}
+      {notice ? <div className="notice" data-tone="success" role="status">{notice}</div> : null}
 
       {remote.status === 'loading' ? (
-        <p className="loading-text">{t.loading}</p>
+        <div className="loading-state"><span className="loading-state__spinner" aria-hidden />{t.loading}</div>
       ) : remote.status === 'error' ? (
-        <div>
-          <p className="error-text">{t.loadError}</p>
+        <div className="empty-state">
+          <p>{t.loadError}</p>
           <button type="button" className="button" onClick={() => remote.reload()}>
             {t.retry}
           </button>
         </div>
       ) : remote.data?.length === 0 ? (
         <div className="empty-state">
-          <p className="empty-state__title">{t.emptyTitle}</p>
-          <p className="empty-state__body">{canManage ? t.emptyBody : t.emptyBodyReadOnly}</p>
+          <p>{canManage ? t.emptyBody : t.emptyBodyReadOnly}</p>
           {canManage ? (
             <button type="button" className="button button--primary" onClick={() => setShowUpload(true)}>
               {t.uploadFirst}
@@ -102,7 +99,7 @@ export function SiteFloorPlansPage() {
                 {fp.level ? <p className="floor-plan-card__meta">{fp.level}</p> : null}
                 <div className="button-row">
                   <Link
-                    className="button"
+                    className="button button--primary"
                     to={`/sites/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(fp.id)}`}
                   >
                     {t.open.replace('{name}', fp.name)}
@@ -132,6 +129,6 @@ export function SiteFloorPlansPage() {
           onClose={() => setShowUpload(false)}
         />
       ) : null}
-    </main>
+    </div>
   )
 }
