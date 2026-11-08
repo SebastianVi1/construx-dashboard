@@ -336,6 +336,22 @@
   gap: 0.625rem;
   max-height: 70vh;
   box-shadow: 0 2px 8px var(--cx-shadow-color);
+  /* Always on screen next to the plan so people can be dragged without scrolling back */
+  position: sticky;
+  top: 1rem;
+}
+
+@media (max-width: 720px) {
+  .floor-plan-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .assignment-panel {
+    position: static;
+    width: auto;
+    max-height: 40vh;
+  }
 }
 
 .assignment-panel__title {
@@ -444,6 +460,12 @@
   display: inline-flex;
   width: 20px;
   height: 20px;
+  border-radius: var(--cx-radius-sm);
+  transition: transform 120ms ease-out;
+}
+
+.zone-occupant:hover {
+  transform: scale(1.2);
 }
 
 .zone-occupant svg {
@@ -467,4 +489,98 @@
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--cx-ink);
+}
+
+.occupant-bubble__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.occupant-bubble__title {
+  margin: 0;
+  font: 600 16px/22px var(--cx-font-sans);
+  color: var(--cx-ink);
+  overflow-wrap: anywhere;
+}
+
+.occupant-bubble__close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--cx-radius-sm);
+  background: transparent;
+  color: var(--cx-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.occupant-bubble__close:hover {
+  background: var(--cx-primary-subtle);
+  color: var(--cx-ink);
+}
+
+.occupant-bubble__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.occupant-bubble__fact {
+  display: contents;
+}
+
+.occupant-bubble__facts dt {
+  color: var(--cx-muted);
+}
+
+.occupant-bubble__facts dd {
+  margin: 0;
+  color: var(--cx-ink);
+  overflow-wrap: anywhere;
+}
+
+.occupant-bubble__section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cx-border);
+}
+
+.occupant-bubble__section h3 {
+  margin: 0 0 8px;
+  font: 600 14px/20px var(--cx-font-sans);
+  color: var(--cx-ink);
+}
+
+.occupant-bubble__muted {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.occupant-bubble__tasks {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.occupant-bubble__task {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.zone-occupant[aria-expanded='true'] {
+  outline: 2px solid var(--cx-primary);
+  outline-offset: 1px;
 }

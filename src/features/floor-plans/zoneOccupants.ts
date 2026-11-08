@@ -1,12 +1,22 @@
 import type { Zone } from './zonesApi'
 import type { AssignmentData, DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
+import type { Task, TaskRole } from '../tasks/tasksApi'
 
 /** Someone or something shown inside a zone on the plan. */
-export type Occupant = { key: string; kind: 'person' | 'equipment'; label: string }
+export type Occupant = {
+  key: string
+  kind: 'person' | 'equipment'
+  label: string
+  /** The assignment that put it in the zone; for a crew member, the crew's assignment. */
+  assignmentId: string
+  /** The person's membership id, or the equipment id. Absent for a crew with no members. */
+  resourceId?: string
+  crewName?: string
+}
 
 export type OccupantDirectory = {
-  members: { membershipId: string; fullName: string | null; email: string }[]
-  crews: { id: string; name: string; memberMembershipIds: string[] }[]
+  members: { membershipId: string; fullName: string | null; email: string; role?: { name: string }; status?: string }[]
+  crews: { id: string; name: string; memberMembershipIds: string[]; leaderMembershipId?: string }[]
   equipment: { id: string; type: string; identifier: string }[]
 }
 
@@ -61,24 +71,34 @@ export function zoneOccupants(assignments: AssignmentData[], directory: Occupant
 
   for (const a of assignments) {
     const list = (byZone[a.zoneId] ??= [])
-    const addPerson = (membershipId: string, label: string) => {
+    const addPerson = (membershipId: string, label: string, crewName?: string) => {
       const key = `person:${membershipId}`
-      if (!list.some((o) => o.key === key)) list.push({ key, kind: 'person', label })
+      if (!list.some((o) => o.key === key)) {
+        list.push({ key, kind: 'person', label, assignmentId: a.id, resourceId: membershipId, crewName })
+      }
     }
     if (a.membershipId) {
       addPerson(a.membershipId, memberName.get(a.membershipId) ?? '')
     } else if (a.crewId) {
       const crew = crews.get(a.crewId)
       if (!crew || crew.memberMembershipIds.length === 0) {
-        list.push({ key: `crew:${a.crewId}`, kind: 'person', label: crew?.name ?? '' })
+        list.push({ key: `crew:${a.crewId}`, kind: 'person', label: crew?.name ?? '', assignmentId: a.id, crewName: crew?.name })
       } else {
-        for (const id of crew.memberMembershipIds) addPerson(id, `${memberName.get(id) ?? ''} · ${crew.name}`)
+        for (const id of crew.memberMembershipIds) {
+          addPerson(id, `${memberName.get(id) ?? ''} · ${crew.name}`, crew.name)
+        }
       }
     } else if (a.equipmentId) {
       const eq = equipment.get(a.equipmentId)
       const key = `equipment:${a.equipmentId}`
       if (!list.some((o) => o.key === key)) {
-        list.push({ key, kind: 'equipment', label: eq ? `${eq.type} — ${eq.identifier}` : '' })
+        list.push({
+          key,
+          kind: 'equipment',
+          label: eq ? `${eq.type} — ${eq.identifier}` : '',
+          assignmentId: a.id,
+          resourceId: a.equipmentId,
+        })
       }
     }
   }
@@ -97,6 +117,42 @@ export function assignmentLabel(a: AssignmentData, directory: OccupantDirectory)
     return eq ? `${eq.type} — ${eq.identifier}` : ''
   }
   return ''
+}
+
+/** Crews a person belongs to, and whether they lead each one. */
+export function crewsOf(membershipId: string, directory: OccupantDirectory): { name: string; leader: boolean }[] {
+  return directory.crews
+    .filter((c) => c.leaderMembershipId === membershipId || c.memberMembershipIds.includes(membershipId))
+    .map((c) => ({ name: c.name, leader: c.leaderMembershipId === membershipId }))
+}
+
+/** Every zone a person is in, directly or through one of their crews, in plan order. */
+export function zoneIdsOf(membershipId: string, assignments: AssignmentData[], directory: OccupantDirectory): string[] {
+  const crewIds = new Set(
+    directory.crews.filter((c) => c.memberMembershipIds.includes(membershipId)).map((c) => c.id),
+  )
+  const ids: string[] = []
+  for (const a of assignments) {
+    const inIt = a.membershipId === membershipId || (a.crewId !== null && crewIds.has(a.crewId))
+    if (inIt && !ids.includes(a.zoneId)) ids.push(a.zoneId)
+  }
+  return ids
+}
+
+/** Tasks not yet done whose team includes the person, soonest due first, with their place in it. */
+export function activeTasksOf(membershipId: string, tasks: Task[]): { task: Task; taskRole: TaskRole }[] {
+  const result: { task: Task; taskRole: TaskRole }[] = []
+  for (const task of tasks) {
+    if (task.status === 'DONE') continue
+    const place = task.assignees.find((p) => p.membershipId === membershipId)
+    if (place) result.push({ task, taskRole: place.taskRole })
+  }
+  return result.sort((a, b) => a.task.dueAt.localeCompare(b.task.dueAt))
+}
+
+/** Identifies one figure in the map's DOM, which is rebuilt whenever the occupants change. */
+export function occupantAnchorKey(zone: Pick<Zone, 'id'>, occupant: Pick<Occupant, 'key'>): string {
+  return `${zone.id}|${occupant.key}`
 }
 
 export function escapeHtml(text: string): string {

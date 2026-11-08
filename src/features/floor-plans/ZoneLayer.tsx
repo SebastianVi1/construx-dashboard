@@ -4,7 +4,7 @@ import type { Zone } from './zonesApi'
 import { ZONE_STATUS_COLORS } from './zonesApi'
 import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
 import type { Occupant } from './zoneOccupants'
-import { escapeHtml, parseDropPayload, zoneAtPoint } from './zoneOccupants'
+import { escapeHtml, occupantAnchorKey, parseDropPayload, zoneAtPoint } from './zoneOccupants'
 
 interface ZoneLayerProps {
   map: L.Map
@@ -18,6 +18,10 @@ interface ZoneLayerProps {
   dragging?: boolean
   onDropResource?: (zone: Zone, resource: DraggableResource) => void
   onReassignDrop?: (zone: Zone, drag: ReassignDrag) => void
+  /** Clicking a figure opens that occupant; clicking around the figures still opens the zone. */
+  onOccupantClick?: (zone: Zone, occupant: Occupant) => void
+  /** The figure whose bubble is open, as `occupantAnchorKey` gives it, to mark it as expanded. */
+  activeOccupantKey?: string | null
 }
 
 /** Most figures drawn in one zone before the rest collapse into a "+N" chip. */
@@ -28,12 +32,14 @@ const PERSON_SVG =
 const EQUIPMENT_SVG =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 17V9h11l3 4h4a2 2 0 0 1 2 2v2h-2a3 3 0 0 0-6 0H9a3 3 0 0 0-6 0z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>'
 
-function occupantsHtml(list: Occupant[]): string {
+function occupantsHtml(zone: Zone, list: Occupant[], activeKey: string | null | undefined): string {
   const shown = list.slice(0, MAX_FIGURES)
   const figures = shown
-    .map((o) => {
+    .map((o, i) => {
       const svg = o.kind === 'person' ? PERSON_SVG : EQUIPMENT_SVG
-      return `<span class="zone-occupant zone-occupant--${o.kind}" title="${escapeHtml(o.label)}">${svg}</span>`
+      const key = occupantAnchorKey(zone, o)
+      const expanded = key === activeKey ? 'true' : 'false'
+      return `<span class="zone-occupant zone-occupant--${o.kind}" data-occupant="${i}" data-occupant-key="${escapeHtml(key)}" role="button" aria-expanded="${expanded}" aria-label="${escapeHtml(o.label)}" title="${escapeHtml(o.label)}">${svg}</span>`
     })
     .join('')
   const rest = list.length - shown.length
@@ -52,6 +58,8 @@ export function ZoneLayer({
   dragging,
   onDropResource,
   onReassignDrop,
+  onOccupantClick,
+  activeOccupantKey,
 }: ZoneLayerProps) {
   const layerGroupRef = useRef<L.LayerGroup | null>(null)
   const occupantGroupRef = useRef<L.LayerGroup | null>(null)
@@ -87,9 +95,14 @@ export function ZoneLayer({
 
       const list = occupants?.[zone.id] ?? []
       if (list.length > 0) {
-        const icon = L.divIcon({ className: 'zone-occupants-icon', html: occupantsHtml(list), iconSize: undefined })
+        const icon = L.divIcon({ className: 'zone-occupants-icon', html: occupantsHtml(zone, list, activeOccupantKey), iconSize: undefined })
         const marker = L.marker(polygon.getBounds().getCenter(), { icon, keyboard: false })
-        marker.on('click', () => onZoneClick(zone))
+        marker.on('click', (e: L.LeafletMouseEvent) => {
+          const figure = (e.originalEvent.target as Element | null)?.closest('[data-occupant]')
+          const occupant = figure ? list[Number(figure.getAttribute('data-occupant'))] : undefined
+          if (occupant && onOccupantClick) onOccupantClick(zone, occupant)
+          else onZoneClick(zone)
+        })
         occupantGroup.addLayer(marker)
       }
     }
@@ -98,7 +111,7 @@ export function ZoneLayer({
       group.clearLayers()
       occupantGroup.clearLayers()
     }
-  }, [map, zones, metersPerPx, visible, onZoneClick, occupants])
+  }, [map, zones, metersPerPx, visible, onZoneClick, onOccupantClick, occupants, activeOccupantKey])
 
   // Highlight every zone as a drop target while something is being dragged
   useEffect(() => {

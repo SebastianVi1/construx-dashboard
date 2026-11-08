@@ -12,14 +12,15 @@ import { ZoneLayer } from './ZoneLayer'
 import { ZoneDrawTool } from './ZoneDrawTool'
 import { ZonePanel } from './ZonePanel'
 import { AssignmentPanel } from './AssignmentPanel'
+import { OccupantBubble } from './OccupantBubble'
 import { getCalibration } from './calibrationApi'
 import type { Calibration } from './calibrationApi'
 import { listZones } from './zonesApi'
 import type { Zone } from './zonesApi'
 import { createAssignment, listFloorPlanAssignments, reassignToZone } from './zoneAssignmentsApi'
 import type { AssignmentData, DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
-import { assignmentLabel, zoneOccupants } from './zoneOccupants'
-import type { OccupantDirectory } from './zoneOccupants'
+import { assignmentLabel, occupantAnchorKey, zoneOccupants } from './zoneOccupants'
+import type { Occupant, OccupantDirectory } from './zoneOccupants'
 import { listMembers } from '../members/membersApi'
 import { listCrews, listEquipment } from '../crews/crewsApi'
 import './floor-plans.css'
@@ -53,12 +54,12 @@ export function FloorPlanPage() {
   const [zoneConflictBanner, setZoneConflictBanner] = useState(false)
 
   // Assignment state
-  const [assignmentPanelOpen, setAssignmentPanelOpen] = useState(false)
   const [draggingResource, setDraggingResource] = useState<DraggableResource | null>(null)
   const [draggingReassign, setDraggingReassign] = useState<ReassignDrag | null>(null)
   const [assignError, setAssignError] = useState(false)
   const [assignments, setAssignments] = useState<AssignmentData[]>([])
   const [directory, setDirectory] = useState<OccupantDirectory>({ members: [], crews: [], equipment: [] })
+  const [selectedOccupant, setSelectedOccupant] = useState<{ zone: Zone; occupant: Occupant } | null>(null)
 
   // Load existing calibration when floor plan is READY
   useEffect(() => {
@@ -263,15 +264,6 @@ export function FloorPlanPage() {
                       {t.zones.toggleVisibility}
                     </button>
                   ) : null}
-                  {hasCalibration && canManagePlan ? (
-                    <button
-                      type="button"
-                      className={`button${assignmentPanelOpen ? ' button--active' : ''}`}
-                      onClick={() => setAssignmentPanelOpen((v) => !v)}
-                    >
-                      {t.assignments.panelTitle}
-                    </button>
-                  ) : null}
                 </div>
               ) : null}
 
@@ -298,7 +290,7 @@ export function FloorPlanPage() {
               ) : null}
 
               <div className="floor-plan-layout">
-                {assignmentPanelOpen ? (
+                {hasCalibration && canManagePlan ? (
                   <AssignmentPanel
                     organizationId={orgId}
                     onDragStart={(res) => setDraggingResource(res)}
@@ -318,6 +310,17 @@ export function FloorPlanPage() {
                       metersPerPx={calibration.metersPerPx}
                       visible={zonesVisible}
                       onZoneClick={(zone) => setSelectedZone(zone)}
+                      onOccupantClick={(zone, occupant) =>
+                        // A second click on the same figure closes its bubble
+                        setSelectedOccupant((prev) =>
+                          prev && occupantAnchorKey(prev.zone, prev.occupant) === occupantAnchorKey(zone, occupant)
+                            ? null
+                            : { zone, occupant },
+                        )
+                      }
+                      activeOccupantKey={
+                        selectedOccupant ? occupantAnchorKey(selectedOccupant.zone, selectedOccupant.occupant) : null
+                      }
                       occupants={zoneOccupants(assignments, directory)}
                       dragging={draggingResource !== null || draggingReassign !== null}
                       onDropResource={(zone, resource) => {
@@ -342,6 +345,28 @@ export function FloorPlanPage() {
                   ) : null}
                 </div>
               </div>
+
+              {selectedOccupant ? (
+                <OccupantBubble
+                  key={occupantAnchorKey(selectedOccupant.zone, selectedOccupant.occupant)}
+                  getAnchor={() => {
+                    const key = occupantAnchorKey(selectedOccupant.zone, selectedOccupant.occupant)
+                    return (
+                      mapInstance
+                        ?.getContainer()
+                        .querySelector(`[data-occupant-key="${CSS.escape(key)}"]`) ?? null
+                    )
+                  }}
+                  occupant={selectedOccupant.occupant}
+                  zone={selectedOccupant.zone}
+                  zones={zones}
+                  assignments={assignments}
+                  directory={directory}
+                  organizationId={orgId}
+                  siteId={siteId}
+                  onClose={() => setSelectedOccupant(null)}
+                />
+              ) : null}
 
               {selectedZone ? (
                 <ZonePanel

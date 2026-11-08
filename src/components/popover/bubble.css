@@ -1,0 +1,63 @@
+.bubble {
+  /* Above Leaflet's panes and controls (z-index up to 1000) */
+  position: fixed;
+  z-index: 1100;
+  box-sizing: border-box;
+  width: min(340px, calc(100vw - 32px));
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  box-shadow: 0 12px 32px -12px var(--cx-shadow-color);
+  animation: bubble-in 140ms ease-out;
+}
+
+.bubble:focus {
+  outline: none;
+}
+
+/* Content scrolls inside so the tail, drawn outside the box, is never clipped */
+.bubble__scroll {
+  max-height: min(60vh, 480px);
+  overflow: auto;
+  padding: 14px 16px;
+}
+
+/* The tail: a rotated square sharing the bubble's border, pointing at the anchor */
+.bubble::after {
+  content: '';
+  position: absolute;
+  left: var(--bubble-arrow-left);
+  width: 12px;
+  height: 12px;
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  transform: translateX(-50%) rotate(45deg);
+  pointer-events: none;
+}
+
+.bubble[data-side='top']::after {
+  bottom: -7px;
+  border-top: 0;
+  border-left: 0;
+}
+
+.bubble[data-side='bottom']::after {
+  top: -7px;
+  border-bottom: 0;
+  border-right: 0;
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    animation: none;
+  }
+}
