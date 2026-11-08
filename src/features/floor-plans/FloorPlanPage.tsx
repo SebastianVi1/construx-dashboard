@@ -167,30 +167,26 @@ export function FloorPlanPage() {
   const hasCalibration = calibration !== null
 
   return (
-    <main className="page-content">
+    <div className="page">
       <header className="page-header">
-        <nav aria-label="breadcrumb" className="breadcrumb">
-          <Link to={`/sites/${encodeURIComponent(siteId)}/floor-plans`}>{t.back}</Link>
+        <div className="page-header__text">
+          <nav aria-label="breadcrumb">
+            <Link className="page-back" to={`/sites/${encodeURIComponent(siteId)}/floor-plans`}>{t.back}</Link>
+          </nav>
           {floorPlan ? (
-            <>
-              <span aria-hidden>›</span>
-              <span>{floorPlan.name}</span>
-            </>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <h1>{floorPlan.name}</h1>
+              <span
+                className={`floor-plan-status-badge floor-plan-status-badge--${floorPlan.status.toLowerCase()}`}
+                role="status"
+              >
+                {t.status[floorPlan.status]}
+              </span>
+            </div>
           ) : null}
-        </nav>
-        {floorPlan ? (
-          <div className="page-header__row">
-            <h1>{floorPlan.name}</h1>
-            <span
-              className={`floor-plan-status-badge floor-plan-status-badge--${floorPlan.status.toLowerCase()}`}
-              role="status"
-            >
-              {t.status[floorPlan.status]}
-            </span>
-          </div>
-        ) : null}
-        {floorPlan?.level ? <p className="page-header__description">{floorPlan.level}</p> : null}
-        {floorPlan?.description ? <p className="page-header__description">{floorPlan.description}</p> : null}
+          {floorPlan?.level ? <p>{floorPlan.level}</p> : null}
+          {floorPlan?.description ? <p>{floorPlan.description}</p> : null}
+        </div>
       </header>
 
       {zoneConflictBanner ? (
@@ -203,10 +199,10 @@ export function FloorPlanPage() {
       ) : null}
 
       {remote.status === 'loading' ? (
-        <p className="loading-text">{t.loading}</p>
+        <div className="loading-state"><span className="loading-state__spinner" aria-hidden />{t.loading}</div>
       ) : remote.status === 'error' ? (
-        <div>
-          <p className="error-text">{t.loadError}</p>
+        <div className="empty-state">
+          <p>{t.loadError}</p>
           <button type="button" className="button" onClick={() => remote.reload()}>
             {t.retry}
           </button>
@@ -370,6 +366,6 @@ export function FloorPlanPage() {
           )}
         </>
       ) : null}
-    </main>
+    </div>
   )
 }

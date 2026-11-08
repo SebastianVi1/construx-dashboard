@@ -5,6 +5,7 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 import { useLocale } from '../../i18n'
 import { createZone } from './zonesApi'
 import type { Zone, ZoneStatus } from './zonesApi'
+import '../../components/form/form.css'
 
 interface ZoneDrawToolProps {
   map: L.Map
@@ -144,45 +145,54 @@ export function ZoneDrawTool({
       </div>
 
       {pendingPoints ? (
-        <form className="zone-draw-tool__form" onSubmit={handleSubmit}>
-          <label className="field">
-            <span className="field__label">{t.nameLabel}</span>
-            <input
-              className="field__input"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t.namePlaceholder}
-              maxLength={120}
-              required
-              autoFocus
-            />
-          </label>
-          <label className="field">
-            <span className="field__label">{t.descriptionLabel}</span>
-            <input
-              className="field__input"
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t.descriptionPlaceholder}
-              maxLength={500}
-            />
-          </label>
-          <label className="field">
-            <span className="field__label">{t.statusLabel}</span>
-            <select
-              className="field__select"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ZoneStatus)}
-            >
-              <option value="NOT_STARTED">{t.status.NOT_STARTED}</option>
-              <option value="IN_PROGRESS">{t.status.IN_PROGRESS}</option>
-              <option value="ON_HOLD">{t.status.ON_HOLD}</option>
-              <option value="DONE">{t.status.DONE}</option>
-            </select>
-          </label>
-          {error ? <p className="error-text">{error}</p> : null}
+        <form className="zone-draw-tool__form form" onSubmit={handleSubmit}>
+          <div className="form-field">
+            <label className="form-field__label" htmlFor="zdzone-name">{t.nameLabel}</label>
+            <div className="form-field__box">
+              <input
+                id="zdzone-name"
+                className="form-field__control"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t.namePlaceholder}
+                maxLength={120}
+                required
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="form-field">
+            <label className="form-field__label" htmlFor="zdzone-desc">{t.descriptionLabel}</label>
+            <div className="form-field__box">
+              <input
+                id="zdzone-desc"
+                className="form-field__control"
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t.descriptionPlaceholder}
+                maxLength={500}
+              />
+            </div>
+          </div>
+          <div className="form-field" data-type="select">
+            <label className="form-field__label" htmlFor="zdzone-status">{t.statusLabel}</label>
+            <div className="form-field__box">
+              <select
+                id="zdzone-status"
+                className="form-field__control"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as ZoneStatus)}
+              >
+                <option value="NOT_STARTED">{t.status.NOT_STARTED}</option>
+                <option value="IN_PROGRESS">{t.status.IN_PROGRESS}</option>
+                <option value="ON_HOLD">{t.status.ON_HOLD}</option>
+                <option value="DONE">{t.status.DONE}</option>
+              </select>
+            </div>
+          </div>
+          {error ? <p className="form-error">{error}</p> : null}
           <div className="zone-draw-tool__actions">
             <button type="submit" className="button button--primary" disabled={submitting || !name.trim()}>
               {submitting ? t.saving : t.saveZone}
