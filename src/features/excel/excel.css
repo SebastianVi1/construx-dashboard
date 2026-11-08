@@ -364,12 +364,22 @@
   font-weight: 600;
 }
 
+/* An open workbook fills the workspace: full width, and the grid takes the height left under the toolbar. */
+.page.excel-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: none;
+  min-width: 0;
+  height: calc(100svh - var(--cx-header-height));
+  padding-bottom: var(--cx-page-gutter);
+}
+
 .excel-editor__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
-  margin-bottom: 12px;
 }
 
 .excel-editor__name {
@@ -387,7 +397,8 @@
 }
 
 .excel-editor__grid {
-  height: min(70vh, 720px);
+  flex: 1 1 0;
+  min-height: 320px;
   overflow: hidden;
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-md) var(--cx-radius-md) 0 0;
@@ -395,6 +406,7 @@
 
 .sheet-tabs {
   display: flex;
+  flex: none;
   overflow-x: auto;
   border: 1px solid var(--cx-border);
   border-top: 0;
@@ -426,9 +438,19 @@
   outline-offset: -2px;
 }
 
+/* The tabs sit flush under the grid, as one surface. */
+.excel-editor__grid + .sheet-tabs {
+  margin-top: -12px;
+}
+
+/* Phones also lose the bottom tab bar's height, which the workspace pads below the page. */
 @media (max-width: 760px) {
+  .page.excel-editor {
+    height: calc(100svh - var(--cx-header-height) - var(--cx-tabbar-height) - env(safe-area-inset-bottom));
+  }
+
   .excel-editor__grid {
-    height: 60vh;
+    min-height: 240px;
   }
 }
 
