@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
 import { SkeletonList, Notice } from '../../components/page'
@@ -23,6 +23,7 @@ type SitePhasesProps = {
   onSite: boolean | undefined
   /** Task counts of the site changed. */
   onProgressChanged: () => void
+  targetPhase?: string
 }
 
 type Dialog =
@@ -37,7 +38,7 @@ type Dialog =
  * VIEW_GOAL; adding, editing and deleting phases MANAGE_GOAL; the boards
  * VIEW_ACTIVITY. Budgets show with VIEW_BUDGET and change with MANAGE_BUDGET.
  */
-export function SitePhases({ organizationId, siteId, people, onSite, onProgressChanged }: SitePhasesProps) {
+export function SitePhases({ organizationId, siteId, people, onSite, onProgressChanged, targetPhase }: SitePhasesProps) {
   const { messages: m, locale } = useLocale()
   const t = m.goals
   const { can } = usePermissions()
@@ -58,6 +59,17 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
   const [status, setStatus] = useState<TaskStatus | ''>('')
   const [assignee, setAssignee] = useState('')
   const [now] = useState(() => new Date())
+
+  // Jump to a linked phase once, not again each time the phases reload after a task change.
+  const jumpedTo = useRef<string | undefined>(undefined)
+  const hasGoals = goals.data !== undefined
+  useEffect(() => {
+    if (!canView || !targetPhase || !hasGoals || jumpedTo.current === targetPhase) return
+    jumpedTo.current = targetPhase
+    const heading = document.getElementById(targetPhase)
+    heading?.focus()
+    heading?.scrollIntoView({ block: 'start' })
+  }, [canView, targetPhase, hasGoals])
 
   if (!canView) return null
 
@@ -176,7 +188,7 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
                     <header className="phase__header">
                       <div className="phase__title">
                         <p className="phase__due data-mono">{formatMessage(t.due, { date: dueText(goal.dueAt, intl) })}</p>
-                        <h3 id={`phase-${goal.id}`}>{goal.name}</h3>
+                        <h3 id={`phase-${goal.id}`} tabIndex={-1}>{goal.name}</h3>
                         <div className="phase__facts">
                           {goal.completed ? (
                             <span className="badge" data-tone="success">

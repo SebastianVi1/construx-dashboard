@@ -2,10 +2,12 @@
 
 /* ── Sites toolbar (filter select) ────────────────────────────── */
 
-.sites-toolbar {
+.sites-page .sites-toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
+  padding-block: 16px;
+  border-block: 1px solid var(--cx-border);
 }
 
 .sites-toolbar__label {
@@ -15,24 +17,26 @@
 
 /* ── Sites card grid ───────────────────────────────────────────── */
 
-.sites-grid {
+.sites-page .sites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 24px;
 }
 
 /*
  * Each card borrows the drawing-sheet corner marks from .site-sheet,
  * scaled down to card proportions.
  */
-.site-card {
-  --tick: 10px;
+.sites-page .site-card {
+  --tick: 14px;
   --tick-weight: 1.5px;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 20px;
+  gap: 12px;
+  min-width: 0;
+  min-height: 248px;
+  padding: 28px;
   border: 1px solid var(--cx-border);
   border-radius: var(--cx-radius-lg);
   background: var(--cx-surface);
@@ -41,53 +45,109 @@
   transition: border-color 150ms ease-out;
 }
 
-.site-card::before {
+.sites-page .site-card::before {
   content: '';
   position: absolute;
   inset: 6px;
   pointer-events: none;
   background:
-    linear-gradient(var(--cx-primary), var(--cx-primary)) top left / var(--tick) var(--tick-weight),
-    linear-gradient(var(--cx-primary), var(--cx-primary)) top left / var(--tick-weight) var(--tick),
-    linear-gradient(var(--cx-primary), var(--cx-primary)) top right / var(--tick) var(--tick-weight),
-    linear-gradient(var(--cx-primary), var(--cx-primary)) top right / var(--tick-weight) var(--tick),
-    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom left / var(--tick) var(--tick-weight),
-    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom left / var(--tick-weight) var(--tick),
-    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom right / var(--tick) var(--tick-weight),
-    linear-gradient(var(--cx-primary), var(--cx-primary)) bottom right / var(--tick-weight) var(--tick);
+    linear-gradient(var(--cx-brand), var(--cx-brand)) top left / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-brand), var(--cx-brand)) top left / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-brand), var(--cx-brand)) top right / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-brand), var(--cx-brand)) top right / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-brand), var(--cx-brand)) bottom left / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-brand), var(--cx-brand)) bottom left / var(--tick-weight) var(--tick),
+    linear-gradient(var(--cx-brand), var(--cx-brand)) bottom right / var(--tick) var(--tick-weight),
+    linear-gradient(var(--cx-brand), var(--cx-brand)) bottom right / var(--tick-weight) var(--tick);
   background-repeat: no-repeat;
 }
 
-.site-card:hover {
+.sites-page .site-card:hover {
   border-color: var(--cx-accent);
 }
 
-.site-card:focus-visible {
-  outline: none;
-  border-color: var(--cx-accent);
-  box-shadow: 0 0 0 3px var(--cx-accent-subtle);
+.sites-page .site-card:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 4px;
 }
 
-.site-card__header {
-  margin-bottom: 4px;
+.sites-page .site-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
 }
 
-.site-card__name {
-  font-size: 15px;
+.sites-page .site-card__name {
+  margin: 0;
+  font-family: var(--cx-font-display);
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
   font-weight: 600;
   line-height: 1.3;
 }
 
-.site-card__address,
-.site-card__schedule {
-  font-size: 13px;
+.sites-page .site-card__address,
+.sites-page .site-card__schedule {
+  overflow-wrap: anywhere;
+  font-size: 14px;
   color: var(--cx-muted);
 }
 
-.site-card__progress {
-  margin-top: auto;
+.sites-page .site-card__progress {
   padding-top: 12px;
+}
+
+.sites-page .site-card__footer {
+  margin-top: auto;
+  padding-top: 20px;
   border-top: 1px solid var(--cx-border);
+}
+
+.sites-page .site-card__address {
+  margin-bottom: 20px;
+}
+
+.sites-page .site-card__open {
+  flex-shrink: 0;
+  color: var(--cx-muted);
+  transition: color 150ms ease-out, transform 150ms ease-out;
+}
+
+.sites-page .site-card:hover .site-card__open {
+  color: var(--cx-accent);
+  transform: translate(2px, -2px);
+}
+
+.sites-page .filter-select select {
+  min-height: 44px;
+}
+
+@media (max-width: 480px) {
+  .sites-page .sites-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .sites-page .filter-select {
+    flex: 1 1 180px;
+  }
+
+  .sites-page .site-card {
+    padding: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sites-page .site-card,
+  .sites-page .site-card__open {
+    transition: none;
+  }
+
+  .sites-page .site-card:hover .site-card__open {
+    transform: none;
+  }
 }
 
 /* Compact native select used beside a dataset. */
@@ -310,4 +370,42 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.site-section-target {
+  min-width: 0;
+  scroll-margin-top: calc(var(--cx-header-height) + 24px);
+}
+
+.site-secondary-actions {
+  padding-top: 24px;
+  border-top: 1px solid var(--cx-border);
+  align-items: flex-start;
+}
+
+.site-team-preview {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.site-team-preview li {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--cx-border);
+  overflow-wrap: anywhere;
+}
+
+.site-phase-state {
+  margin-inline-start: 12px;
+}
+
+.site-overview .page-section__header a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-underline-offset: 4px;
 }

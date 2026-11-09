@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
@@ -17,11 +17,10 @@ import { SiteOverviewTab } from './SiteOverviewTab'
 import { SitePeople } from './SitePeople'
 import { dateText, scheduleText } from './siteDisplay'
 import { siteProgress } from './siteHelpers'
+import { siteTab, siteTabSearch, siteSectionUrl, type SiteTab } from './siteNavigation'
 import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import '../../components/filter/filter-tabs.css'
 import './sites.css'
-
-type Tab = 'overview' | 'details' | 'list' | 'gantt' | 'plans' | 'reports'
 
 /** One site: its details (editable with MANAGE_PROJECT), budget (finance roles), progress, people, plans and its phases. */
 export function SiteDetailPage() {
@@ -36,11 +35,26 @@ export function SiteDetailPage() {
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [formVersion, setFormVersion] = useState(0)
   const [savedNotice, setSavedNotice] = useState<string | null>(null)
-  const [searchParams] = useSearchParams()
-  const initialTab = (['overview', 'details', 'list', 'gantt', 'plans', 'reports'] as Tab[]).find(
-    (t) => t === searchParams.get('tab'),
-  )
-  const [tab, setTab] = useState<Tab>(initialTab ?? 'overview')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
+  const tab = siteTab(searchParams)
+  function setTab(next: SiteTab) {
+    setSearchParams(siteTabSearch(searchParams, next))
+  }
+  let anchor = ''
+  try { anchor = decodeURIComponent(location.hash.slice(1)) } catch { /* Ignore malformed anchors. */ }
+
+  // Jump to a linked section once per arrival, not again when the site reloads after a save.
+  const jumpedTo = useRef('')
+  const hasSite = site.data !== undefined
+  useEffect(() => {
+    if (tab !== 'details' || !hasSite || !['site-team', 'site-budget'].includes(anchor)) return
+    if (jumpedTo.current === location.key) return
+    jumpedTo.current = location.key
+    const section = document.getElementById(anchor)
+    section?.focus()
+    section?.scrollIntoView({ block: 'start' })
+  }, [tab, anchor, hasSite, location.key])
 
   const myMembershipId = access?.membershipId ?? null
   const onSite = people.data ? people.data.some((person) => person.membershipId === myMembershipId) : undefined
@@ -89,10 +103,10 @@ export function SiteDetailPage() {
             <h1>{current.name}</h1>
             <p>{current.address || t.noAddress}</p>
           </div>
-          {canManage && current.status !== 'ARCHIVED' ? (
-            <button type="button" className="button button--danger" onClick={() => setArchiveOpen(true)}>
-              {t.detail.archive}
-            </button>
+          {tab !== 'list' && can('VIEW_GOAL', current.id, { onSite }) ? (
+            <Link className="button button--primary" to={siteSectionUrl(current.id, 'list')}>
+              {t.overview.viewPhases}
+            </Link>
           ) : null}
         </div>
         <dl className="site-sheet__facts">
@@ -130,7 +144,7 @@ export function SiteDetailPage() {
         <button type="button" className="filter-tabs__tab" onClick={() => setTab('list')} aria-pressed={tab === 'list'}>
           {t.detail.tabs.list}
         </button>
-        <button type="button" className="filter-tabs__tab filter-tabs__tab--desktop" onClick={() => setTab('gantt')} aria-pressed={tab === 'gantt'}>
+        <button type="button" className="filter-tabs__tab" onClick={() => setTab('gantt')} aria-pressed={tab === 'gantt'}>
           {t.detail.tabs.gantt}
         </button>
         {canViewPlans ? (
@@ -149,6 +163,8 @@ export function SiteDetailPage() {
           site={current}
           people={people}
           myMembershipId={myMembershipId}
+          canManageTeam={canManage}
+          canManageBudget={can('MANAGE_BUDGET')}
           canViewBudget={can('VIEW_BUDGET')}
           canViewGoals={can('VIEW_GOAL', current.id, { onSite }) ?? false}
         />
@@ -194,23 +210,34 @@ export function SiteDetailPage() {
               )}
             </section>
 
-            <SitePeople
-              organizationId={organization.id}
-              siteId={current.id}
-              people={people}
-              canManage={canManage}
-              myMembershipId={myMembershipId}
-            />
+            <div id="site-team" className="site-section-target" tabIndex={-1}>
+              <SitePeople
+                organizationId={organization.id}
+                siteId={current.id}
+                people={people}
+                canManage={canManage}
+                myMembershipId={myMembershipId}
+              />
+            </div>
           </div>
 
           {can('VIEW_BUDGET') ? (
-            <SiteBudget
-              organizationId={organization.id}
-              site={current}
-              canManage={can('MANAGE_BUDGET')}
-              onSaved={saved}
-              onNotice={setSavedNotice}
-            />
+            <div id="site-budget" className="site-section-target" tabIndex={-1}>
+              <SiteBudget
+                organizationId={organization.id}
+                site={current}
+                canManage={can('MANAGE_BUDGET')}
+                onSaved={saved}
+                onNotice={setSavedNotice}
+              />
+            </div>
+          ) : null}
+          {canManage && current.status !== 'ARCHIVED' ? (
+            <section className="page-section site-secondary-actions" aria-label={t.detail.archive}>
+              <button type="button" className="button button--danger" onClick={() => setArchiveOpen(true)}>
+                {t.detail.archive}
+              </button>
+            </section>
           ) : null}
         </>
       ) : tab === 'plans' ? (
@@ -225,6 +252,7 @@ export function SiteDetailPage() {
           siteId={current.id}
           people={people.data}
           onSite={onSite}
+          targetPhase={anchor.startsWith('phase-') ? anchor : undefined}
           onProgressChanged={site.reload}
         />
       ) : (

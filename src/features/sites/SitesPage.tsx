@@ -44,7 +44,7 @@ export function SitesPage() {
   }, [t.title])
 
   return (
-    <div className="page">
+    <div className="page sites-page">
       <header className="page-header">
         <div className="page-header__text">
           <h1>{t.title}</h1>
@@ -116,20 +116,25 @@ function SitesGrid({ sites, t, locale }: { sites: Site[]; t: Messages['sites']; 
           <Link key={site.id} className="site-card" to={`/sites/${encodeURIComponent(site.id)}`}>
             <div className="site-card__header">
               <SiteStatusBadge status={site.status} labels={t.status} />
+              <svg className="site-card__open" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" focusable="false">
+                <path d="M5 19 19 5M5 5h14v14" />
+              </svg>
             </div>
-            <div className="site-card__name">{site.name}</div>
+            <h2 className="site-card__name">{site.name}</h2>
             <div className={`site-card__address${site.address ? '' : ' cell-muted'}`}>
               {site.address || t.noAddress}
             </div>
-            <div className="site-card__schedule data-mono">{scheduleText(site, t, locale)}</div>
-            {progress && progress.total > 0 ? (
-              <div className="site-card__progress">
-                <ProgressMeter
-                  progress={progress}
-                  label={formatMessage(t.progress, { done: progress.done, total: progress.total })}
-                />
-              </div>
-            ) : null}
+            <div className="site-card__footer">
+              <div className="site-card__schedule data-mono">{scheduleText(site, t, locale)}</div>
+              {progress && progress.total > 0 ? (
+                <div className="site-card__progress">
+                  <ProgressMeter
+                    progress={progress}
+                    label={formatMessage(t.progress, { done: progress.done, total: progress.total })}
+                  />
+                </div>
+              ) : null}
+            </div>
           </Link>
         )
       })}

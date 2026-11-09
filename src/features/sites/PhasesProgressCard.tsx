@@ -1,3 +1,7 @@
+import { useState } from 'react'
+import { Link } from 'react-router'
+import { isOverdue } from '../goals/dueAt'
+import { siteSectionUrl } from './siteNavigation'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { SkeletonList, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
@@ -12,6 +16,7 @@ type Props = {
 export function PhasesProgressCard({ organizationId, siteId }: Props) {
   const { messages: m, locale } = useLocale()
   const t = m.sites.overview
+  const [now] = useState(() => new Date())
   const key = `${organizationId}:${siteId}:goals-progress`
   const goals = useRemoteData(key, () => listGoals(organizationId, siteId))
 
@@ -45,7 +50,11 @@ export function PhasesProgressCard({ organizationId, siteId }: Props) {
             const pct = total > 0 ? Math.round((done / total) * 100) : null
             return (
               <tr key={goal.id}>
-                <td>{goal.name}</td>
+                <td>
+                  <Link to={siteSectionUrl(siteId, 'list', `phase-${goal.id}`)}>{goal.name}</Link>
+                  {goal.completed ? <span className="badge site-phase-state" data-tone="success">{m.goals.completed}</span>
+                    : isOverdue(goal.dueAt, now) ? <span className="badge site-phase-state" data-tone="warning">{m.goals.overdue}</span> : null}
+                </td>
                 <td className="data-mono">
                   {formatDate(goal.startAt, intlLocales[locale])} –{' '}
                   {formatDate(goal.dueAt, intlLocales[locale])}
