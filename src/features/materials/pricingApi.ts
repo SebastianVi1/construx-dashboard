@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
+import { organizationPath } from '../../lib/apiPaths'
 
 export const materialUnits = ['PIECE', 'BAG', 'SQUARE_METER', 'CUBIC_METER', 'KILOGRAM', 'LITER', 'METER'] as const
 
@@ -183,7 +183,7 @@ export const importReportSchema = z.object({
 export type ImportReport = z.infer<typeof importReportSchema>
 
 /** A real import refused with 422: nothing was saved, and `report` says which rows are wrong. */
-export class PriceImportRejectedError extends AuthApiError {
+export class PriceImportRejectedError extends ApiError {
   readonly report: ImportReport
 
   constructor(report: ImportReport) {
@@ -213,7 +213,7 @@ export async function importPrices(organizationId: string, file: File, { dryRun 
   try {
     return await postImport(organizationId, file, dryRun)
   } catch (error) {
-    if (dryRun || !(error instanceof AuthApiError) || error.status !== 422) throw error
+    if (dryRun || !(error instanceof ApiError) || error.status !== 422) throw error
     throw new PriceImportRejectedError(await postImport(organizationId, file, true))
   }
 }
@@ -238,7 +238,7 @@ const conflictKinds: Record<string, PricingErrorKind> = {
 
 /** Message to show when a pricing request fails; each pricing 409 code has its own. */
 export function pricingErrorKind(error: unknown): PricingErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 409) return (error.code && conflictKinds[error.code]) || 'generic'
   if (error.status === 400) return 'invalid'
   if (error.status === 401) return 'session'
@@ -251,9 +251,9 @@ export type ImportErrorKind = PricingErrorKind | 'badFile' | 'importRejected'
 
 /** Import failures: a 400 VALIDATION_FAILED is a file the server cannot read (header, size, rows), a 422 a rejected import. */
 export function importErrorKind(error: unknown): ImportErrorKind {
-  if (error instanceof AuthApiError && error.status === 422) return 'importRejected'
-  if (error instanceof AuthApiError && error.status === 400 && error.code === 'VALIDATION_FAILED') return 'badFile'
+  if (error instanceof ApiError && error.status === 422) return 'importRejected'
+  if (error instanceof ApiError && error.status === 400 && error.code === 'VALIDATION_FAILED') return 'badFile'
   // Over 2 MB the server's multipart limit answers 413 before the import's own size check.
-  if (error instanceof AuthApiError && error.status === 413) return 'badFile'
+  if (error instanceof ApiError && error.status === 413) return 'badFile'
   return pricingErrorKind(error)
 }

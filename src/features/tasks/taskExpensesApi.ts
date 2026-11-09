@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getJson, sendJson } from '../auth/authApi'
+import { getJson, sendJson } from '../../lib/http'
 import { expenseSchema, type ExpenseDraft } from '../finance/financeApi'
 import { goalPath } from '../goals/goalsApi'
 import type { PhaseRef } from './tasksApi'

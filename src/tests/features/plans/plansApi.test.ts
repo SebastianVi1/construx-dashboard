@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import {
   completePlanUpload,
   deletePlan,
@@ -33,7 +33,7 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
   const client = { get, post: send, patch: send, put: send, delete: send }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -157,15 +157,15 @@ describe('plans API', () => {
   })
 
   it('planErrorKind: maps server and storage failures to messages', () => {
-    expect(planErrorKind(new AuthApiError(400, undefined, 'PLAN_FILE_TYPE'))).toBe('fileType')
-    expect(planErrorKind(new AuthApiError(400, undefined, 'PLAN_FILE_TOO_LARGE'))).toBe('tooLarge')
-    expect(planErrorKind(new AuthApiError(400, undefined, 'PLAN_UPLOAD_MISSING'))).toBe('uploadFailed')
-    expect(planErrorKind(new AuthApiError(400, undefined, 'PLAN_UPLOAD_MISMATCH'))).toBe('uploadFailed')
+    expect(planErrorKind(new ApiError(400, undefined, 'PLAN_FILE_TYPE'))).toBe('fileType')
+    expect(planErrorKind(new ApiError(400, undefined, 'PLAN_FILE_TOO_LARGE'))).toBe('tooLarge')
+    expect(planErrorKind(new ApiError(400, undefined, 'PLAN_UPLOAD_MISSING'))).toBe('uploadFailed')
+    expect(planErrorKind(new ApiError(400, undefined, 'PLAN_UPLOAD_MISMATCH'))).toBe('uploadFailed')
     expect(planErrorKind(new StorageUploadError(403))).toBe('uploadFailed')
-    expect(planErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
-    expect(planErrorKind(new AuthApiError(401))).toBe('session')
-    expect(planErrorKind(new AuthApiError(403))).toBe('forbidden')
-    expect(planErrorKind(new AuthApiError(404))).toBe('notFound')
+    expect(planErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
+    expect(planErrorKind(new ApiError(401))).toBe('session')
+    expect(planErrorKind(new ApiError(403))).toBe('forbidden')
+    expect(planErrorKind(new ApiError(404))).toBe('notFound')
     expect(planErrorKind(new Error('x'))).toBe('generic')
   })
 })

@@ -4,7 +4,7 @@ import L from 'leaflet'
 import 'leaflet-draw'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import { useLocale } from '../../i18n'
-import { AuthApiError } from '../auth/authApi'
+import { ApiError } from '../../lib/http'
 import { createZone } from './zonesApi'
 import { MIN_ZONE_AREA_M2, polygonArea } from './zoneOccupants'
 import type { Zone, ZoneStatus } from './zonesApi'
@@ -132,7 +132,7 @@ export function ZoneDrawTool({
       setDescription('')
       setStatus('NOT_STARTED')
     } catch (err) {
-      setError(err instanceof AuthApiError && err.code === 'ZONE_NO_AREA' ? t.noAreaError : t.createError)
+      setError(err instanceof ApiError && err.code === 'ZONE_NO_AREA' ? t.noAreaError : t.createError)
     } finally {
       setSubmitting(false)
     }

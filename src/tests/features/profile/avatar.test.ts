@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import { ImageCompressionError } from '../../../lib/image'
 import { StorageUploadError } from '../../../features/plans/plansApi'
 import {
@@ -24,7 +24,7 @@ function stubApi() {
   const put = mock<(url: string, body?: unknown) => Promise<unknown>>(async () => ({ status: 200, data: saved }))
   const del = mock<(url: string) => Promise<unknown>>(async () => ({ status: 204, data: '' }))
   const client = { get, post, put, patch: put, delete: del }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { post, put, del }
 }
 
@@ -104,8 +104,8 @@ describe('avatarErrorKind and profileSchema', () => {
     expect(avatarErrorKind(new ImageCompressionError())).toBe('compressFailed')
     expect(avatarErrorKind(new AvatarTooLargeError())).toBe('tooLarge')
     expect(avatarErrorKind(new StorageUploadError(0))).toBe('uploadFailed')
-    expect(avatarErrorKind(new AuthApiError(400))).toBe('invalid')
-    expect(avatarErrorKind(new AuthApiError(401))).toBe('session')
+    expect(avatarErrorKind(new ApiError(400))).toBe('invalid')
+    expect(avatarErrorKind(new ApiError(401))).toBe('session')
     expect(avatarErrorKind(new Error('x'))).toBe('generic')
   })
 

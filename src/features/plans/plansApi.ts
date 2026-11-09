@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
+import { sitePath } from '../../lib/apiPaths'
 
 /** `PlanResponse`. `viewUrl` is a short-lived link to the image; reload the list for a fresh one. */
 export const planSchema = z.object({
@@ -40,7 +40,7 @@ export type PlanUploadRequest = {
 }
 
 function plansPath(organizationId: string, siteId: string): string {
-  return `${organizationPath(organizationId)}/projects/${encodeURIComponent(siteId)}/plans`
+  return `${sitePath(organizationId, siteId)}/plans`
 }
 
 function planPath(organizationId: string, siteId: string, planId: string): string {
@@ -137,7 +137,7 @@ export type PlanErrorKind =
 /** Message to show when loading, uploading or deleting a plan fails. */
 export function planErrorKind(error: unknown): PlanErrorKind {
   if (error instanceof StorageUploadError) return 'uploadFailed'
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.code === 'PLAN_FILE_TYPE') return 'fileType'
   if (error.code === 'PLAN_FILE_TOO_LARGE') return 'tooLarge'
   if (error.code === 'PLAN_UPLOAD_MISSING' || error.code === 'PLAN_UPLOAD_MISMATCH') return 'uploadFailed'

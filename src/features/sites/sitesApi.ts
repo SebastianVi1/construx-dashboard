@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
+import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
 import { personSchema } from '../people/personSchema'
 import { roleSchema } from '../permissions/can'
-import { organizationPath } from '../permissions/permissionsApi'
+import { organizationPath } from '../../lib/apiPaths'
 
 export const siteStatuses = ['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'ARCHIVED'] as const
 
@@ -108,7 +108,7 @@ export type SiteErrorKind = 'dateOrder' | 'invalid' | 'session' | 'forbidden' | 
 
 /** Message to show when loading, creating or editing a site fails. */
 export function siteErrorKind(error: unknown): SiteErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 400) return error.code === 'INVALID_ARGUMENT' ? 'dateOrder' : 'invalid'
   if (error.status === 401) return 'session'
   if (error.status === 403) return 'forbidden'
@@ -127,7 +127,7 @@ export type AccessErrorKind =
 
 /** Message to show when assigning or removing a person on a site fails. */
 export function accessErrorKind(error: unknown): AccessErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 409) return error.code === 'DATA_CONFLICT' ? 'alreadyAssigned' : 'hasTasks'
   if (error.status === 400) return 'inactive'
   if (error.status === 401) return 'session'

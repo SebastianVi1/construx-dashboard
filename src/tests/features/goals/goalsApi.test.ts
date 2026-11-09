@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import { createGoal, deleteGoal, goalErrorKind, listGoals, setGoalBudget, shiftGoal, updateGoal, type Goal } from '../../../features/goals/goalsApi'
 
 type Config = { withCredentials?: boolean; headers?: Record<string, string> }
@@ -24,7 +24,7 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
   const client = { get, post: send, patch: send, put: send, delete: send }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -51,8 +51,8 @@ describe('phases API', () => {
   })
 
   it('goalErrorKind: tells allocation errors apart from date errors', () => {
-    expect(goalErrorKind(new AuthApiError(400, undefined, 'BUDGET_EXCEEDED'))).toBe('budgetExceeded')
-    expect(goalErrorKind(new AuthApiError(400, undefined, 'BUDGET_PARENT_MISSING'))).toBe('budgetParentMissing')
+    expect(goalErrorKind(new ApiError(400, undefined, 'BUDGET_EXCEEDED'))).toBe('budgetExceeded')
+    expect(goalErrorKind(new ApiError(400, undefined, 'BUDGET_PARENT_MISSING'))).toBe('budgetParentMissing')
   })
 
   it('includes an optional color when creating a record from the dialog', async () => {
@@ -139,13 +139,13 @@ describe('phases API', () => {
 
 describe('phase error kinds', () => {
   it('maps a phase failure to a message kind', () => {
-    expect(goalErrorKind(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('beforeTasks')
-    expect(goalErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
-    expect(goalErrorKind(new AuthApiError(409, undefined, 'STATE_CONFLICT'))).toBe('hasTasks')
-    expect(goalErrorKind(new AuthApiError(401))).toBe('session')
-    expect(goalErrorKind(new AuthApiError(403))).toBe('forbidden')
-    expect(goalErrorKind(new AuthApiError(404))).toBe('notFound')
-    expect(goalErrorKind(new AuthApiError(500))).toBe('generic')
+    expect(goalErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('beforeTasks')
+    expect(goalErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
+    expect(goalErrorKind(new ApiError(409, undefined, 'STATE_CONFLICT'))).toBe('hasTasks')
+    expect(goalErrorKind(new ApiError(401))).toBe('session')
+    expect(goalErrorKind(new ApiError(403))).toBe('forbidden')
+    expect(goalErrorKind(new ApiError(404))).toBe('notFound')
+    expect(goalErrorKind(new ApiError(500))).toBe('generic')
     expect(goalErrorKind(new Error('boom'))).toBe('generic')
   })
 })

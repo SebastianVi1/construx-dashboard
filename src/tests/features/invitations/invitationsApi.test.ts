@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import { acceptErrorKind, acceptInvitation, joinedPath } from '../../../features/invitations/invitationsApi'
 
 type Config = { headers?: Record<string, string> }
@@ -16,7 +16,7 @@ const accepted = {
 function stubApi(send: () => unknown) {
   const get = mock(async () => csrfOk)
   const post = mock(async () => send())
-  configureAuthApi({ client: { get, post } as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: { get, post } as unknown as AxiosInstance, baseUrl: '/api' })
   return { post }
 }
 
@@ -49,12 +49,12 @@ describe('after accepting', () => {
 
 describe('accept error kinds', () => {
   it('maps an accept failure to a message kind', () => {
-    expect(acceptErrorKind(new AuthApiError(404, undefined, 'NOT_FOUND'))).toBe('notForYou')
-    expect(acceptErrorKind(new AuthApiError(409, undefined, 'STATE_CONFLICT'))).toBe('unavailable')
-    expect(acceptErrorKind(new AuthApiError(429, 30))).toBe('rateLimited')
-    expect(acceptErrorKind(new AuthApiError(401))).toBe('session')
-    expect(acceptErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('notForYou')
-    expect(acceptErrorKind(new AuthApiError(500))).toBe('generic')
+    expect(acceptErrorKind(new ApiError(404, undefined, 'NOT_FOUND'))).toBe('notForYou')
+    expect(acceptErrorKind(new ApiError(409, undefined, 'STATE_CONFLICT'))).toBe('unavailable')
+    expect(acceptErrorKind(new ApiError(429, 30))).toBe('rateLimited')
+    expect(acceptErrorKind(new ApiError(401))).toBe('session')
+    expect(acceptErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('notForYou')
+    expect(acceptErrorKind(new ApiError(500))).toBe('generic')
     expect(acceptErrorKind(new Error('offline'))).toBe('generic')
   })
 })

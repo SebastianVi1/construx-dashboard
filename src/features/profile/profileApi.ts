@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
+import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
 import { compressImage, ImageCompressionError, imageContentTypes } from '../../lib/image'
 import { personSchema } from '../people/personSchema'
 import { sendToStorage, StorageUploadError } from '../plans/plansApi'
@@ -95,14 +95,14 @@ export function avatarErrorKind(error: unknown): AvatarErrorKind {
   if (error instanceof ImageCompressionError) return 'compressFailed'
   if (error instanceof AvatarTooLargeError) return 'tooLarge'
   if (error instanceof StorageUploadError) return 'uploadFailed'
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 400) return 'invalid'
   if (error.status === 401) return 'session'
   return 'generic'
 }
 
 export function profileErrorKind(error: unknown): ProfileErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 400) return 'invalid'
   if (error.status === 401) return 'session'
   return 'generic'

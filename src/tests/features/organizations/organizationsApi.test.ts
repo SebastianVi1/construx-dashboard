@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import { createOrganization, getOrganization, listOrganizations } from '../../../features/organizations/organizationsApi'
 
 type Config = { withCredentials?: boolean; headers?: Record<string, string> }
@@ -13,7 +13,7 @@ const acme = { id: '7f1c2a9e-0000-4000-8000-000000000001', name: 'Acme Builders'
 function stubApi(getImpl: (url: string) => unknown, postImpl: () => unknown = () => ({ status: 201, data: acme })) {
   const get = mock(async (url: string) => getImpl(url))
   const post = mock(async () => postImpl())
-  configureAuthApi({ client: { get, post } as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: { get, post } as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, post }
 }
 
@@ -50,7 +50,7 @@ describe('organizations API', () => {
     })
 
     const failure = createOrganization('x')
-    await expect(failure).rejects.toBeInstanceOf(AuthApiError)
+    await expect(failure).rejects.toBeInstanceOf(ApiError)
     await expect(failure).rejects.toMatchObject({ status: 400, code: 'VALIDATION_FAILED' })
   })
 
@@ -72,7 +72,7 @@ describe('organizations API', () => {
 
   it('listOrganizations: rejects a malformed body', async () => {
     stubApi(() => ({ status: 200, data: [{ id: 1 }] }))
-    await expect(listOrganizations()).rejects.toBeInstanceOf(AuthApiError)
+    await expect(listOrganizations()).rejects.toBeInstanceOf(ApiError)
   })
 
   it('getOrganization: gets one organization by an encoded id', async () => {

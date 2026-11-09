@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { configureAuthApi } from '../../../features/auth/authApi'
+import { configureHttp } from '../../../lib/http'
 import {
   getMonthlyExpenses,
   getOrgFinanceSummary,
@@ -34,7 +34,7 @@ const monthly = { totalBudget: 500000, months: [{ month: '2026-01', spent: 42000
 
 function stubApi(get: (url: string, config?: unknown) => unknown) {
   const client = { get: mock(async (url: string, config?: unknown) => get(url, config)) }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return client
 }
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import { generateReport, getDownloadUrl, listReports, reportSchema, type SiteReport } from '../../../features/reports/reportApi'
 
 const csrfOk = { data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
@@ -19,7 +19,7 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
   const client = { get, post: send, patch: send, put: send, delete: send }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -55,8 +55,8 @@ describe('listReports', () => {
   })
 
   it('throws on a 403', async () => {
-    stubApi({ get: () => { throw new AuthApiError(403) } })
-    await expect(listReports('org-1', 'site-1')).rejects.toBeInstanceOf(AuthApiError)
+    stubApi({ get: () => { throw new ApiError(403) } })
+    await expect(listReports('org-1', 'site-1')).rejects.toBeInstanceOf(ApiError)
   })
 })
 
@@ -73,8 +73,8 @@ describe('generateReport', () => {
   })
 
   it('throws on a 403', async () => {
-    stubApi({ send: () => { throw new AuthApiError(403) } })
-    await expect(generateReport('org-1', 'site-1', 'Q4')).rejects.toBeInstanceOf(AuthApiError)
+    stubApi({ send: () => { throw new ApiError(403) } })
+    await expect(generateReport('org-1', 'site-1', 'Q4')).rejects.toBeInstanceOf(ApiError)
   })
 })
 
@@ -90,7 +90,7 @@ describe('getDownloadUrl', () => {
   })
 
   it('throws on a 404', async () => {
-    stubApi({ get: () => { throw new AuthApiError(404) } })
-    await expect(getDownloadUrl('org-1', 'site-1', 'r-1')).rejects.toBeInstanceOf(AuthApiError)
+    stubApi({ get: () => { throw new ApiError(404) } })
+    await expect(getDownloadUrl('org-1', 'site-1', 'r-1')).rejects.toBeInstanceOf(ApiError)
   })
 })

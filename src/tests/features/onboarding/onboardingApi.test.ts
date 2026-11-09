@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { configureAuthApi } from '../../../features/auth/authApi'
+import { configureHttp } from '../../../lib/http'
 import { getOnboarding, putOnboarding } from '../../../features/onboarding/onboardingApi'
 
 type Config = { withCredentials?: boolean; headers?: Record<string, string> }
@@ -13,7 +13,7 @@ const saved = { intent: 'RUN_COMPANY' as const, businessType: null, updatedAt: '
 function stubApi(getImpl: () => unknown, putImpl: () => unknown = () => ({ status: 200, data: saved })) {
   const get = mock(async () => getImpl())
   const put = mock(async () => putImpl())
-  configureAuthApi({ client: { get, put } as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: { get, put } as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, put }
 }
 

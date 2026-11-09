@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { Locale } from '../../i18n'
-import { AuthApiError } from '../auth/authApi'
+import { ApiError } from '../../lib/http'
 import { moneyText } from '../materials/priceRules'
 
 export type BudgetValidationMessages = {
@@ -64,7 +64,7 @@ export type AllocationIssue = 'budgetExceeded' | 'budgetParentMissing'
  * parent has no budget yet.
  */
 export function allocationIssue(error: unknown): AllocationIssue | null {
-  if (!(error instanceof AuthApiError) || error.status !== 400) return null
+  if (!(error instanceof ApiError) || error.status !== 400) return null
   if (error.code === 'BUDGET_EXCEEDED') return 'budgetExceeded'
   if (error.code === 'BUDGET_PARENT_MISSING') return 'budgetParentMissing'
   return null

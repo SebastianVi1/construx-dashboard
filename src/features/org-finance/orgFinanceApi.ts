@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { getJson } from '../auth/authApi'
+import { getJson } from '../../lib/http'
 import { expenseCategories } from '../finance/financeApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { organizationPath } from '../../lib/apiPaths'
 
 export const siteFinanceStatuses = ['OK', 'NEAR_LIMIT', 'OVER_BUDGET', 'NO_BUDGET'] as const
 

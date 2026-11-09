@@ -4,7 +4,7 @@ import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { listMembers, type Member } from '../members/membersApi'
 import { roleLabel } from '../permissions'
-import { AuthApiError } from '../auth/authApi'
+import { ApiError } from '../../lib/http'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { assignableMembers } from './siteHelpers'
@@ -174,7 +174,7 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
 
   if (!members.data) {
     if (members.status !== 'error') return <SkeletonList />
-    const forbidden = members.error instanceof AuthApiError && members.error.status === 403
+    const forbidden = members.error instanceof ApiError && members.error.status === 403
     return <Notice>{forbidden ? t.membersForbidden : t.membersError}</Notice>
   }
 

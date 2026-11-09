@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { getJson, sendJson } from '../../lib/http'
+import { floorPlanPath } from '../../lib/apiPaths'
 
 export const shiftSchema = z.enum(['MORNING', 'AFTERNOON', 'FULL_DAY'])
 export type Shift = z.infer<typeof shiftSchema>
@@ -53,7 +53,7 @@ export type CreateAssignmentRequest = {
 }
 
 function assignmentsPath(orgId: string, siteId: string, floorPlanId: string, zoneId: string): string {
-  return `${organizationPath(orgId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/zones/${encodeURIComponent(zoneId)}/assignments`
+  return `${floorPlanPath(orgId, siteId, floorPlanId)}/zones/${encodeURIComponent(zoneId)}/assignments`
 }
 
 export function listAssignments(
@@ -120,7 +120,7 @@ export function getZoneAssignmentCounts(
   floorPlanId: string,
 ): Promise<Record<string, number>> {
   return getJson(
-    `${organizationPath(orgId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/zones/assignment-counts`,
+    `${floorPlanPath(orgId, siteId, floorPlanId)}/zones/assignment-counts`,
     z.record(z.string(), z.number()),
   )
 }
@@ -132,7 +132,7 @@ export function listFloorPlanAssignments(
   floorPlanId: string,
 ): Promise<AssignmentData[]> {
   return getJson(
-    `${organizationPath(orgId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/assignments`,
+    `${floorPlanPath(orgId, siteId, floorPlanId)}/assignments`,
     z.array(assignmentDataSchema),
   )
 }

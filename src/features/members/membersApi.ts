@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
+import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
 import { roleSchema } from '../permissions/can'
 import { personSchema } from '../people/personSchema'
-import { organizationPath } from '../permissions/permissionsApi'
+import { organizationPath } from '../../lib/apiPaths'
 
 export const memberSchema = personSchema.extend({
   membershipId: z.string().min(1),
@@ -96,7 +96,7 @@ export function removeMember(organizationId: string, membershipId: string): Prom
 export type MemberActionErrorKind = 'conflict' | 'session' | 'forbidden' | 'notFound' | 'generic'
 
 export function memberActionErrorKind(error: unknown): MemberActionErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 409) return 'conflict'
   if (error.status === 401) return 'session'
   if (error.status === 403) return 'forbidden'
@@ -117,7 +117,7 @@ export function makeInviteSchema(messages: InviteValidationMessages) {
 export type InviteErrorKind = 'alreadyMember' | 'invalidEmail' | 'invalid' | 'session' | 'forbidden' | 'notFound' | 'generic'
 
 export function inviteErrorKind(error: unknown): InviteErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 409) return 'alreadyMember'
   if (error.status === 400) return error.code === 'VALIDATION_FAILED' ? 'invalidEmail' : 'invalid'
   if (error.status === 401) return 'session'
@@ -129,7 +129,7 @@ export function inviteErrorKind(error: unknown): InviteErrorKind {
 export type RevokeErrorKind = 'notPending' | 'session' | 'forbidden' | 'notFound' | 'generic'
 
 export function revokeErrorKind(error: unknown): RevokeErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 409) return 'notPending'
   if (error.status === 401) return 'session'
   if (error.status === 403) return 'forbidden'

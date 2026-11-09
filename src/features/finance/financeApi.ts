@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { deleteJson, getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { deleteJson, getJson, sendJson } from '../../lib/http'
+import { sitePath } from '../../lib/apiPaths'
 
 /** Fixed order: the summary, the chart colors and the legend all follow it. */
 export const expenseCategories = ['MATERIALS', 'LABOR', 'EQUIPMENT', 'OTHER'] as const
@@ -40,10 +40,6 @@ export type ExpenseDraft = {
 }
 
 export type ExpensePatch = Partial<ExpenseDraft>
-
-function sitePath(organizationId: string, siteId: string): string {
-  return `${organizationPath(organizationId)}/projects/${encodeURIComponent(siteId)}`
-}
 
 /** Allocated budget, total spent, what remains and spend per category (VIEW_BUDGET). */
 export function getBudgetSummary(organizationId: string, siteId: string): Promise<BudgetSummary> {

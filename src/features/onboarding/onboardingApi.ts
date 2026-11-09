@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getJson, sendJson } from '../auth/authApi'
+import { getJson, sendJson } from '../../lib/http'
 
 export const intents = ['RUN_COMPANY', 'WORKER_OR_INVITED'] as const
 export const businessTypes = ['OWNER_DEVELOPER', 'GENERAL_CONTRACTOR', 'ARCHITECT_ENGINEER', 'SUBCONTRACTOR'] as const

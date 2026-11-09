@@ -53,11 +53,6 @@ export function makeResetPasswordSchema(messages: ValidationMessages) {
     })
 }
 
-export const csrfSchema = z.object({
-  headerName: z.string().regex(/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/),
-  token: z.string().min(1),
-})
-
 export const problemSchema = z.object({
   title: z.string().optional(),
   detail: z.string().optional(),

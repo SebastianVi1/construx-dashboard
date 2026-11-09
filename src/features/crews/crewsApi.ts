@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { deleteJson, getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { deleteJson, getJson, sendJson } from '../../lib/http'
+import { organizationPath } from '../../lib/apiPaths'
 
 // ── Crew ──────────────────────────────────────────────────────────────────────
 

@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
+import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
 import { goalPath } from '../goals/goalsApi'
 import { personSchema } from '../people/personSchema'
-import { organizationPath } from '../permissions/permissionsApi'
+import { organizationPath } from '../../lib/apiPaths'
 
 export const taskStatuses = ['TODO', 'IN_PROGRESS', 'DONE'] as const
 
@@ -147,7 +147,7 @@ export type TaskErrorKind =
  * that has expenses.
  */
 export function taskErrorKind(error: unknown): TaskErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 400) return error.code === 'INVALID_ARGUMENT' ? 'afterPhase' : 'invalid'
   if (error.status === 409) return 'transition'
   if (error.status === 401) return 'session'

@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { deleteJson, getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { deleteJson, getJson, sendJson, uploadPresigned } from '../../lib/http'
+import { sitePath } from '../../lib/apiPaths'
 
 function basePath(org: string, site: string) {
-  return `${organizationPath(org)}/projects/${encodeURIComponent(site)}/document-folders`
+  return `${sitePath(org, site)}/document-folders`
 }
 
 export const documentFolderSchema = z.object({
@@ -92,6 +92,18 @@ export function confirmUpload(
     201,
     documentEntrySchema,
   )
+}
+
+/**
+ * Upload a file into a folder: get a presigned URL, PUT the file to storage,
+ * then confirm the entry. A failed storage PUT throws before the confirm, so
+ * no entry is created for a file that was never stored.
+ */
+export async function uploadDocumentFile(org: string, site: string, folderId: string, file: File) {
+  const contentType = file.type || 'application/octet-stream'
+  const ticket = await requestUploadUrl(org, site, folderId, file.name, contentType, file.size)
+  await uploadPresigned(ticket.uploadUrl, file, { 'Content-Type': contentType, ...ticket.headers })
+  return confirmUpload(org, site, folderId, ticket.entryId, ticket.s3Key, file.name, file.size, file.type || null)
 }
 
 export function deleteDocumentEntry(org: string, site: string, folderId: string, entryId: string) {

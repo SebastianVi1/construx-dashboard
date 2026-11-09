@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
 import { z } from 'zod'
-import { configureAuthApi, deleteJson, getJson, login, onSessionExpired, sendJson } from '../../../features/auth/authApi'
+import { login } from '../../../features/auth/authApi'
+import { configureHttp, deleteJson, getJson, onSessionExpired, sendJson } from '../../../lib/http'
 
 type Config = { headers?: Record<string, string> }
 
@@ -40,7 +41,7 @@ function fakeBackend(options: {
     patch: mock((url: string, _body: unknown, config?: Config) => handle('PATCH', url, config)),
     delete: mock((url: string, config?: Config) => handle('DELETE', url, config)),
   }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { calls, count: (entry: string) => calls.filter((call) => call === entry).length }
 }
 

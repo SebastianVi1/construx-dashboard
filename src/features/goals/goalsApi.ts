@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
+import { sitePath } from '../../lib/apiPaths'
 import { allocationIssue } from '../sites/budgetRules'
 
 /**
@@ -28,7 +28,7 @@ export type Goal = z.infer<typeof goalSchema>
 export type GoalInput = { color?: string; name: string; startAt: string; dueAt: string }
 
 export function goalsPath(organizationId: string, siteId: string): string {
-  return `${organizationPath(organizationId)}/projects/${encodeURIComponent(siteId)}/goals`
+  return `${sitePath(organizationId, siteId)}/goals`
 }
 
 export function goalPath(organizationId: string, siteId: string, goalId: string): string {
@@ -86,7 +86,7 @@ export type GoalErrorKind =
  * Budget allocation errors have their own codes.
  */
 export function goalErrorKind(error: unknown): GoalErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   const allocation = allocationIssue(error)
   if (allocation) return allocation
   if (error.status === 400) return error.code === 'INVALID_ARGUMENT' ? 'beforeTasks' : 'invalid'
