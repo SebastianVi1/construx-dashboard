@@ -383,22 +383,6 @@
   align-items: flex-start;
 }
 
-.site-team-preview {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.site-team-preview li {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-  padding-block: 12px;
-  border-bottom: 1px solid var(--cx-border);
-  overflow-wrap: anywhere;
-}
-
 .site-phase-state {
   margin-inline-start: 12px;
 }
@@ -407,5 +391,142 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  color: var(--cx-accent);
+  font-weight: 500;
   text-underline-offset: 4px;
+}
+
+/* Phase names in the progress table read as text and reveal the link on hover. */
+.site-overview .data-table td a {
+  color: var(--cx-ink);
+  text-decoration: none;
+}
+
+.site-overview .data-table td a:hover {
+  color: var(--cx-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ── Overview team: head count per role, then the roster ─────── */
+
+.site-team__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.site-team__roles li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 4px 0 10px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.site-team__role-count {
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.site-team__roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 8px 24px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.site-team__person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 56px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.site-team__person .avatar {
+  width: 36px;
+  height: 36px;
+  box-shadow: none;
+}
+
+.site-team__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.site-team__line {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.site-team__name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-team__line .person-you {
+  flex: none;
+}
+
+.site-team__role {
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.site-team__more {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 56px;
+  padding-block: 8px;
+  border-bottom: 1px dashed var(--cx-border-strong);
+  color: var(--cx-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.site-team__more-count {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px dashed var(--cx-border-strong);
+  border-radius: 50%;
+  font-size: 13px;
+}
+
+.site-team__more:hover .site-team__more-label {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.site-team__more:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 2px;
 }

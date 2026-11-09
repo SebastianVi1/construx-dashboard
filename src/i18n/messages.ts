@@ -451,7 +451,8 @@ const en = {
       manageTeam: 'Manage team',
       viewTeam: 'View team',
       teamCount: 'Assigned: {count}',
-      teamPreview: 'Showing {shown} of {total}',
+      teamRoles: 'Roles on this site',
+      teamMore: 'See all {total}',
       phaseColumn: {
         name: 'Phase',
         dates: 'Dates',
@@ -2224,7 +2225,8 @@ const es: Messages = {
       manageTeam: 'Gestionar equipo',
       viewTeam: 'Ver equipo',
       teamCount: 'Asignados: {count}',
-      teamPreview: 'Mostrando {shown} de {total}',
+      teamRoles: 'Roles en esta obra',
+      teamMore: 'Ver los {total}',
       phaseColumn: {
         name: 'Fase',
         dates: 'Fechas',
