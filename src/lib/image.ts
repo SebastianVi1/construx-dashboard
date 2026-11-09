@@ -10,6 +10,16 @@ export type CompressOptions = {
   quality: number
   /** Files this small are returned as they are. */
   skipBelow?: number
+  /** Throw `ImageCompressionError` instead of returning the original when the image cannot be processed. */
+  strict?: boolean
+}
+
+/** The browser could not decode or re-encode the image. */
+export class ImageCompressionError extends Error {
+  constructor() {
+    super('Image could not be compressed')
+    this.name = 'ImageCompressionError'
+  }
 }
 
 /** Scales down so the long edge is at most `maxEdge`; never scales up. */
@@ -33,17 +43,21 @@ export function pickSmaller(original: File, compressed: Blob | null): File {
 
 /**
  * Re-encodes an image as WebP in the browser, shrinking it to `maxEdge` when needed. WebP keeps lines
- * and text sharper than JPEG at the same size. Returns the original when it is under `skipBelow`,
- * cannot be decoded, or compressing does not make it smaller (some browsers cannot encode WebP and
- * hand back a PNG).
+ * and text sharper than JPEG at the same size. Returns the original when it is under `skipBelow` or
+ * compressing does not make it smaller (some browsers cannot encode WebP and hand back a PNG). An image
+ * the browser cannot decode or encode also comes back as is, or throws `ImageCompressionError` when `strict`.
  */
-export async function compressImage(file: File, { maxEdge, quality, skipBelow = 0 }: CompressOptions): Promise<File> {
+export async function compressImage(file: File, { maxEdge, quality, skipBelow = 0, strict = false }: CompressOptions): Promise<File> {
   if (file.size < skipBelow) return file
+  const failed = () => {
+    if (strict) throw new ImageCompressionError()
+    return file
+  }
   let bitmap: ImageBitmap
   try {
     bitmap = await createImageBitmap(file)
   } catch {
-    return file
+    return failed()
   }
   try {
     const { width, height } = scaledSize(bitmap.width, bitmap.height, maxEdge)
@@ -51,10 +65,11 @@ export async function compressImage(file: File, { maxEdge, quality, skipBelow = 
     canvas.width = width
     canvas.height = height
     const context = canvas.getContext('2d')
-    if (!context) return file
+    if (!context) return failed()
     context.imageSmoothingQuality = 'high'
     context.drawImage(bitmap, 0, 0, width, height)
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', quality))
+    if (!blob) return failed()
     return pickSmaller(file, blob)
   } finally {
     bitmap.close()
