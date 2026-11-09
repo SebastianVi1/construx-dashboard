@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
-import { compressImage, imageContentTypes } from '../../lib/image'
+import { compressImage, ImageCompressionError, imageContentTypes } from '../../lib/image'
 import { sendToStorage, StorageUploadError } from '../plans/plansApi'
 
 /** `ProfileResponse`: every field is null until the person saves their profile. */
@@ -27,7 +27,7 @@ export const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 /** Long edge of the stored photo; avatars are shown at 88 px at most, so this covers high-density screens. */
 export const AVATAR_EDGE = 512
 
-export type AvatarErrorKind = 'fileType' | 'tooLarge' | 'invalid' | 'uploadFailed' | 'session' | 'generic'
+export type AvatarErrorKind = 'fileType' | 'tooLarge' | 'compressFailed' | 'invalid' | 'uploadFailed' | 'session' | 'generic'
 
 const avatarUploadTicketSchema = z.object({
   key: z.string().min(1),
@@ -53,9 +53,12 @@ export function avatarFileProblem(file: Pick<File, 'type' | 'size'>): AvatarErro
   return null
 }
 
-/** Every photo is shrunk to `AVATAR_EDGE` and re-encoded as WebP, whatever its size. */
+/**
+ * Every photo is shrunk to `AVATAR_EDGE` and re-encoded as WebP, whatever its size. Throws
+ * `ImageCompressionError` when the browser cannot process it, rather than uploading the original.
+ */
 export function compressAvatar(file: File): Promise<File> {
-  return compressImage(file, { maxEdge: AVATAR_EDGE, quality: 0.85 })
+  return compressImage(file, { maxEdge: AVATAR_EDGE, quality: 0.85, strict: true })
 }
 
 /** Compress, presign, PUT the bytes straight to storage, then point the profile at the new photo. */
@@ -64,7 +67,7 @@ export async function uploadAvatar(
   { compress = compressAvatar, send = sendToStorage }: { compress?: typeof compressAvatar; send?: typeof sendToStorage } = {},
 ): Promise<Profile> {
   const file = await compress(original)
-  // Compressing can fall back to the original (an image the browser cannot decode).
+  // A small original that WebP cannot beat is kept as is; it still has to fit the server limit.
   if (file.size > MAX_AVATAR_BYTES) throw new AvatarTooLargeError()
   const ticket = await sendJson(
     'post',
@@ -91,6 +94,7 @@ export class AvatarTooLargeError extends Error {
 }
 
 export function avatarErrorKind(error: unknown): AvatarErrorKind {
+  if (error instanceof ImageCompressionError) return 'compressFailed'
   if (error instanceof AvatarTooLargeError) return 'tooLarge'
   if (error instanceof StorageUploadError) return 'uploadFailed'
   if (!(error instanceof AuthApiError)) return 'generic'

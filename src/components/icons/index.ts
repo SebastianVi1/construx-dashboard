@@ -1,5 +1,6 @@
 export {
   ArrowLeftIcon,
+  CameraIcon,
   CheckIcon,
   ChevronDownIcon,
   DocumentIcon,

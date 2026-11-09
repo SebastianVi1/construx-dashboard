@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test'
 import type { AxiosInstance } from 'axios'
 import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ImageCompressionError } from '../../../lib/image'
 import { StorageUploadError } from '../../../features/plans/plansApi'
 import {
   avatarErrorKind,
@@ -69,6 +70,18 @@ describe('uploadAvatar', () => {
     expect(api.put).not.toHaveBeenCalled()
   })
 
+  test('does not ask the API when the photo cannot be compressed', async () => {
+    const api = stubApi()
+    const compress = async (): Promise<File> => {
+      throw new ImageCompressionError()
+    }
+
+    await expect(uploadAvatar(new File(['x'], 'x.png', { type: 'image/png' }), { compress })).rejects.toBeInstanceOf(
+      ImageCompressionError,
+    )
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
   test('refuses a photo still over 5 MB after compressing, before asking the API', async () => {
     const api = stubApi()
     const big = new File([new Uint8Array(MAX_AVATAR_BYTES + 1)], 'big.png', { type: 'image/png' })
@@ -88,6 +101,7 @@ describe('removeAvatar', () => {
 
 describe('avatarErrorKind and profileSchema', () => {
   test('maps storage and API failures', () => {
+    expect(avatarErrorKind(new ImageCompressionError())).toBe('compressFailed')
     expect(avatarErrorKind(new AvatarTooLargeError())).toBe('tooLarge')
     expect(avatarErrorKind(new StorageUploadError(0))).toBe('uploadFailed')
     expect(avatarErrorKind(new AuthApiError(400))).toBe('invalid')

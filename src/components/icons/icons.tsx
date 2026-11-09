@@ -120,6 +120,16 @@ export function PlusIcon(props: IconProps) {
   )
 }
 
+/** A camera body with a lens: change a photo. */
+export function CameraIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </Icon>
+  )
+}
+
 export function UserIcon(props: IconProps) {
   return (
     <Icon {...props}>

@@ -13,6 +13,7 @@ import { Avatar } from './Avatar'
 import { AvatarPicker } from './AvatarPicker'
 import { EditProfileDialog } from './EditProfileDialog'
 import { formatPhone } from './phone'
+import type { AvatarErrorKind } from './profileApi'
 import { displayName } from './profileDisplay'
 import { publishProfile, useMyProfile } from './useMyProfile'
 import './profile.css'
@@ -28,6 +29,7 @@ export function ProfilePage() {
   const orgId = organization.id
   const sites = useRemoteData(`${orgId}:sites`, () => listSites(orgId))
   const [editing, setEditing] = useState(false)
+  const [photoError, setPhotoError] = useState<AvatarErrorKind | null>(null)
   const [resetState, setResetState] = useState<'idle' | 'pending' | 'sent' | 'error'>('idle')
 
   useEffect(() => {
@@ -44,10 +46,11 @@ export function ProfilePage() {
     <div className="page">
       <header className="profile-hero">
         <div className="profile-hero__identity">
-          <div className="profile-hero__avatar">
-            <Avatar fullName={fullName} email={user.email} avatarUrl={profile.data?.avatarUrl} size="large" />
-            {profile.data ? <AvatarPicker profile={profile.data} /> : null}
-          </div>
+          {profile.data ? (
+            <AvatarPicker profile={profile.data} email={user.email} onError={setPhotoError} />
+          ) : (
+            <Avatar fullName={fullName} email={user.email} size="large" />
+          )}
           <div className="profile-hero__text">
             <h1>{displayName(fullName, user.email)}</h1>
             <p>{user.email}</p>
@@ -65,6 +68,12 @@ export function ProfilePage() {
           {m.auth.account.signOut}
         </button>
       </header>
+
+      {photoError ? (
+        <p role="alert" className="form-error profile-photo-error">
+          {t.photo.errors[photoError]}
+        </p>
+      ) : null}
 
       <section className="page-section" aria-labelledby="profile-details">
         <div className="page-section__header">

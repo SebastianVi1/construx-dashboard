@@ -1,43 +1,57 @@
 import { useRef, useState } from 'react'
+import { CameraIcon } from '../../components/icons'
 import { useLocale } from '../../i18n'
+import { Avatar } from './Avatar'
 import { AVATAR_TYPES, avatarErrorKind, avatarFileProblem, removeAvatar, uploadAvatar, type AvatarErrorKind, type Profile } from './profileApi'
 import { publishProfile } from './useMyProfile'
 
-/** Change or remove the profile photo; the bytes go straight to storage through a presigned URL. */
-export function AvatarPicker({ profile }: { profile: Profile }) {
+/**
+ * The profile portrait as its own button: picking a file compresses it and sends it straight to
+ * storage through a presigned URL. A camera badge keeps the action visible on touch screens. Failures
+ * go to `onError` so the page can show them at full width instead of squeezing them under the circle.
+ */
+export function AvatarPicker({
+  profile,
+  email,
+  onError,
+}: {
+  profile: Profile
+  email: string
+  onError: (error: AvatarErrorKind | null) => void
+}) {
   const { messages: m } = useLocale()
   const t = m.profile.photo
   const input = useRef<HTMLInputElement>(null)
   const [state, setState] = useState<'idle' | 'uploading' | 'removing'>('idle')
-  const [error, setError] = useState<AvatarErrorKind | null>(null)
   const busy = state !== 'idle'
+  const actionLabel = profile.avatarUrl ? t.change : t.add
 
   async function choose(file: File | undefined) {
     if (!file) return
     const problem = avatarFileProblem(file)
     if (problem) {
-      setError(problem)
+      onError(problem)
       return
     }
-    setError(null)
+    onError(null)
     setState('uploading')
     try {
       publishProfile(await uploadAvatar(file))
     } catch (caught) {
-      setError(avatarErrorKind(caught))
+      onError(avatarErrorKind(caught))
     } finally {
       setState('idle')
     }
   }
 
   async function remove() {
-    setError(null)
+    onError(null)
     setState('removing')
     try {
       await removeAvatar()
       publishProfile({ ...profile, avatarUrl: null })
     } catch (caught) {
-      setError(avatarErrorKind(caught))
+      onError(avatarErrorKind(caught))
     } finally {
       setState('idle')
     }
@@ -58,23 +72,34 @@ export function AvatarPicker({ profile }: { profile: Profile }) {
           void choose(file)
         }}
       />
-      <div className="avatar-picker__actions">
-        <button type="button" className="button button--small" disabled={busy} onClick={() => input.current?.click()}>
-          {state === 'uploading' ? t.uploading : profile.avatarUrl ? t.change : t.add}
+      <button
+        type="button"
+        className="avatar-picker__portrait"
+        data-busy={state === 'uploading' ? true : undefined}
+        disabled={busy}
+        aria-label={state === 'uploading' ? t.uploading : actionLabel}
+        onClick={() => input.current?.click()}
+      >
+        <Avatar fullName={profile.fullName} email={email} avatarUrl={profile.avatarUrl} size="large" decorative />
+        <span className="avatar-picker__veil" aria-hidden>
+          {state === 'uploading' ? (
+            <span className="avatar-picker__spinner" />
+          ) : (
+            <>
+              <CameraIcon className="avatar-picker__veil-icon" />
+              <span>{actionLabel}</span>
+            </>
+          )}
+        </span>
+        <span className="avatar-picker__badge" aria-hidden>
+          <CameraIcon />
+        </span>
+      </button>
+      {profile.avatarUrl ? (
+        <button type="button" className="button button--small" disabled={busy} onClick={() => void remove()}>
+          {state === 'removing' ? t.removing : t.remove}
         </button>
-        {profile.avatarUrl ? (
-          <button type="button" className="button button--small" disabled={busy} onClick={() => void remove()}>
-            {state === 'removing' ? t.removing : t.remove}
-          </button>
-        ) : null}
-      </div>
-      {error ? (
-        <p role="alert" className="form-error avatar-picker__error">
-          {t.errors[error]}
-        </p>
-      ) : (
-        <p className="avatar-picker__hint">{t.hint}</p>
-      )}
+      ) : null}
     </div>
   )
 }

@@ -6,9 +6,10 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--cx-accent);
-  border-radius: var(--cx-radius-md);
+  border-radius: 50%;
   background: var(--cx-accent-subtle);
+  /* The dark theme's shadow token is unset, so fall back to the deep black design.md asks for there. */
+  box-shadow: 0 2px 6px var(--cx-shadow-color, rgb(0 0 0 / 0.45));
   color: var(--cx-accent);
   font-size: 13px;
   font-weight: 600;
@@ -29,7 +30,7 @@
 .avatar[data-size='large'] {
   width: 72px;
   height: 72px;
-  border-radius: var(--cx-radius-lg);
+  box-shadow: 0 4px 14px var(--cx-shadow-color, rgb(0 0 0 / 0.45));
   font-size: 26px;
 }
 
@@ -93,48 +94,134 @@
   min-width: 0;
 }
 
-/* Larger avatar in the hero band */
+/* The portrait in the hero band: a contact shadow plus a wide soft one, so it lifts off the band. */
 .profile-hero .avatar[data-size='large'] {
-  width: 88px;
-  height: 88px;
-  font-size: 30px;
+  width: 96px;
+  height: 96px;
+  font-size: 32px;
+  box-shadow:
+    0 1px 3px var(--cx-shadow-color, rgb(0 0 0 / 0.5)),
+    0 10px 28px var(--cx-shadow-color, rgb(0 0 0 / 0.45));
 }
 
-.profile-hero__avatar {
+.avatar-picker {
   flex: none;
   display: grid;
   justify-items: center;
   gap: 8px;
 }
 
-.avatar-picker {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  max-width: 180px;
-}
-
 .avatar-picker__input {
   display: none;
 }
 
-.avatar-picker__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
+/* The whole circle is the button; no chrome of its own. */
+.avatar-picker__portrait {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
 }
 
-.avatar-picker__hint,
-.avatar-picker__error {
+.avatar-picker__portrait:disabled {
+  cursor: progress;
+}
+
+.avatar-picker__portrait:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 4px;
+}
+
+/* Dark scrim with the action, shown on hover, keyboard focus and while uploading. */
+.avatar-picker__veil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  border-radius: 50%;
+  background: rgb(6 13 26 / 0.62);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+}
+
+.avatar-picker__veil-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.avatar-picker__portrait:hover:not(:disabled) .avatar-picker__veil,
+.avatar-picker__portrait:focus-visible .avatar-picker__veil,
+.avatar-picker__portrait[data-busy] .avatar-picker__veil {
+  opacity: 1;
+}
+
+.avatar-picker__spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgb(255 255 255 / 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: avatar-spin 800ms linear infinite;
+}
+
+@keyframes avatar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Always-visible camera badge: touch screens have no hover. */
+.avatar-picker__badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--cx-primary);
+  color: var(--cx-on-primary);
+  box-shadow: 0 2px 6px var(--cx-shadow-color, rgb(0 0 0 / 0.45));
+  transition: transform 160ms ease-out;
+}
+
+.avatar-picker__badge svg {
+  width: 16px;
+  height: 16px;
+}
+
+.avatar-picker__portrait:hover:not(:disabled) .avatar-picker__badge {
+  transform: scale(1.08);
+}
+
+.avatar-picker__portrait[data-busy] .avatar-picker__badge {
+  opacity: 0;
+}
+
+.profile-photo-error {
   margin: 0;
-  font-size: 12px;
-  line-height: 16px;
-  text-align: center;
 }
 
-.avatar-picker__hint {
-  color: var(--cx-muted);
+@media (prefers-reduced-motion: reduce) {
+  .avatar-picker__veil,
+  .avatar-picker__badge {
+    transition: none;
+  }
+
+  .avatar-picker__spinner {
+    animation-duration: 2400ms;
+  }
 }
 
 .profile-hero__text {
@@ -351,6 +438,20 @@
 }
 
 @media (max-width: 480px) {
+  .profile-hero {
+    flex-wrap: wrap;
+  }
+
+  .profile-hero__identity {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .avatar-picker {
+    justify-items: start;
+  }
+
   .security-card {
     flex-direction: column;
     gap: 14px;

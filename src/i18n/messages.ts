@@ -259,13 +259,13 @@ const en = {
     photo: {
       add: 'Add photo',
       change: 'Change photo',
-      remove: 'Remove',
+      remove: 'Remove photo',
       uploading: 'Uploading…',
       removing: 'Removing…',
-      hint: 'JPEG, PNG or WebP, up to 20 MB. We shrink it before uploading.',
       errors: {
         fileType: 'Choose a JPEG, PNG or WebP image.',
         tooLarge: 'The photo is too large. Choose one under 20 MB.',
+        compressFailed: 'We could not process this image. Try another photo.',
         invalid: 'The photo could not be saved. Try another image.',
         uploadFailed: 'The photo could not be uploaded. Check your connection and try again.',
         session: 'Your session ended. Sign in again.',
@@ -2025,13 +2025,13 @@ const es: Messages = {
     photo: {
       add: 'Añadir foto',
       change: 'Cambiar foto',
-      remove: 'Quitar',
+      remove: 'Quitar foto',
       uploading: 'Subiendo…',
       removing: 'Quitando…',
-      hint: 'JPEG, PNG o WebP, hasta 20 MB. La reducimos antes de subirla.',
       errors: {
         fileType: 'Elige una imagen JPEG, PNG o WebP.',
         tooLarge: 'La foto es demasiado grande. Elige una de menos de 20 MB.',
+        compressFailed: 'No pudimos procesar esta imagen. Prueba con otra foto.',
         invalid: 'No pudimos guardar la foto. Prueba con otra imagen.',
         uploadFailed: 'No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.',
         session: 'Tu sesión terminó. Vuelve a iniciar sesión.',
