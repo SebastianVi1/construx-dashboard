@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import L from 'leaflet'
 import { useLocale } from '../../i18n'
-import { useRemoteData } from '../../components/data/useRemoteData'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
-import { getFloorPlan, viewUrlExpiresSoon } from './floorPlansApi'
 import { FloorPlanViewer } from './FloorPlanViewer'
 import { CalibrationTool } from './CalibrationTool'
 import { ZoneLayer } from './ZoneLayer'
@@ -13,14 +11,13 @@ import { ZoneDrawTool } from './ZoneDrawTool'
 import { ZonePanel } from './ZonePanel'
 import { AssignmentPanel } from './AssignmentPanel'
 import { OccupantBubble } from './OccupantBubble'
-import { getCalibration } from './calibrationApi'
 import type { Calibration } from './calibrationApi'
 import type { Zone } from './zonesApi'
 import { createAssignment, reassignToZone } from './zoneAssignmentsApi'
-import type { AssignmentData, DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
-import { getFloorPlanState, localIsoDate } from './floorPlanStateApi'
-import { memberName, occupantAnchorKey, zoneOccupants } from './zoneOccupants'
+import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
+import { memberName, occupantAnchorKey } from './zoneOccupants'
 import type { Occupant } from './zoneOccupants'
+import { useFloorPlan } from './useFloorPlan'
 import { ScaleIcon } from './floorPlanIcons'
 import './floor-plans.css'
 
@@ -34,114 +31,30 @@ export function FloorPlanPage() {
   const canManagePlan = can('MANAGE_PLAN') ?? false
 
   const orgId = organization?.id ?? ''
-  const remote = useRemoteData(`floor-plan-${floorPlanId}`, () => getFloorPlan(orgId, siteId, floorPlanId))
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const floorPlan = remote.data
-  const shouldPoll = floorPlan?.status === 'PENDING' || floorPlan?.status === 'PROCESSING'
+  const plan = useFloorPlan(orgId, siteId, floorPlanId)
+  const { floorPlan, calibration, zones, assignments } = plan
 
   const [calibrating, setCalibrating] = useState(false)
-  const [calibration, setCalibration] = useState<Calibration | null>(null)
-  const [calibrationLoaded, setCalibrationLoaded] = useState(false)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
 
   // Zone state
-  const [zones, setZones] = useState<Zone[]>([])
-  const zonesLoadedRef = useRef(false)
   const [zonesVisible, setZonesVisible] = useState(true)
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null)
   const [zoneConflictBanner, setZoneConflictBanner] = useState(false)
-  const [stateError, setStateError] = useState(false)
 
   // Assignment state
   const [draggingResource, setDraggingResource] = useState<DraggableResource | null>(null)
   const [draggingReassign, setDraggingReassign] = useState<ReassignDrag | null>(null)
   const [assignError, setAssignError] = useState(false)
-  const [assignments, setAssignments] = useState<AssignmentData[]>([])
   const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null)
   const [selectedOccupant, setSelectedOccupant] = useState<{ zone: Zone; occupant: Occupant } | null>(null)
-
-  // Load existing calibration when floor plan is READY
-  useEffect(() => {
-    if (!floorPlan || floorPlan.status !== 'READY' || calibrationLoaded) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCalibrationLoaded(true)
-    getCalibration(orgId, siteId, floorPlanId)
-      .then((cal) => setCalibration(cal))
-      .catch(() => setCalibration(null))
-  }, [floorPlan, orgId, siteId, floorPlanId, calibrationLoaded])
-
-  // Zones and today's assignments in one read; occupants come named, so no members list is needed
-  const loadState = useCallback(() => {
-    getFloorPlanState(orgId, siteId, floorPlanId, localIsoDate())
-      .then((states) => {
-        setZones(states.map((s) => s.zone))
-        setAssignments(states.flatMap((s) => s.activeAssignments))
-        setStateError(false)
-      })
-      .catch(() => setStateError(true))
-  }, [orgId, siteId, floorPlanId])
-
-  // Load zones when floor plan is READY and calibration exists
-  useEffect(() => {
-    if (!floorPlan || floorPlan.status !== 'READY' || !calibration || zonesLoadedRef.current) return
-    zonesLoadedRef.current = true
-    loadState()
-  }, [floorPlan, calibration, loadState])
-
-  const reloadAssignments = loadState
-
-  // Poll every 3 seconds while PENDING or PROCESSING
-  useEffect(() => {
-    if (shouldPoll) {
-      pollingRef.current = setInterval(() => {
-        remote.reload()
-      }, 3000)
-    } else {
-      if (pollingRef.current !== null) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
-      }
-    }
-    return () => {
-      if (pollingRef.current !== null) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
-      }
-    }
-  }, [shouldPoll, remote])
-
-  const handleRefreshNeeded = () => {
-    remote.reload()
-  }
-
-  // Refresh when the view URL is about to expire.
-  // Also re-checks on tab restore so a backgrounded tab never shows a broken image.
-  useEffect(() => {
-    if (!floorPlan) return
-
-    function checkRefresh() {
-      if (viewUrlExpiresSoon(floorPlan!)) remote.reload()
-    }
-
-    function onVisibilityChange() {
-      if (!document.hidden) checkRefresh()
-    }
-
-    const interval = setInterval(checkRefresh, 60_000)
-    document.addEventListener('visibilitychange', onVisibilityChange)
-    return () => {
-      clearInterval(interval)
-      document.removeEventListener('visibilitychange', onVisibilityChange)
-    }
-  }, [floorPlan, remote])
 
   const handleMapReady = (map: L.Map) => {
     setMapInstance(map)
   }
 
   const handleCalibrated = (cal: Calibration) => {
-    setCalibration(cal)
+    plan.calibrated(cal)
     setCalibrating(false)
   }
 
@@ -150,16 +63,16 @@ export function FloorPlanPage() {
   }
 
   const handleZoneCreated = (zone: Zone) => {
-    setZones((prev) => [...prev, zone])
+    plan.applyZoneChange({ kind: 'created', zone })
   }
 
   const handleZoneUpdated = (zone: Zone) => {
-    setZones((prev) => prev.map((z) => (z.id === zone.id ? zone : z)))
+    plan.applyZoneChange({ kind: 'updated', zone })
     setSelectedZone(zone)
   }
 
   const handleZoneDeleted = (zoneId: string) => {
-    setZones((prev) => prev.filter((z) => z.id !== zoneId))
+    plan.applyZoneChange({ kind: 'deleted', zoneId })
     setSelectedZone(null)
   }
 
@@ -206,10 +119,19 @@ export function FloorPlanPage() {
         </div>
       ) : null}
 
-      {stateError ? (
+      {plan.calibrationStatus === 'error' ? (
+        <div className="floor-plan-notice" role="alert">
+          <p>{t.calibration.loadError}</p>
+          <button type="button" className="button" onClick={plan.reloadCalibration}>
+            {t.retry}
+          </button>
+        </div>
+      ) : null}
+
+      {plan.stateStatus === 'error' ? (
         <div className="floor-plan-notice" role="alert">
           <p>{t.zones.stateError}</p>
-          <button type="button" className="button" onClick={loadState}>
+          <button type="button" className="button" onClick={plan.reloadState}>
             {t.retry}
           </button>
         </div>
@@ -218,18 +140,19 @@ export function FloorPlanPage() {
       {zoneConflictBanner ? (
         <div className="floor-plan-notice" role="alert">
           <p>{t.zones.conflictWarning}</p>
-          <button type="button" className="button" onClick={() => { setZoneConflictBanner(false); loadState() }}>
+          <button type="button" className="button" onClick={() => { setZoneConflictBanner(false); plan.reloadState() }}>
             {t.retry}
           </button>
         </div>
       ) : null}
 
-      {remote.status === 'loading' ? (
+      {/* Polls and URL refreshes keep the plan on screen; only a first read shows the spinner */}
+      {!floorPlan && plan.status === 'loading' ? (
         <div className="loading-state"><span className="loading-state__spinner" aria-hidden />{t.loading}</div>
-      ) : remote.status === 'error' ? (
+      ) : plan.status === 'error' ? (
         <div className="empty-state">
           <p>{t.loadError}</p>
-          <button type="button" className="button" onClick={() => remote.reload()}>
+          <button type="button" className="button" onClick={plan.reload}>
             {t.retry}
           </button>
         </div>
@@ -304,7 +227,6 @@ export function FloorPlanPage() {
                 <div className="floor-plan-canvas">
                   <FloorPlanViewer
                     floorPlan={floorPlan}
-                    onRefreshNeeded={handleRefreshNeeded}
                     onMapReady={handleMapReady}
                   />
                   {/* Floating cards over the plan (drawing, calibration); tools portal into it */}
@@ -338,7 +260,7 @@ export function FloorPlanPage() {
                       activeOccupantKey={
                         selectedOccupant ? occupantAnchorKey(selectedOccupant.zone, selectedOccupant.occupant) : null
                       }
-                      occupants={zoneOccupants(assignments)}
+                      occupants={plan.occupantsByZone}
                       dragging={draggingResource !== null || draggingReassign !== null}
                       onDropResource={(zone, resource) => {
                         setDraggingResource(null)
@@ -348,14 +270,14 @@ export function FloorPlanPage() {
                           crewId: resource.type === 'crew' ? resource.id : null,
                           equipmentId: resource.type === 'equipment' ? resource.id : null,
                         })
-                          .then(() => reloadAssignments())
+                          .then(plan.reloadState)
                           .catch(() => setAssignError(true))
                       }}
                       onReassignDrop={(targetZone, drag) => {
                         setDraggingReassign(null)
                         if (targetZone.id === drag.sourceZoneId) return
                         reassignToZone(orgId, siteId, floorPlanId, drag.sourceZoneId, drag.assignmentId, targetZone.id)
-                          .then(() => reloadAssignments())
+                          .then(plan.reloadState)
                           .catch(() => setAssignError(true))
                       }}
                     />
@@ -376,7 +298,7 @@ export function FloorPlanPage() {
                     onConflict={handleZoneConflict}
                     onReassignDragStart={(drag) => setDraggingReassign(drag)}
                     onReassignDragEnd={() => setDraggingReassign(null)}
-                    onAssignmentsChanged={reloadAssignments}
+                    onAssignmentsChanged={plan.reloadState}
                     nameFor={(id) => memberName(id, assignments)}
                   />
                 ) : (

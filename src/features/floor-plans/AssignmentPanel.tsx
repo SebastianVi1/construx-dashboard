@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { formatMessage, useLocale } from '../../i18n'
+import { useRemoteData } from '../../components/data/useRemoteData'
 import { usePermissions } from '../permissions'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { getFloorPlanRoster } from './floorPlanRosterApi'
-import type { Roster } from './floorPlanRosterApi'
 import type { DraggableResource } from './zoneAssignmentsApi'
 
 type Tab = 'people' | 'crews' | 'equipment'
@@ -26,8 +26,6 @@ function initials(name: string): string {
     .join('')
 }
 
-type RosterState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; roster: Roster }
-
 export function AssignmentPanel({ organizationId, siteId, onDragStart, onDragEnd }: AssignmentPanelProps) {
   const { messages: m } = useLocale()
   const t = m.floorPlans.assignments
@@ -36,26 +34,12 @@ export function AssignmentPanel({ organizationId, siteId, onDragStart, onDragEnd
   const crewsHref = can('MANAGE_MEMBERS') ? '/members#crews' : '/crews'
 
   const [tab, setTab] = useState<Tab>('people')
-  const [state, setState] = useState<RosterState>({ status: 'loading' })
-  const [attempt, setAttempt] = useState(0)
-
   // Site staff, crews and equipment in one read gated by MANAGE_PLAN, so planners without the
   // members permission still get a roster
-  useEffect(() => {
-    let cancelled = false
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setState({ status: 'loading' })
-    getFloorPlanRoster(organizationId, siteId)
-      .then((roster) => !cancelled && setState({ status: 'ready', roster }))
-      .catch(() => !cancelled && setState({ status: 'error' }))
-    return () => {
-      cancelled = true
-    }
-  }, [organizationId, siteId, attempt])
-
-  const people = state.status === 'ready' ? state.roster.people : []
-  const crews = state.status === 'ready' ? state.roster.crews : []
-  const equipment = state.status === 'ready' ? state.roster.equipment : []
+  const roster = useRemoteData(`${organizationId}:${siteId}`, () => getFloorPlanRoster(organizationId, siteId))
+  const people = roster.data?.people ?? []
+  const crews = roster.data?.crews ?? []
+  const equipment = roster.data?.equipment ?? []
 
   function handleDragStart(resource: DraggableResource, e: React.DragEvent) {
     e.dataTransfer.setData('application/json', JSON.stringify(resource))
@@ -86,12 +70,12 @@ export function AssignmentPanel({ organizationId, siteId, onDragStart, onDragEnd
       </div>
 
       <div className="assignment-panel__list" role="tabpanel">
-        {state.status === 'loading' ? (
+        {roster.status === 'loading' ? (
           <p className="assignment-panel__empty">{m.floorPlans.loading}</p>
-        ) : state.status === 'error' ? (
+        ) : roster.status === 'error' ? (
           <div className="assignment-panel__empty" role="alert">
             <p>{t.rosterError}</p>
-            <button type="button" className="button button--small" onClick={() => setAttempt((n) => n + 1)}>
+            <button type="button" className="button button--small" onClick={roster.reload}>
               {m.floorPlans.retry}
             </button>
           </div>

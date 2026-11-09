@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'bun:test'
-import { calibrationSchema, computeMetersPerPx } from '../../../features/floor-plans/calibrationApi'
+import { afterEach, describe, expect, it } from 'bun:test'
+import { calibrationSchema, computeMetersPerPx, findCalibration } from '../../../features/floor-plans/calibrationApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 
 describe('computeMetersPerPx', () => {
   it('computes correctly for horizontal distance (100 px, 5 m → 0.05)', () => {
@@ -55,5 +56,33 @@ describe('calibrationSchema', () => {
   it('rejects empty floorPlanId', () => {
     const result = calibrationSchema.safeParse({ ...validData, floorPlanId: '' })
     expect(result.success).toBe(false)
+  })
+})
+
+describe('findCalibration', () => {
+  const saved = {
+    id: 'c1', floorPlanId: 'fp1', metersPerPx: 0.05,
+    pointAX: 0, pointAY: 0, pointBX: 100, pointBY: 0, lengthMeters: 5, createdAt: '2026-11-01T12:00:00Z',
+  }
+  const answer = (status: number, data: unknown) =>
+    configureHttp({ baseUrl: '/api', fetcher: async () => ({ status, data }) })
+
+  afterEach(() => configureHttp({ fetcher: async () => ({ status: 599, data: undefined }) }))
+
+  it('returns the saved calibration', async () => {
+    answer(200, saved)
+    expect(await findCalibration('o1', 's1', 'fp1')).toEqual(saved)
+  })
+
+  it('returns null for a plan nobody has calibrated yet', async () => {
+    answer(404, { code: 'NOT_FOUND' })
+    expect(await findCalibration('o1', 's1', 'fp1')).toBeNull()
+  })
+
+  it('fails on any other error instead of passing the plan off as uncalibrated', async () => {
+    answer(500, undefined)
+    const error = await findCalibration('o1', 's1', 'fp1').catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBe(500)
   })
 })

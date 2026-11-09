@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { z } from 'zod'
 import { useLocale } from '../../i18n'
 import { useForm } from '../../components/form'
+import { useRemoteData } from '../../components/data/useRemoteData'
 import { updateZone, deleteZone, ZONE_STATUS_COLORS } from './zonesApi'
 import type { Zone, ZoneStatus } from './zonesApi'
 import { listAssignments, closeAssignment, reassignToZone } from './zoneAssignmentsApi'
-import type { AssignmentData, ReassignDrag } from './zoneAssignmentsApi'
+import type { ReassignDrag } from './zoneAssignmentsApi'
 import { getZoneAudit } from './auditApi'
-import type { AuditEvent } from './auditApi'
 import { assignmentLabel, personOf } from './zoneOccupants'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
@@ -93,30 +93,20 @@ export function ZonePanel({
     },
   })
 
-  const [assignments, setAssignments] = useState<AssignmentData[]>([])
-  const [assignmentsLoading, setAssignmentsLoading] = useState(false)
-  const [assignmentsError, setAssignmentsError] = useState<string | null>(null)
+  // Each tab reads when shown; the key drops answers of another zone or plan
+  const zoneKey = `${organizationId}:${siteId}:${floorPlanId}:${zone.id}`
+  const assignmentsRead = useRemoteData(activeTab === 'assignments' ? zoneKey : null, () =>
+    listAssignments(organizationId, siteId, floorPlanId, zone.id),
+  )
+  const auditRead = useRemoteData(activeTab === 'history' ? zoneKey : null, () =>
+    getZoneAudit(organizationId, siteId, floorPlanId, zone.id),
+  )
+  const assignments = assignmentsRead.data ?? []
+  const auditEvents = auditRead.data ?? []
+  const [actionError, setActionError] = useState(false)
   const [closingId, setClosingId] = useState<string | null>(null)
   const [movingId, setMovingId] = useState<string | null>(null)
   const [moveTargetId, setMoveTargetId] = useState<string>('')
-
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
-  const [auditLoading, setAuditLoading] = useState(false)
-  const [auditError, setAuditError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    if (activeTab === 'assignments') {
-      listAssignments(organizationId, siteId, floorPlanId, zone.id)
-        .then((data) => { if (!cancelled) { setAssignmentsLoading(false); setAssignments(data) } })
-        .catch(() => { if (!cancelled) { setAssignmentsLoading(false); setAssignmentsError(ta.error) } })
-    } else {
-      getZoneAudit(organizationId, siteId, floorPlanId, zone.id)
-        .then((data) => { if (!cancelled) { setAuditLoading(false); setAuditEvents(data) } })
-        .catch(() => { if (!cancelled) { setAuditLoading(false); setAuditError(th.loadError) } })
-    }
-    return () => { cancelled = true }
-  }, [activeTab, zone.id, organizationId, siteId, floorPlanId, ta.error, th.loadError])
 
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -141,11 +131,12 @@ export function ZonePanel({
   const handleClose = async (assignmentId: string) => {
     setClosingId(assignmentId)
     try {
+      setActionError(false)
       await closeAssignment(organizationId, siteId, floorPlanId, zone.id, assignmentId)
-      setAssignments((prev) => prev.filter((a) => a.id !== assignmentId))
+      assignmentsRead.update((current) => current.filter((a) => a.id !== assignmentId))
       onAssignmentsChanged?.()
     } catch {
-      setAssignmentsError(ta.error)
+      setActionError(true)
     } finally {
       setClosingId(null)
     }
@@ -155,13 +146,14 @@ export function ZonePanel({
     if (!moveTargetId) return
     setMovingId(assignmentId)
     try {
+      setActionError(false)
       await reassignToZone(organizationId, siteId, floorPlanId, zone.id, assignmentId, moveTargetId)
-      setAssignments((prev) => prev.filter((a) => a.id !== assignmentId))
+      assignmentsRead.update((current) => current.filter((a) => a.id !== assignmentId))
       onAssignmentsChanged?.()
       setMovingId(null)
       setMoveTargetId('')
     } catch {
-      setAssignmentsError(ta.error)
+      setActionError(true)
       setMovingId(null)
     }
   }
@@ -255,10 +247,16 @@ export function ZonePanel({
 
           {activeTab === 'assignments' ? (
             <div className="zone-panel__tab-content" role="tabpanel">
-              {assignmentsLoading ? (
+              {actionError ? <p className="error-text" role="alert">{ta.error}</p> : null}
+              {assignmentsRead.status === 'error' ? (
+                <div role="alert">
+                  <p className="error-text">{ta.loadError}</p>
+                  <button type="button" className="button button--small" onClick={assignmentsRead.reload}>
+                    {m.floorPlans.retry}
+                  </button>
+                </div>
+              ) : !assignmentsRead.data ? (
                 <p className="zone-panel__loading">{th.loading}</p>
-              ) : assignmentsError ? (
-                <p className="error-text">{assignmentsError}</p>
               ) : assignments.length === 0 ? (
                 <p className="zone-panel__empty">{ta.noAssignments}</p>
               ) : (
@@ -334,10 +332,15 @@ export function ZonePanel({
             </div>
           ) : (
             <div className="zone-panel__tab-content" role="tabpanel">
-              {auditLoading ? (
+              {auditRead.status === 'error' ? (
+                <div role="alert">
+                  <p className="error-text">{th.loadError}</p>
+                  <button type="button" className="button button--small" onClick={auditRead.reload}>
+                    {m.floorPlans.retry}
+                  </button>
+                </div>
+              ) : !auditRead.data ? (
                 <p className="zone-panel__loading">{th.loading}</p>
-              ) : auditError ? (
-                <p className="error-text">{auditError}</p>
               ) : auditEvents.length === 0 ? (
                 <p className="zone-panel__empty">{th.noEvents}</p>
               ) : (

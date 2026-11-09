@@ -710,6 +710,7 @@ const en = {
       notCalibrated: 'Scale not calibrated — zone drawing is disabled.',
       zeroDistanceError: 'The two points must not be at the same location.',
       secondPoint: 'Now click the second point.',
+      loadError: 'Could not load the scale calibration of this plan.',
     },
     zones: {
       drawPolygon: 'Draw polygon',
@@ -764,6 +765,7 @@ const en = {
       closeAssignment: 'Close assignment',
       activeAssignments: 'Active assignments',
       noAssignments: 'No active assignments.',
+      loadError: 'Could not load the assignments of this zone.',
       error: 'Could not save assignment. Try again.',
       dismiss: 'Dismiss',
       crewMembers: '{count} members',
@@ -2482,6 +2484,7 @@ const es: Messages = {
       notCalibrated: 'Escala no calibrada — el dibujo de zonas está desactivado.',
       zeroDistanceError: 'Los dos puntos no deben estar en la misma ubicación.',
       secondPoint: 'Ahora haz clic en el segundo punto.',
+      loadError: 'No se pudo cargar la calibración de escala de este plano.',
     },
     zones: {
       drawPolygon: 'Dibujar polígono',
@@ -2536,6 +2539,7 @@ const es: Messages = {
       closeAssignment: 'Cerrar asignación',
       activeAssignments: 'Asignaciones activas',
       noAssignments: 'Sin asignaciones activas.',
+      loadError: 'No se pudieron cargar las asignaciones de esta zona.',
       error: 'No se pudo guardar la asignación. Inténtalo de nuevo.',
       dismiss: 'Cerrar',
       crewMembers: '{count} integrantes',

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getJson, sendJson } from '../../lib/http'
+import { ApiError, getJson, sendJson } from '../../lib/http'
 import { floorPlanPath } from '../../lib/apiPaths'
 
 export const calibrationSchema = z.object({
@@ -43,6 +43,18 @@ export function getCalibration(
   floorPlanId: string,
 ): Promise<Calibration> {
   return getJson(calibrationPath(organizationId, siteId, floorPlanId), calibrationSchema)
+}
+
+/** The plan's calibration, or null when it has none yet (404); other failures are thrown. */
+export function findCalibration(
+  organizationId: string,
+  siteId: string,
+  floorPlanId: string,
+): Promise<Calibration | null> {
+  return getCalibration(organizationId, siteId, floorPlanId).catch((error: unknown) => {
+    if (error instanceof ApiError && error.status === 404) return null
+    throw error
+  })
 }
 
 /** Pure helper: compute metersPerPx from two pixel points and a real-world distance. */

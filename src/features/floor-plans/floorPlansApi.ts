@@ -152,10 +152,3 @@ export function floorPlanErrorKind(error: unknown): FloorPlanErrorKind {
   if (error.status === 404) return 'notFound'
   return 'generic'
 }
-
-/** Returns true if the view URL expires within the given number of minutes. */
-export function viewUrlExpiresSoon(floorPlan: FloorPlan, withinMinutes = 5): boolean {
-  if (!floorPlan.viewUrlExpiresAt) return false
-  const expiresAt = new Date(floorPlan.viewUrlExpiresAt).getTime()
-  return expiresAt - Date.now() < withinMinutes * 60 * 1000
-}

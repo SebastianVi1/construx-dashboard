@@ -2,7 +2,6 @@ import { describe, expect, it } from 'bun:test'
 import {
   floorPlanSchema,
   floorPlanUploadTicketSchema,
-  viewUrlExpiresSoon,
   type FloorPlan,
 } from '../../../features/floor-plans/floorPlansApi'
 
@@ -99,22 +98,5 @@ describe('floorPlanUploadTicketSchema', () => {
   it('rejects an empty floorPlanId', () => {
     const result = floorPlanUploadTicketSchema.safeParse({ floorPlanId: '', uploadUrl: 'https://x', headers: {}, expiresAt: '2026-11-01' })
     expect(result.success).toBe(false)
-  })
-})
-
-describe('viewUrlExpiresSoon', () => {
-  it('returns false when expires in more than 5 minutes', () => {
-    const fp: FloorPlan = { ...baseFloorPlan, viewUrlExpiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString() }
-    expect(viewUrlExpiresSoon(fp)).toBe(false)
-  })
-
-  it('returns true when expires in less than 5 minutes', () => {
-    const fp: FloorPlan = { ...baseFloorPlan, viewUrlExpiresAt: new Date(Date.now() + 2 * 60 * 1000).toISOString() }
-    expect(viewUrlExpiresSoon(fp)).toBe(true)
-  })
-
-  it('returns false when viewUrlExpiresAt is null', () => {
-    const fp: FloorPlan = { ...baseFloorPlan, viewUrlExpiresAt: null }
-    expect(viewUrlExpiresSoon(fp)).toBe(false)
   })
 })
