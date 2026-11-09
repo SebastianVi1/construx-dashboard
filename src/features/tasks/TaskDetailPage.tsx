@@ -7,6 +7,8 @@ import { dueText } from '../goals/dueAt'
 import { listGoals } from '../goals/goalsApi'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import { listSiteAccess } from '../sites/sitesApi'
 import { TaskMoveButtons, TaskRoleBadge, TaskStatusBadge } from './TaskBits'
 import { TaskDialog } from './TaskDialog'
@@ -70,7 +72,11 @@ function TaskDetail({ at, taskId }: { at: PhaseRef; taskId: string }) {
       <section className="page-section" aria-labelledby="task-team-title">
         <h2 id="task-team-title">{t.team.title}</h2>
         <ul className="task-detail__team">{sortTeam(task.assignees).map((person) => <li key={person.accessId}>
-          <span>{person.fullName || t.unnamed}{person.membershipId === access?.membershipId ? <span className="person-you"> {t.you}</span> : null}</span>
+          <span className="person-cell">
+            <Avatar fullName={person.fullName} avatarUrl={person.avatarUrl} decorative />
+            <span>{person.fullName || t.unnamed}</span>
+            {person.membershipId === access?.membershipId ? <span className="person-you">{t.you}</span> : null}
+          </span>
           <TaskRoleBadge role={person.taskRole} />
         </li>)}</ul>
       </section>

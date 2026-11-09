@@ -1,5 +1,7 @@
 import { useId } from 'react'
 import { formatMessage, useLocale } from '../../i18n'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import type { SiteAccess } from '../sites/sitesApi'
 import { taskRoles, type TaskRole, type TeamPlace } from './tasksApi'
 import { addToTeam, changeTaskRole, removeFromTeam, sortTeam } from './teamRules'
@@ -20,7 +22,7 @@ export function TeamEditor({ team, people, error, disabled, onChange }: TeamEdit
   const addId = useId()
   const errorId = `${addId}-error`
   const hintId = `${addId}-hint`
-  const names = new Map(people.map((person) => [person.accessId, person.fullName || t.unnamed]))
+  const byAccess = new Map(people.map((person) => [person.accessId, person]))
   const available = people.filter((person) => !team.some((place) => place.accessId === person.accessId))
 
   return (
@@ -29,10 +31,14 @@ export function TeamEditor({ team, people, error, disabled, onChange }: TeamEdit
       {team.length > 0 ? (
         <ul className="team-editor__list">
           {sortTeam(team).map((place) => {
-            const name = names.get(place.accessId) ?? t.unnamed
+            const person = byAccess.get(place.accessId)
+            const name = person?.fullName || t.unnamed
             return (
               <li key={place.accessId} className="team-editor__row">
-                <span className="team-editor__name">{name}</span>
+                <span className="team-editor__name person-cell">
+                  <Avatar fullName={person?.fullName ?? null} avatarUrl={person?.avatarUrl} decorative />
+                  {name}
+                </span>
                 <select
                   className="form-field__control team-editor__role"
                   aria-label={formatMessage(t.team.roleLabel, { name })}

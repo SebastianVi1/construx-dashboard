@@ -119,7 +119,7 @@ function TeamRoster({ people, myMembershipId, moreUrl }: { people: SiteAccess[];
       <ul className="site-team__roster">
         {shown.map((person) => (
           <li key={person.accessId} className="site-team__person">
-            <Avatar fullName={person.fullName} email="?" decorative />
+            <Avatar fullName={person.fullName} avatarUrl={person.avatarUrl} decorative />
             <div className="site-team__who">
               <span className="site-team__line">
                 <span className={person.fullName ? 'site-team__name' : 'site-team__name cell-muted'}>

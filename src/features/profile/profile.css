@@ -1,17 +1,19 @@
 /* Avatar, sidebar account link and profile page. Tokens only. */
 
+/* Lists size it with --avatar-size and drop the lift with --avatar-shadow: none. */
 .avatar {
+  --avatar-size-used: var(--avatar-size, 32px);
   flex: none;
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: var(--avatar-size-used);
+  height: var(--avatar-size-used);
   border-radius: 50%;
   background: var(--cx-accent-subtle);
   /* The dark theme's shadow token is unset, so fall back to the deep black design.md asks for there. */
-  box-shadow: 0 2px 6px var(--cx-shadow-color, rgb(0 0 0 / 0.45));
+  box-shadow: var(--avatar-shadow, 0 2px 6px var(--cx-shadow-color, rgb(0 0 0 / 0.45)));
   color: var(--cx-accent);
-  font-size: 13px;
+  font-size: calc(var(--avatar-size-used) * 0.4);
   font-weight: 600;
   letter-spacing: 0.02em;
   user-select: none;
@@ -28,10 +30,23 @@
 }
 
 .avatar[data-size='large'] {
-  width: 72px;
-  height: 72px;
-  box-shadow: 0 4px 14px var(--cx-shadow-color, rgb(0 0 0 / 0.45));
-  font-size: 26px;
+  --avatar-size-used: var(--avatar-size, 72px);
+  box-shadow: var(--avatar-shadow, 0 4px 14px var(--cx-shadow-color, rgb(0 0 0 / 0.45)));
+}
+
+/* A person in a list: photo, then the name and any marks after it. */
+.person-cell {
+  --avatar-size: 28px;
+  --avatar-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  vertical-align: middle;
+}
+
+.person-cell .person-you {
+  margin-left: 0;
 }
 
 .account-link {

@@ -2,16 +2,19 @@ import { useState } from 'react'
 import { formatMessage, useLocale } from '../../i18n'
 import { displayName, initials } from './profileDisplay'
 
-/** Profile photo, or initials on a blueprint tile; decorative when a visible name sits beside it. */
+/**
+ * Profile photo, or initials on a blueprint tile; decorative when a visible name sits beside it.
+ * Without an email (people lists that never carry one) an unnamed person shows "?".
+ */
 export function Avatar({
   fullName,
-  email,
+  email = '?',
   avatarUrl = null,
   size = 'small',
   decorative = false,
 }: {
   fullName: string | null
-  email: string
+  email?: string
   avatarUrl?: string | null
   size?: 'small' | 'large'
   decorative?: boolean

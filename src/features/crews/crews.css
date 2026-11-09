@@ -54,13 +54,15 @@
 }
 
 .crew-member {
+  --avatar-size: 22px;
+  --avatar-shadow: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
   max-width: 100%;
   min-height: 30px;
-  padding: 2px 4px 2px 10px;
+  padding: 2px 4px 2px 3px;
   border: 1px solid var(--cx-border);
   border-radius: 999px;
   background: var(--cx-surface-raised);
@@ -146,6 +148,8 @@
 }
 
 .crew-result {
+  --avatar-size: 28px;
+  --avatar-shadow: none;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -237,6 +241,8 @@
 }
 
 .crew-form__option {
+  --avatar-size: 24px;
+  --avatar-shadow: none;
   display: flex;
   align-items: center;
   gap: 10px;

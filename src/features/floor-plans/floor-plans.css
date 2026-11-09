@@ -761,11 +761,32 @@
 }
 
 .occupant-bubble__header {
+  --avatar-size: 44px;
+  --avatar-shadow: none;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.occupant-bubble__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.assignment-chip {
+  --avatar-size: 30px;
+  --avatar-shadow: none;
+}
+
+.assignment-list__info {
+  --avatar-size: 24px;
+  --avatar-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .occupant-bubble__title {

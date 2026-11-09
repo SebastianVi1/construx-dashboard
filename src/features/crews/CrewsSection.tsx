@@ -6,6 +6,8 @@ import { ConfirmDialog, Modal } from '../../components/modal'
 import { Notice, SkeletonList } from '../../components/page'
 import { formatMessage, useLocale, type Messages } from '../../i18n'
 import type { Member } from '../members/membersApi'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import { addCrewMember, createCrew, deleteCrew, listCrews, removeCrewMember, type Crew } from './crewsApi'
 import { searchMembers } from './crewSearch'
 import '../../components/form/form.css'
@@ -238,8 +240,10 @@ function CrewCard({ t, crew, members, nameOf, canManage, busy, onAdd, onRemove, 
         {ordered.map((membershipId) => {
           const isLeader = membershipId === crew.leaderMembershipId
           const name = nameOf(membershipId)
+          const member = members.find((item) => item.membershipId === membershipId)
           return (
             <li key={membershipId} className="crew-member">
+              <Avatar fullName={member?.fullName ?? null} email={member?.email} avatarUrl={member?.avatarUrl} decorative />
               <span className="crew-member__name">{name}</span>
               {isLeader ? <span className="badge" data-tone="accent">{t.leader}</span> : null}
               {canManage && !isLeader ? (
@@ -289,6 +293,7 @@ function CrewCard({ t, crew, members, nameOf, canManage, busy, onAdd, onRemove, 
                         onClick={() => onAdd(member.membershipId)}
                       >
                         <span className="crew-result__plus" aria-hidden="true">+</span>
+                        <Avatar fullName={member.fullName} email={member.email} avatarUrl={member.avatarUrl} decorative />
                         <span className="crew-result__text">
                           <span className="crew-result__name">{member.fullName || member.email}</span>
                           {member.fullName ? <span className="crew-result__email">{member.email}</span> : null}
@@ -419,6 +424,7 @@ function CreateCrewDialog({ t, members, onSubmit, onClose }: CreateCrewDialogPro
                       disabled={isLeader}
                       onChange={() => toggle(member.membershipId)}
                     />
+                    <Avatar fullName={member.fullName} email={member.email} avatarUrl={member.avatarUrl} decorative />
                     <span>{member.fullName || member.email}</span>
                     {isLeader ? <span className="badge" data-tone="accent">{t.leader}</span> : null}
                   </label>

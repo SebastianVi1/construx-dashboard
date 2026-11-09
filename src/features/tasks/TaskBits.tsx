@@ -1,5 +1,7 @@
 import { formatMessage, intlLocales, useLocale, type Messages } from '../../i18n'
 import { dueText, isOverdue } from '../goals/dueAt'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import type { Task, TaskRole, TaskStatus } from './tasksApi'
 import type { TaskActions } from './taskRules'
 import { isOnTeam } from './teamRules'
@@ -32,6 +34,7 @@ export function TaskTeamSummary({ task, myMembershipId }: { task: Task; myMember
   const [lead, ...others] = task.assignees
   return (
     <span className="task-team">
+      <Avatar fullName={lead.fullName} avatarUrl={lead.avatarUrl} decorative />
       {lead.fullName || t.unnamed}
       {others.length > 0 ? (
         <span className="task-team__more data-mono">{formatMessage(t.team.more, { count: others.length })}</span>

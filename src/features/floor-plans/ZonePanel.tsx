@@ -8,6 +8,8 @@ import { listAssignments, closeAssignment, reassignToZone } from './zoneAssignme
 import type { AssignmentData, ReassignDrag } from './zoneAssignmentsApi'
 import { getZoneAudit } from './auditApi'
 import type { AuditEvent } from './auditApi'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import '../../components/form/form.css'
 
 interface ZonePanelProps {
@@ -26,6 +28,8 @@ interface ZonePanelProps {
   onAssignmentsChanged?: () => void
   /** Name of the person, crew or equipment an assignment is for. */
   labelFor?: (assignment: AssignmentData) => string
+  /** The assigned person, so the row can show their photo; crews and equipment have none. */
+  personFor?: (assignment: AssignmentData) => { fullName: string | null; email: string; avatarUrl?: string | null } | undefined
   /** Name of the member behind a membership id, for the history. */
   nameFor?: (membershipId: string) => string
 }
@@ -47,6 +51,7 @@ export function ZonePanel({
   onReassignDragEnd,
   onAssignmentsChanged,
   labelFor,
+  personFor,
   nameFor,
 }: ZonePanelProps) {
   const { messages: m } = useLocale()
@@ -282,6 +287,10 @@ export function ZonePanel({
                       onDragEnd={onReassignDragEnd}
                     >
                       <div className="assignment-list__info">
+                        {(() => {
+                          const person = personFor?.(a)
+                          return person ? <Avatar fullName={person.fullName} email={person.email} avatarUrl={person.avatarUrl} decorative /> : null
+                        })()}
                         <span className="assignment-list__activity">{labelFor?.(a) || a.activity}</span>
                       </div>
                       <div className="assignment-list__actions">

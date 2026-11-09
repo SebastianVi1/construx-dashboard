@@ -374,6 +374,7 @@ export function FloorPlanPage() {
                     onReassignDragEnd={() => setDraggingReassign(null)}
                     onAssignmentsChanged={reloadAssignments}
                     labelFor={(a) => assignmentLabel(a, directory)}
+                    personFor={(a) => directory.members.find((x) => x.membershipId === a.membershipId)}
                     nameFor={(id) => {
                       const member = directory.members.find((x) => x.membershipId === id)
                       return member ? (member.fullName ?? member.email) : ''

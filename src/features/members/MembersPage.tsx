@@ -4,6 +4,8 @@ import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import { CrewsSection } from '../crews/CrewsSection'
 import { listSites, type Site } from '../sites/sitesApi'
 import { InviteForm } from './InviteForm'
@@ -359,9 +361,7 @@ function MemberList({
                   const busy = busyId === member.membershipId
                   return (
                     <div key={member.membershipId} className="member-row">
-                      <span className="member-avatar" aria-hidden="true">
-                        {memberInitials(member.fullName)}
-                      </span>
+                      <Avatar fullName={member.fullName} email={member.email} avatarUrl={member.avatarUrl} decorative />
                       <div className="member-info">
                         <span className={`member-name${member.fullName ? '' : ' member-name--unnamed'}`}>{name}</span>
                         <span className="member-email">{member.email}</span>
@@ -415,16 +415,6 @@ function MemberList({
       )}
     </section>
   )
-}
-
-function memberInitials(fullName: string | null): string {
-  if (!fullName) return '?'
-  return fullName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('')
 }
 
 function formatInstant(format: Intl.DateTimeFormat, instant: string): string {

@@ -3,6 +3,8 @@ import { Link } from 'react-router'
 import { Bubble } from '../../components/popover'
 import { intlLocales, useLocale } from '../../i18n'
 import { listGoals } from '../goals/goalsApi'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import { listTasks } from '../tasks/tasksApi'
 import type { Task } from '../tasks/tasksApi'
 import { taskDetailPath } from '../tasks/taskRules'
@@ -69,6 +71,7 @@ export function OccupantBubble({
   const facts: [string, string][] = []
   let title: string
   let subtitle: string
+  let person: { fullName: string | null; email: string; avatarUrl?: string | null } | null = null
 
   if (occupant.kind === 'equipment') {
     const eq = directory.equipment.find((e) => e.id === occupant.resourceId)
@@ -77,6 +80,7 @@ export function OccupantBubble({
     if (eq) facts.push([t.type, eq.type], [t.identifier, eq.identifier])
   } else {
     const member = directory.members.find((x) => x.membershipId === membershipId)
+    person = member ?? null
     title = member ? (member.fullName ?? member.email) : occupant.crewName || t.unknown
     subtitle = member?.role?.name ?? t.personTitle
     if (member) {
@@ -110,7 +114,8 @@ export function OccupantBubble({
   return (
     <Bubble getAnchor={getAnchor} label={title} onClose={onClose}>
       <header className="occupant-bubble__header">
-        <div>
+        {person ? <Avatar fullName={person.fullName} email={person.email} avatarUrl={person.avatarUrl} decorative /> : null}
+        <div className="occupant-bubble__heading">
           <h2 className="occupant-bubble__title">{title}</h2>
           <p className="occupant-bubble__muted">{subtitle}</p>
         </div>

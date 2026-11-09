@@ -32,6 +32,7 @@ export const siteAccessSchema = z.object({
   userId: z.string().min(1),
   fullName: z.string().nullable(),
   role: roleSchema,
+  avatarUrl: z.string().nullish(),
 })
 
 export type SiteAccess = z.infer<typeof siteAccessSchema>

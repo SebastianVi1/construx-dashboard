@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { formatMessage, useLocale } from '../../i18n'
 import { usePermissions } from '../permissions'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import { listMembers } from '../members/membersApi'
 import type { Member } from '../members/membersApi'
 import { listCrews, listEquipment } from '../crews/crewsApi'
@@ -107,7 +109,7 @@ export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: Assi
                 }
                 onDragEnd={onDragEnd}
               >
-                <span className="assignment-chip__avatar" aria-hidden>{initials(member.fullName ?? member.email)}</span>
+                <Avatar fullName={member.fullName} email={member.email} avatarUrl={member.avatarUrl} decorative />
                 <span className="assignment-chip__text">
                   <span className="assignment-chip__name">{member.fullName ?? member.email}</span>
                   <span className="assignment-chip__meta">{member.role.name}</span>

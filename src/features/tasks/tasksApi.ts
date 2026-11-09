@@ -20,6 +20,7 @@ export const assigneeSchema = z.object({
   membershipId: z.string().min(1),
   fullName: z.string().nullable(),
   taskRole: z.enum(taskRoles),
+  avatarUrl: z.string().nullish(),
 })
 
 export type Assignee = z.infer<typeof assigneeSchema>

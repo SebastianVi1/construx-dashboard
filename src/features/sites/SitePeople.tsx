@@ -5,6 +5,8 @@ import { formatMessage, useLocale } from '../../i18n'
 import { listMembers, type Member } from '../members/membersApi'
 import { roleLabel } from '../permissions'
 import { AuthApiError } from '../auth/authApi'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import { assignableMembers } from './siteHelpers'
 import { accessErrorKind, assignToSite, removeFromSite, type AccessErrorKind, type SiteAccess } from './sitesApi'
 
@@ -97,9 +99,12 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
               <tbody>
                 {people.data.filter((p) => !filterRole || p.role.code === filterRole).map((person) => (
                   <tr key={person.accessId}>
-                    <td className={person.fullName ? undefined : 'cell-muted'}>
-                      {nameOf(person)}
-                      {person.membershipId === myMembershipId ? <span className="person-you">{t.you}</span> : null}
+                    <td>
+                      <span className="person-cell">
+                        <Avatar fullName={person.fullName} avatarUrl={person.avatarUrl} decorative />
+                        <span className={person.fullName ? undefined : 'cell-muted'}>{nameOf(person)}</span>
+                        {person.membershipId === myMembershipId ? <span className="person-you">{t.you}</span> : null}
+                      </span>
                     </td>
                     <td>{roleLabel(person.role, m.roles)}</td>
                     {canManage ? (

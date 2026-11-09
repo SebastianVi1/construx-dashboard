@@ -403,6 +403,8 @@
 }
 
 .task-team {
+  --avatar-size: 22px;
+  --avatar-shadow: none;
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;

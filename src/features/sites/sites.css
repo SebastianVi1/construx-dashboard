@@ -462,10 +462,9 @@
   border-bottom: 1px solid var(--cx-border);
 }
 
-.site-team__person .avatar {
-  width: 36px;
-  height: 36px;
-  box-shadow: none;
+.site-team__person {
+  --avatar-size: 36px;
+  --avatar-shadow: none;
 }
 
 .site-team__who {
