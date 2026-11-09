@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { assignmentDataSchema, createAssignmentResponseSchema, shiftSchema } from '../../../features/floor-plans/zoneAssignmentsApi'
+import { assignmentDataSchema, assignmentOccupantSchema, createAssignmentResponseSchema, shiftSchema } from '../../../features/floor-plans/zoneAssignmentsApi'
 
 describe('shiftSchema', () => {
   it('parses valid shifts', () => {
@@ -54,6 +54,14 @@ describe('assignmentDataSchema', () => {
     const result = assignmentDataSchema.parse(raw)
     expect(result.crewId).toBe('crew-1')
     expect(result.endDate).toBe('2025-02-05')
+  })
+
+  it('reads the occupant photo like any person: a missing avatarUrl becomes null', () => {
+    const occupant = { kind: 'CREW', id: 'crew-1', label: 'Concrete', members: [], equipment: null }
+    const withPhoto = { ...occupant, kind: 'PERSON', id: 'mem-1', label: 'Ana', avatarUrl: 'https://s3.example/ana.png' }
+    expect(assignmentOccupantSchema.parse(occupant).avatarUrl).toBeNull()
+    expect(assignmentOccupantSchema.parse(withPhoto).avatarUrl).toBe('https://s3.example/ana.png')
+    expect(() => assignmentOccupantSchema.parse({ ...occupant, avatarUrl: 42 })).toThrow()
   })
 })
 

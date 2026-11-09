@@ -36,12 +36,11 @@ export type Worker = z.infer<typeof workerSchema>
  * Who or what an assignment puts in a zone (`Occupant` in the backend). `id` is the membership,
  * crew or equipment id; `members` are the people it stands for (one, the crew, or none).
  */
-export const assignmentOccupantSchema = z.object({
+export const assignmentOccupantSchema = personSchema.pick({ avatarUrl: true }).extend({
   kind: z.enum(['PERSON', 'CREW', 'EQUIPMENT']),
   id: z.string().min(1),
   /** Person name (null without a profile), crew name, or "type — identifier". */
   label: z.string().nullable(),
-  avatarUrl: z.string().nullable().default(null),
   members: z.array(workerSchema),
   equipment: z.object({ type: z.string(), identifier: z.string() }).nullable(),
 })
