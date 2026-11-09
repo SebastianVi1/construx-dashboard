@@ -36,10 +36,15 @@ function occupantsHtml(zone: Zone, list: Occupant[], activeKey: string | null | 
   const shown = list.slice(0, MAX_FIGURES)
   const figures = shown
     .map((o, i) => {
-      const svg = o.kind === 'person' ? PERSON_SVG : EQUIPMENT_SVG
+      let inner: string
+      if (o.kind === 'person' && o.avatarUrl) {
+        inner = `<img src="${escapeHtml(o.avatarUrl)}" class="zone-occupant__avatar" aria-hidden="true" />`
+      } else {
+        inner = o.kind === 'person' ? PERSON_SVG : EQUIPMENT_SVG
+      }
       const key = occupantAnchorKey(zone, o)
       const expanded = key === activeKey ? 'true' : 'false'
-      return `<span class="zone-occupant zone-occupant--${o.kind}" data-occupant="${i}" data-occupant-key="${escapeHtml(key)}" role="button" aria-expanded="${expanded}" aria-label="${escapeHtml(o.label)}" title="${escapeHtml(o.label)}">${svg}</span>`
+      return `<span class="zone-occupant zone-occupant--${o.kind}" data-occupant="${i}" data-occupant-key="${escapeHtml(key)}" role="button" aria-expanded="${expanded}" aria-label="${escapeHtml(o.label)}" title="${escapeHtml(o.label)}">${inner}</span>`
     })
     .join('')
   const rest = list.length - shown.length

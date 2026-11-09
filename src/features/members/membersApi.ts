@@ -10,6 +10,7 @@ export const memberSchema = z.object({
   fullName: z.string().nullable(),
   role: roleSchema,
   status: z.string(),
+  avatarUrl: z.string().nullable().optional(),
 })
 
 export type Member = z.infer<typeof memberSchema>

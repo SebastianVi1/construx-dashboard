@@ -12,10 +12,12 @@ export type Occupant = {
   /** The person's membership id, or the equipment id. Absent for a crew with no members. */
   resourceId?: string
   crewName?: string
+  /** Presigned profile photo URL; null/undefined shows the generic person icon. */
+  avatarUrl?: string | null
 }
 
 export type OccupantDirectory = {
-  members: { membershipId: string; fullName: string | null; email: string; role?: { name: string }; status?: string }[]
+  members: { membershipId: string; fullName: string | null; email: string; role?: { name: string }; status?: string; avatarUrl?: string | null }[]
   crews: { id: string; name: string; memberMembershipIds: string[]; leaderMembershipId?: string }[]
   equipment: { id: string; type: string; identifier: string }[]
 }
@@ -79,6 +81,7 @@ export function parseDropPayload(raw: string): DraggableResource | ReassignDrag 
  */
 export function zoneOccupants(assignments: AssignmentData[], directory: OccupantDirectory): Record<string, Occupant[]> {
   const memberName = new Map(directory.members.map((m) => [m.membershipId, m.fullName ?? m.email]))
+  const memberAvatar = new Map(directory.members.map((m) => [m.membershipId, m.avatarUrl ?? null]))
   const crews = new Map(directory.crews.map((c) => [c.id, c]))
   const equipment = new Map(directory.equipment.map((e) => [e.id, e]))
   const byZone: Record<string, Occupant[]> = {}
@@ -88,7 +91,7 @@ export function zoneOccupants(assignments: AssignmentData[], directory: Occupant
     const addPerson = (membershipId: string, label: string, crewName?: string) => {
       const key = `person:${membershipId}`
       if (!list.some((o) => o.key === key)) {
-        list.push({ key, kind: 'person', label, assignmentId: a.id, resourceId: membershipId, crewName })
+        list.push({ key, kind: 'person', label, assignmentId: a.id, resourceId: membershipId, crewName, avatarUrl: memberAvatar.get(membershipId) })
       }
     }
     if (a.membershipId) {
