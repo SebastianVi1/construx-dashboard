@@ -13,8 +13,8 @@ const task: Task = {
   status: 'TODO',
   completedAt: null,
   assignees: [
-    { accessId: 'a-1', membershipId: 'm-worker', fullName: 'Ana', taskRole: 'LEAD' },
-    { accessId: 'a-2', membershipId: 'm-crew', fullName: 'Bob', taskRole: 'CREW' },
+    { accessId: 'a-1', membershipId: 'm-worker', fullName: 'Ana', avatarUrl: null, taskRole: 'LEAD' },
+    { accessId: 'a-2', membershipId: 'm-crew', fullName: 'Bob', avatarUrl: null, taskRole: 'CREW' },
   ],
   allocatedBudget: null,
 }

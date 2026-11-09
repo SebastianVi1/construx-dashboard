@@ -14,8 +14,8 @@ import type { Task, TeamPlace } from '../../../features/tasks/tasksApi'
 
 const task: Pick<Task, 'assignees'> = {
   assignees: [
-    { accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana', taskRole: 'LEAD' },
-    { accessId: 'a-2', membershipId: 'm-2', fullName: 'Bob', taskRole: 'CREW' },
+    { accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana', avatarUrl: null, taskRole: 'LEAD' },
+    { accessId: 'a-2', membershipId: 'm-2', fullName: 'Bob', avatarUrl: null, taskRole: 'CREW' },
   ],
 }
 

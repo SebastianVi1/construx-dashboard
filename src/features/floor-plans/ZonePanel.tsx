@@ -8,6 +8,7 @@ import { listAssignments, closeAssignment, reassignToZone } from './zoneAssignme
 import type { AssignmentData, ReassignDrag } from './zoneAssignmentsApi'
 import { getZoneAudit } from './auditApi'
 import type { AuditEvent } from './auditApi'
+import type { Person } from '../people/personSchema'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import '../../components/form/form.css'
@@ -29,7 +30,7 @@ interface ZonePanelProps {
   /** Name of the person, crew or equipment an assignment is for. */
   labelFor?: (assignment: AssignmentData) => string
   /** The assigned person, so the row can show their photo; crews and equipment have none. */
-  personFor?: (assignment: AssignmentData) => { fullName: string | null; email: string; avatarUrl?: string | null } | undefined
+  personFor?: (assignment: AssignmentData) => (Person & { email: string }) | undefined
   /** Name of the member behind a membership id, for the history. */
   nameFor?: (membershipId: string) => string
 }

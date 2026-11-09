@@ -1,15 +1,13 @@
 import { z } from 'zod'
 import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
 import { compressImage, ImageCompressionError, imageContentTypes } from '../../lib/image'
+import { personSchema } from '../people/personSchema'
 import { sendToStorage, StorageUploadError } from '../plans/plansApi'
 
 /** `ProfileResponse`: every field is null until the person saves their profile. */
-export const profileSchema = z.object({
-  fullName: z.string().nullable(),
+export const profileSchema = personSchema.extend({
   phoneNumber: z.string().nullable(),
   trade: z.string().nullable(),
-  /** Presigned download URL valid for an hour; null without a photo. */
-  avatarUrl: z.string().nullable().default(null),
 })
 
 export type Profile = z.infer<typeof profileSchema>

@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Bubble } from '../../components/popover'
 import { intlLocales, useLocale } from '../../i18n'
 import { listGoals } from '../goals/goalsApi'
+import type { Person } from '../people/personSchema'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { listTasks } from '../tasks/tasksApi'
@@ -71,7 +72,7 @@ export function OccupantBubble({
   const facts: [string, string][] = []
   let title: string
   let subtitle: string
-  let person: { fullName: string | null; email: string; avatarUrl?: string | null } | null = null
+  let person: (Person & { email: string }) | null = null
 
   if (occupant.kind === 'equipment') {
     const eq = directory.equipment.find((e) => e.id === occupant.resourceId)

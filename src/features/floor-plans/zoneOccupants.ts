@@ -1,5 +1,6 @@
 import type { Zone } from './zonesApi'
 import type { AssignmentData, DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
+import type { Person } from '../people/personSchema'
 import type { Task, TaskRole } from '../tasks/tasksApi'
 
 /** Someone or something shown inside a zone on the plan. */
@@ -13,11 +14,14 @@ export type Occupant = {
   resourceId?: string
   crewName?: string
   /** Presigned profile photo URL; null/undefined shows the generic person icon. */
-  avatarUrl?: string | null
+  avatarUrl?: Person['avatarUrl']
 }
 
+/** A company member as the plan shows them. */
+export type DirectoryPerson = Person & { membershipId: string; email: string; role?: { name: string }; status?: string }
+
 export type OccupantDirectory = {
-  members: { membershipId: string; fullName: string | null; email: string; role?: { name: string }; status?: string; avatarUrl?: string | null }[]
+  members: DirectoryPerson[]
   crews: { id: string; name: string; memberMembershipIds: string[]; leaderMembershipId?: string }[]
   equipment: { id: string; type: string; identifier: string }[]
 }

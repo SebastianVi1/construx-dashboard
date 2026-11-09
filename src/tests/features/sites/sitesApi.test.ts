@@ -34,6 +34,7 @@ const access = {
   membershipId: 'm-1',
   userId: 'u-1',
   fullName: null,
+  avatarUrl: null,
   role: { code: 'WORKER', name: 'Trabajador' },
 }
 

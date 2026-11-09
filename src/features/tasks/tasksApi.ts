@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
 import { goalPath } from '../goals/goalsApi'
+import { personSchema } from '../people/personSchema'
 import { organizationPath } from '../permissions/permissionsApi'
 
 export const taskStatuses = ['TODO', 'IN_PROGRESS', 'DONE'] as const
@@ -15,12 +16,10 @@ export type TaskRole = (typeof taskRoles)[number]
 /** One requested place in a team: who, and in which task role. */
 export type TeamPlace = { accessId: string; taskRole: TaskRole }
 
-export const assigneeSchema = z.object({
+export const assigneeSchema = personSchema.extend({
   accessId: z.string().min(1),
   membershipId: z.string().min(1),
-  fullName: z.string().nullable(),
   taskRole: z.enum(taskRoles),
-  avatarUrl: z.string().nullish(),
 })
 
 export type Assignee = z.infer<typeof assigneeSchema>

@@ -24,7 +24,7 @@ const task: Task = {
   dueAt: '2026-12-01T18:00:00Z',
   status: 'TODO',
   completedAt: null,
-  assignees: [{ accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana', taskRole: 'LEAD' }],
+  assignees: [{ accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana', avatarUrl: null, taskRole: 'LEAD' }],
   allocatedBudget: null,
 }
 

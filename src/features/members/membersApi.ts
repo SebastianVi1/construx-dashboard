@@ -1,16 +1,15 @@
 import { z } from 'zod'
 import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
 import { roleSchema } from '../permissions/can'
+import { personSchema } from '../people/personSchema'
 import { organizationPath } from '../permissions/permissionsApi'
 
-export const memberSchema = z.object({
+export const memberSchema = personSchema.extend({
   membershipId: z.string().min(1),
   userId: z.string().min(1),
   email: z.string(),
-  fullName: z.string().nullable(),
   role: roleSchema,
   status: z.string(),
-  avatarUrl: z.string().nullable().optional(),
 })
 
 export type Member = z.infer<typeof memberSchema>

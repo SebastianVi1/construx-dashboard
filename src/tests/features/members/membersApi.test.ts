@@ -30,6 +30,7 @@ const member = {
   userId: 'u-1',
   email: 'ana@acme.com',
   fullName: null,
+  avatarUrl: null,
   role: { code: 'MEMBER', name: 'Miembro' },
   status: 'ACTIVE',
 }

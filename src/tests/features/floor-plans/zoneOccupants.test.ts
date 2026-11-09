@@ -34,8 +34,8 @@ function assignment(over: Partial<AssignmentData>): AssignmentData {
 
 const directory = {
   members: [
-    { membershipId: 'm1', fullName: 'Ana', email: 'ana@x.io' },
-    { membershipId: 'm2', fullName: null, email: 'beto@x.io' },
+    { membershipId: 'm1', fullName: 'Ana', avatarUrl: null, email: 'ana@x.io' },
+    { membershipId: 'm2', fullName: null, avatarUrl: null, email: 'beto@x.io' },
   ],
   crews: [{ id: 'c1', name: 'Concrete', memberMembershipIds: ['m1', 'm2'] }],
   equipment: [{ id: 'e1', type: 'Crane', identifier: 'GR-01' }],
@@ -167,7 +167,7 @@ describe('activeTasksOf', () => {
     return {
       id: 't', goalId: 'g', projectId: 'p', name: 'Task', startAt: '', dueAt: '2026-01-10T00:00:00Z',
       status: 'TODO', completedAt: null, allocatedBudget: null,
-      assignees: [{ accessId: 'x1', membershipId: 'm1', fullName: 'Ana', taskRole: 'CREW' }], ...over,
+      assignees: [{ accessId: 'x1', membershipId: 'm1', fullName: 'Ana', avatarUrl: null, taskRole: 'CREW' }], ...over,
     }
   }
 
@@ -175,8 +175,8 @@ describe('activeTasksOf', () => {
     const result = activeTasksOf('m1', [
       task({ id: 'late', dueAt: '2026-03-01T00:00:00Z', status: 'IN_PROGRESS' }),
       task({ id: 'done', status: 'DONE' }),
-      task({ id: 'soon', assignees: [{ accessId: 'x1', membershipId: 'm1', fullName: 'Ana', taskRole: 'LEAD' }] }),
-      task({ id: 'other', assignees: [{ accessId: 'x2', membershipId: 'm2', fullName: null, taskRole: 'LEAD' }] }),
+      task({ id: 'soon', assignees: [{ accessId: 'x1', membershipId: 'm1', fullName: 'Ana', avatarUrl: null, taskRole: 'LEAD' }] }),
+      task({ id: 'other', assignees: [{ accessId: 'x2', membershipId: 'm2', fullName: null, avatarUrl: null, taskRole: 'LEAD' }] }),
     ])
     expect(result.map((r) => [r.task.id, r.taskRole])).toEqual([['soon', 'LEAD'], ['late', 'CREW']])
   })

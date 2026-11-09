@@ -28,7 +28,7 @@ const task: Task = {
   dueAt: '2026-12-01T18:00:00Z',
   status: 'TODO',
   completedAt: null,
-  assignees: [{ accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana Perez', taskRole: 'LEAD' }],
+  assignees: [{ accessId: 'a-1', membershipId: 'm-1', fullName: 'Ana Perez', avatarUrl: null, taskRole: 'LEAD' }],
   allocatedBudget: null,
 }
 const base = '/api/organizations/org-1/projects/p-1/goals/g-1/activities'

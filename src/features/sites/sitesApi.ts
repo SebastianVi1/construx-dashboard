@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
+import { personSchema } from '../people/personSchema'
 import { roleSchema } from '../permissions/can'
 import { organizationPath } from '../permissions/permissionsApi'
 
@@ -26,13 +27,11 @@ export const siteSchema = z.object({
 export type Site = z.infer<typeof siteSchema>
 
 /** `AccessResponse`: a person on a site. No email, because workers can read it. */
-export const siteAccessSchema = z.object({
+export const siteAccessSchema = personSchema.extend({
   accessId: z.string().min(1),
   membershipId: z.string().min(1),
   userId: z.string().min(1),
-  fullName: z.string().nullable(),
   role: roleSchema,
-  avatarUrl: z.string().nullish(),
 })
 
 export type SiteAccess = z.infer<typeof siteAccessSchema>
