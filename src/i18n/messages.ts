@@ -1,5 +1,6 @@
 import type { DeepStringify } from './defineMessages'
 import type { Locale } from './locale'
+import { rolesMessages } from '../features/permissions/messages'
 import { authMessages } from '../features/auth/messages'
 import { onboardingMessages } from '../features/onboarding/messages'
 import { organizationsMessages, workspaceMessages } from '../features/organizations/messages'
@@ -33,16 +34,7 @@ const en = {
   workspace: workspaceMessages.en,
   documents: documentsMessages.en,
   profile: profileMessages.en,
-  roles: {
-    OWNER: 'Owner',
-    ADMINISTRATOR: 'Administrator',
-    MEMBER: 'Member',
-    WORKER: 'Worker',
-    FINANCE: 'Finance',
-    RESIDENT: 'Resident',
-    SITE_MANAGER: 'Site Manager',
-    SUPERINTENDENT: 'Superintendent',
-  },
+  roles: rolesMessages.en,
   sites: sitesMessages.en,
   reports: {
     title: 'Site Reports',
@@ -882,16 +874,7 @@ const es: Messages = {
   workspace: workspaceMessages.es,
   documents: documentsMessages.es,
   profile: profileMessages.es,
-  roles: {
-    OWNER: 'Propietario',
-    ADMINISTRATOR: 'Administrador',
-    MEMBER: 'Miembro',
-    WORKER: 'Trabajador',
-    FINANCE: 'Finanzas',
-    RESIDENT: 'Residente',
-    SITE_MANAGER: 'Jefe de Obra',
-    SUPERINTENDENT: 'Superintendente',
-  },
+  roles: rolesMessages.es,
   sites: sitesMessages.es,
   reports: {
     title: 'Informes de obra',
