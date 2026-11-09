@@ -5,6 +5,7 @@ import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { PhaseSchedule } from '../goals/PhasesPage'
 import { SitePhases } from '../goals/SitePhases'
+import { SiteFloorPlans } from '../floor-plans/SiteFloorPlansPage'
 import { SiteReportsSection } from '../reports/SiteReportsSection'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -20,7 +21,7 @@ import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import '../../components/filter/filter-tabs.css'
 import './sites.css'
 
-type Tab = 'overview' | 'details' | 'list' | 'gantt' | 'reports'
+type Tab = 'overview' | 'details' | 'list' | 'gantt' | 'plans' | 'reports'
 
 /** One site: its details (editable with MANAGE_PROJECT), budget (finance roles), progress, people, plans and its phases. */
 export function SiteDetailPage() {
@@ -36,7 +37,7 @@ export function SiteDetailPage() {
   const [formVersion, setFormVersion] = useState(0)
   const [savedNotice, setSavedNotice] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
-  const initialTab = (['overview', 'details', 'list', 'gantt', 'reports'] as Tab[]).find(
+  const initialTab = (['overview', 'details', 'list', 'gantt', 'plans', 'reports'] as Tab[]).find(
     (t) => t === searchParams.get('tab'),
   )
   const [tab, setTab] = useState<Tab>(initialTab ?? 'overview')
@@ -44,6 +45,7 @@ export function SiteDetailPage() {
   const myMembershipId = access?.membershipId ?? null
   const onSite = people.data ? people.data.some((person) => person.membershipId === myMembershipId) : undefined
   const canManage = can('MANAGE_PROJECT', siteId, { onSite })
+  const canViewPlans = can('VIEW_PLAN') ?? false
   const siteName = site.data?.name
 
   useEffect(() => {
@@ -131,6 +133,11 @@ export function SiteDetailPage() {
         <button type="button" className="filter-tabs__tab filter-tabs__tab--desktop" onClick={() => setTab('gantt')} aria-pressed={tab === 'gantt'}>
           {t.detail.tabs.gantt}
         </button>
+        {canViewPlans ? (
+          <button type="button" className="filter-tabs__tab" onClick={() => setTab('plans')} aria-pressed={tab === 'plans'}>
+            {t.detail.tabs.plans}
+          </button>
+        ) : null}
         <button type="button" className="filter-tabs__tab" onClick={() => setTab('reports')} aria-pressed={tab === 'reports'}>
           {m.reports.title}
         </button>
@@ -144,7 +151,6 @@ export function SiteDetailPage() {
           myMembershipId={myMembershipId}
           canViewBudget={can('VIEW_BUDGET')}
           canViewGoals={can('VIEW_GOAL', current.id, { onSite }) ?? false}
-          canViewPlans={can('VIEW_PLAN') ?? false}
         />
       ) : tab === 'details' ? (
         <>
@@ -207,6 +213,8 @@ export function SiteDetailPage() {
             />
           ) : null}
         </>
+      ) : tab === 'plans' ? (
+        canViewPlans ? <SiteFloorPlans siteId={current.id} /> : <Notice tone="error">{m.workspace.forbidden}</Notice>
       ) : tab === 'reports' ? (
         <SiteReportsSection organizationId={organization.id} siteId={current.id} canGenerate={canManage} />
       ) : !can('VIEW_GOAL', current.id, { onSite }) ? (

@@ -422,9 +422,8 @@ const en = {
         details: 'Details',
         list: 'Tasks',
         gantt: 'Gantt',
+        plans: 'Plans',
       },
-      plans: 'Plans',
-      floorPlans: 'Floor Plans',
     },
     overview: {
       budgetTitle: 'Budget',
@@ -2173,9 +2172,8 @@ const es: Messages = {
         details: 'Datos',
         list: 'Tareas',
         gantt: 'Gantt',
+        plans: 'Planos',
       },
-      plans: 'Planos',
-      floorPlans: 'Planos de planta',
     },
     overview: {
       budgetTitle: 'Presupuesto',

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, Navigate, useParams } from 'react-router'
 import { useLocale } from '../../i18n'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -8,8 +8,14 @@ import { deleteFloorPlan, listFloorPlans, type FloorPlan } from './floorPlansApi
 import { FloorPlanUploadDialog } from './FloorPlanUploadDialog'
 import './floor-plans.css'
 
+/** The old floor-plans route; the list now lives in the site's Plans tab. */
 export function SiteFloorPlansPage() {
   const { siteId = '' } = useParams()
+  return <Navigate to={`/sites/${encodeURIComponent(siteId)}?tab=plans`} replace />
+}
+
+/** Floor plans of one site, shown in the site's Plans tab. */
+export function SiteFloorPlans({ siteId }: { siteId: string }) {
   const { messages: m } = useLocale()
   const t = m.floorPlans
   const organization = useCurrentOrganization()
@@ -45,13 +51,10 @@ export function SiteFloorPlansPage() {
   }
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <div className="page-header__text">
-          <nav aria-label="breadcrumb">
-            <Link className="page-back" to={`/sites/${encodeURIComponent(siteId)}`}>{m.sites.detail.back}</Link>
-          </nav>
-          <h1>{t.title}</h1>
+    <section className="page-section" aria-labelledby="site-floor-plans-heading">
+      <div className="page-section__header">
+        <div>
+          <h2 id="site-floor-plans-heading">{t.title}</h2>
           <p>{t.description}</p>
         </div>
         {canManage ? (
@@ -59,7 +62,7 @@ export function SiteFloorPlansPage() {
             {t.upload}
           </button>
         ) : null}
-      </header>
+      </div>
 
       {notice ? <div className="notice" data-tone="success" role="status">{notice}</div> : null}
 
@@ -129,6 +132,6 @@ export function SiteFloorPlansPage() {
           onClose={() => setShowUpload(false)}
         />
       ) : null}
-    </div>
+    </section>
   )
 }

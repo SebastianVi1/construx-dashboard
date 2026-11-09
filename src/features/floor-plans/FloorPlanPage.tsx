@@ -185,7 +185,7 @@ export function FloorPlanPage() {
       <header className="page-header">
         <div className="page-header__text">
           <nav aria-label="breadcrumb">
-            <Link className="page-back" to={`/sites/${encodeURIComponent(siteId)}/floor-plans`}>{t.back}</Link>
+            <Link className="page-back" to={`/sites/${encodeURIComponent(siteId)}?tab=plans`}>{t.back}</Link>
           </nav>
           {floorPlan ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
