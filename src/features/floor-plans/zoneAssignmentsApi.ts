@@ -1,9 +1,51 @@
 import { z } from 'zod'
 import { getJson, sendJson } from '../../lib/http'
 import { floorPlanPath } from '../../lib/apiPaths'
+import { personSchema } from '../people/personSchema'
+import { taskRoles, taskStatuses } from '../tasks/tasksApi'
 
 export const shiftSchema = z.enum(['MORNING', 'AFTERNOON', 'FULL_DAY'])
 export type Shift = z.infer<typeof shiftSchema>
+
+/** An unfinished task of the Site in a person's team, as the plan shows it. */
+export const openTaskSchema = z.object({
+  id: z.string().min(1),
+  projectId: z.string().min(1),
+  goalId: z.string().min(1),
+  name: z.string(),
+  goalName: z.string(),
+  status: z.enum(taskStatuses),
+  taskRole: z.enum(taskRoles),
+  dueAt: z.string(),
+})
+export type OpenTask = z.infer<typeof openTaskSchema>
+
+/**
+ * A person on the plan, named by the backend. `openTasks` is empty when the viewer may not see that
+ * person's tasks.
+ */
+export const workerSchema = personSchema.extend({
+  membershipId: z.string().min(1),
+  roleName: z.string().nullable(),
+  crewLeader: z.boolean(),
+  openTasks: z.array(openTaskSchema),
+})
+export type Worker = z.infer<typeof workerSchema>
+
+/**
+ * Who or what an assignment puts in a zone (`Occupant` in the backend). `id` is the membership,
+ * crew or equipment id; `members` are the people it stands for (one, the crew, or none).
+ */
+export const assignmentOccupantSchema = z.object({
+  kind: z.enum(['PERSON', 'CREW', 'EQUIPMENT']),
+  id: z.string().min(1),
+  /** Person name (null without a profile), crew name, or "type — identifier". */
+  label: z.string().nullable(),
+  avatarUrl: z.string().nullable().default(null),
+  members: z.array(workerSchema),
+  equipment: z.object({ type: z.string(), identifier: z.string() }).nullable(),
+})
+export type AssignmentOccupant = z.infer<typeof assignmentOccupantSchema>
 
 export const assignmentDataSchema = z.object({
   id: z.string().min(1),
@@ -17,6 +59,7 @@ export const assignmentDataSchema = z.object({
   shift: shiftSchema,
   createdAt: z.string(),
   closedAt: z.string().nullable(),
+  occupant: assignmentOccupantSchema.nullable(),
 })
 export type AssignmentData = z.infer<typeof assignmentDataSchema>
 

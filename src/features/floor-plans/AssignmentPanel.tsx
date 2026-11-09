@@ -4,16 +4,15 @@ import { formatMessage, useLocale } from '../../i18n'
 import { usePermissions } from '../permissions'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
-import { listMembers } from '../members/membersApi'
-import type { Member } from '../members/membersApi'
-import { listCrews, listEquipment } from '../crews/crewsApi'
-import type { Crew, Equipment } from '../crews/crewsApi'
+import { getFloorPlanRoster } from './floorPlanRosterApi'
+import type { Roster } from './floorPlanRosterApi'
 import type { DraggableResource } from './zoneAssignmentsApi'
 
 type Tab = 'people' | 'crews' | 'equipment'
 
 interface AssignmentPanelProps {
   organizationId: string
+  siteId: string
   onDragStart: (resource: DraggableResource) => void
   onDragEnd: () => void
 }
@@ -27,7 +26,9 @@ function initials(name: string): string {
     .join('')
 }
 
-export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: AssignmentPanelProps) {
+type RosterState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; roster: Roster }
+
+export function AssignmentPanel({ organizationId, siteId, onDragStart, onDragEnd }: AssignmentPanelProps) {
   const { messages: m } = useLocale()
   const t = m.floorPlans.assignments
   const { can } = usePermissions()
@@ -35,27 +36,26 @@ export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: Assi
   const crewsHref = can('MANAGE_MEMBERS') ? '/members#crews' : '/crews'
 
   const [tab, setTab] = useState<Tab>('people')
-  const [members, setMembers] = useState<Member[]>([])
-  const [crews, setCrews] = useState<Crew[]>([])
-  const [equipment, setEquipment] = useState<Equipment[]>([])
-  const [loading, setLoading] = useState(false)
+  const [state, setState] = useState<RosterState>({ status: 'loading' })
+  const [attempt, setAttempt] = useState(0)
 
+  // Site staff, crews and equipment in one read gated by MANAGE_PLAN, so planners without the
+  // members permission still get a roster
   useEffect(() => {
+    let cancelled = false
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true)
-    Promise.all([
-      listMembers(organizationId),
-      listCrews(organizationId),
-      listEquipment(organizationId, true),
-    ])
-      .then(([ms, cs, eq]) => {
-        setMembers(ms)
-        setCrews(cs)
-        setEquipment(eq)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [organizationId])
+    setState({ status: 'loading' })
+    getFloorPlanRoster(organizationId, siteId)
+      .then((roster) => !cancelled && setState({ status: 'ready', roster }))
+      .catch(() => !cancelled && setState({ status: 'error' }))
+    return () => {
+      cancelled = true
+    }
+  }, [organizationId, siteId, attempt])
+
+  const people = state.status === 'ready' ? state.roster.people : []
+  const crews = state.status === 'ready' ? state.roster.crews : []
+  const equipment = state.status === 'ready' ? state.roster.equipment : []
 
   function handleDragStart(resource: DraggableResource, e: React.DragEvent) {
     e.dataTransfer.setData('application/json', JSON.stringify(resource))
@@ -86,13 +86,20 @@ export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: Assi
       </div>
 
       <div className="assignment-panel__list" role="tabpanel">
-        {loading ? (
+        {state.status === 'loading' ? (
           <p className="assignment-panel__empty">{m.floorPlans.loading}</p>
+        ) : state.status === 'error' ? (
+          <div className="assignment-panel__empty" role="alert">
+            <p>{t.rosterError}</p>
+            <button type="button" className="button button--small" onClick={() => setAttempt((n) => n + 1)}>
+              {m.floorPlans.retry}
+            </button>
+          </div>
         ) : tab === 'people' ? (
-          members.length === 0 ? (
+          people.length === 0 ? (
             <p className="assignment-panel__empty">{t.emptyPeople}</p>
           ) : (
-            members.map((member) => (
+            people.map((member) => (
               <div
                 key={member.membershipId}
                 className="assignment-chip"
@@ -102,17 +109,17 @@ export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: Assi
                     {
                       type: 'membership',
                       id: member.membershipId,
-                      name: member.fullName ?? member.email,
+                      name: member.fullName ?? t.occupant.noName,
                     },
                     e,
                   )
                 }
                 onDragEnd={onDragEnd}
               >
-                <Avatar fullName={member.fullName} email={member.email} avatarUrl={member.avatarUrl} decorative />
+                <Avatar fullName={member.fullName} avatarUrl={member.avatarUrl} decorative />
                 <span className="assignment-chip__text">
-                  <span className="assignment-chip__name">{member.fullName ?? member.email}</span>
-                  <span className="assignment-chip__meta">{member.role.name}</span>
+                  <span className="assignment-chip__name">{member.fullName ?? t.occupant.noName}</span>
+                  <span className="assignment-chip__meta">{member.roleName}</span>
                 </span>
               </div>
             ))
@@ -140,12 +147,12 @@ export function AssignmentPanel({ organizationId, onDragStart, onDragEnd }: Assi
                 onDragEnd={onDragEnd}
               >
                 <span className="assignment-chip__avatar assignment-chip__avatar--crew" aria-hidden>
-                  {crew.memberMembershipIds.length}
+                  {crew.memberCount}
                 </span>
                 <span className="assignment-chip__text">
                   <span className="assignment-chip__name">{crew.name}</span>
                   <span className="assignment-chip__meta">
-                    {formatMessage(t.crewMembers, { count: crew.memberMembershipIds.length })}
+                    {formatMessage(t.crewMembers, { count: crew.memberCount })}
                   </span>
                 </span>
               </div>

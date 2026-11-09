@@ -27,6 +27,7 @@ describe('assignmentDataSchema', () => {
       shift: 'MORNING',
       createdAt: '2025-01-10T12:00:00Z',
       closedAt: null,
+      occupant: null,
     }
     const result = assignmentDataSchema.parse(raw)
     expect(result.id).toBe('assign-1')
@@ -48,6 +49,7 @@ describe('assignmentDataSchema', () => {
       shift: 'FULL_DAY',
       createdAt: '2025-01-28T09:00:00Z',
       closedAt: null,
+      occupant: null,
     }
     const result = assignmentDataSchema.parse(raw)
     expect(result.crewId).toBe('crew-1')
@@ -70,6 +72,7 @@ describe('createAssignmentResponseSchema', () => {
         shift: 'AFTERNOON',
         createdAt: '2025-02-25T10:00:00Z',
         closedAt: null,
+        occupant: null,
       },
       hasOverlapWarning: true,
     }
@@ -92,6 +95,7 @@ describe('createAssignmentResponseSchema', () => {
         shift: 'MORNING',
         createdAt: '2025-03-30T08:00:00Z',
         closedAt: null,
+        occupant: null,
       },
       hasOverlapWarning: false,
     }

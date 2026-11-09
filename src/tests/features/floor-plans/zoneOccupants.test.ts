@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'bun:test'
 import type { Zone } from '../../../features/floor-plans/zonesApi'
-import type { AssignmentData } from '../../../features/floor-plans/zoneAssignmentsApi'
-import type { Task } from '../../../features/tasks/tasksApi'
+import type { AssignmentData, AssignmentOccupant, Worker } from '../../../features/floor-plans/zoneAssignmentsApi'
 import {
-  activeTasksOf,
   assignmentLabel,
   crewsOf,
   escapeHtml,
+  memberName,
   MIN_ZONE_AREA_M2,
+  personOf,
   polygonArea,
   parseDropPayload,
   pointInPolygon,
@@ -25,21 +25,36 @@ function zone(id: string, points: [number, number][], areaMSquared: number): Zon
   }
 }
 
+const ana: Worker = {
+  membershipId: 'm1', fullName: 'Ana', avatarUrl: 'https://s3/ana.png', roleName: 'Worker', crewLeader: false, openTasks: [],
+}
+const beto: Worker = { ...ana, membershipId: 'm2', fullName: null, avatarUrl: null }
+
+const person = (w: Worker): AssignmentOccupant => ({
+  kind: 'PERSON', id: w.membershipId, label: w.fullName, avatarUrl: w.avatarUrl, members: [w], equipment: null,
+})
+const concrete: AssignmentOccupant = {
+  kind: 'CREW', id: 'c1', label: 'Concrete', avatarUrl: null,
+  members: [{ ...ana, crewLeader: true }, beto], equipment: null,
+}
+const emptyCrew: AssignmentOccupant = { ...concrete, id: 'c2', label: 'Night shift', members: [] }
+const crane: AssignmentOccupant = {
+  kind: 'EQUIPMENT', id: 'e1', label: 'Crane — GR-01', avatarUrl: null, members: [],
+  equipment: { type: 'Crane', identifier: 'GR-01' },
+}
+
 function assignment(over: Partial<AssignmentData>): AssignmentData {
   return {
     id: 'a', zoneId: 'z1', membershipId: null, crewId: null, equipmentId: null, activity: 'Work',
-    startDate: '2026-01-01', endDate: null, shift: 'FULL_DAY', createdAt: '', closedAt: null, ...over,
+    startDate: '2026-01-01', endDate: null, shift: 'FULL_DAY', createdAt: '', closedAt: null, occupant: null, ...over,
   }
 }
 
-const directory = {
-  members: [
-    { membershipId: 'm1', fullName: 'Ana', avatarUrl: null, email: 'ana@x.io' },
-    { membershipId: 'm2', fullName: null, avatarUrl: null, email: 'beto@x.io' },
-  ],
-  crews: [{ id: 'c1', name: 'Concrete', memberMembershipIds: ['m1', 'm2'] }],
-  equipment: [{ id: 'e1', type: 'Crane', identifier: 'GR-01' }],
-}
+const plan = [
+  assignment({ id: 'a1', membershipId: 'm1', occupant: person(ana) }),
+  assignment({ id: 'a2', crewId: 'c1', occupant: concrete }),
+  assignment({ id: 'a3', equipmentId: 'e1', occupant: crane }),
+]
 
 describe('pointInPolygon', () => {
   it('finds points inside and outside', () => {
@@ -81,44 +96,37 @@ describe('parseDropPayload', () => {
 
 describe('zoneOccupants', () => {
   it('draws one figure per person, expanding crews and skipping duplicates', () => {
-    const result = zoneOccupants(
-      [
-        assignment({ id: 'a1', membershipId: 'm1' }),
-        assignment({ id: 'a2', crewId: 'c1' }),
-        assignment({ id: 'a3', equipmentId: 'e1' }),
-      ],
-      directory,
-    )
+    const result = zoneOccupants(plan)
     expect(result.z1.map((o) => [o.kind, o.label])).toEqual([
       ['person', 'Ana'],
-      ['person', 'beto@x.io · Concrete'],
+      ['person', 'Concrete'],
       ['equipment', 'Crane — GR-01'],
     ])
   })
 
-  it('keeps the assignment and resource behind each figure for its detail dialog', () => {
-    const result = zoneOccupants(
-      [
-        assignment({ id: 'a1', membershipId: 'm1' }),
-        assignment({ id: 'a2', crewId: 'c1' }),
-        assignment({ id: 'a3', equipmentId: 'e1' }),
-      ],
-      directory,
-    )
-    expect(result.z1.map((o) => [o.assignmentId, o.resourceId, o.crewName])).toEqual([
-      ['a1', 'm1', undefined],
-      ['a2', 'm2', 'Concrete'],
-      ['a3', 'e1', undefined],
+  it('keeps the assignment, resource and named person behind each figure for its bubble', () => {
+    const result = zoneOccupants(plan)
+    expect(result.z1.map((o) => [o.assignmentId, o.resourceId, o.crewName, o.avatarUrl ?? null])).toEqual([
+      ['a1', 'm1', undefined, 'https://s3/ana.png'],
+      ['a2', 'm2', 'Concrete', null],
+      ['a3', 'e1', undefined, null],
     ])
+    expect(result.z1[0].worker?.roleName).toBe('Worker')
+    expect(result.z1[2].equipment).toEqual({ type: 'Crane', identifier: 'GR-01' })
+  })
+
+  it('draws a crew without members as one figure', () => {
+    const result = zoneOccupants([assignment({ id: 'a9', crewId: 'c2', occupant: emptyCrew })])
+    expect(result.z1.map((o) => [o.key, o.label, o.crewName])).toEqual([['crew:c2', 'Night shift', 'Night shift']])
   })
 
   it('groups by zone', () => {
-    const result = zoneOccupants(
-      [assignment({ zoneId: 'z1', membershipId: 'm1' }), assignment({ zoneId: 'z2', membershipId: 'm2' })],
-      directory,
-    )
+    const result = zoneOccupants([
+      assignment({ zoneId: 'z1', membershipId: 'm1', occupant: person(ana) }),
+      assignment({ zoneId: 'z2', membershipId: 'm2', occupant: person(beto) }),
+    ])
     expect(result.z1).toHaveLength(1)
-    expect(result.z2[0].label).toBe('beto@x.io')
+    expect(result.z2[0].resourceId).toBe('m2')
   })
 })
 
@@ -130,55 +138,44 @@ describe('escapeHtml', () => {
 
 describe('assignmentLabel', () => {
   it('names the person, crew or equipment', () => {
-    expect(assignmentLabel(assignment({ membershipId: 'm2' }), directory)).toBe('beto@x.io')
-    expect(assignmentLabel(assignment({ crewId: 'c1' }), directory)).toBe('Concrete')
-    expect(assignmentLabel(assignment({ equipmentId: 'e1' }), directory)).toBe('Crane — GR-01')
-    expect(assignmentLabel(assignment({ membershipId: 'gone' }), directory)).toBe('')
+    expect(plan.map(assignmentLabel)).toEqual(['Ana', 'Concrete', 'Crane — GR-01'])
+    expect(assignmentLabel(assignment({ membershipId: 'm2', occupant: person(beto) }))).toBe('')
+    expect(assignmentLabel(assignment({ membershipId: 'gone' }))).toBe('')
+  })
+})
+
+describe('personOf', () => {
+  it('is the assigned person, never a crew member or equipment', () => {
+    expect(plan.map((a) => personOf(a)?.membershipId ?? null)).toEqual(['m1', null, null])
+  })
+})
+
+describe('memberName', () => {
+  it('finds a name anywhere on the plan', () => {
+    expect(memberName('m1', plan)).toBe('Ana')
+    expect(memberName('m2', plan)).toBe('')
+    expect(memberName('nobody', plan)).toBe('')
   })
 })
 
 describe('crewsOf', () => {
-  it('lists the crews a person is in and flags the ones they lead', () => {
-    const withLeader = { ...directory, crews: [{ ...directory.crews[0], leaderMembershipId: 'm1' }] }
-    expect(crewsOf('m1', withLeader)).toEqual([{ name: 'Concrete', leader: true }])
-    expect(crewsOf('m2', withLeader)).toEqual([{ name: 'Concrete', leader: false }])
-    expect(crewsOf('nobody', withLeader)).toEqual([])
+  it('lists the crews on the plan a person is in, once each, and flags the ones they lead', () => {
+    const twice = [...plan, assignment({ id: 'a4', zoneId: 'z2', crewId: 'c1', occupant: concrete })]
+    expect(crewsOf('m1', twice)).toEqual([{ name: 'Concrete', leader: true }])
+    expect(crewsOf('m2', twice)).toEqual([{ name: 'Concrete', leader: false }])
+    expect(crewsOf('nobody', twice)).toEqual([])
   })
 })
 
 describe('zoneIdsOf', () => {
   it('finds zones reached directly and through a crew, once each', () => {
-    const result = zoneIdsOf(
-      'm2',
-      [
-        assignment({ zoneId: 'z1', membershipId: 'm2' }),
-        assignment({ zoneId: 'z2', crewId: 'c1' }),
-        assignment({ zoneId: 'z1', crewId: 'c1' }),
-        assignment({ zoneId: 'z3', membershipId: 'm1' }),
-      ],
-      directory,
-    )
-    expect(result).toEqual(['z1', 'z2'])
-  })
-})
-
-describe('activeTasksOf', () => {
-  function task(over: Partial<Task>): Task {
-    return {
-      id: 't', goalId: 'g', projectId: 'p', name: 'Task', startAt: '', dueAt: '2026-01-10T00:00:00Z',
-      status: 'TODO', completedAt: null, allocatedBudget: null,
-      assignees: [{ accessId: 'x1', membershipId: 'm1', fullName: 'Ana', avatarUrl: null, taskRole: 'CREW' }], ...over,
-    }
-  }
-
-  it('keeps unfinished tasks of the person, soonest due first, with their role', () => {
-    const result = activeTasksOf('m1', [
-      task({ id: 'late', dueAt: '2026-03-01T00:00:00Z', status: 'IN_PROGRESS' }),
-      task({ id: 'done', status: 'DONE' }),
-      task({ id: 'soon', assignees: [{ accessId: 'x1', membershipId: 'm1', fullName: 'Ana', avatarUrl: null, taskRole: 'LEAD' }] }),
-      task({ id: 'other', assignees: [{ accessId: 'x2', membershipId: 'm2', fullName: null, avatarUrl: null, taskRole: 'LEAD' }] }),
+    const result = zoneIdsOf('m2', [
+      assignment({ zoneId: 'z1', membershipId: 'm2', occupant: person(beto) }),
+      assignment({ zoneId: 'z2', crewId: 'c1', occupant: concrete }),
+      assignment({ zoneId: 'z1', crewId: 'c1', occupant: concrete }),
+      assignment({ zoneId: 'z3', membershipId: 'm1', occupant: person(ana) }),
     ])
-    expect(result.map((r) => [r.task.id, r.taskRole])).toEqual([['soon', 'LEAD'], ['late', 'CREW']])
+    expect(result).toEqual(['z1', 'z2'])
   })
 })
 

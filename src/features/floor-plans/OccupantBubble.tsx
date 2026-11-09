@@ -1,18 +1,13 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { Bubble } from '../../components/popover'
 import { intlLocales, useLocale } from '../../i18n'
-import { listGoals } from '../goals/goalsApi'
-import type { Person } from '../people/personSchema'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
-import { listTasks } from '../tasks/tasksApi'
-import type { Task } from '../tasks/tasksApi'
 import { taskDetailPath } from '../tasks/taskRules'
 import type { Zone } from './zonesApi'
 import type { AssignmentData } from './zoneAssignmentsApi'
-import type { Occupant, OccupantDirectory } from './zoneOccupants'
-import { activeTasksOf, crewsOf, zoneIdsOf } from './zoneOccupants'
+import type { Occupant } from './zoneOccupants'
+import { crewsOf, zoneIdsOf } from './zoneOccupants'
 
 type OccupantBubbleProps = {
   /** The figure on the plan the bubble points at. */
@@ -20,50 +15,21 @@ type OccupantBubbleProps = {
   occupant: Occupant
   zone: Zone
   zones: Zone[]
+  /** Every active assignment on the plan, occupants named by the backend. */
   assignments: AssignmentData[]
-  directory: OccupantDirectory
-  organizationId: string
-  siteId: string
   onClose: () => void
 }
 
-type TasksState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; tasks: Task[] }
-
-/** Every task of the site, across all its phases. */
-async function listSiteTasks(organizationId: string, siteId: string): Promise<Task[]> {
-  const goals = await listGoals(organizationId, siteId)
-  const perGoal = await Promise.all(goals.map((g) => listTasks({ organizationId, siteId, goalId: g.id })))
-  return perGoal.flat()
-}
-
-/** Bubble over a figure on the plan: who the person or equipment is, where it works and on what. */
-export function OccupantBubble({
-  getAnchor,
-  occupant,
-  zone,
-  zones,
-  assignments,
-  directory,
-  organizationId,
-  siteId,
-  onClose,
-}: OccupantBubbleProps) {
+/**
+ * Bubble over a figure on the plan: who the person or equipment is, where it works and on what.
+ * Everything comes from the plan state, so opening it costs no request.
+ */
+export function OccupantBubble({ getAnchor, occupant, zone, zones, assignments, onClose }: OccupantBubbleProps) {
   const { messages: m, locale } = useLocale()
   const t = m.floorPlans.assignments.occupant
   const dateFormat = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium' })
-  const membershipId = occupant.kind === 'person' ? occupant.resourceId : undefined
-  const [tasks, setTasks] = useState<TasksState>({ status: 'loading' })
-
-  useEffect(() => {
-    if (!membershipId) return
-    let cancelled = false
-    listSiteTasks(organizationId, siteId)
-      .then((ts) => !cancelled && setTasks({ status: 'ready', tasks: ts }))
-      .catch(() => !cancelled && setTasks({ status: 'error' }))
-    return () => {
-      cancelled = true
-    }
-  }, [membershipId, organizationId, siteId])
+  const worker = occupant.kind === 'person' ? occupant.worker : undefined
+  const membershipId = worker?.membershipId
 
   const assignment = assignments.find((a) => a.id === occupant.assignmentId)
   // startDate is a plain YYYY-MM-DD; parse it as a local date so it does not shift a day
@@ -72,25 +38,21 @@ export function OccupantBubble({
   const facts: [string, string][] = []
   let title: string
   let subtitle: string
-  let person: (Person & { email: string }) | null = null
 
   if (occupant.kind === 'equipment') {
-    const eq = directory.equipment.find((e) => e.id === occupant.resourceId)
+    const eq = occupant.equipment
     title = eq ? eq.identifier : occupant.label || t.unknown
     subtitle = eq ? eq.type : t.equipmentTitle
     if (eq) facts.push([t.type, eq.type], [t.identifier, eq.identifier])
   } else {
-    const member = directory.members.find((x) => x.membershipId === membershipId)
-    person = member ?? null
-    title = member ? (member.fullName ?? member.email) : occupant.crewName || t.unknown
-    subtitle = member?.role?.name ?? t.personTitle
-    if (member) {
-      facts.push([t.name, member.fullName ?? t.noName], [t.email, member.email])
-      if (member.role) facts.push([t.role, member.role.name])
-      if (member.status) facts.push([t.status, t.memberStatus[member.status as keyof typeof t.memberStatus] ?? member.status])
+    title = worker ? (worker.fullName ?? t.noName) : occupant.crewName || t.unknown
+    subtitle = worker?.roleName ?? t.personTitle
+    if (worker) {
+      facts.push([t.name, worker.fullName ?? t.noName])
+      if (worker.roleName) facts.push([t.role, worker.roleName])
     }
     if (membershipId) {
-      const crews = crewsOf(membershipId, directory)
+      const crews = crewsOf(membershipId, assignments)
       if (crews.length > 0) {
         facts.push([t.crews, crews.map((c) => (c.leader ? `${c.name} (${t.leader})` : c.name)).join(', ')])
       }
@@ -105,7 +67,7 @@ export function OccupantBubble({
   if (assignment?.activity) facts.push([t.activity, assignment.activity])
 
   const otherZones = membershipId
-    ? zoneIdsOf(membershipId, assignments, directory)
+    ? zoneIdsOf(membershipId, assignments)
         .filter((id) => id !== zone.id)
         .map((id) => zones.find((z) => z.id === id)?.name)
         .filter((name): name is string => Boolean(name))
@@ -115,7 +77,7 @@ export function OccupantBubble({
   return (
     <Bubble getAnchor={getAnchor} label={title} onClose={onClose}>
       <header className="occupant-bubble__header">
-        {person ? <Avatar fullName={person.fullName} email={person.email} avatarUrl={person.avatarUrl} decorative /> : null}
+        {worker ? <Avatar fullName={worker.fullName} avatarUrl={worker.avatarUrl} decorative /> : null}
         <div className="occupant-bubble__heading">
           <h2 className="occupant-bubble__title">{title}</h2>
           <p className="occupant-bubble__muted">{subtitle}</p>
@@ -133,39 +95,31 @@ export function OccupantBubble({
         ))}
       </dl>
 
-      {membershipId ? (
+      {worker ? (
         <section className="occupant-bubble__section">
           <h3>{t.activeTasks}</h3>
-          {tasks.status === 'loading' ? (
-            <p className="occupant-bubble__muted">{t.tasksLoading}</p>
-          ) : tasks.status === 'error' ? (
-            <p className="occupant-bubble__muted">{t.tasksError}</p>
+          {worker.openTasks.length === 0 ? (
+            <p className="occupant-bubble__muted">{t.noActiveTasks}</p>
           ) : (
-            (() => {
-              const active = activeTasksOf(membershipId, tasks.tasks)
-              if (active.length === 0) return <p className="occupant-bubble__muted">{t.noActiveTasks}</p>
-              return (
-                <ul className="occupant-bubble__tasks">
-                  {active.map(({ task, taskRole }) => (
-                    <li key={task.id} className="occupant-bubble__task">
-                      <Link className="table-link" to={taskDetailPath(task)} onClick={onClose}>
-                        {task.name}
-                      </Link>
-                      <span className="occupant-bubble__muted">
-                        {[
-                          task.goalName,
-                          m.tasks.status[task.status],
-                          m.tasks.roles[taskRole],
-                          `${t.due} ${dateFormat.format(new Date(task.dueAt))}`,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )
-            })()
+            <ul className="occupant-bubble__tasks">
+              {worker.openTasks.map((task) => (
+                <li key={task.id} className="occupant-bubble__task">
+                  <Link className="table-link" to={taskDetailPath(task)} onClick={onClose}>
+                    {task.name}
+                  </Link>
+                  <span className="occupant-bubble__muted">
+                    {[
+                      task.goalName,
+                      m.tasks.status[task.status],
+                      m.tasks.roles[task.taskRole],
+                      `${t.due} ${dateFormat.format(new Date(task.dueAt))}`,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
       ) : null}

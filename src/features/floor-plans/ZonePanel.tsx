@@ -8,7 +8,7 @@ import { listAssignments, closeAssignment, reassignToZone } from './zoneAssignme
 import type { AssignmentData, ReassignDrag } from './zoneAssignmentsApi'
 import { getZoneAudit } from './auditApi'
 import type { AuditEvent } from './auditApi'
-import type { Person } from '../people/personSchema'
+import { assignmentLabel, personOf } from './zoneOccupants'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import '../../components/form/form.css'
@@ -27,10 +27,6 @@ interface ZonePanelProps {
   onReassignDragEnd?: () => void
   /** Called after an assignment is closed or moved from this panel. */
   onAssignmentsChanged?: () => void
-  /** Name of the person, crew or equipment an assignment is for. */
-  labelFor?: (assignment: AssignmentData) => string
-  /** The assigned person, so the row can show their photo; crews and equipment have none. */
-  personFor?: (assignment: AssignmentData) => (Person & { email: string }) | undefined
   /** Name of the member behind a membership id, for the history. */
   nameFor?: (membershipId: string) => string
 }
@@ -51,8 +47,6 @@ export function ZonePanel({
   onReassignDragStart,
   onReassignDragEnd,
   onAssignmentsChanged,
-  labelFor,
-  personFor,
   nameFor,
 }: ZonePanelProps) {
   const { messages: m } = useLocale()
@@ -279,7 +273,7 @@ export function ZonePanel({
                         const drag: ReassignDrag = {
                           assignmentId: a.id,
                           sourceZoneId: zone.id,
-                          label: labelFor?.(a) ?? a.activity ?? '',
+                          label: assignmentLabel(a) || (a.activity ?? ''),
                         }
                         e.dataTransfer.setData('application/json', JSON.stringify(drag))
                         e.dataTransfer.effectAllowed = 'move'
@@ -289,10 +283,10 @@ export function ZonePanel({
                     >
                       <div className="assignment-list__info">
                         {(() => {
-                          const person = personFor?.(a)
-                          return person ? <Avatar fullName={person.fullName} email={person.email} avatarUrl={person.avatarUrl} decorative /> : null
+                          const person = personOf(a)
+                          return person ? <Avatar fullName={person.fullName} avatarUrl={person.avatarUrl} decorative /> : null
                         })()}
-                        <span className="assignment-list__activity">{labelFor?.(a) || a.activity}</span>
+                        <span className="assignment-list__activity">{assignmentLabel(a) || a.activity}</span>
                       </div>
                       <div className="assignment-list__actions">
                         <button

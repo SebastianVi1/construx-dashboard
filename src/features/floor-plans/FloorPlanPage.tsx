@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import L from 'leaflet'
 import { useLocale } from '../../i18n'
@@ -15,14 +15,12 @@ import { AssignmentPanel } from './AssignmentPanel'
 import { OccupantBubble } from './OccupantBubble'
 import { getCalibration } from './calibrationApi'
 import type { Calibration } from './calibrationApi'
-import { listZones } from './zonesApi'
 import type { Zone } from './zonesApi'
-import { createAssignment, listFloorPlanAssignments, reassignToZone } from './zoneAssignmentsApi'
+import { createAssignment, reassignToZone } from './zoneAssignmentsApi'
 import type { AssignmentData, DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
-import { assignmentLabel, occupantAnchorKey, zoneOccupants } from './zoneOccupants'
-import type { Occupant, OccupantDirectory } from './zoneOccupants'
-import { listMembers } from '../members/membersApi'
-import { listCrews, listEquipment } from '../crews/crewsApi'
+import { getFloorPlanState, localIsoDate } from './floorPlanStateApi'
+import { memberName, occupantAnchorKey, zoneOccupants } from './zoneOccupants'
+import type { Occupant } from './zoneOccupants'
 import { ScaleIcon } from './floorPlanIcons'
 import './floor-plans.css'
 
@@ -53,13 +51,13 @@ export function FloorPlanPage() {
   const [zonesVisible, setZonesVisible] = useState(true)
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null)
   const [zoneConflictBanner, setZoneConflictBanner] = useState(false)
+  const [stateError, setStateError] = useState(false)
 
   // Assignment state
   const [draggingResource, setDraggingResource] = useState<DraggableResource | null>(null)
   const [draggingReassign, setDraggingReassign] = useState<ReassignDrag | null>(null)
   const [assignError, setAssignError] = useState(false)
   const [assignments, setAssignments] = useState<AssignmentData[]>([])
-  const [directory, setDirectory] = useState<OccupantDirectory>({ members: [], crews: [], equipment: [] })
   const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null)
   const [selectedOccupant, setSelectedOccupant] = useState<{ zone: Zone; occupant: Occupant } | null>(null)
 
@@ -73,29 +71,25 @@ export function FloorPlanPage() {
       .catch(() => setCalibration(null))
   }, [floorPlan, orgId, siteId, floorPlanId, calibrationLoaded])
 
+  // Zones and today's assignments in one read; occupants come named, so no members list is needed
+  const loadState = useCallback(() => {
+    getFloorPlanState(orgId, siteId, floorPlanId, localIsoDate())
+      .then((states) => {
+        setZones(states.map((s) => s.zone))
+        setAssignments(states.flatMap((s) => s.activeAssignments))
+        setStateError(false)
+      })
+      .catch(() => setStateError(true))
+  }, [orgId, siteId, floorPlanId])
+
   // Load zones when floor plan is READY and calibration exists
   useEffect(() => {
     if (!floorPlan || floorPlan.status !== 'READY' || !calibration || zonesLoadedRef.current) return
     zonesLoadedRef.current = true
-    listZones(orgId, siteId, floorPlanId)
-      .then((zs) => setZones(zs))
-      .catch(() => setZones([]))
-    listFloorPlanAssignments(orgId, siteId, floorPlanId)
-      .then((as) => setAssignments(as))
-      .catch(() => {})
-    // Names for the figures drawn in each zone; a failed list just leaves the tooltip blank
-    Promise.all([
-      listMembers(orgId).catch(() => []),
-      listCrews(orgId).catch(() => []),
-      listEquipment(orgId).catch(() => []),
-    ]).then(([members, crews, equipment]) => setDirectory({ members, crews, equipment }))
-  }, [floorPlan, calibration, orgId, siteId, floorPlanId])
+    loadState()
+  }, [floorPlan, calibration, loadState])
 
-  const reloadAssignments = () => {
-    listFloorPlanAssignments(orgId, siteId, floorPlanId)
-      .then((as) => setAssignments(as))
-      .catch(() => {})
-  }
+  const reloadAssignments = loadState
 
   // Poll every 3 seconds while PENDING or PROCESSING
   useEffect(() => {
@@ -212,10 +206,19 @@ export function FloorPlanPage() {
         </div>
       ) : null}
 
+      {stateError ? (
+        <div className="floor-plan-notice" role="alert">
+          <p>{t.zones.stateError}</p>
+          <button type="button" className="button" onClick={loadState}>
+            {t.retry}
+          </button>
+        </div>
+      ) : null}
+
       {zoneConflictBanner ? (
         <div className="floor-plan-notice" role="alert">
           <p>{t.zones.conflictWarning}</p>
-          <button type="button" className="button" onClick={() => { setZoneConflictBanner(false); zonesLoadedRef.current = false; listZones(orgId, siteId, floorPlanId).then((zs) => setZones(zs)).catch(() => {}) }}>
+          <button type="button" className="button" onClick={() => { setZoneConflictBanner(false); loadState() }}>
             {t.retry}
           </button>
         </div>
@@ -292,6 +295,7 @@ export function FloorPlanPage() {
                 {showRoster ? (
                   <AssignmentPanel
                     organizationId={orgId}
+                    siteId={siteId}
                     onDragStart={(res) => setDraggingResource(res)}
                     onDragEnd={() => setDraggingResource(null)}
                   />
@@ -334,7 +338,7 @@ export function FloorPlanPage() {
                       activeOccupantKey={
                         selectedOccupant ? occupantAnchorKey(selectedOccupant.zone, selectedOccupant.occupant) : null
                       }
-                      occupants={zoneOccupants(assignments, directory)}
+                      occupants={zoneOccupants(assignments)}
                       dragging={draggingResource !== null || draggingReassign !== null}
                       onDropResource={(zone, resource) => {
                         setDraggingResource(null)
@@ -373,12 +377,7 @@ export function FloorPlanPage() {
                     onReassignDragStart={(drag) => setDraggingReassign(drag)}
                     onReassignDragEnd={() => setDraggingReassign(null)}
                     onAssignmentsChanged={reloadAssignments}
-                    labelFor={(a) => assignmentLabel(a, directory)}
-                    personFor={(a) => directory.members.find((x) => x.membershipId === a.membershipId)}
-                    nameFor={(id) => {
-                      const member = directory.members.find((x) => x.membershipId === id)
-                      return member ? (member.fullName ?? member.email) : ''
-                    }}
+                    nameFor={(id) => memberName(id, assignments)}
                   />
                 ) : (
                   <aside className="zone-panel zone-panel--empty">
@@ -402,9 +401,6 @@ export function FloorPlanPage() {
                   zone={selectedOccupant.zone}
                   zones={zones}
                   assignments={assignments}
-                  directory={directory}
-                  organizationId={orgId}
-                  siteId={siteId}
                   onClose={() => setSelectedOccupant(null)}
                 />
               ) : null}

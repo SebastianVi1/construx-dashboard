@@ -1,9 +1,8 @@
 import type { Zone } from './zonesApi'
-import type { AssignmentData, DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
+import type { AssignmentData, DraggableResource, ReassignDrag, Worker } from './zoneAssignmentsApi'
 import type { Person } from '../people/personSchema'
-import type { Task, TaskRole } from '../tasks/tasksApi'
 
-/** Someone or something shown inside a zone on the plan. */
+/** One figure drawn inside a zone on the plan: a person or a piece of equipment. */
 export type Occupant = {
   key: string
   kind: 'person' | 'equipment'
@@ -15,15 +14,9 @@ export type Occupant = {
   crewName?: string
   /** Presigned profile photo URL; null/undefined shows the generic person icon. */
   avatarUrl?: Person['avatarUrl']
-}
-
-/** A company member as the plan shows them. */
-export type DirectoryPerson = Person & { membershipId: string; email: string; role?: { name: string }; status?: string }
-
-export type OccupantDirectory = {
-  members: DirectoryPerson[]
-  crews: { id: string; name: string; memberMembershipIds: string[]; leaderMembershipId?: string }[]
-  equipment: { id: string; type: string; identifier: string }[]
+  /** The person behind a person figure, as the backend named them. */
+  worker?: Worker
+  equipment?: { type: string; identifier: string }
 }
 
 /** Ray-casting test; `polygon` and `point` share the same [x, y] space. */
@@ -80,45 +73,49 @@ export function parseDropPayload(raw: string): DraggableResource | ReassignDrag 
 }
 
 /**
- * One occupant per worker and per piece of equipment, grouped by zone. A crew counts as each of
+ * One figure per worker and per piece of equipment, grouped by zone. A crew counts as each of
  * its members; a person assigned twice to the same zone is shown once.
  */
-export function zoneOccupants(assignments: AssignmentData[], directory: OccupantDirectory): Record<string, Occupant[]> {
-  const memberName = new Map(directory.members.map((m) => [m.membershipId, m.fullName ?? m.email]))
-  const memberAvatar = new Map(directory.members.map((m) => [m.membershipId, m.avatarUrl ?? null]))
-  const crews = new Map(directory.crews.map((c) => [c.id, c]))
-  const equipment = new Map(directory.equipment.map((e) => [e.id, e]))
+export function zoneOccupants(assignments: AssignmentData[]): Record<string, Occupant[]> {
   const byZone: Record<string, Occupant[]> = {}
 
   for (const a of assignments) {
     const list = (byZone[a.zoneId] ??= [])
-    const addPerson = (membershipId: string, label: string, crewName?: string) => {
-      const key = `person:${membershipId}`
-      if (!list.some((o) => o.key === key)) {
-        list.push({ key, kind: 'person', label, assignmentId: a.id, resourceId: membershipId, crewName, avatarUrl: memberAvatar.get(membershipId) })
-      }
+    const occupant = a.occupant
+    if (!occupant) continue
+    const addPerson = (worker: Worker, crewName?: string) => {
+      const key = `person:${worker.membershipId}`
+      if (list.some((o) => o.key === key)) return
+      list.push({
+        key,
+        kind: 'person',
+        label: [worker.fullName, crewName].filter(Boolean).join(' · '),
+        assignmentId: a.id,
+        resourceId: worker.membershipId,
+        crewName,
+        avatarUrl: worker.avatarUrl,
+        worker,
+      })
     }
-    if (a.membershipId) {
-      addPerson(a.membershipId, memberName.get(a.membershipId) ?? '')
-    } else if (a.crewId) {
-      const crew = crews.get(a.crewId)
-      if (!crew || crew.memberMembershipIds.length === 0) {
-        list.push({ key: `crew:${a.crewId}`, kind: 'person', label: crew?.name ?? '', assignmentId: a.id, crewName: crew?.name })
+    if (occupant.kind === 'PERSON') {
+      for (const w of occupant.members) addPerson(w)
+    } else if (occupant.kind === 'CREW') {
+      const crewName = occupant.label ?? ''
+      if (occupant.members.length === 0) {
+        list.push({ key: `crew:${occupant.id}`, kind: 'person', label: crewName, assignmentId: a.id, crewName })
       } else {
-        for (const id of crew.memberMembershipIds) {
-          addPerson(id, `${memberName.get(id) ?? ''} · ${crew.name}`, crew.name)
-        }
+        for (const w of occupant.members) addPerson(w, crewName)
       }
-    } else if (a.equipmentId) {
-      const eq = equipment.get(a.equipmentId)
-      const key = `equipment:${a.equipmentId}`
+    } else {
+      const key = `equipment:${occupant.id}`
       if (!list.some((o) => o.key === key)) {
         list.push({
           key,
           kind: 'equipment',
-          label: eq ? `${eq.type} — ${eq.identifier}` : '',
+          label: occupant.label ?? '',
           assignmentId: a.id,
-          resourceId: a.equipmentId,
+          resourceId: occupant.id,
+          equipment: occupant.equipment ?? undefined,
         })
       }
     }
@@ -127,48 +124,44 @@ export function zoneOccupants(assignments: AssignmentData[], directory: Occupant
 }
 
 /** Who an assignment is for, as shown in the zone panel. */
-export function assignmentLabel(a: AssignmentData, directory: OccupantDirectory): string {
-  if (a.membershipId) {
-    const m = directory.members.find((x) => x.membershipId === a.membershipId)
-    return m ? (m.fullName ?? m.email) : ''
-  }
-  if (a.crewId) return directory.crews.find((c) => c.id === a.crewId)?.name ?? ''
-  if (a.equipmentId) {
-    const eq = directory.equipment.find((e) => e.id === a.equipmentId)
-    return eq ? `${eq.type} — ${eq.identifier}` : ''
+export function assignmentLabel(a: AssignmentData): string {
+  return a.occupant?.label ?? ''
+}
+
+/** The person an assignment is for; crews and equipment have none. */
+export function personOf(a: AssignmentData): Worker | undefined {
+  return a.occupant?.kind === 'PERSON' ? a.occupant.members[0] : undefined
+}
+
+/** Name of a member anywhere on the plan, for the zone history; empty when not on it or unnamed. */
+export function memberName(membershipId: string, assignments: AssignmentData[]): string {
+  for (const a of assignments) {
+    const worker = a.occupant?.members.find((w) => w.membershipId === membershipId)
+    if (worker?.fullName) return worker.fullName
   }
   return ''
 }
 
-/** Crews a person belongs to, and whether they lead each one. */
-export function crewsOf(membershipId: string, directory: OccupantDirectory): { name: string; leader: boolean }[] {
-  return directory.crews
-    .filter((c) => c.leaderMembershipId === membershipId || c.memberMembershipIds.includes(membershipId))
-    .map((c) => ({ name: c.name, leader: c.leaderMembershipId === membershipId }))
+/** Crews on the plan a person belongs to, and whether they lead each one. */
+export function crewsOf(membershipId: string, assignments: AssignmentData[]): { name: string; leader: boolean }[] {
+  const crews = new Map<string, { name: string; leader: boolean }>()
+  for (const a of assignments) {
+    const o = a.occupant
+    if (o?.kind !== 'CREW' || crews.has(o.id)) continue
+    const worker = o.members.find((w) => w.membershipId === membershipId)
+    if (worker) crews.set(o.id, { name: o.label ?? '', leader: worker.crewLeader })
+  }
+  return [...crews.values()]
 }
 
 /** Every zone a person is in, directly or through one of their crews, in plan order. */
-export function zoneIdsOf(membershipId: string, assignments: AssignmentData[], directory: OccupantDirectory): string[] {
-  const crewIds = new Set(
-    directory.crews.filter((c) => c.memberMembershipIds.includes(membershipId)).map((c) => c.id),
-  )
+export function zoneIdsOf(membershipId: string, assignments: AssignmentData[]): string[] {
   const ids: string[] = []
   for (const a of assignments) {
-    const inIt = a.membershipId === membershipId || (a.crewId !== null && crewIds.has(a.crewId))
+    const inIt = a.occupant?.members.some((w) => w.membershipId === membershipId) ?? false
     if (inIt && !ids.includes(a.zoneId)) ids.push(a.zoneId)
   }
   return ids
-}
-
-/** Tasks not yet done whose team includes the person, soonest due first, with their place in it. */
-export function activeTasksOf(membershipId: string, tasks: Task[]): { task: Task; taskRole: TaskRole }[] {
-  const result: { task: Task; taskRole: TaskRole }[] = []
-  for (const task of tasks) {
-    if (task.status === 'DONE') continue
-    const place = task.assignees.find((p) => p.membershipId === membershipId)
-    if (place) result.push({ task, taskRole: place.taskRole })
-  }
-  return result.sort((a, b) => a.task.dueAt.localeCompare(b.task.dueAt))
 }
 
 /** Identifies one figure in the map's DOM, which is rebuilt whenever the occupants change. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { zoneStateSchema } from '../../../features/floor-plans/floorPlanStateApi'
+import { localIsoDate, zoneStateSchema } from '../../../features/floor-plans/floorPlanStateApi'
 import { z } from 'zod'
 
 const zone = {
@@ -28,6 +28,28 @@ const assignment = {
   shift: 'MORNING',
   createdAt: '2026-11-01T08:00:00Z',
   closedAt: null,
+  occupant: {
+    kind: 'PERSON',
+    id: 'm1a2b3c4-0000-0000-0000-000000000001',
+    label: 'Ana Perez',
+    avatarUrl: 'https://s3.example/ana.png',
+    members: [
+      {
+        membershipId: 'm1a2b3c4-0000-0000-0000-000000000001',
+        fullName: 'Ana Perez',
+        avatarUrl: 'https://s3.example/ana.png',
+        roleName: 'Trabajador',
+        crewLeader: false,
+        openTasks: [
+          {
+            id: 't1', projectId: 'p1', goalId: 'g1', name: 'Pour slab', goalName: 'Structure',
+            status: 'TODO', taskRole: 'LEAD', dueAt: '2026-11-15T00:00:00Z',
+          },
+        ],
+      },
+    ],
+    equipment: null,
+  },
 }
 
 describe('zoneStateSchema', () => {
@@ -40,6 +62,30 @@ describe('zoneStateSchema', () => {
       expect(result.data.activeAssignments).toHaveLength(1)
       expect(result.data.activeAssignments[0].activity).toBe('Foundation pouring')
     }
+  })
+
+  it('carries the named occupant with photo and open tasks', () => {
+    const result = zoneStateSchema.parse({ zone, activeAssignments: [assignment] })
+    const occupant = result.activeAssignments[0].occupant
+    expect(occupant?.kind).toBe('PERSON')
+    expect(occupant?.label).toBe('Ana Perez')
+    expect(occupant?.members[0].avatarUrl).toBe('https://s3.example/ana.png')
+    expect(occupant?.members[0].openTasks[0].taskRole).toBe('LEAD')
+  })
+
+  it('reads equipment and an occupant-less assignment', () => {
+    const equipment = {
+      ...assignment,
+      membershipId: null,
+      equipmentId: 'e1',
+      occupant: {
+        kind: 'EQUIPMENT', id: 'e1', label: 'Crane — GR-01', avatarUrl: null, members: [],
+        equipment: { type: 'Crane', identifier: 'GR-01' },
+      },
+    }
+    const result = zoneStateSchema.parse({ zone, activeAssignments: [equipment, { ...assignment, occupant: null }] })
+    expect(result.activeAssignments[0].occupant?.equipment?.identifier).toBe('GR-01')
+    expect(result.activeAssignments[1].occupant).toBeNull()
   })
 
   it('parses a zone state with no assignments', () => {
@@ -58,5 +104,11 @@ describe('zoneStateSchema', () => {
     if (result.success) {
       expect(result.data).toHaveLength(1)
     }
+  })
+})
+
+describe('localIsoDate', () => {
+  it('formats the local calendar day, padded', () => {
+    expect(localIsoDate(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05')
   })
 })
