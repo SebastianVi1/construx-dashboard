@@ -5,10 +5,32 @@
  * hollow, in progress is the brightest solid glow, done dims and gets a tick.
  */
 
-/* Schedule pages use the full workspace width without widening other pages. */
+/*
+ * Only the chart sheet takes the full workspace width; the header, tabs, toolbar
+ * and notices stay in the regular page column.
+ */
+.page:has(.gantt),
+.page:has(.gantt) .phases-schedule,
+.page:has(.gantt) .gantt {
+  grid-template-columns: minmax(0, 1fr) min(100%, calc(1120px - 2 * var(--cx-page-gutter))) minmax(0, 1fr);
+  column-gap: 0;
+}
+
 .page:has(.gantt) {
   max-width: none;
   min-width: 0;
+}
+
+.page:has(.gantt) > *,
+.page:has(.gantt) .phases-schedule > *,
+.page:has(.gantt) .gantt > * {
+  grid-column: 2;
+}
+
+.page:has(.gantt) > .phases-schedule,
+.page:has(.gantt) .phases-schedule > .gantt,
+.page:has(.gantt) .gantt > .gantt__scroll {
+  grid-column: 1 / -1;
 }
 
 .gantt {
