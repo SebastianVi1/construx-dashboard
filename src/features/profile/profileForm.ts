@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import type { Profile, ProfileUpdate } from './profileApi'
 
+/** The editable part of a profile; the photo has its own flow. */
+type EditableProfile = Pick<Profile, 'fullName' | 'phoneNumber' | 'trade'>
+
 export type ProfileValidationMessages = {
   fullNameRequired: string
   fullNameMax: string
@@ -24,7 +27,7 @@ export function makeProfileSchema(messages: ProfileValidationMessages) {
   })
 }
 
-export function profileFormValues(profile: Profile): ProfileValues {
+export function profileFormValues(profile: EditableProfile): ProfileValues {
   return { fullName: profile.fullName ?? '', phoneNumber: profile.phoneNumber ?? '', trade: profile.trade ?? '' }
 }
 
@@ -38,7 +41,7 @@ export type ProfileField = keyof ProfileUpdate
 export type ProfileChange = { field: ProfileField; from: string; to: string }
 
 /** What a save would change, in form order; an unset stored field counts as empty. */
-export function profileChanges(profile: Profile, update: ProfileUpdate): ProfileChange[] {
+export function profileChanges(profile: EditableProfile, update: ProfileUpdate): ProfileChange[] {
   const fields: ProfileField[] = ['fullName', 'phoneNumber', 'trade']
   return fields
     .map((field) => ({ field, from: profile[field] ?? '', to: update[field] }))

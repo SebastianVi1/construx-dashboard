@@ -10,6 +10,7 @@ import { roleLabel, usePermissions } from '../permissions'
 import { SiteStatusBadge } from '../sites/SiteBits'
 import { listSites } from '../sites/sitesApi'
 import { Avatar } from './Avatar'
+import { AvatarPicker } from './AvatarPicker'
 import { EditProfileDialog } from './EditProfileDialog'
 import { formatPhone } from './phone'
 import { displayName } from './profileDisplay'
@@ -43,7 +44,10 @@ export function ProfilePage() {
     <div className="page">
       <header className="profile-hero">
         <div className="profile-hero__identity">
-          <Avatar fullName={fullName} email={user.email} size="large" />
+          <div className="profile-hero__avatar">
+            <Avatar fullName={fullName} email={user.email} avatarUrl={profile.data?.avatarUrl} size="large" />
+            {profile.data ? <AvatarPicker profile={profile.data} /> : null}
+          </div>
           <div className="profile-hero__text">
             <h1>{displayName(fullName, user.email)}</h1>
             <p>{user.email}</p>

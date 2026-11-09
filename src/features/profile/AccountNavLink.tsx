@@ -18,7 +18,7 @@ export function AccountNavLink() {
 
   return (
     <NavLink className="account-link" to="/account" aria-label={`${m.profile.openProfile}: ${name}`}>
-      <Avatar fullName={fullName} email={user.email} decorative />
+      <Avatar fullName={fullName} email={user.email} avatarUrl={profile.data?.avatarUrl} decorative />
       <span className="account-link__text">
         <span className="account-link__name">{name}</span>
         {fullName?.trim() ? <span className="account-link__email">{user.email}</span> : null}

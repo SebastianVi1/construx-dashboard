@@ -43,14 +43,14 @@ export function AccountMenu() {
         onClick={toggle}
         aria-label={`${m.workspace.accountMenu}: ${name}`}
       >
-        <Avatar fullName={fullName} email={user.email} decorative />
+        <Avatar fullName={fullName} email={user.email} avatarUrl={profile.data?.avatarUrl} decorative />
         <span className="account-menu__name">{name}</span>
         <ChevronDownIcon className="account-menu__chevron" width="16" height="16" />
       </button>
 
       <div ref={panelRef} id={panelId} className="popover account-menu__panel" hidden={!open}>
         <div className="account-menu__who">
-          <Avatar fullName={fullName} email={user.email} decorative />
+          <Avatar fullName={fullName} email={user.email} avatarUrl={profile.data?.avatarUrl} decorative />
           <span className="account-menu__who-text">
             <span className="popover__item-title">{name}</span>
             {fullName?.trim() ? <span className="popover__item-meta">{user.email}</span> : null}
