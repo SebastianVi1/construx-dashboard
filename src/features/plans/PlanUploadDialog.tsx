@@ -3,7 +3,7 @@ import { Modal } from '../../components/modal'
 import { formatMessage, useLocale } from '../../i18n'
 import {
   MAX_FINAL_BYTES,
-  compressImage,
+  compressPlanImage,
   planDescriptionIssue,
   planFileIssue,
   planNameIssue,
@@ -72,7 +72,7 @@ export function PlanUploadDialog({ organizationId, siteId, folderId, onUploaded,
     setError(null)
     try {
       setStage({ kind: 'compressing' })
-      const upload = await compressImage(file)
+      const upload = await compressPlanImage(file)
       if (upload !== file) {
         setCompressedNote(formatMessage(t.dialog.compressed, { from: megabytes(file.size), to: megabytes(upload.size) }))
       }
