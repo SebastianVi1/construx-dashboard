@@ -22,7 +22,7 @@ React 19 + TypeScript + Vite 8 (Rolldown) SPA. Bun is the package manager/runtim
 - `session.ts`: `restoreSession()` calls `/me`; on 401 it tries `/refresh` exactly once, then retries `/me`. `AuthProvider` guards against StrictMode double-invoke with a ref because refresh rotates the secret — don't make it run twice.
 - Zod schemas for API payloads live in `schemas.ts`.
 
-**i18n** (`src/i18n/`): custom, no library. `messages.ts` holds the typed message dictionaries per `Locale`; `format.ts` for formatting; `LocaleProvider`/`locale-context.ts` expose the locale. User-facing strings go through messages, not literals.
+**i18n** (`src/i18n/`): custom, no library. strings live in per-feature slices (`src/features/<feature>/messages.ts`, shared ones in `src/i18n/slices/`) built with `defineMessages({ en, es })`, which makes a missing or extra Spanish key a build error; `messages.ts` only assembles the slices into the typed `Messages` per `Locale`. Add new strings to the feature's slice, not to `messages.ts`; `format.ts` for formatting; `LocaleProvider`/`locale-context.ts` expose the locale. User-facing strings go through messages, not literals.
 
 **Onboarding** (`src/features/onboarding/`): `OnboardingProvider` owns answers (persisted to `localStorage` key `construx.onboarding`) and renders the FAB and portal modal for the whole app. Built on the generic `src/components/modal/` (`Modal`, config-driven `QuestionModal`).
 

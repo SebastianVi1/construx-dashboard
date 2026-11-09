@@ -1,5 +1,7 @@
 import type { DeepStringify } from './defineMessages'
 import type { Locale } from './locale'
+import { commonMessages } from './slices/common'
+import { validationMessages } from './slices/validation'
 import { rolesMessages } from '../features/permissions/messages'
 import { authMessages } from '../features/auth/messages'
 import { onboardingMessages } from '../features/onboarding/messages'
@@ -22,24 +24,12 @@ import { homeMessages } from '../features/home/messages'
 import { orgFinanceMessages } from '../features/org-finance/messages'
 import { crewsMessages, equipmentMessages } from '../features/crews/messages'
 
+// Assembly only: each slice lives next to its feature (features/*/messages.ts) or in ./slices
+// for shared strings, with English and Spanish side by side via defineMessages.
 const en = {
-  common: {
-    language: 'Language',
-    theme: 'Theme',
-    themeLight: 'Light',
-    themeDark: 'Dark',
-  },
+  common: commonMessages.en,
   auth: authMessages.en,
-  validation: {
-    nameRequired: 'Enter your name',
-    nameMax: 'Use at most 100 characters',
-    emailRequired: 'Enter your email address',
-    emailInvalid: 'Enter a valid email address',
-    passwordRequired: 'Enter your password',
-    passwordMin: 'Use at least 12 characters',
-    passwordMax: 'Use at most 72 characters',
-    passwordMismatch: 'The passwords do not match',
-  },
+  validation: validationMessages.en,
   onboarding: onboardingMessages.en,
   organizations: organizationsMessages.en,
   workspace: workspaceMessages.en,
@@ -68,23 +58,9 @@ const en = {
 export type Messages = DeepStringify<typeof en>
 
 const es: Messages = {
-  common: {
-    language: 'Idioma',
-    theme: 'Tema',
-    themeLight: 'Claro',
-    themeDark: 'Oscuro',
-  },
+  common: commonMessages.es,
   auth: authMessages.es,
-  validation: {
-    nameRequired: 'Ingresa tu nombre',
-    nameMax: 'Usa como máximo 100 caracteres',
-    emailRequired: 'Ingresa tu correo electrónico',
-    emailInvalid: 'Ingresa un correo electrónico válido',
-    passwordRequired: 'Ingresa tu contraseña',
-    passwordMin: 'Usa al menos 12 caracteres',
-    passwordMax: 'Usa como máximo 72 caracteres',
-    passwordMismatch: 'Las contraseñas no coinciden',
-  },
+  validation: validationMessages.es,
   onboarding: onboardingMessages.es,
   organizations: organizationsMessages.es,
   workspace: workspaceMessages.es,
