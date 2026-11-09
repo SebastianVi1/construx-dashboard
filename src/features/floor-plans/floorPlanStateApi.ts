@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { getJson } from '../../lib/http'
+import { floorPlanPath } from '../../lib/apiPaths'
 import { zoneSchema } from './zonesApi'
 import { assignmentDataSchema } from './zoneAssignmentsApi'
 
@@ -16,6 +16,6 @@ export function getFloorPlanState(
   floorPlanId: string,
   date: string,
 ): Promise<ZoneState[]> {
-  const path = `${organizationPath(orgId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/state?date=${encodeURIComponent(date)}`
+  const path = `${floorPlanPath(orgId, siteId, floorPlanId)}/state?date=${encodeURIComponent(date)}`
   return getJson(path, z.array(zoneStateSchema))
 }

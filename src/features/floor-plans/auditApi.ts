@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { getJson } from '../../lib/http'
+import { floorPlanPath } from '../../lib/apiPaths'
 
 export const auditEventSchema = z.object({
   id: z.string().min(1),
@@ -15,7 +15,7 @@ export const auditEventSchema = z.object({
 export type AuditEvent = z.infer<typeof auditEventSchema>
 
 function zonePath(orgId: string, siteId: string, floorPlanId: string, zoneId: string): string {
-  return `${organizationPath(orgId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/zones/${encodeURIComponent(zoneId)}`
+  return `${floorPlanPath(orgId, siteId, floorPlanId)}/zones/${encodeURIComponent(zoneId)}`
 }
 
 export function getZoneAudit(

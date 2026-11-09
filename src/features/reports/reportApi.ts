@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { getJson, sendJson } from '../../lib/http'
+import { sitePath } from '../../lib/apiPaths'
 
 export const reportStatuses = ['PENDING', 'READY', 'FAILED'] as const
 export type ReportStatus = (typeof reportStatuses)[number]
@@ -21,7 +21,7 @@ export type SiteReport = z.infer<typeof reportSchema>
 const downloadUrlSchema = z.object({ downloadUrl: z.string().min(1) })
 
 function reportsPath(organizationId: string, siteId: string): string {
-  return `${organizationPath(organizationId)}/projects/${encodeURIComponent(siteId)}/reports`
+  return `${sitePath(organizationId, siteId)}/reports`
 }
 
 export function listReports(organizationId: string, siteId: string): Promise<SiteReport[]> {

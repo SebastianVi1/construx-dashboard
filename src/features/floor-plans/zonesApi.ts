@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getJson, sendJson, deleteJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { getJson, sendJson, deleteJson } from '../../lib/http'
+import { floorPlanPath } from '../../lib/apiPaths'
 
 export const zoneStatusSchema = z.enum(['NOT_STARTED', 'IN_PROGRESS', 'ON_HOLD', 'DONE'])
 export type ZoneStatus = z.infer<typeof zoneStatusSchema>
@@ -28,7 +28,7 @@ export const ZONE_STATUS_COLORS: Record<ZoneStatus, string> = {
 }
 
 function zonesPath(organizationId: string, siteId: string, floorPlanId: string): string {
-  return `${organizationPath(organizationId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/zones`
+  return `${floorPlanPath(organizationId, siteId, floorPlanId)}/zones`
 }
 
 export type CreateZoneRequest = {

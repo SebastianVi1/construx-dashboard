@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { messages } from '../../../i18n/messages'
-import { AuthApiError } from '../../../features/auth/authApi'
+import { ApiError } from '../../../lib/http'
 import type { Organization } from '../../../features/organizations/organizationsApi'
 import { createErrorKind, makeOrganizationSchema } from '../../../features/organizations/schemas'
 import { readSelectedId, resolveSelectedOrganization, selectedOrganizationKey, writeSelectedId } from '../../../features/organizations/selection'
@@ -60,13 +60,13 @@ describe('organization name', () => {
 
 describe('createErrorKind', () => {
   it('maps backend validation failures to an invalid-name message', () => {
-    expect(createErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalidName')
-    expect(createErrorKind(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalidName')
+    expect(createErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalidName')
+    expect(createErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalidName')
   })
 
   it('maps an expired session and anything else to their own messages', () => {
-    expect(createErrorKind(new AuthApiError(401))).toBe('session')
-    expect(createErrorKind(new AuthApiError(500))).toBe('generic')
+    expect(createErrorKind(new ApiError(401))).toBe('session')
+    expect(createErrorKind(new ApiError(500))).toBe('generic')
     expect(createErrorKind(new Error('network'))).toBe('generic')
   })
 })

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import {
   completeTask,
   createTask,
@@ -37,7 +37,7 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
   const client = { get, post: send, patch: send, put: send, delete: send }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -213,13 +213,13 @@ describe('tasks API', () => {
 
 describe('task error kinds', () => {
   it('maps a task failure to a message kind', () => {
-    expect(taskErrorKind(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('afterPhase')
-    expect(taskErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
-    expect(taskErrorKind(new AuthApiError(404, undefined, 'NOT_FOUND'))).toBe('notFound')
-    expect(taskErrorKind(new AuthApiError(409, undefined, 'STATE_CONFLICT'))).toBe('transition')
-    expect(taskErrorKind(new AuthApiError(401))).toBe('session')
-    expect(taskErrorKind(new AuthApiError(403))).toBe('forbidden')
-    expect(taskErrorKind(new AuthApiError(500))).toBe('generic')
+    expect(taskErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('afterPhase')
+    expect(taskErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
+    expect(taskErrorKind(new ApiError(404, undefined, 'NOT_FOUND'))).toBe('notFound')
+    expect(taskErrorKind(new ApiError(409, undefined, 'STATE_CONFLICT'))).toBe('transition')
+    expect(taskErrorKind(new ApiError(401))).toBe('session')
+    expect(taskErrorKind(new ApiError(403))).toBe('forbidden')
+    expect(taskErrorKind(new ApiError(500))).toBe('generic')
     expect(taskErrorKind('boom')).toBe('generic')
   })
 })

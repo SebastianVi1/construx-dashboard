@@ -2,7 +2,7 @@ import { Navigate } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
-import { AuthApiError } from '../auth/authApi'
+import { ApiError } from '../../lib/http'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { landingPath } from '../permissions/landing'
@@ -30,7 +30,7 @@ function OrgFinanceDashboard() {
   const { messages: m, locale } = useLocale()
   const t = m.orgFinance
   const summary = useRemoteData(`${organization.id}:finance-summary`, () => getOrgFinanceSummary(organization.id))
-  const forbidden = summary.error instanceof AuthApiError && summary.error.status === 403
+  const forbidden = summary.error instanceof ApiError && summary.error.status === 403
   const overBudget = summary.data?.sites.filter((site) => site.status === 'OVER_BUDGET') ?? []
   const listFormat = new Intl.ListFormat(intlLocales[locale], { type: 'conjunction' })
 

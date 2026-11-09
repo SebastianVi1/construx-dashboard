@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { deleteJson, getJson, sendJson } from '../auth/authApi'
+import { deleteJson, getJson, sendJson } from '../../lib/http'
 
 /**
  * `OrganizationResponse` from the v1 contract. `myRole` is in the contract but

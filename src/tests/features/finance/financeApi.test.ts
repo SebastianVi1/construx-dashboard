@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import { createExpense, deleteExpense, getBudgetSummary, listExpenses, updateExpense, type Expense } from '../../../features/finance/financeApi'
 
 const csrfOk = { data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
@@ -31,7 +31,7 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
   const client = { get, post: send, patch: send, put: send, delete: send }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -65,7 +65,7 @@ describe('finance API', () => {
 
   it('listExpenses: rejects an unknown category', async () => {
     stubApi({ get: () => ({ status: 200, data: [{ ...expense, category: 'FOOD' }] }) })
-    expect(await listExpenses('org-1', 'p-1').catch((error: unknown) => error)).toBeInstanceOf(AuthApiError)
+    expect(await listExpenses('org-1', 'p-1').catch((error: unknown) => error)).toBeInstanceOf(ApiError)
   })
 
   it('createExpense, updateExpense and deleteExpense hit the expense paths', async () => {

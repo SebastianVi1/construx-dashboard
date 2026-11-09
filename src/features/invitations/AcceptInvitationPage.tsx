@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { withReturnPath } from '../../components/navigation/returnPath'
 import { formatMessage, useLocale } from '../../i18n'
-import { AuthApiError } from '../auth/authApi'
+import { ApiError } from '../../lib/http'
 import { useAuth } from '../auth/auth-context'
 import { AuthLayout } from '../auth/AuthLayout'
 import { rateLimitText } from '../auth/retryAfter'
@@ -47,7 +47,7 @@ export function AcceptInvitationPage() {
     } catch (error) {
       setFailure({
         kind: acceptErrorKind(error),
-        retryAfterSeconds: error instanceof AuthApiError ? error.retryAfterSeconds : undefined,
+        retryAfterSeconds: error instanceof ApiError ? error.retryAfterSeconds : undefined,
       })
       setBusy(false)
     }

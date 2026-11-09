@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { configureAuthApi } from '../../../features/auth/authApi'
+import { configureHttp } from '../../../lib/http'
 import { canPerform, type MyAccess } from '../../../features/permissions/can'
 import { getMyAccess } from '../../../features/permissions/permissionsApi'
 
@@ -63,7 +63,7 @@ describe('permissions API', () => {
 
   it('getMyAccess: gets the caller role and permissions for an organization', async () => {
     const get = mock(async () => ({ status: 200, data: worker }))
-    configureAuthApi({ client: { get } as unknown as AxiosInstance, baseUrl: '/api' })
+    configureHttp({ client: { get } as unknown as AxiosInstance, baseUrl: '/api' })
 
     expect(await getMyAccess('org/1')).toEqual(worker)
     const [url, config] = get.mock.calls[0] as unknown as [string, { withCredentials?: boolean }]
@@ -74,7 +74,7 @@ describe('permissions API', () => {
   it('getMyAccess: rejects an unknown scope', async () => {
     const bad = { ...worker, permissions: [{ action: 'VIEW_PROJECT', scope: 'GALAXY' }] }
     const get = mock(async () => ({ status: 200, data: bad }))
-    configureAuthApi({ client: { get } as unknown as AxiosInstance, baseUrl: '/api' })
+    configureHttp({ client: { get } as unknown as AxiosInstance, baseUrl: '/api' })
 
     await expect(getMyAccess('org-1')).rejects.toMatchObject({ status: 200 })
   })

@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { deleteJson, getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { deleteJson, getJson, sendJson } from '../../lib/http'
+import { sitePath } from '../../lib/apiPaths'
 
 function basePath(org: string, site: string) {
-  return `${organizationPath(org)}/projects/${encodeURIComponent(site)}/document-folders`
+  return `${sitePath(org, site)}/document-folders`
 }
 
 export const documentFolderSchema = z.object({

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { messages } from '../../../i18n/messages'
-import { AuthApiError } from '../../../features/auth/authApi'
+import { ApiError } from '../../../lib/http'
 import {
   allocationIssue,
   budgetAmount,
@@ -81,10 +81,10 @@ describe('optional budget field', () => {
 
 describe('allocation errors', () => {
   it('maps the server allocation codes and ignores everything else', () => {
-    expect(allocationIssue(new AuthApiError(400, undefined, 'BUDGET_EXCEEDED'))).toBe('budgetExceeded')
-    expect(allocationIssue(new AuthApiError(400, undefined, 'BUDGET_PARENT_MISSING'))).toBe('budgetParentMissing')
-    expect(allocationIssue(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBeNull()
-    expect(allocationIssue(new AuthApiError(403))).toBeNull()
+    expect(allocationIssue(new ApiError(400, undefined, 'BUDGET_EXCEEDED'))).toBe('budgetExceeded')
+    expect(allocationIssue(new ApiError(400, undefined, 'BUDGET_PARENT_MISSING'))).toBe('budgetParentMissing')
+    expect(allocationIssue(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBeNull()
+    expect(allocationIssue(new ApiError(403))).toBeNull()
     expect(allocationIssue(new Error('x'))).toBeNull()
   })
 })

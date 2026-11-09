@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import { messages } from '../../../i18n/messages'
 import {
   createInvitation,
@@ -42,7 +42,7 @@ const roles = [
 function stubApi(responses: { get?: (url: string) => unknown; send?: () => unknown } = {}) {
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
-  configureAuthApi({ client: { get, post: send, delete: send } as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: { get, post: send, delete: send } as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -126,20 +126,20 @@ describe('invitation rules', () => {
   })
 
   it('maps an invite failure to a message kind', () => {
-    expect(inviteErrorKind(new AuthApiError(409, undefined, 'STATE_CONFLICT'))).toBe('alreadyMember')
-    expect(inviteErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalidEmail')
-    expect(inviteErrorKind(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalid')
-    expect(inviteErrorKind(new AuthApiError(401))).toBe('session')
-    expect(inviteErrorKind(new AuthApiError(403))).toBe('forbidden')
-    expect(inviteErrorKind(new AuthApiError(404))).toBe('notFound')
+    expect(inviteErrorKind(new ApiError(409, undefined, 'STATE_CONFLICT'))).toBe('alreadyMember')
+    expect(inviteErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalidEmail')
+    expect(inviteErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalid')
+    expect(inviteErrorKind(new ApiError(401))).toBe('session')
+    expect(inviteErrorKind(new ApiError(403))).toBe('forbidden')
+    expect(inviteErrorKind(new ApiError(404))).toBe('notFound')
     expect(inviteErrorKind(new Error('offline'))).toBe('generic')
   })
 
   it('maps a revoke failure to a message kind', () => {
-    expect(revokeErrorKind(new AuthApiError(409, undefined, 'STATE_CONFLICT'))).toBe('notPending')
-    expect(revokeErrorKind(new AuthApiError(403))).toBe('forbidden')
-    expect(revokeErrorKind(new AuthApiError(404))).toBe('notFound')
-    expect(revokeErrorKind(new AuthApiError(401))).toBe('session')
-    expect(revokeErrorKind(new AuthApiError(500))).toBe('generic')
+    expect(revokeErrorKind(new ApiError(409, undefined, 'STATE_CONFLICT'))).toBe('notPending')
+    expect(revokeErrorKind(new ApiError(403))).toBe('forbidden')
+    expect(revokeErrorKind(new ApiError(404))).toBe('notFound')
+    expect(revokeErrorKind(new ApiError(401))).toBe('session')
+    expect(revokeErrorKind(new ApiError(500))).toBe('generic')
   })
 })

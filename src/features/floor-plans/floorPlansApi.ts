@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { AuthApiError, deleteJson, getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
+import { sitePath, floorPlanPath } from '../../lib/apiPaths'
 import type { StorageRequest } from '../plans/plansApi'
 
 export const floorPlanStatusSchema = z.enum(['PENDING', 'PROCESSING', 'READY', 'ERROR'])
@@ -42,11 +42,7 @@ export type FloorPlanUploadRequest = {
 }
 
 function floorPlansPath(organizationId: string, siteId: string): string {
-  return `${organizationPath(organizationId)}/projects/${encodeURIComponent(siteId)}/floor-plans`
-}
-
-function floorPlanPath(organizationId: string, siteId: string, floorPlanId: string): string {
-  return `${floorPlansPath(organizationId, siteId)}/${encodeURIComponent(floorPlanId)}`
+  return `${sitePath(organizationId, siteId)}/floor-plans`
 }
 
 /** Step 1: announce the file and get a presigned upload URL. */
@@ -146,7 +142,7 @@ export type FloorPlanErrorKind =
 
 export function floorPlanErrorKind(error: unknown): FloorPlanErrorKind {
   if (error instanceof StorageUploadError) return 'uploadFailed'
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.code === 'FLOOR_PLAN_FILE_TYPE') return 'fileType'
   if (error.code === 'FLOOR_PLAN_FILE_TOO_LARGE') return 'tooLarge'
   if (error.code === 'FLOOR_PLAN_UPLOAD_MISSING') return 'uploadFailed'

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { AuthApiError } from '../auth/authApi'
+import { ApiError } from '../../lib/http'
 
 export type OrganizationValidationMessages = { nameRequired: string; nameMax: string }
 
@@ -14,7 +14,7 @@ export type CreateErrorKind = 'invalidName' | 'session' | 'generic'
 
 /** Which message to show when `POST /api/organizations` fails. */
 export function createErrorKind(error: unknown): CreateErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 400) return 'invalidName'
   if (error.status === 401) return 'session'
   return 'generic'

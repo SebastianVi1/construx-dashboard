@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import {
   accessErrorKind,
   assignToSite,
@@ -41,7 +41,7 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
   const client = { get, post: send, patch: send, put: send, delete: send }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -188,22 +188,22 @@ describe('sites API', () => {
 
 describe('site error kinds', () => {
   it('maps a save failure to a message kind', () => {
-    expect(siteErrorKind(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('dateOrder')
-    expect(siteErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
-    expect(siteErrorKind(new AuthApiError(401))).toBe('session')
-    expect(siteErrorKind(new AuthApiError(403, undefined, 'FORBIDDEN'))).toBe('forbidden')
-    expect(siteErrorKind(new AuthApiError(404, undefined, 'NOT_FOUND'))).toBe('notFound')
-    expect(siteErrorKind(new AuthApiError(500))).toBe('generic')
+    expect(siteErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('dateOrder')
+    expect(siteErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
+    expect(siteErrorKind(new ApiError(401))).toBe('session')
+    expect(siteErrorKind(new ApiError(403, undefined, 'FORBIDDEN'))).toBe('forbidden')
+    expect(siteErrorKind(new ApiError(404, undefined, 'NOT_FOUND'))).toBe('notFound')
+    expect(siteErrorKind(new ApiError(500))).toBe('generic')
     expect(siteErrorKind(new Error('boom'))).toBe('generic')
   })
 
   it('maps a site access failure to a message kind', () => {
-    expect(accessErrorKind(new AuthApiError(409, undefined, 'STATE_CONFLICT'))).toBe('hasTasks')
-    expect(accessErrorKind(new AuthApiError(409, undefined, 'DATA_CONFLICT'))).toBe('alreadyAssigned')
-    expect(accessErrorKind(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('inactive')
-    expect(accessErrorKind(new AuthApiError(403))).toBe('forbidden')
-    expect(accessErrorKind(new AuthApiError(404))).toBe('notFound')
-    expect(accessErrorKind(new AuthApiError(401))).toBe('session')
-    expect(accessErrorKind(new AuthApiError(502))).toBe('generic')
+    expect(accessErrorKind(new ApiError(409, undefined, 'STATE_CONFLICT'))).toBe('hasTasks')
+    expect(accessErrorKind(new ApiError(409, undefined, 'DATA_CONFLICT'))).toBe('alreadyAssigned')
+    expect(accessErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('inactive')
+    expect(accessErrorKind(new ApiError(403))).toBe('forbidden')
+    expect(accessErrorKind(new ApiError(404))).toBe('notFound')
+    expect(accessErrorKind(new ApiError(401))).toBe('session')
+    expect(accessErrorKind(new ApiError(502))).toBe('generic')
   })
 })

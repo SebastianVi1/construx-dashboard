@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { AuthApiError, configureAuthApi } from '../../../features/auth/authApi'
+import { ApiError, configureHttp } from '../../../lib/http'
 import {
   archiveMaterial,
   createMaterial,
@@ -68,7 +68,7 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
   const client = { get, post: send, patch: send, put: send, delete: send }
-  configureAuthApi({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -96,7 +96,7 @@ describe('pricing API', () => {
   it('listMaterials: rejects a price sent as a number instead of a string', async () => {
     stubApi({ get: () => ({ status: 200, data: [{ ...material, latestPrices: [{ ...latest, price: 245.5 }] }] }) })
 
-    await expect(listMaterials('org-1')).rejects.toBeInstanceOf(AuthApiError)
+    await expect(listMaterials('org-1')).rejects.toBeInstanceOf(ApiError)
   })
 
   it('getMaterial: gets one material with its full history', async () => {
@@ -219,7 +219,7 @@ describe('price import API', () => {
   it('importPrices: rejects a report that does not match the contract', async () => {
     stubApi({ send: () => ({ status: 200, data: { ...report, summary: undefined } }) })
 
-    await expect(importPrices('org-1', csv, { dryRun: true })).rejects.toBeInstanceOf(AuthApiError)
+    await expect(importPrices('org-1', csv, { dryRun: true })).rejects.toBeInstanceOf(ApiError)
   })
 
   it('importPrices: on 422 nothing is imported and the error carries the report of the rows', async () => {
@@ -236,40 +236,40 @@ describe('price import API', () => {
 
 describe('price import error kinds', () => {
   it('maps a 400 VALIDATION_FAILED (bad header, too big) to the bad-file message', () => {
-    expect(importErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('badFile')
+    expect(importErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('badFile')
   })
 
   it('maps a 413 from the upload limit (over 2 MB) to the bad-file message', () => {
-    expect(importErrorKind(new AuthApiError(413))).toBe('badFile')
+    expect(importErrorKind(new ApiError(413))).toBe('badFile')
   })
 
   it('maps a 422 to the rejected-import message', () => {
     expect(importErrorKind(new PriceImportRejectedError(rejected))).toBe('importRejected')
-    expect(importErrorKind(new AuthApiError(422))).toBe('importRejected')
+    expect(importErrorKind(new ApiError(422))).toBe('importRejected')
   })
 
   it('falls back to the pricing kinds, and pricingErrorKind keeps 400 as invalid', () => {
-    expect(importErrorKind(new AuthApiError(403))).toBe('forbidden')
+    expect(importErrorKind(new ApiError(403))).toBe('forbidden')
     expect(importErrorKind('boom')).toBe('generic')
-    expect(pricingErrorKind(new AuthApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
+    expect(pricingErrorKind(new ApiError(400, undefined, 'VALIDATION_FAILED'))).toBe('invalid')
   })
 })
 
 describe('pricing error kinds', () => {
   it('maps each pricing 409 code to its own message kind', () => {
-    expect(pricingErrorKind(new AuthApiError(409, undefined, 'DUPLICATE_MATERIAL'))).toBe('duplicateMaterial')
-    expect(pricingErrorKind(new AuthApiError(409, undefined, 'DUPLICATE_SUPPLIER'))).toBe('duplicateSupplier')
-    expect(pricingErrorKind(new AuthApiError(409, undefined, 'ARCHIVED_MATERIAL'))).toBe('archivedMaterial')
-    expect(pricingErrorKind(new AuthApiError(409, undefined, 'ARCHIVED_SUPPLIER'))).toBe('archivedSupplier')
-    expect(pricingErrorKind(new AuthApiError(409, undefined, 'DATA_CONFLICT'))).toBe('generic')
+    expect(pricingErrorKind(new ApiError(409, undefined, 'DUPLICATE_MATERIAL'))).toBe('duplicateMaterial')
+    expect(pricingErrorKind(new ApiError(409, undefined, 'DUPLICATE_SUPPLIER'))).toBe('duplicateSupplier')
+    expect(pricingErrorKind(new ApiError(409, undefined, 'ARCHIVED_MATERIAL'))).toBe('archivedMaterial')
+    expect(pricingErrorKind(new ApiError(409, undefined, 'ARCHIVED_SUPPLIER'))).toBe('archivedSupplier')
+    expect(pricingErrorKind(new ApiError(409, undefined, 'DATA_CONFLICT'))).toBe('generic')
   })
 
   it('maps the other statuses like the rest of the app', () => {
-    expect(pricingErrorKind(new AuthApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalid')
-    expect(pricingErrorKind(new AuthApiError(401))).toBe('session')
-    expect(pricingErrorKind(new AuthApiError(403))).toBe('forbidden')
-    expect(pricingErrorKind(new AuthApiError(404))).toBe('notFound')
-    expect(pricingErrorKind(new AuthApiError(500))).toBe('generic')
+    expect(pricingErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalid')
+    expect(pricingErrorKind(new ApiError(401))).toBe('session')
+    expect(pricingErrorKind(new ApiError(403))).toBe('forbidden')
+    expect(pricingErrorKind(new ApiError(404))).toBe('notFound')
+    expect(pricingErrorKind(new ApiError(500))).toBe('generic')
     expect(pricingErrorKind('boom')).toBe('generic')
   })
 })

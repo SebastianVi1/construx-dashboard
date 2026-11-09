@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getJson, sendJson } from '../auth/authApi'
-import { organizationPath } from '../permissions/permissionsApi'
+import { getJson, sendJson } from '../../lib/http'
+import { floorPlanPath } from '../../lib/apiPaths'
 
 export const calibrationSchema = z.object({
   id: z.string().min(1),
@@ -25,7 +25,7 @@ export type SaveCalibrationRequest = {
 }
 
 function calibrationPath(organizationId: string, siteId: string, floorPlanId: string): string {
-  return `${organizationPath(organizationId)}/projects/${encodeURIComponent(siteId)}/floor-plans/${encodeURIComponent(floorPlanId)}/calibration`
+  return `${floorPlanPath(organizationId, siteId, floorPlanId)}/calibration`
 }
 
 export function saveCalibration(

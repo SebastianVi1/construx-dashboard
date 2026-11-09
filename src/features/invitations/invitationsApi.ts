@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { AuthApiError, sendJson } from '../auth/authApi'
+import { ApiError, sendJson } from '../../lib/http'
 import { roleSchema } from '../permissions/can'
 
 /** `POST /api/invitations/accept` answer: the organization joined and, if named, its site. */
@@ -29,7 +29,7 @@ export type AcceptErrorKind = 'notForYou' | 'unavailable' | 'rateLimited' | 'ses
  * for another email; 409 means used, expired, revoked, or already a member.
  */
 export function acceptErrorKind(error: unknown): AcceptErrorKind {
-  if (!(error instanceof AuthApiError)) return 'generic'
+  if (!(error instanceof ApiError)) return 'generic'
   if (error.status === 404 || error.status === 400) return 'notForYou'
   if (error.status === 409) return 'unavailable'
   if (error.status === 429) return 'rateLimited'
