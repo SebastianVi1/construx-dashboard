@@ -5,12 +5,12 @@ import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
+import { downloadPresigned } from '../../lib/http'
 import {
-  confirmUpload,
   deleteDocumentEntry,
   getDocumentEntries,
   getDocumentFolders,
-  requestUploadUrl,
+  uploadDocumentFile,
   type DocumentEntry,
   type DocumentFolder,
 } from './documentFoldersApi'
@@ -43,20 +43,16 @@ function isExcelFile(entry: DocumentEntry): boolean {
   return ext === 'xlsx' || ext === 'xls' || ext === 'csv'
 }
 
+/** Save a presigned file locally. Throws ApiError when storage refuses it (e.g. expired link). */
 async function downloadFile(url: string, fileName: string): Promise<void> {
-  try {
-    const res = await fetch(url)
-    const blob = await res.blob()
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = fileName
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(a.href)
-  } catch {
-    window.open(url, '_blank')
-  }
+  const blob = await downloadPresigned(url)
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(a.href)
 }
 
 function formatBytes(bytes: number | null): string {
@@ -101,6 +97,7 @@ export function DocumentFolderPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   useEffect(() => {
     const name = folder ? folderName(folder, locale) : t.folderTitle
@@ -122,19 +119,22 @@ export function DocumentFolderPage() {
     setUploadError(null)
     setUploading(true)
     try {
-      const urlData = await requestUploadUrl(org.id, siteId, folderId, file.name, file.type || 'application/octet-stream', file.size)
-      await fetch(urlData.uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type || 'application/octet-stream', ...urlData.headers },
-        body: file,
-      })
-      const entry = await confirmUpload(org.id, siteId, folderId, urlData.entryId, urlData.s3Key, file.name, file.size, file.type || null)
+      const entry = await uploadDocumentFile(org.id, siteId, folderId, file)
       entriesRemote.update((entries) => [entry, ...entries])
     } catch {
       setUploadError(t.uploadError)
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleDownload(entry: DocumentEntry) {
+    setDownloadError(null)
+    try {
+      await downloadFile(entry.downloadUrl, entry.fileName)
+    } catch {
+      setDownloadError(t.downloadError)
     }
   }
 
@@ -180,6 +180,9 @@ export function DocumentFolderPage() {
 
       {uploadError && (
         <Notice tone="error">{uploadError}</Notice>
+      )}
+      {downloadError && (
+        <Notice tone="error">{downloadError}</Notice>
       )}
 
       {entriesRemote.status === 'loading' && <SkeletonList />}
@@ -229,7 +232,7 @@ export function DocumentFolderPage() {
                   <button
                     className="button button--ghost button--sm"
                     type="button"
-                    onClick={() => downloadFile(entry.downloadUrl, entry.fileName)}
+                    onClick={() => handleDownload(entry)}
                   >
                     {t.download}
                   </button>

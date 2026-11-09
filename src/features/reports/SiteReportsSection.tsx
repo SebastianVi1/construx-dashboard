@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { SkeletonList, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
+import { downloadPresigned } from '../../lib/http'
 import { formatDate } from '../home/format'
 import { getDownloadUrl, listReports, type SiteReport } from './reportApi'
 import { cacheReports, getPdfBlob, savePdfBlob } from './reportStorage'
@@ -41,9 +42,7 @@ export function SiteReportsSection({ organizationId, siteId, canGenerate }: Prop
       let blob = await getPdfBlob(report.id)
       if (!blob) {
         const url = await getDownloadUrl(organizationId, siteId, report.id)
-        const response = await fetch(url)
-        if (!response.ok) throw new Error('download_failed')
-        blob = await response.blob()
+        blob = await downloadPresigned(url)
         savePdfBlob(report.id, blob)
       }
       const link = document.createElement('a')
