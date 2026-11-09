@@ -72,7 +72,7 @@
   margin: calc(-1 * var(--cx-section-gap)) calc(-1 * var(--cx-page-gutter)) 0;
   padding: 28px var(--cx-page-gutter) 32px;
   border-radius: 0 0 var(--cx-radius-lg) var(--cx-radius-lg);
-  background: var(--cx-ink-800);
+  background: var(--cx-surface-raised);
 }
 
 .profile-hero__identity {
@@ -83,12 +83,10 @@
   min-width: 0;
 }
 
-/* Larger avatar in the dark band */
+/* Larger avatar in the hero band */
 .profile-hero .avatar[data-size='large'] {
   width: 88px;
   height: 88px;
-  border-color: var(--cx-accent);
-  background: rgba(34, 87, 201, 0.28);
   font-size: 30px;
 }
 
@@ -105,11 +103,11 @@
   font-weight: 600;
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
-  color: #fff;
+  color: var(--cx-ink);
 }
 
 .profile-hero__text p {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--cx-muted);
   font-size: 14px;
   overflow-wrap: anywhere;
 }
@@ -120,28 +118,8 @@
   align-items: center;
   gap: 8px 12px;
   margin-top: 6px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--cx-muted);
   font-size: 14px;
-}
-
-/* Role badge inside the dark band */
-.profile-hero .badge[data-tone='accent'] {
-  color: var(--cx-blueprint-300);
-  border-color: rgba(156, 194, 255, 0.35);
-  background: rgba(34, 87, 201, 0.22);
-}
-
-/* Sign-out button inside the dark band */
-.profile-hero > .button {
-  flex: none;
-  border-color: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.profile-hero > .button:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
 }
 
 .profile-details {
