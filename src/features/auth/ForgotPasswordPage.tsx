@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { AuthApiError, forgotPassword } from './authApi'
+import { AuthApiError } from './authApi'
+import { forgotPassword } from './passwordResetApi'
 import { AuthLayout } from './AuthLayout'
 import { Form, useForm, type FieldConfig } from '../../components/form'
 import { makeForgotPasswordSchema } from './schemas'

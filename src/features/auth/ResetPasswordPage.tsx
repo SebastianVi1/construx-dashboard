@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { resetPassword } from './authApi'
+import { resetPassword } from './passwordResetApi'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
 import { Form, useForm, type FieldConfig } from '../../components/form'

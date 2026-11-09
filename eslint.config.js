@@ -28,6 +28,19 @@ export default defineConfig([
       ],
     },
   },
+  // Only auth reaches its session API; other features use the small auth modules (e.g. passwordResetApi)
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/features/auth/**', 'src/tests/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [{ regex: '(^|/)auth/authApi$', message: 'Only features/auth imports authApi.' }],
+        },
+      ],
+    },
+  },
   // Tests, theme token definitions, and Leaflet/SVG color consumers may use raw hex
   {
     files: [

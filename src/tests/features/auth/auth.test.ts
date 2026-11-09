@@ -3,16 +3,15 @@ import type { AxiosInstance } from 'axios'
 import {
   AuthApiError,
   configureAuthApi,
-  forgotPassword,
   getCurrentUser,
   login,
   logout,
   refresh,
   register,
   resendVerification,
-  resetPassword,
   verifyEmail,
 } from '../../../features/auth/authApi'
+import { forgotPassword, resetPassword } from '../../../features/auth/passwordResetApi'
 import {
   makeForgotPasswordSchema,
   makeLoginSchema,
