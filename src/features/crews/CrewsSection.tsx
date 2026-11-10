@@ -1,6 +1,7 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { Field, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { SearchIcon } from '../../components/icons'
 import { ConfirmDialog, Modal } from '../../components/modal'
 import { Notice, SkeletonList } from '../../components/page'
@@ -9,6 +10,7 @@ import type { Member } from '../members/membersApi'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { addCrewMember, createCrew, deleteCrew, listCrews, removeCrewMember, type Crew } from './crewsApi'
+import { makeCrewSchema } from './crewForm'
 import { searchMembers } from './crewSearch'
 import '../../components/form/form.css'
 import './crews.css'
@@ -327,83 +329,53 @@ type CreateCrewDialogProps = {
 }
 
 function CreateCrewDialog({ t, members, onSubmit, onClose }: CreateCrewDialogProps) {
-  const nameId = useId()
-  const leaderId = useId()
-  const [name, setName] = useState('')
-  const [leader, setLeader] = useState('')
   const [picked, setPicked] = useState<string[]>([])
   const [query, setQuery] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const form = useForm({
+    initialValues: { name: '', leader: '' },
+    schema: makeCrewSchema(t.validation),
+    onSubmit: async (values) => {
+      setError(await onSubmit(values.name.trim(), values.leader, picked))
+    },
+  })
+  const busy = form.isSubmitting
+  const leader = form.values.leader
   const shown = searchMembers(members, query)
   const chosen = new Set([...picked, leader].filter(Boolean)).size
-  const [touched, setTouched] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const trimmed = name.trim()
-  const nameIssue = !trimmed ? t.validation.nameRequired : trimmed.length > 120 ? t.validation.nameMax : null
-  const leaderIssue = leader ? null : t.validation.leaderRequired
 
   function toggle(membershipId: string) {
     setPicked((list) => (list.includes(membershipId) ? list.filter((id) => id !== membershipId) : [...list, membershipId]))
   }
 
-  async function submit() {
-    setTouched(true)
-    if (nameIssue || leaderIssue || busy) return
-    setBusy(true)
-    setError(await onSubmit(trimmed, leader, picked))
-    setBusy(false)
-  }
+  const fields: FieldConfig[] = [
+    { name: 'name', label: t.name, placeholder: t.namePlaceholder, autoComplete: 'off', maxLength: TEXT_LIMITS.crewName },
+    {
+      name: 'leader',
+      label: t.leader,
+      type: 'select',
+      options: [
+        { value: '', label: t.leaderPlaceholder },
+        ...members.map((member) => ({ value: member.membershipId, label: member.fullName || member.email })),
+      ],
+    },
+  ]
 
   return (
     <Modal title={t.add} description={t.createDescription} onClose={onClose}>
-      <form
-        className="crew-form"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault()
-          void submit()
-        }}
-      >
-        <div className="form-field" data-state={touched && nameIssue ? 'invalid' : undefined}>
-          <label className="form-field__label" htmlFor={nameId}>
-            {t.name}
-          </label>
-          <input
-            id={nameId}
-            className="form-field__control"
-            value={name}
-            maxLength={120}
-            placeholder={t.namePlaceholder}
-            autoFocus
+      <form className="crew-form" noValidate onSubmit={form.onSubmit} aria-busy={busy}>
+        {fields.map((field) => (
+          <Field
+            key={field.name}
+            config={field}
+            value={form.values[field.name]}
+            error={form.errors[field.name]}
+            valid={form.valid[field.name]}
             disabled={busy}
-            aria-invalid={touched && nameIssue ? true : undefined}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(value) => form.onChange(field.name, value)}
+            onBlur={() => form.onBlur(field.name)}
           />
-          {touched && nameIssue ? <p className="form-field__error">{nameIssue}</p> : null}
-        </div>
-
-        <div className="form-field" data-state={touched && leaderIssue ? 'invalid' : undefined}>
-          <label className="form-field__label" htmlFor={leaderId}>
-            {t.leader}
-          </label>
-          <select
-            id={leaderId}
-            className="form-field__control"
-            value={leader}
-            disabled={busy}
-            aria-invalid={touched && leaderIssue ? true : undefined}
-            onChange={(event) => setLeader(event.target.value)}
-          >
-            <option value="">{t.leaderPlaceholder}</option>
-            {members.map((member) => (
-              <option key={member.membershipId} value={member.membershipId}>
-                {member.fullName || member.email}
-              </option>
-            ))}
-          </select>
-          {touched && leaderIssue ? <p className="form-field__error">{leaderIssue}</p> : null}
-        </div>
+        ))}
 
         <fieldset className="crew-form__people" disabled={busy}>
           <legend className="form-field__label">{t.members}</legend>
@@ -443,7 +415,7 @@ function CreateCrewDialog({ t, members, onSubmit, onClose }: CreateCrewDialogPro
           <button type="button" className="button" onClick={onClose} disabled={busy}>
             {t.cancel}
           </button>
-          <button type="submit" className="button button--primary" disabled={busy}>
+          <button type="submit" className="button button--primary" disabled={busy} aria-busy={busy}>
             {busy ? t.creating : t.add}
           </button>
         </div>

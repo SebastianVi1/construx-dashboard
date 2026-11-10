@@ -44,7 +44,7 @@ export const crewsMessages = defineMessages({
     forbidden: 'You do not have permission to manage crews.',
     validation: {
       nameRequired: 'Enter a crew name.',
-      nameMax: 'Use at most 120 characters.',
+      nameMax: 'Use at most 60 characters.',
       leaderRequired: 'Select a leader.',
     },
     error: {
@@ -95,7 +95,7 @@ export const crewsMessages = defineMessages({
     forbidden: 'No tienes permiso para gestionar cuadrillas.',
     validation: {
       nameRequired: 'Escribe el nombre de la cuadrilla.',
-      nameMax: 'Usa máximo 120 caracteres.',
+      nameMax: 'Usa máximo 60 caracteres.',
       leaderRequired: 'Selecciona un líder.',
     },
     error: {
