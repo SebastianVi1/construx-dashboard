@@ -184,6 +184,58 @@
   color: var(--cx-ink);
 }
 
+/* Currency symbol before a money value, unit after a number. */
+.form-field__affix {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cx-muted);
+  font: inherit;
+  line-height: 22px;
+  pointer-events: none;
+}
+
+.form-field__affix--prefix {
+  left: 14px;
+}
+
+.form-field__affix--suffix {
+  right: 40px;
+}
+
+.form-field[data-prefix] .form-field__control {
+  padding-left: calc(14px + var(--affix-prefix) + 6px);
+}
+
+.form-field[data-suffix] .form-field__control {
+  padding-right: calc(40px + var(--affix-suffix) + 6px);
+}
+
+.form-field[data-type='money'] .form-field__control,
+.form-field[data-type='number'] .form-field__control {
+  font-variant-numeric: tabular-nums;
+}
+
+.form-field__footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.form-field__footer:empty {
+  display: none;
+}
+
+.form-field__counter {
+  flex: none;
+  margin-left: auto;
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
 .form-field__hint,
 .form-field__error {
   font-size: 13px;
@@ -234,6 +286,10 @@
 }
 
 .form-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
   min-height: 46px;
   border: 1px solid var(--cx-primary);
@@ -264,6 +320,23 @@
 .form-submit:disabled {
   cursor: wait;
   opacity: 0.72;
+}
+
+/* Spinner before the "…ing" label while the request is in flight. */
+.form-submit[aria-busy='true']::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: form-spin 800ms linear infinite;
+}
+
+@keyframes form-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

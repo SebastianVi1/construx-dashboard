@@ -6,6 +6,7 @@ export type FieldType =
   | 'password'
   | 'tel'
   | 'number'
+  | 'money'
   | 'url'
   | 'search'
   | 'date'
@@ -48,6 +49,14 @@ export type FieldConfig = {
   min?: string
   /** Number of visible rows for `textarea` fields. */
   rows?: number
+  /** Most characters a text field takes; a `textarea` also shows a counter. See `TEXT_LIMITS`. */
+  maxLength?: number
+  /** Decimal places a `number` field takes; 0 (the default) keeps it to whole numbers. Money always has 2. */
+  decimals?: number
+  /** Digits before the dot for `number` and `money` fields. See `MONEY_DIGITS`. */
+  maxDigits?: number
+  /** Unit shown after a `number` field's value, such as "m". */
+  suffix?: string
 }
 
 export type FieldErrors = Record<string, string | undefined>

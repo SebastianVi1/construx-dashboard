@@ -27,7 +27,7 @@ export function Form({ controller, fields, submitLabel, pendingLabel, children }
 
       {children}
 
-      <button className="form-submit" type="submit" disabled={isSubmitting}>
+      <button className="form-submit" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
         {isSubmitting && pendingLabel ? pendingLabel : submitLabel}
       </button>
     </form>

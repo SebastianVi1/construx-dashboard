@@ -1,5 +1,7 @@
 export { Field } from './Field'
 export { Form } from './Form'
+export { MONEY_DIGITS, TEXT_LIMITS } from './limits'
+export { NumberControl } from './NumberControl'
 export { useForm } from './useForm'
 export { collectErrors } from './validation'
 export type {
