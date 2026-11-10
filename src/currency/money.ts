@@ -41,6 +41,15 @@ export function toMxn(amount: number, currency: Currency, rate: ExchangeRate | n
   return cents(amount * pesosPerUnit(currency, rate))
 }
 
+/** Turns amounts typed in the active currency into stored pesos and back; `useCurrency()` is one. */
+export type MoneyConversion = {
+  toMxn: (amount: number) => number
+  fromMxn: (amountMxn: number) => number
+}
+
+/** No conversion: what pure rules default to, and what tests use. */
+export const PESOS: MoneyConversion = { toMxn: (amount) => amount, fromMxn: (amountMxn) => amountMxn }
+
 /** The prefix a money field shows: dollars get "US$" so they never pass for pesos. */
 export const currencySymbol: Record<Currency, string> = { MXN: '$', USD: 'US$' }
 

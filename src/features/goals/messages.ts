@@ -40,8 +40,8 @@ export const goalsMessages = defineMessages({
       startHint: 'No task in this phase can start earlier.',
       dueAt: 'Due date',
       dueHint: 'Every task in this phase must be due by then.',
-      budget: 'Budget (MXN, optional)',
-      budgetPlaceholder: '50000.00',
+      budget: 'Budget ({currency}, optional)',
+      budgetPlaceholder: '50,000.00',
       budgetHint: 'Carved out of the site budget. Leave it empty to set it later.',
     },
     validation: {
@@ -122,8 +122,8 @@ export const goalsMessages = defineMessages({
       startHint: 'Ninguna tarea de esta fase puede empezar antes.',
       dueAt: 'Fecha límite',
       dueHint: 'Todas las tareas de esta fase deben vencer antes.',
-      budget: 'Presupuesto (MXN, opcional)',
-      budgetPlaceholder: '50000.00',
+      budget: 'Presupuesto ({currency}, opcional)',
+      budgetPlaceholder: '50,000.00',
       budgetHint: 'Sale del presupuesto de la obra. Déjalo vacío para definirlo después.',
     },
     validation: {

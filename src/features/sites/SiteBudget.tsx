@@ -28,6 +28,7 @@ type Dialog = { kind: 'budget' } | { kind: 'expense'; expense?: Expense } | { ki
 /** The site's budget: what was assigned, spent and is left, a quick chart, and the expenses behind it. */
 export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice }: SiteBudgetProps) {
   const { messages: m } = useLocale()
+  const { currency } = useCurrency()
   const t = m.finance
   const key = `${organizationId}:${site.id}`
   const summary = useRemoteData(`${key}:budget`, () => getBudgetSummary(organizationId, site.id))
@@ -49,7 +50,7 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
       <div className="page-section__header">
         <div>
           <h2 id="site-budget-heading">{t.title}</h2>
-          <p>{t.currencyNote}</p>
+          <p>{formatMessage(t.currencyNote, { currency })}</p>
         </div>
         {canManage ? (
           <div className="button-row">

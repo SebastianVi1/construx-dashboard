@@ -4,7 +4,7 @@ export const orgFinanceMessages = defineMessages({
   en: {
     title: 'Finance',
     subtitle: 'Budget and spending across every site of the company.',
-    currencyNote: 'Amounts in MXN',
+    currencyNote: 'Amounts in {currency}',
     loading: 'Loading company finances…',
     loadError: 'We could not load the company finances.',
     retry: 'Try again',
@@ -77,7 +77,7 @@ export const orgFinanceMessages = defineMessages({
   es: {
     title: 'Finanzas',
     subtitle: 'Presupuesto y gasto de todas las obras de la empresa.',
-    currencyNote: 'Montos en MXN',
+    currencyNote: 'Montos en {currency}',
     loading: 'Cargando las finanzas de la empresa…',
     loadError: 'No pudimos cargar las finanzas de la empresa.',
     retry: 'Intentar de nuevo',

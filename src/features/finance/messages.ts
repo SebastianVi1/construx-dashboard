@@ -3,7 +3,7 @@ import { defineMessages } from '../../i18n/defineMessages'
 export const financeMessages = defineMessages({
   en: {
     title: 'Budget and expenses',
-    currencyNote: 'Amounts in MXN',
+    currencyNote: 'Amounts in {currency}',
     allocated: 'Allocated budget',
     spent: 'Spent',
     remaining: 'Remaining',
@@ -48,8 +48,8 @@ export const financeMessages = defineMessages({
       cancel: 'Cancel',
     },
     field: {
-      amount: 'Amount (MXN)',
-      amountPlaceholder: '1200.00',
+      amount: 'Amount ({currency})',
+      amountPlaceholder: '1,200.00',
       spentOn: 'Date',
       description: 'Concept',
       descriptionPlaceholder: 'Cement bags',
@@ -60,7 +60,7 @@ export const financeMessages = defineMessages({
       amountRequired: 'Enter an amount',
       amountInvalid: 'Enter an amount greater than 0, using only digits and a dot',
       amountDecimals: 'Use at most 2 decimals',
-      amountMax: 'Use an amount below 1,000,000,000,000',
+      amountMax: 'Use an amount below $1,000,000,000,000 MXN',
       dateRequired: 'Choose the date of the expense',
       descriptionRequired: 'Describe the expense',
       descriptionMax: 'Use at most 160 characters',
@@ -77,7 +77,7 @@ export const financeMessages = defineMessages({
   },
   es: {
     title: 'Presupuesto y gastos',
-    currencyNote: 'Montos en MXN',
+    currencyNote: 'Montos en {currency}',
     allocated: 'Presupuesto asignado',
     spent: 'Gastado',
     remaining: 'Restante',
@@ -122,8 +122,8 @@ export const financeMessages = defineMessages({
       cancel: 'Cancelar',
     },
     field: {
-      amount: 'Monto (MXN)',
-      amountPlaceholder: '1200.00',
+      amount: 'Monto ({currency})',
+      amountPlaceholder: '1,200.00',
       spentOn: 'Fecha',
       description: 'Concepto',
       descriptionPlaceholder: 'Bultos de cemento',
@@ -134,7 +134,7 @@ export const financeMessages = defineMessages({
       amountRequired: 'Ingresa un monto',
       amountInvalid: 'Ingresa un monto mayor a 0, solo con dígitos y punto',
       amountDecimals: 'Usa como máximo 2 decimales',
-      amountMax: 'Usa un monto menor a 1,000,000,000,000',
+      amountMax: 'Usa un monto menor a $1,000,000,000,000 MXN',
       dateRequired: 'Elige la fecha del gasto',
       descriptionRequired: 'Describe el gasto',
       descriptionMax: 'Usa como máximo 160 caracteres',

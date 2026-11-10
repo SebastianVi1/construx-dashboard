@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { localInputToInstant } from './dueAt'
 import type { Goal, GoalInput } from './goalsApi'
 import { colorSchema } from '../gantt/barColor'
+import type { MoneyConversion } from '../../currency'
 import { optionalBudgetField, type BudgetValidationMessages } from '../sites/budgetRules'
 
 export type GoalValidationMessages = {
@@ -60,6 +61,7 @@ export function makeGoalSchema(
   invalidColor = 'Invalid color',
   budget?: BudgetValidationMessages,
   notBefore?: number,
+  money?: MoneyConversion,
 ) {
   return z
     .object({
@@ -67,7 +69,7 @@ export function makeGoalSchema(
       name: nameSchema(messages),
       startAt: dueSchema(messages.startRequired, messages.startPast, notBefore),
       dueAt: dueSchema(messages.dueRequired, messages.duePast, notBefore),
-      budget: budget ? optionalBudgetField(budget).optional() : z.string().optional(),
+      budget: budget ? optionalBudgetField(budget, money).optional() : z.string().optional(),
     })
     .refine(startNotAfterDue, { message: messages.startAfterDue, path: ['startAt'] })
 }
