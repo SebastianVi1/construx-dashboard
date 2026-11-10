@@ -3,6 +3,7 @@ import L from 'leaflet'
 import { useLocale } from '../../i18n'
 import { saveCalibration } from './calibrationApi'
 import type { Calibration } from './calibrationApi'
+import { Field } from '../../components/form'
 
 interface CalibrationToolProps {
   map: L.Map
@@ -28,7 +29,7 @@ export function CalibrationTool({
 
   const [state, setState] = useState<ToolState>('firstPoint')
   const [distance, setDistance] = useState('')
-  const [distanceError, setDistanceError] = useState('')
+  const [touched, setTouched] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -105,14 +106,14 @@ export function CalibrationTool({
     onCancel()
   }
 
+  // A real distance between the two points: more than 0, up to 3 decimals (millimetres).
+  const distanceIssue = Number(distance) > 0 ? null : t.zeroDistanceError
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const parsed = parseFloat(distance)
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      setDistanceError(t.zeroDistanceError)
-      return
-    }
-    setDistanceError('')
+    setTouched(true)
+    if (saving || distanceIssue) return
+    const parsed = Number(distance)
     setSaveError('')
     setSaving(true)
     try {
@@ -142,41 +143,37 @@ export function CalibrationTool({
       ) : null}
 
       {state === 'enterDistance' ? (
-        <form onSubmit={handleSubmit} className="form">
+        <form onSubmit={handleSubmit} className="form" noValidate>
           <h2 className="fp-float__title">{t.calibrate}</h2>
-          <div className="form-field">
-            <label htmlFor="calibration-distance" className="form-field__label">
-              {t.distanceLabel}
-            </label>
-            <div className="form-field__box">
-              <input
-                id="calibration-distance"
-                type="number"
-                min="0.001"
-                step="any"
-                className="form-field__control"
-                placeholder={t.distancePlaceholder}
-                value={distance}
-                onChange={(e) => setDistance(e.target.value)}
-                autoFocus
-              />
-            </div>
-          </div>
-          {distanceError ? (
-            <p className="fp-float__error" role="alert">
-              {distanceError}
-            </p>
-          ) : null}
+          <Field
+            config={{
+              name: 'calibration-distance',
+              label: t.distanceLabel,
+              type: 'number',
+              decimals: 3,
+              maxDigits: 6,
+              suffix: 'm',
+              placeholder: t.distancePlaceholder,
+            }}
+            value={distance}
+            error={touched && distanceIssue ? distanceIssue : undefined}
+            valid={!distanceIssue}
+            disabled={saving}
+            onChange={(value) => {
+              setDistance(value)
+              setTouched(true)
+            }}
+          />
           {saveError ? (
             <p className="fp-float__error" role="alert">
               {saveError}
             </p>
           ) : null}
           <div className="fp-float__actions">
-            <button type="button" className="button button--small" onClick={handleCancel}>
+            <button type="button" className="button button--small" onClick={handleCancel} disabled={saving}>
               {t.cancel}
             </button>
-            <button type="submit" className="button button--small button--primary" disabled={saving}>
+            <button type="submit" className="button button--small button--primary" disabled={saving} aria-busy={saving}>
               {saving ? m.floorPlans.dialog.confirming : t.save}
             </button>
           </div>

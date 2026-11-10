@@ -3,11 +3,13 @@ import { createPortal } from 'react-dom'
 import L from 'leaflet'
 import 'leaflet-draw'
 import 'leaflet-draw/dist/leaflet.draw.css'
-import { useLocale } from '../../i18n'
+import { Field, useForm } from '../../components/form'
+import { useLocale, type Messages } from '../../i18n'
 import { ApiError } from '../../lib/http'
 import { createZone } from './zonesApi'
 import { MIN_ZONE_AREA_M2, polygonArea } from './zoneOccupants'
-import type { Zone, ZoneStatus } from './zonesApi'
+import type { Zone } from './zonesApi'
+import { makeZoneSchema, zoneFields, zoneInput } from './zoneForm'
 import { PolygonIcon, RectangleIcon } from './floorPlanIcons'
 import '../../components/form/form.css'
 
@@ -39,10 +41,6 @@ export function ZoneDrawTool({
   const drawRef = useRef<L.Draw.Polygon | L.Draw.Rectangle | null>(null)
   const [drawMode, setDrawMode] = useState<DrawMode>(null)
   const [pendingPoints, setPendingPoints] = useState<[number, number][] | null>(null)
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [status, setStatus] = useState<ZoneStatus>('NOT_STARTED')
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Activate draw handler when drawMode changes
@@ -108,95 +106,23 @@ export function ZoneDrawTool({
       drawRef.current = null
     }
     setPendingPoints(null)
-    setName('')
-    setDescription('')
-    setStatus('NOT_STARTED')
     setError(null)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!pendingPoints || !name.trim()) return
-    setSubmitting(true)
+  async function create(input: ZoneInput) {
+    if (!pendingPoints) return
     setError(null)
     try {
-      const zone = await createZone(organizationId, siteId, floorPlanId, {
-        name: name.trim(),
-        description: description.trim() || null,
-        status,
-        points: pendingPoints,
-      })
-      onZoneCreated(zone)
+      onZoneCreated(await createZone(organizationId, siteId, floorPlanId, { ...input, points: pendingPoints }))
       setPendingPoints(null)
-      setName('')
-      setDescription('')
-      setStatus('NOT_STARTED')
     } catch (err) {
       setError(err instanceof ApiError && err.code === 'ZONE_NO_AREA' ? t.noAreaError : t.createError)
-    } finally {
-      setSubmitting(false)
+      throw err
     }
   }
 
   const form = pendingPoints ? (
-    <form className="fp-float form" onSubmit={handleSubmit}>
-      <h2 className="fp-float__title">{t.newZone}</h2>
-      <div className="form-field">
-        <label className="form-field__label" htmlFor="zdzone-name">{t.nameLabel}</label>
-        <div className="form-field__box">
-          <input
-            id="zdzone-name"
-            className="form-field__control"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t.namePlaceholder}
-            maxLength={120}
-            required
-            autoFocus
-          />
-        </div>
-      </div>
-      <div className="form-field">
-        <label className="form-field__label" htmlFor="zdzone-desc">{t.descriptionLabel}</label>
-        <div className="form-field__box">
-          <input
-            id="zdzone-desc"
-            className="form-field__control"
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t.descriptionPlaceholder}
-            maxLength={500}
-          />
-        </div>
-      </div>
-      <div className="form-field" data-type="select">
-        <label className="form-field__label" htmlFor="zdzone-status">{t.statusLabel}</label>
-        <div className="form-field__box">
-          <select
-            id="zdzone-status"
-            className="form-field__control"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as ZoneStatus)}
-          >
-            <option value="NOT_STARTED">{t.status.NOT_STARTED}</option>
-            <option value="IN_PROGRESS">{t.status.IN_PROGRESS}</option>
-            <option value="ON_HOLD">{t.status.ON_HOLD}</option>
-            <option value="DONE">{t.status.DONE}</option>
-          </select>
-        </div>
-      </div>
-      {error ? <p className="fp-float__error" role="alert">{error}</p> : null}
-      <div className="fp-float__actions">
-        <button type="button" className="button button--small" onClick={handleCancel} disabled={submitting}>
-          {t.cancel}
-        </button>
-        <button type="submit" className="button button--small button--primary" disabled={submitting || !name.trim()}>
-          {submitting ? t.saving : t.saveZone}
-        </button>
-      </div>
-    </form>
+    <NewZoneForm t={t} error={error} onSubmit={create} onCancel={handleCancel} />
   ) : error ? (
     <div className="fp-hint fp-hint--error" role="alert">
       <p>{error}</p>
@@ -240,5 +166,52 @@ export function ZoneDrawTool({
       </button>
       {form && overlayHost ? createPortal(form, overlayHost) : null}
     </div>
+  )
+}
+
+type ZoneInput = ReturnType<typeof zoneInput>
+
+type NewZoneFormProps = {
+  t: Messages['floorPlans']['zones']
+  error: string | null
+  /** Rejects to keep the form open with `error`. */
+  onSubmit: (input: ZoneInput) => Promise<void>
+  onCancel: () => void
+}
+
+/** Name, description and status of the zone just drawn; mounted fresh for every shape. */
+function NewZoneForm({ t, error, onSubmit, onCancel }: NewZoneFormProps) {
+  const form = useForm({
+    initialValues: { name: '', description: '', status: 'NOT_STARTED' },
+    schema: makeZoneSchema(t.validation),
+    onSubmit: (values) => onSubmit(zoneInput(values)),
+  })
+  const busy = form.isSubmitting
+
+  return (
+    <form className="fp-float form" noValidate onSubmit={form.onSubmit} aria-busy={busy}>
+      <h2 className="fp-float__title">{t.newZone}</h2>
+      {zoneFields(t).map((field) => (
+        <Field
+          key={field.name}
+          config={{ ...field, name: `zone-new-${field.name}` }}
+          value={form.values[field.name]}
+          error={form.errors[field.name]}
+          valid={form.valid[field.name]}
+          disabled={busy}
+          onChange={(value) => form.onChange(field.name, value)}
+          onBlur={() => form.onBlur(field.name)}
+        />
+      ))}
+      {error ? <p className="fp-float__error" role="alert">{error}</p> : null}
+      <div className="fp-float__actions">
+        <button type="button" className="button button--small" onClick={onCancel} disabled={busy}>
+          {t.cancel}
+        </button>
+        <button type="submit" className="button button--small button--primary" disabled={busy} aria-busy={busy}>
+          {busy ? t.saving : t.saveZone}
+        </button>
+      </div>
+    </form>
   )
 }
