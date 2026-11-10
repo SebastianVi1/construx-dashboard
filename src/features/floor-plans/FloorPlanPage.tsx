@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import L from 'leaflet'
 import { useLocale } from '../../i18n'
@@ -46,6 +46,20 @@ export function FloorPlanPage() {
   const [draggingResource, setDraggingResource] = useState<DraggableResource | null>(null)
   const [draggingReassign, setDraggingReassign] = useState<ReassignDrag | null>(null)
   const [assignError, setAssignError] = useState(false)
+  // One drop at a time: a second drop while the first is saving would assign or move twice.
+  const dropping = useRef(false)
+
+  function saveDrop(request: () => Promise<unknown>, reload: () => void) {
+    if (dropping.current) return
+    dropping.current = true
+    setAssignError(false)
+    request()
+      .then(reload)
+      .catch(() => setAssignError(true))
+      .finally(() => {
+        dropping.current = false
+      })
+  }
   const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null)
   const [selectedOccupant, setSelectedOccupant] = useState<{ zone: Zone; occupant: Occupant } | null>(null)
 
@@ -264,21 +278,23 @@ export function FloorPlanPage() {
                       dragging={draggingResource !== null || draggingReassign !== null}
                       onDropResource={(zone, resource) => {
                         setDraggingResource(null)
-                        setAssignError(false)
-                        createAssignment(orgId, siteId, floorPlanId, zone.id, {
-                          membershipId: resource.type === 'membership' ? resource.id : null,
-                          crewId: resource.type === 'crew' ? resource.id : null,
-                          equipmentId: resource.type === 'equipment' ? resource.id : null,
-                        })
-                          .then(plan.reloadState)
-                          .catch(() => setAssignError(true))
+                        saveDrop(
+                          () =>
+                            createAssignment(orgId, siteId, floorPlanId, zone.id, {
+                              membershipId: resource.type === 'membership' ? resource.id : null,
+                              crewId: resource.type === 'crew' ? resource.id : null,
+                              equipmentId: resource.type === 'equipment' ? resource.id : null,
+                            }),
+                          plan.reloadState,
+                        )
                       }}
                       onReassignDrop={(targetZone, drag) => {
                         setDraggingReassign(null)
                         if (targetZone.id === drag.sourceZoneId) return
-                        reassignToZone(orgId, siteId, floorPlanId, drag.sourceZoneId, drag.assignmentId, targetZone.id)
-                          .then(plan.reloadState)
-                          .catch(() => setAssignError(true))
+                        saveDrop(
+                          () => reassignToZone(orgId, siteId, floorPlanId, drag.sourceZoneId, drag.assignmentId, targetZone.id),
+                          plan.reloadState,
+                        )
                       }}
                     />
                   ) : null}
