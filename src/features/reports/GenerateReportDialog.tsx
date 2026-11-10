@@ -3,6 +3,7 @@ import { Modal } from '../../components/modal'
 import { useLocale } from '../../i18n'
 import { generateReport, type SiteReport } from './reportApi'
 import { cacheReport, savePdfBlob } from './reportStorage'
+import { Field, TEXT_LIMITS } from '../../components/form'
 
 type Props = {
   organizationId: string
@@ -21,7 +22,7 @@ export function GenerateReportDialog({ organizationId, siteId, onGenerated, onCl
 
   const titleIssue = title.trim().length === 0
     ? t.validation.titleRequired
-    : title.length > 200
+    : title.trim().length > TEXT_LIMITS.reportTitle
       ? t.validation.titleMax
       : null
 
@@ -46,29 +47,31 @@ export function GenerateReportDialog({ organizationId, siteId, onGenerated, onCl
 
   return (
     <Modal title={t.dialog.title} description={t.dialog.description} onClose={onClose}>
-      <form onSubmit={submit} noValidate>
-        <div className="form-field">
-          <label htmlFor={titleId}>{t.dialog.label}</label>
-          <input
-            id={titleId}
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t.dialog.placeholder}
-            maxLength={200}
-            disabled={busy}
-            autoFocus
-          />
-          {titleIssue && title.length > 0 ? (
-            <span className="form-field__error">{titleIssue}</span>
-          ) : null}
-        </div>
-        {error ? <p className="notice notice--error">{error}</p> : null}
-        <div className="form-actions">
+      <form className="form" onSubmit={submit} noValidate>
+        <Field
+          config={{
+            name: `${titleId}-title`,
+            label: t.dialog.label,
+            placeholder: t.dialog.placeholder,
+            autoComplete: 'off',
+            maxLength: TEXT_LIMITS.reportTitle,
+          }}
+          value={title}
+          error={titleIssue && title.length > 0 ? titleIssue : undefined}
+          valid={!titleIssue}
+          disabled={busy}
+          onChange={setTitle}
+        />
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="button-row button-row--end modal-actions">
           <button type="button" className="button button--ghost" onClick={onClose} disabled={busy}>
             {t.dialog.cancel}
           </button>
-          <button type="submit" className="button" disabled={busy || title.trim().length === 0}>
+          <button type="submit" className="button button--primary" disabled={busy || title.trim().length === 0} aria-busy={busy}>
             {busy ? t.dialog.generating : t.dialog.submit}
           </button>
         </div>
