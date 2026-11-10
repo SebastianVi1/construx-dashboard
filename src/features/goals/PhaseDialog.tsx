@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { useCurrency } from '../../currency'
 import { formatMessage, useLocale } from '../../i18n'
@@ -79,7 +79,7 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
   })
 
   const fields: FieldConfig[] = [
-    { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
+    { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off', maxLength: TEXT_LIMITS.phaseName },
     { name: 'startAt', label: t.field.startAt, type: 'date', hint: t.field.startHint, min: goal ? undefined : todayStr },
     { name: 'dueAt', label: t.field.dueAt, type: 'date', hint: t.field.dueHint, min: goal ? undefined : todayStr },
     ...(canManageBudget

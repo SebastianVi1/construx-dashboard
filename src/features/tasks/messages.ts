@@ -116,7 +116,7 @@ export const tasksMessages = defineMessages({
     },
     validation: {
       nameRequired: 'Enter the task',
-      nameMax: 'Use at most 160 characters',
+      nameMax: 'Use at most 100 characters',
       descriptionMax: 'Use at most 500 characters',
       startRequired: 'Pick a start date',
       dueRequired: 'Pick a due date',
@@ -280,7 +280,7 @@ export const tasksMessages = defineMessages({
     },
     validation: {
       nameRequired: 'Escribe la tarea',
-      nameMax: 'Usa como máximo 160 caracteres',
+      nameMax: 'Usa como máximo 100 caracteres',
       descriptionMax: 'Usa como máximo 500 caracteres',
       startRequired: 'Elige una fecha de inicio',
       dueRequired: 'Elige una fecha límite',

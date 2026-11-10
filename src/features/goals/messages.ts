@@ -46,7 +46,7 @@ export const goalsMessages = defineMessages({
     },
     validation: {
       nameRequired: 'Enter the phase name',
-      nameMax: 'Use at most 160 characters',
+      nameMax: 'Use at most 100 characters',
       startRequired: 'Pick a start date',
       dueRequired: 'Pick a due date',
       startAfterDue: 'The start must be on or before the due date',
@@ -128,7 +128,7 @@ export const goalsMessages = defineMessages({
     },
     validation: {
       nameRequired: 'Escribe el nombre de la fase',
-      nameMax: 'Usa como máximo 160 caracteres',
+      nameMax: 'Usa como máximo 100 caracteres',
       startRequired: 'Elige una fecha de inicio',
       dueRequired: 'Elige una fecha límite',
       startAfterDue: 'El inicio debe ser igual o anterior a la fecha límite',

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { dueText, instantToLocalInput, localInputToInstant } from '../goals/dueAt'
@@ -119,8 +119,8 @@ export function TaskDialog({
   const fields: FieldConfig[] = [
     ...(canEdit
       ? ([
-          { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
-          { name: 'description', label: t.field.description, placeholder: t.field.descriptionPlaceholder, type: 'textarea', autoComplete: 'off', spellCheck: false, rows: 3 },
+          { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off', maxLength: TEXT_LIMITS.taskName },
+          { name: 'description', label: t.field.description, placeholder: t.field.descriptionPlaceholder, type: 'textarea', autoComplete: 'off', spellCheck: false, rows: 3, maxLength: TEXT_LIMITS.longText },
           {
             name: 'startAt',
             label: t.field.startAt,

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TEXT_LIMITS } from '../../components/form'
 import { localInputToInstant } from '../goals/dueAt'
 import { nameSchema, sameDate, startNotAfterDue } from '../goals/goalForm'
 import type { Goal } from '../goals/goalsApi'
@@ -57,7 +58,7 @@ export function makeTaskSchema(
   return z
     .object({
       color: colorSchema(invalidColor),
-      description: z.string().max(500, messages.descriptionMax).default(''),
+      description: z.string().max(TEXT_LIMITS.longText, messages.descriptionMax).default(''),
       name: nameSchema(messages),
       startAt: instantField(
         messages.startRequired,
