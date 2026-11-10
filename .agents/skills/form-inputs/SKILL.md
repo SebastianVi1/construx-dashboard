@@ -15,9 +15,10 @@ button that changes data can only fire once. Build on `src/components/form/` (re
 - Text: `maxLength: TEXT_LIMITS.<kind>` on the field **and** `.max(TEXT_LIMITS.<kind>, message)` in the schema.
   Required text uses `.trim().min(1, message)`. Long text is a `textarea` with `TEXT_LIMITS.longText`.
 - Money: `type: 'money'` (prices add `maxDigits: MONEY_DIGITS.price`). The value is the plain amount in the
-  **active currency**. Validate with `amountIssue(raw, { allowZero, max, rate })` from
-  `features/sites/budgetRules.ts`, where `rate` is pesos per typed unit, so the backend cap is checked in MXN.
-  Send `toMxn(Number(raw))`; prefill an edit with `String(fromMxn(stored))`, both from `useCurrency()`.
+  **active currency**. Validate with `amountIssue(raw, { allowZero, max, money })` from
+  `features/sites/budgetRules.ts`, passing `money = useCurrency()`, so the backend cap is checked in MXN.
+  Send `money.toMxn(Number(raw))`; prefill an edit with `money.fromMxn(stored).toFixed(2)`; decide whether an
+  amount changed by comparing in the typed currency, never after converting.
 - Labels never hardcode a currency: use `{currency}` in the message and fill it with `useCurrency().currency`.
 - Numbers: `type: 'number'` with `decimals`, `maxDigits` and `suffix` (unit).
 - Every message lives in the feature's `messages.ts` slice in English and Spanish. No zod default messages.
