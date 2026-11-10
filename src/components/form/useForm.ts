@@ -36,8 +36,10 @@ export function useForm<Values extends Record<string, string>>({
 
   const { errors, valid } = visibleFieldState(values, allErrors, touched, submitAttempted)
 
+  // Typing counts as touching: the field shows whether it is right while the user types.
   function onChange(name: string, value: string) {
     setValues((current) => ({ ...current, [name]: value }))
+    setTouched((current) => (current[name] ? current : { ...current, [name]: true }))
     setSubmitError(false)
   }
 
