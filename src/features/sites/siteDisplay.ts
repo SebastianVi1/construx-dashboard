@@ -1,4 +1,4 @@
-import type { FieldConfig } from '../../components/form'
+import { TEXT_LIMITS, type FieldConfig } from '../../components/form'
 import { formatMessage, intlLocales, type Locale, type Messages } from '../../i18n'
 import { formatDate } from '../home/format'
 import { siteStatuses, type Site } from './sitesApi'
@@ -25,8 +25,14 @@ export function siteFields(t: Messages['sites'], options: { statusDefault: boole
     .filter((status) => !options.statusDefault || status !== 'ARCHIVED')
     .map((status) => ({ value: status, label: t.status[status] }))
   return [
-    { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
-    { name: 'address', label: t.field.address, placeholder: t.field.addressPlaceholder, autoComplete: 'street-address' },
+    { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off', maxLength: TEXT_LIMITS.siteName },
+    {
+      name: 'address',
+      label: t.field.address,
+      placeholder: t.field.addressPlaceholder,
+      autoComplete: 'street-address',
+      maxLength: TEXT_LIMITS.address,
+    },
     { name: 'startDate', label: t.field.startDate, type: 'date' },
     { name: 'expectedEndDate', label: t.field.expectedEndDate, type: 'date' },
     {

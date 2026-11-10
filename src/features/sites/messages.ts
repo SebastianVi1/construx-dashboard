@@ -61,8 +61,8 @@ export const sitesMessages = defineMessages({
     },
     validation: {
       nameRequired: 'Enter the site name',
-      nameMax: 'Use at most 160 characters',
-      addressMax: 'Use at most 255 characters',
+      nameMax: 'Use at most 100 characters',
+      addressMax: 'Use at most 200 characters',
       dateOrder: 'The expected end date cannot be before the start date',
       dateKeep: 'A date cannot be removed once set. Pick another date instead.',
     },
@@ -244,8 +244,8 @@ export const sitesMessages = defineMessages({
     },
     validation: {
       nameRequired: 'Ingresa el nombre de la obra',
-      nameMax: 'Usa como máximo 160 caracteres',
-      addressMax: 'Usa como máximo 255 caracteres',
+      nameMax: 'Usa como máximo 100 caracteres',
+      addressMax: 'Usa como máximo 200 caracteres',
       dateOrder: 'La fecha estimada de fin no puede ser anterior a la de inicio',
       dateKeep: 'Una fecha no se puede quitar una vez definida. Elige otra fecha.',
     },
