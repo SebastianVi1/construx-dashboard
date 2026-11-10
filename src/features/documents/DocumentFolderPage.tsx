@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { ConfirmDialog } from '../../components/modal'
 import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -98,6 +99,8 @@ export function DocumentFolderPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<DocumentEntry | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     const name = folder ? folderName(folder, locale) : t.folderTitle
@@ -139,12 +142,12 @@ export function DocumentFolderPage() {
   }
 
   async function handleDelete(entry: DocumentEntry) {
-    if (!confirm(t.deleteConfirm)) return
     try {
       await deleteDocumentEntry(org.id, siteId, folderId, entry.id)
       entriesRemote.update((entries) => entries.filter((e) => e.id !== entry.id))
+      setDeleting(null)
     } catch {
-      // non-blocking: user can retry
+      setDeleteError(t.deleteFileError)
     }
   }
 
@@ -170,6 +173,7 @@ export function DocumentFolderPage() {
               className="button button--primary"
               type="button"
               disabled={uploading}
+              aria-busy={uploading}
               onClick={() => fileInputRef.current?.click()}
             >
               {uploading ? t.uploading : t.uploadFile}
@@ -177,6 +181,19 @@ export function DocumentFolderPage() {
           </div>
         )}
       </header>
+
+      {deleting && (
+        <ConfirmDialog
+          title={t.delete}
+          body={t.deleteConfirm}
+          confirmLabel={t.delete}
+          pendingLabel={t.deleting}
+          cancelLabel={t.cancel}
+          error={deleteError}
+          onConfirm={() => handleDelete(deleting)}
+          onClose={() => setDeleting(null)}
+        />
+      )}
 
       {uploadError && (
         <Notice tone="error">{uploadError}</Notice>
@@ -240,7 +257,10 @@ export function DocumentFolderPage() {
                     <button
                       className="button button--ghost button--sm button--danger"
                       type="button"
-                      onClick={() => handleDelete(entry)}
+                      onClick={() => {
+                        setDeleteError(null)
+                        setDeleting(entry)
+                      }}
                     >
                       {t.delete}
                     </button>
