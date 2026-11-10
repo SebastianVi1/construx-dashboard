@@ -1,4 +1,6 @@
-import type { FieldConfig } from '../../components/form'
+import { MONEY_DIGITS, TEXT_LIMITS, type FieldConfig } from '../../components/form'
+import type { Currency } from '../../currency'
+import { formatMessage } from '../../i18n'
 import type { Messages } from '../../i18n'
 import { NEW_SUPPLIER } from './materialForm'
 import { materialCategories, materialUnits, type Material, type Supplier } from './pricingApi'
@@ -18,7 +20,13 @@ export function materialLabel(material: Pick<Material, 'name' | 'brand' | 'unit'
 
 export function materialFields(t: MaterialsMessages): FieldConfig[] {
   return [
-    { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
+    {
+      name: 'name',
+      label: t.field.name,
+      placeholder: t.field.namePlaceholder,
+      autoComplete: 'off',
+      maxLength: TEXT_LIMITS.materialName,
+    },
     {
       name: 'unit',
       label: t.field.unit,
@@ -34,7 +42,13 @@ export function materialFields(t: MaterialsMessages): FieldConfig[] {
         ...materialCategories.map((category) => ({ value: category, label: t.category[category] })),
       ],
     },
-    { name: 'brand', label: t.field.brand, placeholder: t.field.brandPlaceholder, autoComplete: 'off' },
+    {
+      name: 'brand',
+      label: t.field.brand,
+      placeholder: t.field.brandPlaceholder,
+      autoComplete: 'off',
+      maxLength: TEXT_LIMITS.brand,
+    },
   ]
 }
 
@@ -44,6 +58,8 @@ type PriceFieldOptions = {
   suppliers: Supplier[]
   /** Show the inline "new supplier" fields. */
   newSupplier: boolean
+  /** The currency prices are typed in. */
+  currency: Currency
 }
 
 /** Record-price fields; the new supplier's fields appear right under the picker when chosen. */
@@ -72,8 +88,20 @@ export function priceFields(t: MaterialsMessages, options: PriceFieldOptions): F
   })
   if (options.newSupplier) {
     fields.push(
-      { name: 'supplierName', label: t.field.supplierName, placeholder: t.field.supplierNamePlaceholder, autoComplete: 'off' },
-      { name: 'supplierBranch', label: t.field.supplierBranch, placeholder: t.field.supplierBranchPlaceholder, autoComplete: 'off' },
+      {
+        name: 'supplierName',
+        label: t.field.supplierName,
+        placeholder: t.field.supplierNamePlaceholder,
+        autoComplete: 'off',
+        maxLength: TEXT_LIMITS.supplierName,
+      },
+      {
+        name: 'supplierBranch',
+        label: t.field.supplierBranch,
+        placeholder: t.field.supplierBranchPlaceholder,
+        autoComplete: 'off',
+        maxLength: TEXT_LIMITS.supplierBranch,
+      },
       {
         name: 'supplierWebsite',
         label: t.field.supplierWebsite,
@@ -81,13 +109,20 @@ export function priceFields(t: MaterialsMessages, options: PriceFieldOptions): F
         placeholder: t.field.supplierWebsitePlaceholder,
         autoComplete: 'url',
         inputMode: 'url',
+        maxLength: TEXT_LIMITS.supplierWebsite,
       },
     )
   }
   fields.push(
-    { name: 'price', label: t.field.price, placeholder: t.field.pricePlaceholder, autoComplete: 'off' },
+    {
+      name: 'price',
+      label: formatMessage(t.field.price, { currency: options.currency }),
+      type: 'money',
+      maxDigits: MONEY_DIGITS.price,
+      placeholder: t.field.pricePlaceholder,
+    },
     { name: 'observedOn', label: t.field.observedOn, type: 'date' },
-    { name: 'sku', label: t.field.sku, placeholder: t.field.skuPlaceholder, autoComplete: 'off' },
+    { name: 'sku', label: t.field.sku, placeholder: t.field.skuPlaceholder, autoComplete: 'off', maxLength: TEXT_LIMITS.sku },
   )
   return fields
 }

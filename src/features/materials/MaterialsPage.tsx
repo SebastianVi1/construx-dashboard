@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { FilterTabs, filterCounts, type FilterOption } from '../../components/filter'
 import { SkeletonList, Notice } from '../../components/page'
+import { useCurrency } from '../../currency'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -21,6 +22,7 @@ import './materials.css'
  */
 export function MaterialsPage() {
   const { messages: m, locale } = useLocale()
+  const { currency } = useCurrency()
   const t = m.materials
   const organization = useCurrentOrganization()
   const { can } = usePermissions()
@@ -58,7 +60,7 @@ export function MaterialsPage() {
       <header className="page-header">
         <div className="page-header__text">
           <h1>{t.title}</h1>
-          <p>{t.description}</p>
+          <p>{formatMessage(t.description, { currency })}</p>
         </div>
         {canManage ? (
           <div className="button-row">
