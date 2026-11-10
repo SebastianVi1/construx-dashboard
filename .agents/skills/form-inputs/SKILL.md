@@ -21,6 +21,7 @@ button that changes data can only fire once. Build on `src/components/form/` (re
   amount changed by comparing in the typed currency, never after converting.
 - Labels never hardcode a currency: use `{currency}` in the message and fill it with `useCurrency().currency`.
 - Numbers: `type: 'number'` with `decimals`, `maxDigits` and `suffix` (unit).
+- A single name created in place (folders): `NameForm` from `components/form`.
 - Every message lives in the feature's `messages.ts` slice in English and Spanish. No zod default messages.
 
 ## Buttons
