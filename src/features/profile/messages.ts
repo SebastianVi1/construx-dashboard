@@ -12,6 +12,9 @@ export const profileMessages = defineMessages({
       remove: 'Remove photo',
       uploading: 'Uploading…',
       removing: 'Removing…',
+      view: 'View photo',
+      preview: 'Profile photo',
+      close: 'Close',
       errors: {
         fileType: 'Choose a JPEG, PNG or WebP image.',
         tooLarge: 'The photo is too large. Choose one under 20 MB.',
@@ -93,6 +96,9 @@ export const profileMessages = defineMessages({
       remove: 'Quitar foto',
       uploading: 'Subiendo…',
       removing: 'Quitando…',
+      view: 'Ver foto',
+      preview: 'Foto de perfil',
+      close: 'Cerrar',
       errors: {
         fileType: 'Elige una imagen JPEG, PNG o WebP.',
         tooLarge: 'La foto es demasiado grande. Elige una de menos de 20 MB.',
