@@ -5,7 +5,6 @@ import {
   allocationIssue,
   budgetAmount,
   budgetChanged,
-  budgetText,
   budgetToInput,
   makeBudgetSchema,
   optionalBudgetAmount,
@@ -43,11 +42,6 @@ describe('site budget schema', () => {
 })
 
 describe('site budget display', () => {
-  it('formats the amount as pesos in both languages', () => {
-    expect(budgetText(250000.5, 'en')).toBe('$250,000.50')
-    expect(budgetText(250000.5, 'es')).toBe('$250,000.50')
-  })
-
   it('prefills the dialog with the stored amount, or nothing', () => {
     expect(budgetToInput(250000.5)).toBe('250000.5')
     expect(budgetToInput(null)).toBe('')

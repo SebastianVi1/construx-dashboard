@@ -7,7 +7,7 @@ import { formatMessage, useLocale } from '../../i18n'
 import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import type { Goal } from '../goals/goalsApi'
 import { usePermissions } from '../permissions'
-import { allocationIssue, budgetText } from '../sites/budgetRules'
+import { allocationIssue } from '../sites/budgetRules'
 import type { SiteAccess } from '../sites/sitesApi'
 import { TaskDialog } from './TaskDialog'
 import { TaskDue, TaskMoveButtons, TaskTeamSummary } from './TaskBits'
@@ -24,6 +24,7 @@ import {
 } from './tasksApi'
 import { useTaskMove } from './useTaskMove'
 import './tasks.css'
+import { useCurrency } from '../../currency'
 
 type PhaseTasksProps = {
   organizationId: string
@@ -46,7 +47,8 @@ type Dialog =
 
 /** Tasks of one phase as a board grouped by status, filtered on the server. Budgets need VIEW_BUDGET / MANAGE_BUDGET. */
 export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSite, onChanged }: PhaseTasksProps) {
-  const { messages: m, locale } = useLocale()
+  const { messages: m } = useLocale()
+  const { money } = useCurrency()
   const t = m.tasks
   const { access, can } = usePermissions()
   const at: PhaseRef = { organizationId, siteId, goalId: goal.id }
@@ -233,7 +235,7 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
                           </p>
                           {canViewBudget && task.allocatedBudget !== null ? (
                             <p className="task-item__meta data-mono">
-                              {formatMessage(t.budget.value, { amount: budgetText(task.allocatedBudget, locale) })}
+                              {formatMessage(t.budget.value, { amount: money(task.allocatedBudget) })}
                             </p>
                           ) : null}
                           {allowed.start ||

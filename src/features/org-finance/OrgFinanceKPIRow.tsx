@@ -1,7 +1,7 @@
 import { formatMessage, useLocale } from '../../i18n'
-import { budgetText } from '../sites/budgetRules'
 import type { OrgFinanceSummary } from './orgFinanceApi'
 import { percentText } from './orgFinanceFormat'
+import { useCurrency } from '../../currency'
 
 type OrgFinanceKPIRowProps = { summary: OrgFinanceSummary }
 
@@ -12,6 +12,7 @@ type OrgFinanceKPIRowProps = { summary: OrgFinanceSummary }
  */
 export function OrgFinanceKPIRow({ summary }: OrgFinanceKPIRowProps) {
   const { messages: m, locale } = useLocale()
+  const { money } = useCurrency()
   const t = m.orgFinance.kpi
   const withBudget = summary.sites.filter((site) => site.allocatedBudget !== null).length
   const hasBudget = withBudget > 0
@@ -21,20 +22,20 @@ export function OrgFinanceKPIRow({ summary }: OrgFinanceKPIRowProps) {
     <dl className="org-kpis" aria-label={t.label}>
       <div className="org-kpis__item">
         <dt>{t.budget}</dt>
-        <dd className="org-kpis__value data-mono">{hasBudget ? budgetText(summary.totalBudget, locale) : m.orgFinance.noValue}</dd>
+        <dd className="org-kpis__value data-mono">{hasBudget ? money(summary.totalBudget) : m.orgFinance.noValue}</dd>
         <dd className="org-kpis__hint">
           {hasBudget ? formatMessage(t.budgetHint, { count: withBudget, total: summary.sites.length }) : t.noBudget}
         </dd>
       </div>
       <div className="org-kpis__item">
         <dt>{t.spent}</dt>
-        <dd className="org-kpis__value data-mono">{budgetText(summary.totalSpent, locale)}</dd>
+        <dd className="org-kpis__value data-mono">{money(summary.totalSpent)}</dd>
         <dd className="org-kpis__hint">{t.spentHint}</dd>
       </div>
       <div className="org-kpis__item" data-tone={overrun ? 'danger' : undefined}>
         <dt>{t.balance}</dt>
         <dd className="org-kpis__value data-mono">
-          {hasBudget ? budgetText(summary.totalRemaining, locale) : m.orgFinance.noValue}
+          {hasBudget ? money(summary.totalRemaining) : m.orgFinance.noValue}
         </dd>
         <dd className="org-kpis__hint">{hasBudget ? (overrun ? t.balanceOverrun : t.balanceLeft) : t.noBudget}</dd>
       </div>

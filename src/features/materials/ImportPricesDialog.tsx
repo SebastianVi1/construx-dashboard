@@ -164,7 +164,7 @@ function ImportPreview({ report, t, locale }: { report: ImportReport; t: ImportM
                 <td className="data-mono">{row.line}</td>
                 <td>{row.material || '—'}</td>
                 <td>{row.supplier ? supplierLabel({ name: row.supplier, branch: row.branch ?? null }) : '—'}</td>
-                <td className="data-mono">{previewPrice(row.price, locale)}</td>
+                <td className="data-mono">{previewPrice(row.price)}</td>
                 <td>{previewDate(row.observedOn, locale)}</td>
                 <td>
                   {row.errors.length > 0 ? (

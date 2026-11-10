@@ -1,7 +1,5 @@
 import { z } from 'zod'
-import type { Locale } from '../../i18n'
 import { ApiError } from '../../lib/http'
-import { moneyText } from '../materials/priceRules'
 
 export type BudgetValidationMessages = {
   required: string
@@ -80,7 +78,3 @@ export function budgetToInput(amount: number | null): string {
   return amount === null ? '' : String(amount)
 }
 
-/** Budgets share the global currency (MXN): "$250,000.50". */
-export function budgetText(amount: number, locale: Locale): string {
-  return moneyText(String(amount), locale)
-}

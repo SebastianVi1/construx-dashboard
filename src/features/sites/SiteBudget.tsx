@@ -10,8 +10,9 @@ import { ExpenseDialog } from '../finance/ExpenseDialog'
 import { ExpenseTable } from '../finance/ExpenseTable'
 import { getBudgetSummary, listExpenses, type BudgetSummary, type Expense } from '../finance/financeApi'
 import '../finance/finance.css'
-import { allocationIssue, budgetText } from './budgetRules'
+import { allocationIssue } from './budgetRules'
 import { setSiteBudget, siteErrorKind, type Site } from './sitesApi'
+import { useCurrency } from '../../currency'
 
 type SiteBudgetProps = {
   organizationId: string
@@ -135,7 +136,8 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
 
 /** Figures on the left, the chart beside them; they stack on narrow screens. */
 export function BudgetOverview({ summary }: { summary: BudgetSummary }) {
-  const { messages: m, locale } = useLocale()
+  const { messages: m } = useLocale()
+  const { money } = useCurrency()
   const t = m.finance
   const chart = budgetChart(summary)
   const overrun = chart.status === 'overrun'
@@ -148,29 +150,29 @@ export function BudgetOverview({ summary }: { summary: BudgetSummary }) {
           <div>
             <dt>{t.allocated}</dt>
             <dd className="budget-figures__value">
-              {summary.allocatedBudget === null ? t.noBudget : budgetText(summary.allocatedBudget, locale)}
+              {summary.allocatedBudget === null ? t.noBudget : money(summary.allocatedBudget)}
             </dd>
           </div>
           <div>
             <dt>{t.spent}</dt>
-            <dd className="budget-figures__value">{budgetText(summary.spent, locale)}</dd>
+            <dd className="budget-figures__value">{money(summary.spent)}</dd>
           </div>
           {summary.allocatedBudget !== null ? (
             <>
               <div>
                 <dt>{t.allocatedToPhases}</dt>
-                <dd className="budget-figures__value">{budgetText(summary.allocatedToPhases, locale)}</dd>
+                <dd className="budget-figures__value">{money(summary.allocatedToPhases)}</dd>
               </div>
               <div>
                 <dt>{t.unallocated}</dt>
-                <dd className="budget-figures__value">{budgetText(summary.unallocated ?? 0, locale)}</dd>
+                <dd className="budget-figures__value">{money(summary.unallocated ?? 0)}</dd>
               </div>
             </>
           ) : null}
           <div data-status={chart.status}>
             <dt>{overrun ? t.overrun : t.remaining}</dt>
             <dd className="budget-figures__value budget-figures__value--lead">
-              {summary.remaining === null ? '—' : budgetText(Math.abs(summary.remaining), locale)}
+              {summary.remaining === null ? '—' : money(Math.abs(summary.remaining))}
             </dd>
           </div>
         </dl>

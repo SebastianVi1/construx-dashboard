@@ -1,7 +1,8 @@
 import type { Locale, Messages } from '../../i18n'
 import { supplierLabel } from './materialDisplay'
-import { moneyText, priceRows, relativeAge } from './priceRules'
+import { priceRows, relativeAge } from './priceRules'
 import type { LatestPrice } from './pricingApi'
+import { useCurrency } from '../../currency'
 
 type LatestPricesProps = {
   prices: LatestPrice[]
@@ -12,6 +13,7 @@ type LatestPricesProps = {
 
 /** Latest price per supplier, cheapest first; the cheapest is highlighted and old prices are flagged. */
 export function LatestPrices({ prices, today, t, locale }: LatestPricesProps) {
+  const { money } = useCurrency()
   if (prices.length === 0) return <span className="cell-muted">{t.noPrices}</span>
 
   return (
@@ -19,7 +21,7 @@ export function LatestPrices({ prices, today, t, locale }: LatestPricesProps) {
       {priceRows(prices, today).map((row) => (
         <li key={row.id} className="price-list__row" data-cheapest={row.cheapest || undefined}>
           <span className="price-list__supplier">{supplierLabel({ name: row.supplierName, branch: row.supplierBranch })}</span>
-          <span className="price-list__price data-mono">{moneyText(row.price, locale)}</span>
+          <span className="price-list__price data-mono">{money(row.price)}</span>
           <span className="price-list__age">{relativeAge(row.observedOn, today, locale)}</span>
           {row.cheapest ? (
             <span className="badge" data-tone="success">

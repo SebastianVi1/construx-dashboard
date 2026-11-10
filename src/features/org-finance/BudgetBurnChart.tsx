@@ -3,10 +3,10 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { SkeletonList, Notice } from '../../components/page'
 import '../../components/switcher/segmented-switch.css'
 import { formatMessage, useLocale } from '../../i18n'
-import { budgetText } from '../sites/budgetRules'
 import { getMonthlyExpenses } from './orgFinanceApi'
 import { burnChartLayout, financePeriod, financeRanges, type FinanceRange } from './orgFinanceCharts'
 import { monthLongText, monthShortText } from './orgFinanceFormat'
+import { useCurrency } from '../../currency'
 
 type BudgetBurnChartProps = { organizationId: string }
 
@@ -22,6 +22,7 @@ function pct(share: number): string {
  */
 export function BudgetBurnChart({ organizationId }: BudgetBurnChartProps) {
   const { messages: m, locale } = useLocale()
+  const { money } = useCurrency()
   const t = m.orgFinance.burn
   const [range, setRange] = useState<FinanceRange>('1Y')
   const monthly = useRemoteData(`${organizationId}:finance-monthly:${range}`, () =>
@@ -82,7 +83,7 @@ export function BudgetBurnChart({ organizationId }: BudgetBurnChartProps) {
               {layout.ceiling !== null ? (
                 <li>
                   <span className="org-burn__key org-burn__key--ceiling" aria-hidden="true" />
-                  {formatMessage(t.ceilingValue, { amount: budgetText(monthly.data.totalBudget, locale) })}
+                  {formatMessage(t.ceilingValue, { amount: money(monthly.data.totalBudget) })}
                 </li>
               ) : null}
             </ul>
@@ -104,9 +105,9 @@ export function BudgetBurnChart({ organizationId }: BudgetBurnChartProps) {
                     <span className="org-burn__tip data-mono">
                       {monthLongText(point.month, locale)}
                       <br />
-                      {formatMessage(t.tipLine, { label: t.monthly, amount: budgetText(point.spent, locale) })}
+                      {formatMessage(t.tipLine, { label: t.monthly, amount: money(point.spent) })}
                       <br />
-                      {formatMessage(t.tipLine, { label: t.cumulative, amount: budgetText(point.cumulative, locale) })}
+                      {formatMessage(t.tipLine, { label: t.cumulative, amount: money(point.cumulative) })}
                     </span>
                     <span
                       className="org-burn__bar"
@@ -142,8 +143,8 @@ export function BudgetBurnChart({ organizationId }: BudgetBurnChartProps) {
                 {layout.points.map((point) => (
                   <tr key={point.month}>
                     <th scope="row">{monthLongText(point.month, locale)}</th>
-                    <td>{budgetText(point.spent, locale)}</td>
-                    <td>{budgetText(point.cumulative, locale)}</td>
+                    <td>{money(point.spent)}</td>
+                    <td>{money(point.cumulative)}</td>
                   </tr>
                 ))}
               </tbody>

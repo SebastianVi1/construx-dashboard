@@ -5,7 +5,6 @@ import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import { usePermissions } from '../permissions'
-import { budgetText } from '../sites/budgetRules'
 import { ProgressMeter } from '../sites/SiteBits'
 import { siteProgress } from '../sites/siteHelpers'
 import type { SiteAccess } from '../sites/sitesApi'
@@ -15,6 +14,7 @@ import { dueText, isOverdue } from './dueAt'
 import { deleteGoal, goalErrorKind, listGoals, setGoalBudget, type Goal } from './goalsApi'
 import { PhaseDialog } from './PhaseDialog'
 import './goals.css'
+import { useCurrency } from '../../currency'
 
 type SitePhasesProps = {
   organizationId: string
@@ -40,6 +40,7 @@ type Dialog =
  */
 export function SitePhases({ organizationId, siteId, people, onSite, onProgressChanged, targetPhase }: SitePhasesProps) {
   const { messages: m, locale } = useLocale()
+  const { money } = useCurrency()
   const t = m.goals
   const { can } = usePermissions()
   const headingId = useId()
@@ -214,8 +215,8 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
                               {goal.allocatedBudget === null
                                 ? t.budget.none
                                 : formatMessage(t.budget.facts, {
-                                    budget: budgetText(goal.allocatedBudget, locale),
-                                    left: budgetText(goal.unallocated ?? 0, locale),
+                                    budget: money(goal.allocatedBudget),
+                                    left: money(goal.unallocated ?? 0),
                                   })}
                             </span>
                           ) : null}

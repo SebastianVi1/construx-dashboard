@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Modal } from '../../components/modal'
 import { formatMessage, useLocale } from '../../i18n'
-import { budgetText } from '../sites/budgetRules'
 import { siteErrorKind, type SiteErrorKind } from '../sites/sitesApi'
 import { deleteExpense, type Expense } from './financeApi'
+import { useCurrency } from '../../currency'
 
 type DeleteExpenseDialogProps = {
   organizationId: string
@@ -14,7 +14,8 @@ type DeleteExpenseDialogProps = {
 }
 
 export function DeleteExpenseDialog({ organizationId, siteId, expense, onDeleted, onClose }: DeleteExpenseDialogProps) {
-  const { messages: m, locale } = useLocale()
+  const { messages: m } = useLocale()
+  const { money } = useCurrency()
   const t = m.finance
   const [busy, setBusy] = useState(false)
   const [errorKind, setErrorKind] = useState<SiteErrorKind | null>(null)
@@ -34,7 +35,7 @@ export function DeleteExpenseDialog({ organizationId, siteId, expense, onDeleted
 
   const body = formatMessage(t.deleteDialog.body, {
     description: expense.description,
-    amount: budgetText(expense.amount, locale),
+    amount: money(expense.amount),
   })
 
   return (

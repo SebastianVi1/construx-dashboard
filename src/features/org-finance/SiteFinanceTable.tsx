@@ -1,8 +1,8 @@
 import { Link, useNavigate } from 'react-router'
 import { formatMessage, useLocale } from '../../i18n'
-import { budgetText } from '../sites/budgetRules'
 import type { SiteFinance, SiteFinanceStatus } from './orgFinanceApi'
 import { percentText } from './orgFinanceFormat'
+import { useCurrency } from '../../currency'
 
 const statusTone: Record<SiteFinanceStatus, 'success' | 'warning' | 'danger' | 'muted'> = {
   OK: 'success',
@@ -24,6 +24,7 @@ type SiteFinanceTableProps = { sites: SiteFinance[] }
  */
 export function SiteFinanceTable({ sites }: SiteFinanceTableProps) {
   const { messages: m, locale } = useLocale()
+  const { money } = useCurrency()
   const t = m.orgFinance.sites
   const navigate = useNavigate()
   const none = m.orgFinance.noValue
@@ -57,11 +58,11 @@ export function SiteFinanceTable({ sites }: SiteFinanceTableProps) {
                 </Link>
               </th>
               <td className="cell-number data-mono">
-                {site.allocatedBudget === null ? none : budgetText(site.allocatedBudget, locale)}
+                {site.allocatedBudget === null ? none : money(site.allocatedBudget)}
               </td>
-              <td className="cell-number data-mono">{budgetText(site.spent, locale)}</td>
+              <td className="cell-number data-mono">{money(site.spent)}</td>
               <td className="cell-number data-mono org-sites__remaining">
-                {site.remaining === null ? none : budgetText(site.remaining, locale)}
+                {site.remaining === null ? none : money(site.remaining)}
               </td>
               <td className="cell-number data-mono">
                 {site.executionPct === null ? none : percentText(site.executionPct, locale, m)}

@@ -1,3 +1,4 @@
+import { formatMoney } from '../../currency'
 import { intlLocales, type Locale } from '../../i18n'
 import type { LatestPrice, Material } from './pricingApi'
 
@@ -40,18 +41,9 @@ export function localToday(now = new Date()): string {
 /** Every amount in the app (prices, budgets, expenses) is in this currency for now. */
 export const CURRENCY = 'MXN'
 
-/** The narrow symbol keeps both languages on "$1,245.50". */
-const moneyLocales: Record<Locale, string> = { en: 'en-US', es: 'es-MX' }
-
-/** A decimal string such as "245.5" in the global currency with two decimals. */
-export function moneyText(price: string, locale: Locale): string {
-  return new Intl.NumberFormat(moneyLocales[locale], {
-    style: 'currency',
-    currency: CURRENCY,
-    currencyDisplay: 'narrowSymbol',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(price))
+/** A decimal string such as "245.5" as pesos, "$245.50", regardless of the picked currency: for amounts as typed in a file. */
+export function moneyText(price: string): string {
+  return formatMoney(price, CURRENCY, null)
 }
 
 function normalize(text: string): string {

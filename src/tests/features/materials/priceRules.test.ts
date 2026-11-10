@@ -37,8 +37,8 @@ describe('price age', () => {
 describe('money', () => {
   it('moneyText: formats a decimal string in the global currency (MXN) with two decimals', () => {
     expect(CURRENCY).toBe('MXN')
-    expect(moneyText('245.5', 'en')).toBe('$245.50')
-    expect(moneyText('1245.50', 'es')).toBe('$1,245.50')
+    expect(moneyText('245.5')).toBe('$245.50')
+    expect(moneyText('1245.50')).toBe('$1,245.50')
   })
 
   it('feature copy names the active currency and has no leftover USD references', () => {

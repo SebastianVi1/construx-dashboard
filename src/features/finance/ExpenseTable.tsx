@@ -1,7 +1,7 @@
 import { formatMessage, useLocale } from '../../i18n'
-import { budgetText } from '../sites/budgetRules'
 import { dateText } from '../sites/siteDisplay'
 import type { Expense } from './financeApi'
+import { useCurrency } from '../../currency'
 
 type ExpenseTableProps = {
   expenses: Expense[]
@@ -14,6 +14,7 @@ type ExpenseTableProps = {
 /** The site's expenses, newest first; also the text equivalent of the chart. */
 export function ExpenseTable({ expenses, canManage, canManageExpense, onEdit, onDelete }: ExpenseTableProps) {
   const { messages: m, locale } = useLocale()
+  const { money } = useCurrency()
   const t = m.finance
 
   return (
@@ -45,7 +46,7 @@ export function ExpenseTable({ expenses, canManage, canManageExpense, onEdit, on
                   {t.category[expense.category]}
                 </span>
               </td>
-              <td className="data-mono expense-table__amount">{budgetText(expense.amount, locale)}</td>
+              <td className="data-mono expense-table__amount">{money(expense.amount)}</td>
               {canManage ? (
                 <td className="cell-actions">
                   {(!canManageExpense || canManageExpense(expense)) ? <div className="button-row button-row--end">

@@ -1,9 +1,9 @@
 import { useLocale } from '../../i18n'
 import type { ExpenseCategory } from '../finance/financeApi'
 import '../finance/finance.css'
-import { budgetText } from '../sites/budgetRules'
 import { donutSlices } from './orgFinanceCharts'
 import { percentText } from './orgFinanceFormat'
+import { useCurrency } from '../../currency'
 
 type OrgCategoryChartProps = {
   byCategory: { category: ExpenseCategory; amount: number }[]
@@ -18,6 +18,7 @@ const RADIUS = 15.9155
  */
 export function OrgCategoryChart({ byCategory }: OrgCategoryChartProps) {
   const { messages: m, locale } = useLocale()
+  const { money } = useCurrency()
   const t = m.orgFinance.category
   const slices = donutSlices(byCategory)
   const spent = slices.reduce((sum, slice) => sum + slice.amount, 0)
@@ -53,7 +54,7 @@ export function OrgCategoryChart({ byCategory }: OrgCategoryChartProps) {
             </svg>
             <figcaption className="org-category__center">
               <span>{t.total}</span>
-              <strong className="data-mono">{budgetText(spent, locale)}</strong>
+              <strong className="data-mono">{money(spent)}</strong>
             </figcaption>
           </figure>
           <ul className="org-category__legend">
@@ -61,7 +62,7 @@ export function OrgCategoryChart({ byCategory }: OrgCategoryChartProps) {
               <li key={slice.category}>
                 <span className="budget-chart__swatch" data-category={slice.category} aria-hidden="true" />
                 <span className="org-category__name">{m.finance.category[slice.category]}</span>
-                <span className="data-mono">{budgetText(slice.amount, locale)}</span>
+                <span className="data-mono">{money(slice.amount)}</span>
                 <span className="org-category__share data-mono">{percentText(slice.share * 100, locale, m)}</span>
               </li>
             ))}

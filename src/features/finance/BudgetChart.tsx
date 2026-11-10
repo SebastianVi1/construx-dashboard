@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { formatMessage, useLocale } from '../../i18n'
-import { budgetText } from '../sites/budgetRules'
 import type { BudgetChart as Chart } from './budgetLayout'
 import type { BudgetSummary, ExpenseCategory } from './financeApi'
+import { useCurrency } from '../../currency'
 
 type BudgetChartProps = {
   chart: Chart
@@ -19,7 +19,8 @@ function percent(share: number): number {
  * so the chart never relies on color alone.
  */
 export function BudgetChart({ chart, summary }: BudgetChartProps) {
-  const { messages: m, locale } = useLocale()
+  const { messages: m } = useLocale()
+  const { money } = useCurrency()
   const t = m.finance
   const [active, setActive] = useState<ExpenseCategory | 'remaining' | null>(null)
   const spent = summary.spent
@@ -41,9 +42,9 @@ export function BudgetChart({ chart, summary }: BudgetChartProps) {
   const tooltipLeft = active ? Math.min(Math.max(centers[active] ?? 0.5, 0.12), 0.88) : 0.5
   const tooltip =
     active === 'remaining'
-      ? `${t.remainingLegend} · ${budgetText(remaining, locale)}`
+      ? `${t.remainingLegend} · ${money(remaining)}`
       : activeSegment
-        ? `${t.category[activeSegment.category]} · ${budgetText(activeSegment.amount, locale)}`
+        ? `${t.category[activeSegment.category]} · ${money(activeSegment.amount)}`
         : null
 
   return (
@@ -96,7 +97,7 @@ export function BudgetChart({ chart, summary }: BudgetChartProps) {
           >
             <span className="budget-chart__swatch" data-category={segment.category} aria-hidden="true" />
             <span className="budget-chart__name">{t.category[segment.category]}</span>
-            <span className="budget-chart__value data-mono">{budgetText(segment.amount, locale)}</span>
+            <span className="budget-chart__value data-mono">{money(segment.amount)}</span>
             <span className="budget-chart__share">
               {formatMessage(t.shareOfSpend, { percent: percent(spent > 0 ? segment.amount / spent : 0) })}
             </span>
@@ -110,7 +111,7 @@ export function BudgetChart({ chart, summary }: BudgetChartProps) {
           >
             <span className="budget-chart__swatch budget-chart__swatch--remaining" aria-hidden="true" />
             <span className="budget-chart__name">{t.remainingLegend}</span>
-            <span className="budget-chart__value data-mono">{budgetText(remaining, locale)}</span>
+            <span className="budget-chart__value data-mono">{money(remaining)}</span>
             <span className="budget-chart__share" />
           </li>
         ) : null}
