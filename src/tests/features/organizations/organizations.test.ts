@@ -45,15 +45,15 @@ describe('selected organization storage', () => {
 describe('organization name', () => {
   const schema = makeOrganizationSchema(messages.en.organizations.validation)
 
-  it('trims and accepts 1 to 160 characters', () => {
+  it('trims and accepts 1 to 100 characters', () => {
     expect(schema.parse({ name: '  Acme Builders ' })).toEqual({ name: 'Acme Builders' })
-    expect(schema.safeParse({ name: 'a'.repeat(160) }).success).toBe(true)
+    expect(schema.safeParse({ name: 'a'.repeat(100) }).success).toBe(true)
   })
 
-  it('rejects a blank name and one longer than 160 characters', () => {
+  it('rejects a blank name and one longer than 100 characters', () => {
     const blank = schema.safeParse({ name: '   ' })
     expect(blank.error?.issues[0]?.message).toBe(messages.en.organizations.validation.nameRequired)
-    const long = schema.safeParse({ name: 'a'.repeat(161) })
+    const long = schema.safeParse({ name: 'a'.repeat(101) })
     expect(long.error?.issues[0]?.message).toBe(messages.en.organizations.validation.nameMax)
   })
 })

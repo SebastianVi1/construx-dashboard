@@ -24,7 +24,7 @@ export const organizationsMessages = defineMessages({
     },
     validation: {
       nameRequired: 'Enter the company name',
-      nameMax: 'Use at most 160 characters',
+      nameMax: 'Use at most 100 characters',
     },
     error: {
       invalidName: 'The company name was not accepted. Check it and try again.',
@@ -69,7 +69,7 @@ export const organizationsMessages = defineMessages({
     },
     validation: {
       nameRequired: 'Ingresa el nombre de la empresa',
-      nameMax: 'Usa como máximo 160 caracteres',
+      nameMax: 'Usa como máximo 100 caracteres',
     },
     error: {
       invalidName: 'El nombre de la empresa no fue aceptado. Revísalo e inténtalo de nuevo.',

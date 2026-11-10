@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TEXT_LIMITS } from '../../components/form'
 import type { Profile, ProfileUpdate } from './profileApi'
 
 /** The editable part of a profile; the photo has its own flow. */
@@ -14,16 +15,16 @@ export type ProfileValidationMessages = {
 
 export type ProfileValues = { fullName: string; phoneNumber: string; trade: string }
 
-/** Backend rules: full name 1..160, phone in E.164 (`+` and 2..15 digits), trade at most 80; all trimmed. */
+/** Within the backend's rules: full name 1..80, phone in E.164 (`+` and 2..15 digits), trade at most 60; all trimmed. */
 export function makeProfileSchema(messages: ProfileValidationMessages) {
   return z.object({
-    fullName: z.string().trim().min(1, messages.fullNameRequired).max(160, messages.fullNameMax),
+    fullName: z.string().trim().min(1, messages.fullNameRequired).max(TEXT_LIMITS.personName, messages.fullNameMax),
     phoneNumber: z
       .string()
       .trim()
       .min(1, { message: messages.phoneRequired, abort: true })
       .regex(/^\+[1-9][0-9]{1,14}$/, messages.phoneFormat),
-    trade: z.string().trim().max(80, messages.tradeMax),
+    trade: z.string().trim().max(TEXT_LIMITS.trade, messages.tradeMax),
   })
 }
 

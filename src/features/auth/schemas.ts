@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TEXT_LIMITS } from '../../components/form'
 
 export type ValidationMessages = {
   nameRequired: string
@@ -16,7 +17,7 @@ export type RegistrationInput = { name: string; email: string; password: string 
 
 export function makeLoginSchema(messages: ValidationMessages) {
   return z.object({
-    email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
+    email: z.string().trim().min(1, messages.emailRequired).max(TEXT_LIMITS.email, messages.emailInvalid).email(messages.emailInvalid),
     password: z.string().min(1, messages.passwordRequired),
   })
 }
@@ -24,8 +25,8 @@ export function makeLoginSchema(messages: ValidationMessages) {
 export function makeRegistrationSchema(messages: ValidationMessages) {
   return z
     .object({
-      name: z.string().trim().min(1, messages.nameRequired).max(100, messages.nameMax),
-      email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
+      name: z.string().trim().min(1, messages.nameRequired).max(TEXT_LIMITS.personName, messages.nameMax),
+      email: z.string().trim().min(1, messages.emailRequired).max(TEXT_LIMITS.email, messages.emailInvalid).email(messages.emailInvalid),
       password: z.string().min(12, messages.passwordMin).max(72, messages.passwordMax),
       confirmPassword: z.string(),
     })
@@ -37,7 +38,7 @@ export function makeRegistrationSchema(messages: ValidationMessages) {
 
 export function makeForgotPasswordSchema(messages: ValidationMessages) {
   return z.object({
-    email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
+    email: z.string().trim().min(1, messages.emailRequired).max(TEXT_LIMITS.email, messages.emailInvalid).email(messages.emailInvalid),
   })
 }
 

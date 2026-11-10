@@ -3,7 +3,7 @@ import { defineMessages } from '../defineMessages'
 export const validationMessages = defineMessages({
   en: {
     nameRequired: 'Enter your name',
-    nameMax: 'Use at most 100 characters',
+    nameMax: 'Use at most 80 characters',
     emailRequired: 'Enter your email address',
     emailInvalid: 'Enter a valid email address',
     passwordRequired: 'Enter your password',
@@ -13,7 +13,7 @@ export const validationMessages = defineMessages({
   },
   es: {
     nameRequired: 'Ingresa tu nombre',
-    nameMax: 'Usa como máximo 100 caracteres',
+    nameMax: 'Usa como máximo 80 caracteres',
     emailRequired: 'Ingresa tu correo electrónico',
     emailInvalid: 'Ingresa un correo electrónico válido',
     passwordRequired: 'Ingresa tu contraseña',

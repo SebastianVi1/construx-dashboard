@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TEXT_LIMITS } from '../../components/form'
 import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
 import { roleSchema } from '../permissions/can'
 import { personSchema } from '../people/personSchema'
@@ -108,7 +109,12 @@ export type InviteValidationMessages = { emailRequired: string; emailInvalid: st
 
 export function makeInviteSchema(messages: InviteValidationMessages) {
   return z.object({
-    email: z.string().trim().min(1, messages.emailRequired).email(messages.emailInvalid),
+    email: z
+      .string()
+      .trim()
+      .min(1, messages.emailRequired)
+      .max(TEXT_LIMITS.email, messages.emailInvalid)
+      .email(messages.emailInvalid),
     roleCode: z.string().min(1, messages.roleRequired),
     projectId: z.string(),
   })

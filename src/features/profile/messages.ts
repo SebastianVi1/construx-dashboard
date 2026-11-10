@@ -73,10 +73,10 @@ export const profileMessages = defineMessages({
       },
       validation: {
         fullNameRequired: 'Enter your full name.',
-        fullNameMax: 'Use at most 160 characters.',
+        fullNameMax: 'Use at most 80 characters.',
         phoneRequired: 'Enter your phone number.',
         phoneFormat: 'Pick a country and enter a complete number.',
-        tradeMax: 'Use at most 80 characters.',
+        tradeMax: 'Use at most 60 characters.',
       },
       error: {
         invalid: 'Check your details and try again.',
@@ -157,10 +157,10 @@ export const profileMessages = defineMessages({
       },
       validation: {
         fullNameRequired: 'Escribe tu nombre completo.',
-        fullNameMax: 'Usa como máximo 160 caracteres.',
+        fullNameMax: 'Usa como máximo 80 caracteres.',
         phoneRequired: 'Escribe tu número de teléfono.',
         phoneFormat: 'Elige un país y escribe el número completo.',
-        tradeMax: 'Usa como máximo 80 caracteres.',
+        tradeMax: 'Usa como máximo 60 caracteres.',
       },
       error: {
         invalid: 'Revisa tus datos e inténtalo de nuevo.',
