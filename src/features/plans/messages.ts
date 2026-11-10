@@ -44,6 +44,8 @@ export const plansMessages = defineMessages({
     deleteBody: '{name} is removed from the site and its file is deleted. This cannot be undone.',
     deleteConfirm: 'Delete plan',
     deleting: 'Deleting…',
+    deleteCancel: 'Cancel',
+    deleteError: 'We could not delete the plan. Try again.',
     validation: {
       required: 'Choose an image to upload.',
       fileType: 'Only JPEG, PNG and WebP images can be uploaded.',
@@ -107,6 +109,8 @@ export const plansMessages = defineMessages({
     deleteBody: '{name} se quita de la obra y se borra su archivo. No se puede deshacer.',
     deleteConfirm: 'Eliminar plano',
     deleting: 'Eliminando…',
+    deleteCancel: 'Cancelar',
+    deleteError: 'No pudimos eliminar el plano. Inténtalo de nuevo.',
     validation: {
       required: 'Elige una imagen para subir.',
       fileType: 'Solo se pueden subir imágenes JPEG, PNG y WebP.',

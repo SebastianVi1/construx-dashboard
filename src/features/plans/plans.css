@@ -113,12 +113,6 @@
   border-radius: var(--cx-radius-md);
 }
 
-.plan-upload__description {
-  min-height: 70px;
-  padding-right: 14px;
-  resize: vertical;
-}
-
 .plan-upload__progress {
   width: 100%;
   accent-color: var(--cx-primary);

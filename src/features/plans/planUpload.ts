@@ -1,4 +1,5 @@
 import { compressImage, imageContentTypes } from '../../lib/image'
+import { TEXT_LIMITS } from '../../components/form'
 
 const MB = 1024 * 1024
 
@@ -12,8 +13,8 @@ export const SKIP_COMPRESSION_BELOW = 1.5 * MB
 export const MAX_EDGE = 6000
 /** WebP keeps lines and text sharper than JPEG at the same size. */
 export const WEBP_QUALITY = 0.85
-export const MAX_NAME_LENGTH = 120
-export const MAX_DESCRIPTION_LENGTH = 500
+export const MAX_NAME_LENGTH = TEXT_LIMITS.documentName
+export const MAX_DESCRIPTION_LENGTH = TEXT_LIMITS.longText
 
 export const planContentTypes = imageContentTypes
 
