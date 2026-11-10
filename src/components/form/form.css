@@ -344,3 +344,17 @@
     animation: none;
   }
 }
+
+/* A one-field form shown in place, such as "new folder". */
+.inline-form {
+  display: grid;
+  gap: 12px;
+  max-width: 420px;
+  margin-bottom: 20px;
+}
+
+.inline-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
