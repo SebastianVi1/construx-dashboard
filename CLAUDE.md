@@ -17,6 +17,8 @@ React 19 + TypeScript + Vite 8 (Rolldown) SPA. Bun is the package manager/runtim
 
 **Provider stack** (`src/main.tsx`, order matters): `BrowserRouter` → `LocaleProvider` → `OnboardingProvider` → `AuthProvider` → `App`. `src/App.tsx` is the route table (`/`, `/login`, `/register`, `/verify-email`, `/auth/complete`, `/account`). `features/home/HomePage.tsx` exists but is intentionally unrouted.
 
+**Currency** (`src/currency/`): amounts are stored in MXN; `CurrencyProvider` holds the MXN/USD display preference (`localStorage` key `construx.currency`) and a daily USD→MXN rate from Frankfurter, cached under `construx.exchangeRate`, fetched only when USD is picked. Show money with `useCurrency().money(amountMxn)`; convert typed amounts with `toMxn`/`fromMxn`.
+
 **Auth** (`src/features/auth/`): the backend uses HttpOnly cookies (access JWT + rotating refresh token); JS never touches tokens. `auth.md` (untracked, repo root) documents the backend contract (endpoints, CSRF, Google OIDC flow).
 - Transport lives in `src/lib/http.ts`: axios (not fetch), `withCredentials: true`, fetches a CSRF token via GET before every mutating call (`sendWithCsrf`, `sendJson`), shares one in-flight refresh, and is injectable for tests (`configureHttp`). Every feature API goes through it.
 - `authApi.ts`: the session endpoints (login, register, logout, `/me`, refresh, verification). Only `features/auth` imports it (ESLint `no-restricted-imports`); `passwordResetApi.ts` holds the reset calls other features may use.

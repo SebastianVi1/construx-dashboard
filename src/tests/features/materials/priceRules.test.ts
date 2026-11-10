@@ -41,9 +41,10 @@ describe('money', () => {
     expect(moneyText('1245.50', 'es')).toBe('$1,245.50')
   })
 
-  it('copy names the active currency and has no leftover USD references', () => {
+  it('feature copy names the active currency and has no leftover USD references', () => {
     for (const locale of ['en', 'es'] as const) {
-      const text = JSON.stringify(messages[locale])
+      // The shared slice holds the MXN/USD switcher and its exchange-rate note.
+      const text = JSON.stringify({ ...messages[locale], common: undefined })
       expect(text).toContain(CURRENCY)
       expect(text).not.toContain('USD')
       expect(text).not.toMatch(/dólares|dollars/i)

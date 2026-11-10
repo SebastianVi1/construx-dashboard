@@ -384,6 +384,15 @@
   min-width: 0;
 }
 
+.account-menu__rate {
+  margin: -6px 0 4px;
+  padding: 0 10px;
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: right;
+}
+
 /* ---------- Side navigation ---------- */
 
 .workspace-nav {
