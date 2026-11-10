@@ -163,6 +163,7 @@ export function MoveDialog({
           className="button button--primary"
           disabled={selected === undefined || busy}
           onClick={() => void move()}
+          aria-busy={busy}
         >
           {busy ? t.moving : t.moveHere}
         </button>

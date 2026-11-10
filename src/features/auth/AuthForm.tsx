@@ -141,6 +141,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
                 className="auth-resend__button"
                 onClick={handleResend}
                 disabled={resendStatus === 'sending'}
+                aria-busy={resendStatus === 'sending'}
               >
                 {resendStatus === 'sending' ? m.auth.accepted.resendSending : m.auth.accepted.resendButton}
               </button>

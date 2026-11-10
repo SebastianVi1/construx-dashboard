@@ -192,6 +192,7 @@ export function ZonePanel({
                   className="button button--small button--danger"
                   onClick={handleDelete}
                   disabled={deleting}
+                  aria-busy={deleting}
                 >
                   {deleting ? t.deleting : t.deleteConfirm}
                 </button>

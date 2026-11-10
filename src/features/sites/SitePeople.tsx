@@ -115,6 +115,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
                           disabled={busyId !== null}
                           aria-label={formatMessage(t.removeLabel, { name: nameOf(person) })}
                           onClick={() => void remove(person)}
+                          aria-busy={busyId === person.accessId}
                         >
                           {busyId === person.accessId ? t.removing : t.remove}
                         </button>
@@ -217,7 +218,7 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
             ))}
           </select>
         </span>
-        <button type="submit" className="button" disabled={busy || !selected}>
+        <button type="submit" className="button" disabled={busy || !selected} aria-busy={busy}>
           {busy ? t.assigning : t.assign}
         </button>
       </div>

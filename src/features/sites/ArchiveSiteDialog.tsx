@@ -40,7 +40,7 @@ export function ArchiveSiteDialog({ organizationId, site, onArchived, onClose }:
         <button type="button" className="button" onClick={onClose} disabled={busy}>
           {t.detail.cancel}
         </button>
-        <button type="button" className="button button--danger" onClick={() => void archive()} disabled={busy}>
+        <button type="button" className="button button--danger" onClick={() => void archive()} disabled={busy} aria-busy={busy}>
           {busy ? t.detail.archiving : t.detail.archiveConfirm}
         </button>
       </div>

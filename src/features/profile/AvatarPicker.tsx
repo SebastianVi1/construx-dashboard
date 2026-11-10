@@ -139,7 +139,7 @@ export function AvatarPicker({
           <button type="button" className="button button--small" disabled={busy} onClick={() => setPreviewing(true)}>
             {t.view}
           </button>
-          <button type="button" className="button button--small" disabled={busy} onClick={() => void remove()}>
+          <button type="button" className="button button--small" disabled={busy} onClick={() => void remove()} aria-busy={state === 'removing'}>
             {state === 'removing' ? t.removing : t.remove}
           </button>
         </div>

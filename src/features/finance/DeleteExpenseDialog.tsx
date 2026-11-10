@@ -49,7 +49,7 @@ export function DeleteExpenseDialog({ organizationId, siteId, expense, onDeleted
         <button type="button" className="button" onClick={onClose} disabled={busy}>
           {t.deleteDialog.cancel}
         </button>
-        <button type="button" className="button button--danger" onClick={() => void remove()} disabled={busy}>
+        <button type="button" className="button button--danger" onClick={() => void remove()} disabled={busy} aria-busy={busy}>
           {busy ? t.deleteDialog.deleting : t.deleteDialog.confirm}
         </button>
       </div>

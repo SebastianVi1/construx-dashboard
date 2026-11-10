@@ -112,7 +112,7 @@ export function AcceptInvitationPage() {
           {t.signIn}
         </Link>
       ) : (
-        <button type="button" className="org-primary" onClick={() => void accept()} disabled={busy}>
+        <button type="button" className="org-primary" onClick={() => void accept()} disabled={busy} aria-busy={busy}>
           {busy ? t.pending : t.accept}
         </button>
       )}
