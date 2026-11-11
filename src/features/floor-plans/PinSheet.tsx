@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useLocale } from '../../i18n'
+import { formatMessage, useLocale } from '../../i18n'
 import { ApiError } from '../../lib/http'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import {
@@ -17,6 +17,9 @@ import { getFloorPlanRoster } from './floorPlanRosterApi'
 import { PIN_DESCRIPTION_MAX, PIN_TITLE_MAX, pinErrors, pinInput, pinVariant, type PinValues } from './pinForm'
 import { MAX_PIN_PHOTOS, uploadPinPhoto } from './pinPhoto'
 import { usePhotoUploads } from './usePhotoUploads'
+import { PinIcon } from './floorPlanIcons'
+import { Avatar } from '../profile/Avatar'
+import '../profile/profile.css'
 import '../../components/form/form.css'
 
 type Target = { organizationId: string; siteId: string; floorPlanId: string }
@@ -246,13 +249,19 @@ function PinCreateForm({ x, y, canManagePlan, onSaved, onClose, ...target }: Cre
   )
 }
 
+/** An issue's life in order; closing straight from open skips the middle step's date. */
+const PIN_STEPS: PinStatus[] = ['OPEN', 'RESOLVED', 'CLOSED']
+
 type DetailProps = Omit<PinSheetProps, 'mode'> & { pinId: string }
 
 function PinDetailView({ pinId, onSaved, onDeleted, onClose, nameFor, ...target }: DetailProps) {
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.floorPlans.pins
   const { organizationId, siteId, floorPlanId } = target
   const key = `${organizationId}:${siteId}:${floorPlanId}:${pinId}`
+  const when = (iso: string) =>
+    new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
+  const day = (iso: string) => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(new Date(iso))
 
   const read = useRemoteData(key, () => getPin(organizationId, siteId, floorPlanId, pinId))
   const pin = read.data
@@ -361,14 +370,7 @@ function PinDetailView({ pinId, onSaved, onDeleted, onClose, nameFor, ...target 
       <div className="zone-panel__header">
         <div className="zone-panel__heading">
           <h2 className="zone-panel__title">{pin.title ?? t.untitledPhoto}</h2>
-          {pin.kind === 'ISSUE' && pin.status ? (
-            <span className={`pin-status pin-status--${pin.status.toLowerCase()}`}>
-              <span className="visually-hidden">{t.statusLabel}: </span>
-              {t.status[pin.status]}
-            </span>
-          ) : (
-            <span className="pin-status pin-status--photo">{t.kind.PHOTO}</span>
-          )}
+          {pin.kind === 'PHOTO' ? <span className="pin-status pin-status--photo">{t.kind.PHOTO}</span> : null}
         </div>
         <button type="button" className="fp-close" onClick={onClose} aria-label={t.close}>
           ×
@@ -402,20 +404,64 @@ function PinDetailView({ pinId, onSaved, onDeleted, onClose, nameFor, ...target 
         />
       ) : (
         <>
-          <dl className="zone-panel__details">
-            <dt>{t.reportedBy}</dt>
-            <dd>{pin.createdBy.fullName ?? t.unknownPerson}</dd>
-            <dt>{t.reportedOn}</dt>
-            <dd>{new Date(pin.createdAt).toLocaleString()}</dd>
+          {pin.kind === 'ISSUE' && pin.status ? (
+            <ol className="pin-track" aria-label={t.statusLabel}>
+              {PIN_STEPS.map((step, index) => {
+                const current = PIN_STEPS.indexOf(pin.status ?? 'OPEN')
+                const date = step === 'RESOLVED' ? pin.resolvedAt : step === 'CLOSED' ? pin.closedAt : pin.createdAt
+                return (
+                  <li
+                    key={step}
+                    className={`pin-track__step pin-track__step--${step.toLowerCase()}`}
+                    data-reached={index <= current || undefined}
+                    aria-current={index === current ? 'step' : undefined}
+                  >
+                    <span className="pin-track__label">{t.status[step]}</span>
+                    {index <= current && date ? <span className="pin-track__date">{day(date)}</span> : null}
+                  </li>
+                )
+              })}
+            </ol>
+          ) : null}
+
+          <ul className="pin-people">
+            <li className="pin-person">
+              <Avatar fullName={pin.createdBy.fullName} decorative />
+              <span className="pin-person__text">
+                <span className="visually-hidden">{t.reportedBy}: </span>
+                <span className="pin-person__name">{pin.createdBy.fullName ?? t.unknownPerson}</span>
+                <span className="pin-person__note">
+                  {formatMessage(pin.kind === 'ISSUE' ? t.reportedAt : t.addedAt, { date: when(pin.createdAt) })}
+                </span>
+              </span>
+            </li>
             {pin.kind === 'ISSUE' ? (
-              <>
-                <dt>{t.assigneeLabel}</dt>
-                <dd>{pin.assignee ? (pin.assignee.fullName ?? t.unknownPerson) : t.assigneeNone}</dd>
-              </>
+              <li className="pin-person">
+                {pin.assignee ? (
+                  <Avatar fullName={pin.assignee.fullName} decorative />
+                ) : (
+                  <span className="pin-person__nobody" aria-hidden />
+                )}
+                <span className="pin-person__text">
+                  <span className="pin-person__name">
+                    {pin.assignee ? (pin.assignee.fullName ?? t.unknownPerson) : t.unassigned}
+                  </span>
+                  {pin.assignee ? <span className="pin-person__note">{t.assignedRole}</span> : null}
+                </span>
+                {!pin.assignee && pin.can.assign ? (
+                  <button type="button" className="button button--small" disabled={busy} onClick={() => setEditing(true)}>
+                    {t.assign}
+                  </button>
+                ) : null}
+              </li>
             ) : null}
-            <dt>{t.zone}</dt>
-            <dd>{pin.zoneName ?? t.noZone}</dd>
-          </dl>
+          </ul>
+
+          <p className="pin-place">
+            <PinIcon />
+            <span className="visually-hidden">{t.zone}: </span>
+            {pin.zoneName ?? t.noZone}
+          </p>
           {pin.description ? <p className="zone-panel__description">{pin.description}</p> : null}
 
           {pin.can.resolve || pin.can.close || pin.can.reopen ? (
