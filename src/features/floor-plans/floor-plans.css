@@ -715,7 +715,9 @@
   max-width: 132px;
   padding: 3px;
   border-radius: var(--cx-radius-sm);
-  background: color-mix(in srgb, var(--cx-surface) 70%, transparent);
+  background: color-mix(in srgb, var(--cx-surface) 88%, transparent);
+  /* Framed in its zone's colour: the figures stand beside the zone, not on it */
+  box-shadow: 0 0 0 1.5px var(--zone-color, var(--cx-border-strong)), 0 2px 6px var(--cx-shadow-color);
   cursor: pointer;
 }
 

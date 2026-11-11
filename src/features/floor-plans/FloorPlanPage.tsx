@@ -331,6 +331,7 @@ export function FloorPlanPage() {
                         selectedOccupant ? occupantAnchorKey(selectedOccupant.zone, selectedOccupant.occupant) : null
                       }
                       occupants={plan.occupantsByZone}
+                      avoidPins={pinsVisible ? shownPins : undefined}
                       dragging={draggingResource !== null || draggingReassign !== null}
                       onDropResource={(zone, resource) => {
                         setDraggingResource(null)
@@ -384,6 +385,8 @@ export function FloorPlanPage() {
                     canManagePlan={canManagePlan}
                     onSaved={(pin) => {
                       pins.upsert(pin)
+                      // Assigning an issue also places the person in the pin's zone
+                      if (pin.assignee) plan.reloadState()
                       setPinSheet({ kind: 'view', pinId: pin.id })
                     }}
                     onDeleted={(pinId) => {
