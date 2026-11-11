@@ -15,6 +15,7 @@ import {
   type DocumentEntry,
   type DocumentFolder,
 } from './documentFoldersApi'
+import { DOCUMENT_ACCEPT, documentFileIssue } from './documentFile'
 import './documents.css'
 
 function folderName(folder: DocumentFolder, locale: Locale) {
@@ -120,6 +121,12 @@ export function DocumentFolderPage() {
     const file = e.target.files?.[0]
     if (!file) return
     setUploadError(null)
+    const issue = documentFileIssue(file)
+    if (issue) {
+      setUploadError(t.fileIssues[issue])
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
     setUploading(true)
     try {
       const entry = await uploadDocumentFile(org.id, siteId, folderId, file)
@@ -165,6 +172,7 @@ export function DocumentFolderPage() {
             <input
               ref={fileInputRef}
               type="file"
+              accept={DOCUMENT_ACCEPT}
               className="visually-hidden"
               onChange={handleFileSelect}
               aria-label={t.uploadFile}

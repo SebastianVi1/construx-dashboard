@@ -33,6 +33,11 @@ export const documentsMessages = defineMessages({
     uploadFile: 'Upload file',
     uploading: 'Uploading…',
     uploadError: 'We could not upload the file. Try again.',
+    fileIssues: {
+      fileType: 'Upload a PDF, an image, an Office file (Word, Excel, PowerPoint) or a DWG/DXF drawing.',
+      tooLarge: 'The file is larger than 50 MB.',
+      empty: 'The file is empty.',
+    },
     downloadError: 'We could not download the file. The link may have expired; reload the page and try again.',
     download: 'Download',
     delete: 'Delete',
@@ -79,6 +84,11 @@ export const documentsMessages = defineMessages({
     uploadFile: 'Subir archivo',
     uploading: 'Subiendo…',
     uploadError: 'No pudimos subir el archivo. Intentá de nuevo.',
+    fileIssues: {
+      fileType: 'Sube un PDF, una imagen, un archivo de Office (Word, Excel, PowerPoint) o un plano DWG/DXF.',
+      tooLarge: 'El archivo pesa más de 50 MB.',
+      empty: 'El archivo está vacío.',
+    },
     downloadError: 'No pudimos descargar el archivo. El enlace puede haber vencido; recargá la página e intentá de nuevo.',
     download: 'Descargar',
     delete: 'Eliminar',
