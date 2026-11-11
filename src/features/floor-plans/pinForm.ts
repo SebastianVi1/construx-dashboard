@@ -52,3 +52,8 @@ export function visiblePins(pins: Pin[], { showClosed }: { showClosed: boolean }
 export function clampToBounds(x: number, y: number, width: number, height: number): [number, number] {
   return [Math.min(Math.max(x, 0), width), Math.min(Math.max(y, 0), height)]
 }
+
+/** The CSS modifier that colours a pin: its kind, and for issues their status. */
+export function pinVariant(pin: Pick<Pin, 'kind' | 'status'>): string {
+  return pin.kind === 'PHOTO' ? 'photo' : `issue-${(pin.status ?? 'OPEN').toLowerCase()}`
+}

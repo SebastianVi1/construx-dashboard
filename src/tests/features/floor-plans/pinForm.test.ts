@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { clampToBounds, pinErrors, pinInput, visiblePins } from '../../../features/floor-plans/pinForm'
+import { clampToBounds, pinErrors, pinInput, pinVariant, visiblePins } from '../../../features/floor-plans/pinForm'
 import type { Pin } from '../../../features/floor-plans/pinsApi'
 
 const values = { kind: 'ISSUE' as const, title: 'Cracked tile', description: '', assigneeMembershipId: '', photoCount: 0 }
@@ -58,5 +58,14 @@ describe('clampToBounds', () => {
   it('pulls a point back onto the plan image', () => {
     expect(clampToBounds(-5, 9999, 100, 50)).toEqual([0, 50])
     expect(clampToBounds(40, 20, 100, 50)).toEqual([40, 20])
+  })
+})
+
+describe('pinVariant', () => {
+  it('colours issues by status and photos on their own', () => {
+    expect(pinVariant({ kind: 'ISSUE', status: 'OPEN' })).toBe('issue-open')
+    expect(pinVariant({ kind: 'ISSUE', status: 'RESOLVED' })).toBe('issue-resolved')
+    expect(pinVariant({ kind: 'ISSUE', status: 'CLOSED' })).toBe('issue-closed')
+    expect(pinVariant({ kind: 'PHOTO', status: null })).toBe('photo')
   })
 })

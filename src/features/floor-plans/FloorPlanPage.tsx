@@ -18,7 +18,14 @@ import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
 import { memberName, occupantAnchorKey } from './zoneOccupants'
 import type { Occupant } from './zoneOccupants'
 import { useFloorPlan } from './useFloorPlan'
-import { ScaleIcon } from './floorPlanIcons'
+import { PinIcon, ScaleIcon } from './floorPlanIcons'
+import { PinLayer } from './PinLayer'
+import { PinAddTool } from './PinAddTool'
+import { PinSheet, type PinSheetMode } from './PinSheet'
+import { PinListPanel, type PinListFilters } from './PinListPanel'
+import { usePins } from './usePins'
+import { visiblePins } from './pinForm'
+import type { Pin } from './pinsApi'
 import './floor-plans.css'
 
 export function FloorPlanPage() {
@@ -41,6 +48,14 @@ export function FloorPlanPage() {
   const [zonesVisible, setZonesVisible] = useState(true)
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null)
   const [zoneConflictBanner, setZoneConflictBanner] = useState(false)
+
+  // Pin state: the list's filters also decide which pins the plan shows
+  const [pinsVisible, setPinsVisible] = useState(true)
+  const [pinFilters, setPinFilters] = useState<PinListFilters>({ showClosed: false })
+  const [addingPin, setAddingPin] = useState(false)
+  const [pinSheet, setPinSheet] = useState<PinSheetMode | null>(null)
+  const pins = usePins(orgId, siteId, floorPlanId, pinFilters)
+  const shownPins = visiblePins(pins.pins, pinFilters)
 
   // Assignment state
   const [draggingResource, setDraggingResource] = useState<DraggableResource | null>(null)
@@ -93,6 +108,18 @@ export function FloorPlanPage() {
   const handleZoneConflict = () => {
     setZoneConflictBanner(true)
     setSelectedZone(null)
+  }
+
+  const handlePinPlaced = (x: number, y: number) => {
+    setAddingPin(false)
+    setSelectedZone(null)
+    setPinSheet({ kind: 'create', x, y })
+  }
+
+  const openPin = (pin: Pin, center: boolean) => {
+    setAddingPin(false)
+    setPinSheet({ kind: 'view', pinId: pin.id })
+    if (center) mapInstance?.panTo([pin.y, pin.x])
   }
 
   if (!siteId || !floorPlanId || !organization) return null
@@ -184,7 +211,9 @@ export function FloorPlanPage() {
           ) : (
             <>
               <section
-                className={`floor-plan-workspace${showRoster ? ' floor-plan-workspace--roster' : ''}`}
+                className={`floor-plan-workspace${showRoster ? ' floor-plan-workspace--roster' : ''}${
+                  pinSheet ? ' floor-plan-workspace--sheet' : ''
+                }`}
                 aria-label={floorPlan.name}
               >
                 {isReady ? (
@@ -200,6 +229,18 @@ export function FloorPlanPage() {
                         {t.calibration.calibrate}
                       </button>
                     </div>
+                    <div className="floor-plan-toolbar__group floor-plan-toolbar__group--pins">
+                      <button
+                        type="button"
+                        className="fp-tool"
+                        aria-pressed={addingPin}
+                        disabled={!mapInstance || calibrating}
+                        onClick={() => setAddingPin((v) => !v)}
+                      >
+                        <PinIcon />
+                        {t.pins.add}
+                      </button>
+                    </div>
                     {isReady && hasCalibration && mapInstance && !calibrating ? (
                       <ZoneDrawTool
                         map={mapInstance}
@@ -211,8 +252,20 @@ export function FloorPlanPage() {
                         overlayHost={overlayHost}
                       />
                     ) : null}
-                    {hasCalibration ? (
-                      <div className="floor-plan-toolbar__group floor-plan-toolbar__group--end">
+                    {hasCalibration ? null : (
+                      <p className="floor-plan-toolbar__note" role="status">{t.calibration.notCalibrated}</p>
+                    )}
+                    <div className="floor-plan-toolbar__group floor-plan-toolbar__group--end">
+                      <button
+                        type="button"
+                        className="fp-switch"
+                        aria-pressed={pinsVisible}
+                        onClick={() => setPinsVisible((v) => !v)}
+                      >
+                        <span className="fp-switch__track" aria-hidden />
+                        {t.pins.toggleVisibility}
+                      </button>
+                      {hasCalibration ? (
                         <button
                           type="button"
                           className="fp-switch"
@@ -222,10 +275,8 @@ export function FloorPlanPage() {
                           <span className="fp-switch__track" aria-hidden />
                           {t.zones.toggleVisibility}
                         </button>
-                      </div>
-                    ) : (
-                      <p className="floor-plan-toolbar__note" role="status">{t.calibration.notCalibrated}</p>
-                    )}
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
 
@@ -262,7 +313,12 @@ export function FloorPlanPage() {
                       zones={zones}
                       metersPerPx={calibration.metersPerPx}
                       visible={zonesVisible}
-                      onZoneClick={(zone) => setSelectedZone(zone)}
+                      onZoneClick={(zone) => {
+                        // While a pin is being placed, a tap on a zone places the pin there
+                        if (addingPin) return
+                        setPinSheet(null)
+                        setSelectedZone(zone)
+                      }}
                       onOccupantClick={(zone, occupant) =>
                         // A second click on the same figure closes its bubble
                         setSelectedOccupant((prev) =>
@@ -298,9 +354,46 @@ export function FloorPlanPage() {
                       }}
                     />
                   ) : null}
+                  {mapInstance ? (
+                    <PinLayer
+                      map={mapInstance}
+                      pins={shownPins}
+                      visible={pinsVisible}
+                      selectedId={pinSheet?.kind === 'view' ? pinSheet.pinId : null}
+                      draft={pinSheet?.kind === 'create' ? pinSheet : null}
+                      labelOf={(pin) => pin.title ?? t.pins.kind[pin.kind]}
+                      onPinClick={(pin) => openPin(pin, false)}
+                    />
+                  ) : null}
+                  {mapInstance && addingPin ? (
+                    <PinAddTool
+                      map={mapInstance}
+                      overlayHost={overlayHost}
+                      onPlaced={handlePinPlaced}
+                      onCancel={() => setAddingPin(false)}
+                    />
+                  ) : null}
                 </div>
 
-                {selectedZone ? (
+                {pinSheet ? (
+                  <PinSheet
+                    mode={pinSheet}
+                    organizationId={orgId}
+                    siteId={siteId}
+                    floorPlanId={floorPlanId}
+                    canManagePlan={canManagePlan}
+                    onSaved={(pin) => {
+                      pins.upsert(pin)
+                      setPinSheet({ kind: 'view', pinId: pin.id })
+                    }}
+                    onDeleted={(pinId) => {
+                      pins.remove(pinId)
+                      setPinSheet(null)
+                    }}
+                    onClose={() => setPinSheet(null)}
+                    nameFor={(id) => memberName(id, assignments)}
+                  />
+                ) : selectedZone ? (
                   <ZonePanel
                     key={selectedZone.id}
                     zone={selectedZone}
@@ -318,9 +411,15 @@ export function FloorPlanPage() {
                     nameFor={(id) => memberName(id, assignments)}
                   />
                 ) : (
-                  <aside className="zone-panel zone-panel--empty">
-                    <p>{hasCalibration ? t.zones.inspectorEmpty : t.calibration.notCalibrated}</p>
-                  </aside>
+                  <PinListPanel
+                    pins={shownPins}
+                    status={pins.status}
+                    zones={zones}
+                    filters={pinFilters}
+                    onFiltersChange={setPinFilters}
+                    onSelect={(pin) => openPin(pin, true)}
+                    onRetry={pins.reload}
+                  />
                 )}
               </section>
 

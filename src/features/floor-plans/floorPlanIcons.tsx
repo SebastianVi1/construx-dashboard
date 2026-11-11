@@ -41,3 +41,13 @@ export function RectangleIcon(props: IconProps) {
     </svg>
   )
 }
+
+/** A map pin: marking an issue or a photo on the plan. */
+export function PinIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </svg>
+  )
+}
