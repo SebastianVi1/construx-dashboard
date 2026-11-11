@@ -543,7 +543,8 @@
   color: var(--cx-ink);
 }
 
-.fp-segmented__option[aria-selected='true'] {
+.fp-segmented__option[aria-selected='true'],
+.fp-segmented__option[aria-pressed='true'] {
   background: var(--cx-surface);
   color: var(--cx-ink);
   box-shadow: 0 1px 3px var(--cx-shadow-color);

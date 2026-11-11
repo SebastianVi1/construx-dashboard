@@ -40,7 +40,6 @@ export function PinListPanel({ pins, status, zones, filters, onFiltersChange, on
             type="button"
             className="fp-segmented__option"
             aria-pressed={filters.kind === kind}
-            aria-selected={filters.kind === kind}
             onClick={() => onFiltersChange({ ...filters, kind })}
           >
             {kindLabel(kind)}

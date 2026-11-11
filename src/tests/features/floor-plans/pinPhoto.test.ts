@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { MAX_PHOTO_BYTES, MAX_PIN_PHOTOS, PinPhotoTooLargeError, uploadPinPhoto } from '../../../features/floor-plans/pinPhoto'
+import { MAX_PHOTO_BYTES, MAX_PIN_PHOTOS, PinPhotoTooLargeError, pickPinPhoto, uploadPinPhoto } from '../../../features/floor-plans/pinPhoto'
 import { StorageUploadError } from '../../../features/plans/plansApi'
 
 const file = (size: number, type = 'image/jpeg') => new File([new Uint8Array(size)], 'site.jpg', { type })
@@ -53,5 +53,33 @@ describe('uploadPinPhoto', () => {
       },
     })
     await expect(upload).rejects.toBeInstanceOf(StorageUploadError)
+  })
+})
+
+describe('pickPinPhoto', () => {
+  const jpeg = (size: number) => new Blob([new Uint8Array(size)], { type: 'image/jpeg' })
+
+  it('takes the shrunk JPEG when it is smaller', () => {
+    const picked = pickPinPhoto(file(9000), jpeg(2000))
+    expect(picked.size).toBe(2000)
+    expect(picked.type).toBe('image/jpeg')
+    expect(picked.name).toBe('site.jpg')
+  })
+
+  it('keeps a small original that shrinking did not beat', () => {
+    const original = file(1000)
+    expect(pickPinPhoto(original, jpeg(1500))).toBe(original)
+  })
+
+  it('takes the JPEG when the original is a type the API refuses, such as HEIC', () => {
+    const heic = new File([new Uint8Array(1000)], 'IMG_1.heic', { type: 'image/heic' })
+    const picked = pickPinPhoto(heic, jpeg(1500))
+    expect(picked.type).toBe('image/jpeg')
+    expect(picked.name).toBe('IMG_1.jpg')
+  })
+
+  it('keeps the original when the browser could not encode it', () => {
+    const original = file(1000)
+    expect(pickPinPhoto(original, null)).toBe(original)
   })
 })

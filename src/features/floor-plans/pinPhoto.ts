@@ -1,4 +1,4 @@
-import { compressImage } from '../../lib/image'
+import { compressedFileName, imageContentTypes, scaledSize } from '../../lib/image'
 import { sendToStorage } from '../plans/plansApi'
 import { requestPinPhotoUpload } from './pinsApi'
 
@@ -16,9 +16,40 @@ export class PinPhotoTooLargeError extends Error {
   }
 }
 
-/** A phone photo shrunk to 2000 px; the original comes back when the browser cannot re-encode it. */
-export function shrinkPinPhoto(file: File): Promise<File> {
-  return compressImage(file, { maxEdge: PHOTO_EDGE, quality: 0.8 })
+/** The shrunk JPEG, unless the original is already an accepted image and no bigger. */
+export function pickPinPhoto(original: File, shrunk: Blob | null): File {
+  if (!shrunk) return original
+  const accepted = (imageContentTypes as readonly string[]).includes(original.type)
+  if (accepted && shrunk.size >= original.size) return original
+  return new File([shrunk], compressedFileName(original.name, 'image/jpeg'), { type: 'image/jpeg' })
+}
+
+/**
+ * A phone photo scaled to 2000 px and re-encoded as JPEG, which every browser can write (Safari cannot
+ * write WebP and would hand back a PNG bigger than the photo). An image the browser cannot decode comes
+ * back as it is and the API decides.
+ */
+export async function shrinkPinPhoto(file: File): Promise<File> {
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file)
+  } catch {
+    return file
+  }
+  try {
+    const { width, height } = scaledSize(bitmap.width, bitmap.height, PHOTO_EDGE)
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const context = canvas.getContext('2d')
+    if (!context) return file
+    context.imageSmoothingQuality = 'high'
+    context.drawImage(bitmap, 0, 0, width, height)
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8))
+    return pickPinPhoto(file, blob)
+  } finally {
+    bitmap.close()
+  }
 }
 
 /**

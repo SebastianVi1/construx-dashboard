@@ -137,7 +137,6 @@ function PinCreateForm({ x, y, canManagePlan, onSaved, onClose, ...target }: Cre
               type="button"
               className="fp-segmented__option"
               aria-pressed={kind === option}
-              aria-selected={kind === option}
               onClick={() => setKind(option)}
             >
               {t.kind[option]}
@@ -232,7 +231,11 @@ function PinCreateForm({ x, y, canManagePlan, onSaved, onClose, ...target }: Cre
             onPick={(files) => uploads.add(files.slice(0, MAX_PIN_PHOTOS - uploads.items.length))}
           />
           {shown.photos ? <p className="form-field__error">{t.validation[shown.photos]}</p> : null}
-          {submitted && !shown.photos && !uploads.allDone ? <p className="form-field__error">{t.photosWaiting}</p> : null}
+          {submitted && !shown.photos && !uploads.allDone ? (
+            <p className="form-field__error">
+              {uploads.items.some((item) => item.state === 'uploading') ? t.photosWaiting : t.photosFailed}
+            </p>
+          ) : null}
         </div>
 
         {saveError ? <p className="error-text" role="alert">{t.saveError}</p> : null}
@@ -342,7 +345,8 @@ function PinDetailView({ pinId, onSaved, onDeleted, onClose, nameFor, ...target 
               <a href={photo.url} target="_blank" rel="noreferrer" aria-label={t.photoOpen}>
                 <img src={photo.url} alt="" loading="lazy" />
               </a>
-              {pin.can.edit ? (
+              {/* The proof of a fix is only a manager's to remove */}
+              {pin.can.edit && (phase === 'REPORT' || pin.can.assign) ? (
                 <button
                   type="button"
                   className="pin-photo__remove"
