@@ -1,3 +1,4 @@
+import { PanelSkeleton } from './FloorPlanSkeletons'
 import { useState } from 'react'
 import { useLocale } from '../../i18n'
 import { Field, useForm } from '../../components/form'
@@ -253,7 +254,7 @@ export function ZonePanel({
                   </button>
                 </div>
               ) : !assignmentsRead.data ? (
-                <p className="zone-panel__loading">{th.loading}</p>
+                <PanelSkeleton kind="assignments" />
               ) : assignments.length === 0 ? (
                 <p className="zone-panel__empty">{ta.noAssignments}</p>
               ) : (
@@ -339,7 +340,7 @@ export function ZonePanel({
                   </button>
                 </div>
               ) : !auditRead.data ? (
-                <p className="zone-panel__loading">{th.loading}</p>
+                <PanelSkeleton kind="audit" />
               ) : auditEvents.length === 0 ? (
                 <p className="zone-panel__empty">{th.noEvents}</p>
               ) : (

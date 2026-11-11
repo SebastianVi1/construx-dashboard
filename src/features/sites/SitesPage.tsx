@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { filterCounts, type FilterOption } from '../../components/filter'
-import { SkeletonList, Notice } from '../../components/page'
+import { Notice } from '../../components/page'
+import { SitesGridSkeleton } from './SiteSkeletons'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -98,7 +99,7 @@ export function SitesPage() {
             {loadMessage(t.load, siteErrorKind(sites.error))}
           </Notice>
         ) : (
-          <SkeletonList />
+          <SitesGridSkeleton />
         )}
       </section>
 

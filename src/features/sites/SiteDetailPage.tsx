@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { BackLink, SkeletonList, Notice } from '../../components/page'
+import { BackLink, Notice } from '../../components/page'
+import { SiteDetailSkeleton } from './SiteSkeletons'
 import { formatMessage, useLocale } from '../../i18n'
 import { PhaseSchedule } from '../goals/PhasesPage'
 import { SitePhases } from '../goals/SitePhases'
@@ -75,7 +76,7 @@ export function SiteDetailPage() {
             {loadMessage(t.load, siteErrorKind(site.error))}
           </Notice>
         ) : (
-          <SkeletonList />
+          <SiteDetailSkeleton />
         )}
       </div>
     )

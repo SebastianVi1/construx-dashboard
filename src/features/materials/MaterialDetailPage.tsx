@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
-import { BackLink, SkeletonList, Notice } from '../../components/page'
+import { BackLink, SkeletonBlock, SkeletonRegion, SkeletonTable, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -62,7 +62,11 @@ export function MaterialDetailPage() {
             {t.load[loadKind(pricingErrorKind(material.error))]}
           </Notice>
         ) : (
-          <SkeletonList />
+          <>
+            <SkeletonRegion className="page-header__text"><SkeletonBlock width="45%" height={36} /><SkeletonBlock width="65%" height={22} /></SkeletonRegion>
+            <section className="page-section"><h2>{t.detail.latestTitle}</h2><SkeletonTable columns={3} rows={2} compact /></section>
+            <section className="page-section"><h2>{t.detail.historyTitle}</h2><SkeletonTable columns={canManage ? 6 : 5} compact /></section>
+          </>
         )}
       </div>
     )

@@ -1,8 +1,9 @@
+import { TaskBoardSkeleton } from './TaskSkeletons'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
-import { SkeletonList, Notice } from '../../components/page'
+import { Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import type { Goal } from '../goals/goalsApi'
@@ -311,7 +312,7 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
           {t.loadError}
         </Notice>
       ) : (
-        <SkeletonList />
+        <TaskBoardSkeleton columns={filter.status ? 1 : 3} />
       )}
 
       {dialog?.kind === 'create' || dialog?.kind === 'edit' ? (

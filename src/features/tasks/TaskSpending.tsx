@@ -1,6 +1,7 @@
+import { TaskSpendingSkeleton } from './TaskSkeletons'
 import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { DeleteExpenseDialog } from '../finance/DeleteExpenseDialog'
 import { ExpenseDialog } from '../finance/ExpenseDialog'
@@ -49,7 +50,7 @@ export function TaskSpending({ at, task, access }: { at: PhaseRef; task: Task; a
       {notice ? <Notice tone="success">{notice}</Notice> : null}
       {money.status === 'error' ? (
         <Notice tone="error" action={{ label: m.tasks.retry, onClick: money.reload }}>{t.loadError}</Notice>
-      ) : !money.data || !budget ? <SkeletonList /> : (
+      ) : !money.data || !budget ? <TaskSpendingSkeleton canManage={actions.record} /> : (
         <>
           <dl className="task-detail__facts">
             <div><dt>{t.allocated}</dt><dd>{budget.allocatedBudget === null ? t.noBudget : moneyText(budget.allocatedBudget)}</dd></div>

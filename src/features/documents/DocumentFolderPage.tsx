@@ -1,8 +1,9 @@
+import { DocumentEntriesSkeleton } from './DocumentSkeletons'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
-import { BackLink, SkeletonList, Notice } from '../../components/page'
+import { BackLink, SkeletonBlock, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -165,7 +166,7 @@ export function DocumentFolderPage() {
       <BackLink to={`/documents/sites/${encodeURIComponent(siteId)}`}>{t.backToFolders}</BackLink>
       <header className="page-header">
         <div className="page-header__text">
-          <h1>{displayName}</h1>
+          <h1>{foldersRemote.status === 'loading' && !foldersRemote.data ? <span role="status" aria-label={m.workspace.loading}><SkeletonBlock width="min(240px, 60vw)" height={36} /></span> : displayName}</h1>
         </div>
         {canManage && (
           <div className="page-header__actions">
@@ -210,13 +211,13 @@ export function DocumentFolderPage() {
         <Notice tone="error">{downloadError}</Notice>
       )}
 
-      {entriesRemote.status === 'loading' && <SkeletonList />}
+      {entriesRemote.status === 'loading' && !entriesRemote.data && <DocumentEntriesSkeleton />}
       {entriesRemote.status === 'error' && (
         <Notice tone="error" action={{ label: m.workspace.retry, onClick: entriesRemote.reload }}>
           {t.loadFilesError}
         </Notice>
       )}
-      {entriesRemote.status === 'ready' && (
+      {entriesRemote.data !== undefined && entriesRemote.status !== 'error' && (
         entriesRemote.data && entriesRemote.data.length > 0 ? (
           <div className="document-entries-list">
             {entriesRemote.data.map((entry) => (

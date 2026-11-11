@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { SkeletonBlock, SkeletonRegion, SkeletonForm, SkeletonTable, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
@@ -145,7 +145,7 @@ function MembersContent() {
                 {t.invite.rolesError}
               </Notice>
             ) : (
-              <SkeletonList />
+              <SkeletonForm fields={4} />
             )}
           </section>
           {can('VIEW_PLAN') && members.data ? (
@@ -267,7 +267,7 @@ function PendingInvitations({ invitations, sites, busyId, onResend, onRevoke, m,
           {m.members.loadError}
         </Notice>
       ) : (
-        <SkeletonList />
+        <SkeletonTable columns={5} />
       )}
     </section>
   )
@@ -414,7 +414,16 @@ function MemberList({
           {m.members.loadError}
         </Notice>
       ) : (
-        <SkeletonList />
+        <SkeletonRegion>
+          <div className="members-search"><SkeletonBlock height={40} /></div>
+          <div className="member-rows">
+            {Array.from({ length: 4 }, (_, i) => <div className="member-row" key={i}>
+              <SkeletonBlock width={40} height={40} className="skeleton-avatar" />
+              <div className="member-info"><SkeletonBlock width={140} height={20} /><SkeletonBlock width={180} /></div>
+              <div className="member-row__end"><SkeletonBlock width={80} height={24} /></div>
+            </div>)}
+          </div>
+        </SkeletonRegion>
       )}
     </section>
   )

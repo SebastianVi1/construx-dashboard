@@ -1,3 +1,5 @@
+import { SkeletonForm } from '../../components/page'
+import { PanelSkeleton } from './FloorPlanSkeletons'
 import { useRef, useState } from 'react'
 import { formatMessage, useLocale } from '../../i18n'
 import { ApiError } from '../../lib/http'
@@ -315,6 +317,7 @@ function PinDetailView({ pinId, onSaved, onDeleted, onClose, nameFor, ...target 
             ×
           </button>
         </div>
+        {read.status === 'loading' ? <SkeletonForm fields={3} /> : null}
         {read.status === 'error' ? (
           <button type="button" className="button button--small" onClick={read.reload}>
             {m.floorPlans.retry}
@@ -566,7 +569,7 @@ function PinDetailView({ pinId, onSaved, onDeleted, onClose, nameFor, ...target 
                   </button>
                 </div>
               ) : !audit.data ? (
-                <p className="zone-panel__loading">{m.floorPlans.audit.loading}</p>
+                <PanelSkeleton kind="audit" />
               ) : (
                 <ul className="audit-list">
                   {audit.data.map((event) => (

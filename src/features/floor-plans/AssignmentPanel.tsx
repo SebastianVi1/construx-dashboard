@@ -1,3 +1,4 @@
+import { PanelSkeleton } from './FloorPlanSkeletons'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { formatMessage, useLocale } from '../../i18n'
@@ -70,8 +71,8 @@ export function AssignmentPanel({ organizationId, siteId, onDragStart, onDragEnd
       </div>
 
       <div className="assignment-panel__list" role="tabpanel">
-        {roster.status === 'loading' ? (
-          <p className="assignment-panel__empty">{m.floorPlans.loading}</p>
+        {roster.status === 'loading' && !roster.data ? (
+          <PanelSkeleton kind="roster" />
         ) : roster.status === 'error' ? (
           <div className="assignment-panel__empty" role="alert">
             <p>{t.rosterError}</p>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Form, useForm } from '../../components/form'
 import { Modal } from '../../components/modal'
-import { SkeletonList, Notice } from '../../components/page'
+import { SkeletonForm, Notice } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { useLocale } from '../../i18n'
 import { priceFields } from './materialDisplay'
@@ -108,7 +108,7 @@ export function RecordPriceDialog({ organizationId, materials, materialId = '', 
           {t.record.suppliersError}
         </Notice>
       ) : (
-        <SkeletonList />
+        <SkeletonForm fields={materials ? 5 : 4} />
       )}
       <div className="button-row button-row--end modal-actions">
         <button type="button" className="button" onClick={onClose}>

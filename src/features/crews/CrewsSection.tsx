@@ -1,10 +1,11 @@
+import { CrewSkeleton } from './CrewSkeleton'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Field, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { SearchIcon } from '../../components/icons'
 import { ConfirmDialog, Modal } from '../../components/modal'
-import { Notice, SkeletonList } from '../../components/page'
+import { Notice } from '../../components/page'
 import { formatMessage, useLocale, type Messages } from '../../i18n'
 import type { Member } from '../members/membersApi'
 import { Avatar } from '../profile/Avatar'
@@ -177,7 +178,7 @@ export function CrewsSection({ organizationId, members, canManage }: CrewsSectio
           {t.loadError}
         </Notice>
       ) : (
-        <SkeletonList />
+        <CrewSkeleton />
       )}
 
       {creating ? (

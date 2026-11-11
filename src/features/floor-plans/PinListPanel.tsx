@@ -1,3 +1,4 @@
+import { PanelSkeleton } from './FloorPlanSkeletons'
 import { formatMessage, useLocale } from '../../i18n'
 import type { Pin, PinFilters, PinKind } from './pinsApi'
 import type { Zone } from './zonesApi'
@@ -89,7 +90,7 @@ export function PinListPanel({ pins, status, zones, filters, onFiltersChange, on
           </button>
         </div>
       ) : status === 'loading' && pins.length === 0 ? (
-        <p className="zone-panel__loading">{m.floorPlans.audit.loading}</p>
+        <PanelSkeleton kind="pins" />
       ) : pins.length === 0 ? (
         <p className="zone-panel__empty">{filtered || !filters.showClosed ? t.listEmptyFiltered : t.listEmpty}</p>
       ) : (

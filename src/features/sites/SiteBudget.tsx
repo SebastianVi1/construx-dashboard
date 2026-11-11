@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { SkeletonTable, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { BudgetAmountDialog } from '../finance/BudgetAmountDialog'
 import { BudgetChart } from '../finance/BudgetChart'
@@ -10,6 +10,7 @@ import { ExpenseDialog } from '../finance/ExpenseDialog'
 import { ExpenseTable } from '../finance/ExpenseTable'
 import { getBudgetSummary, listExpenses, type BudgetSummary, type Expense } from '../finance/financeApi'
 import '../finance/finance.css'
+import { BudgetOverviewSkeleton } from './SiteSkeletons'
 import { allocationIssue } from './budgetRules'
 import { setSiteBudget, siteErrorKind, type Site } from './sitesApi'
 import { useCurrency } from '../../currency'
@@ -42,7 +43,6 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
     onNotice(notice)
   }
 
-  const failed = summary.status === 'error' || expenses.status === 'error'
   const budget = summary.data?.allocatedBudget ?? site.allocatedBudget
 
   return (
@@ -64,39 +64,25 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
         ) : null}
       </div>
 
-      {failed ? (
-        <Notice
-          tone="error"
-          action={{
-            label: t.retry,
-            onClick: () => {
-              summary.reload()
-              expenses.reload()
-            },
-          }}
-        >
-          {t.loadError}
-        </Notice>
-      ) : !summary.data || !expenses.data ? (
-        <SkeletonList />
-      ) : (
-        <>
-          <BudgetOverview summary={summary.data} />
-          <div className="site-budget__expenses">
-            <h3>{t.expenses}</h3>
-            {expenses.data.length === 0 ? (
-              <p className="site-budget__empty">{t.noExpenses}</p>
-            ) : (
-              <ExpenseTable
-                expenses={expenses.data}
-                canManage={canManage}
-                onEdit={(expense) => setDialog({ kind: 'expense', expense })}
-                onDelete={(expense) => setDialog({ kind: 'delete', expense })}
-              />
-            )}
-          </div>
-        </>
-      )}
+      {summary.status === 'error' ? (
+        <Notice tone="error" action={{ label: t.retry, onClick: summary.reload }}>{t.loadError}</Notice>
+      ) : summary.data ? <BudgetOverview summary={summary.data} /> : <BudgetOverviewSkeleton />}
+
+      <div className="site-budget__expenses">
+        <h3>{t.expenses}</h3>
+        {expenses.status === 'error' ? (
+          <Notice tone="error" action={{ label: t.retry, onClick: expenses.reload }}>{t.loadError}</Notice>
+        ) : !expenses.data ? <SkeletonTable columns={canManage ? 5 : 4} compact /> : expenses.data.length === 0 ? (
+          <p className="site-budget__empty">{t.noExpenses}</p>
+        ) : (
+          <ExpenseTable
+            expenses={expenses.data}
+            canManage={canManage}
+            onEdit={(expense) => setDialog({ kind: 'expense', expense })}
+            onDelete={(expense) => setDialog({ kind: 'delete', expense })}
+          />
+        )}
+      </div>
 
       {dialog?.kind === 'budget' ? (
         <BudgetAmountDialog

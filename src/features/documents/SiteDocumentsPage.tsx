@@ -1,10 +1,11 @@
+import { DocumentFoldersSkeleton, DocumentEntriesSkeleton } from './DocumentSkeletons'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { FolderIcon, SearchIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { NameForm, TEXT_LIMITS } from '../../components/form'
 import { ConfirmDialog } from '../../components/modal'
-import { BackLink, SkeletonList, Notice } from '../../components/page'
+import { BackLink, SkeletonBlock, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -100,7 +101,7 @@ export function SiteDocumentsPage() {
       <BackLink to="/documents">{m.workspace.documents}</BackLink>
       <header className="page-header">
         <div className="page-header__text">
-          <h1>{site.data?.name ?? m.workspace.documents}</h1>
+          <h1>{site.status === 'loading' && !site.data ? <span role="status" aria-label={m.workspace.loading}><SkeletonBlock width="min(240px, 60vw)" height={36} /></span> : site.data?.name ?? m.workspace.documents}</h1>
           <p className="page-header__description">{t.foldersDescription}</p>
         </div>
         {canManage && (
@@ -158,7 +159,7 @@ export function SiteDocumentsPage() {
       {query.trim() && (
         <section className="document-search-results">
           <h2 className="document-search-results__title">{t.searchResults}</h2>
-          {searching && <SkeletonList />}
+          {searching && <DocumentEntriesSkeleton search />}
           {!searching && searchHits !== null && (
             searchHits.length > 0 ? (
               <ul className="document-entries-list">
@@ -186,13 +187,13 @@ export function SiteDocumentsPage() {
       {/* Folder grid (hidden while searching) */}
       {!query.trim() && (
         <>
-          {remote.status === 'loading' && <SkeletonList />}
+          {remote.status === 'loading' && !remote.data && <DocumentFoldersSkeleton />}
           {remote.status === 'error' && (
             <Notice tone="error" action={{ label: m.workspace.retry, onClick: remote.reload }}>
               {t.loadFoldersError}
             </Notice>
           )}
-          {remote.status === 'ready' && remote.data && (
+          {remote.data !== undefined && remote.status !== 'error' && remote.data && (
             remote.data.length > 0 ? (
               <ul className="document-folders-grid">
                 {remote.data.map((folder) => (

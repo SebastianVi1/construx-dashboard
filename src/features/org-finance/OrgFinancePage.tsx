@@ -1,6 +1,7 @@
+import { FinanceDashboardSkeleton } from './FinanceSkeletons'
 import { Navigate } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { useCurrency } from '../../currency'
 import { ApiError } from '../../lib/http'
@@ -55,7 +56,7 @@ function OrgFinanceDashboard() {
           </Notice>
         )
       ) : !summary.data ? (
-        <SkeletonList />
+        <FinanceDashboardSkeleton />
       ) : (
         <>
           {overBudget.length > 0 ? (

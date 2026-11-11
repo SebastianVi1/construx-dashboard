@@ -1,3 +1,4 @@
+import { FloorPlanWorkspaceSkeleton } from './FloorPlanSkeletons'
 import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import L from 'leaflet'
@@ -187,9 +188,9 @@ export function FloorPlanPage() {
         </div>
       ) : null}
 
-      {/* Polls and URL refreshes keep the plan on screen; only a first read shows the spinner */}
+      {/* Polls and URL refreshes keep the plan on screen; only a first read shows the workspace skeleton */}
       {!floorPlan && plan.status === 'loading' ? (
-        <div className="loading-state"><span className="loading-state__spinner" aria-hidden />{t.loading}</div>
+        <FloorPlanWorkspaceSkeleton />
       ) : plan.status === 'error' ? (
         <div className="empty-state">
           <p>{t.loadError}</p>

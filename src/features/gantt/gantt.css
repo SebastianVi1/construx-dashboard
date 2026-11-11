@@ -137,6 +137,16 @@
   grid-template-columns: var(--gantt-names) var(--gantt-width);
 }
 
+/* The placeholder fills the scroll box; only the real chart knows its per-zoom width. */
+.gantt__sheet--skeleton {
+  width: 100%;
+}
+
+.gantt__sheet--skeleton .gantt__head,
+.gantt__sheet--skeleton .gantt__row {
+  grid-template-columns: var(--gantt-names) 1fr;
+}
+
 .gantt__head {
   border-bottom: 1px solid var(--cx-border-strong);
 }

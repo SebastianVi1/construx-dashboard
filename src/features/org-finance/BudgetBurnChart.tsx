@@ -1,6 +1,7 @@
+import { FinanceChartSkeleton } from './FinanceSkeletons'
 import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { Notice } from '../../components/page'
 import '../../components/switcher/segmented-switch.css'
 import { formatMessage, useLocale } from '../../i18n'
 import { getMonthlyExpenses } from './orgFinanceApi'
@@ -66,7 +67,7 @@ export function BudgetBurnChart({ organizationId }: BudgetBurnChartProps) {
             {t.loadError}
           </Notice>
         ) : !layout || !monthly.data ? (
-          <SkeletonList />
+          <FinanceChartSkeleton />
         ) : !hasSpend ? (
           <p className="org-finance__empty">{t.empty}</p>
         ) : (

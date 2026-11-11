@@ -1,10 +1,12 @@
+import { DocumentFoldersSkeleton } from '../documents/DocumentSkeletons'
+import '../documents/documents.css'
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 import { FolderIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { NameForm, TEXT_LIMITS } from '../../components/form'
 import { ConfirmDialog } from '../../components/modal'
-import { BackLink, SkeletonList, Notice } from '../../components/page'
+import { BackLink, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -118,13 +120,13 @@ export function SitePlansPage() {
         />
       )}
 
-      {remote.status === 'loading' && <SkeletonList />}
+      {remote.status === 'loading' && !remote.data && <DocumentFoldersSkeleton />}
       {remote.status === 'error' && (
         <Notice tone="error" action={{ label: t.retry, onClick: remote.reload }}>
           {t.loadError}
         </Notice>
       )}
-      {remote.status === 'ready' && remote.data && (
+      {remote.data !== undefined && remote.status !== 'error' && remote.data && (
         remote.data.length > 0 ? (
           <ul className="document-folders-grid">
             {remote.data.map((folder) => (

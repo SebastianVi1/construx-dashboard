@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Form, TEXT_LIMITS, useForm } from '../../components/form'
 import { ConfirmDialog, Modal } from '../../components/modal'
-import { Notice, SkeletonList } from '../../components/page'
+import { Notice, SkeletonBlock, SkeletonRegion } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -89,8 +89,6 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
     }
   }
 
-  if (equipment.status === 'loading') return <div className="page"><SkeletonList /></div>
-  if (equipment.status === 'error') return <div className="page"><Notice>{t.loadError}</Notice></div>
 
   return (
     <div className="page">
@@ -123,7 +121,16 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
         />
       )}
 
-      {equipment.data?.length === 0 ? (
+      {equipment.status === 'error' ? <Notice>{t.loadError}</Notice> : !equipment.data ? (
+        <SkeletonRegion>
+          <table className="equipment-table" aria-hidden="true">
+            <thead><tr>{[t.type, t.identifier, t.dailyCost, t.active, ...(canManage ? [''] : [])].map((label, i) => <th key={i}>{label}</th>)}</tr></thead>
+            <tbody>{Array.from({ length: 4 }, (_, row) => <tr key={row}>
+              {Array.from({ length: canManage ? 5 : 4 }, (_, column) => <td key={column}><SkeletonBlock height={36} width="75%" /></td>)}
+            </tr>)}</tbody>
+          </table>
+        </SkeletonRegion>
+      ) : equipment.data.length === 0 ? (
         <p className="equipment-empty">{t.empty}</p>
       ) : (
         <table className="equipment-table">

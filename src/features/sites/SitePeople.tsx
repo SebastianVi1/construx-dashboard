@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { SkeletonTable, SkeletonForm, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { listMembers, type Member } from '../members/membersApi'
 import { roleLabel } from '../permissions'
@@ -137,7 +137,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
           {t.loadError}
         </Notice>
       ) : (
-        <SkeletonList />
+        <SkeletonTable columns={canManage ? 3 : 2} compact />
       )}
 
       {canManage ? (
@@ -174,7 +174,7 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
   const [busy, setBusy] = useState(false)
 
   if (!members.data) {
-    if (members.status !== 'error') return <SkeletonList />
+    if (members.status !== 'error') return <SkeletonForm fields={1} />
     const forbidden = members.error instanceof ApiError && members.error.status === 403
     return <Notice>{forbidden ? t.membersForbidden : t.membersError}</Notice>
   }

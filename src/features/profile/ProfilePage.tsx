@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { SkeletonBlock, SkeletonRegion, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { forgotPassword } from '../auth/passwordResetApi'
 import { useAuth } from '../auth/auth-context'
@@ -98,7 +98,13 @@ export function ProfilePage() {
             <ProfileField label={t.role} value={role} empty={t.notSet} />
           </dl>
         ) : (
-          <SkeletonList />
+          <SkeletonRegion>
+            <dl className="profile-details" aria-hidden="true">
+              {Array.from({ length: 6 }, (_, i) => <div className="profile-details__row" key={i}>
+                <dt><SkeletonBlock width="65%" /></dt><dd><SkeletonBlock width="60%" height={22} /></dd>
+              </div>)}
+            </dl>
+          </SkeletonRegion>
         )}
       </section>
 
@@ -132,7 +138,14 @@ export function ProfilePage() {
             </div>
           )
         ) : (
-          <SkeletonList />
+          <SkeletonRegion>
+            <ul className="profile-sites" aria-hidden="true">
+              {Array.from({ length: 3 }, (_, i) => <li key={i}>
+                <div className="profile-sites__link"><SkeletonBlock width={120} height={20} /><SkeletonBlock width={150} /></div>
+                <SkeletonBlock width={64} height={24} />
+              </li>)}
+            </ul>
+          </SkeletonRegion>
         )}
       </section>
 

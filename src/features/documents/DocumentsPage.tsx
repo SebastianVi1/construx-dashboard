@@ -1,8 +1,9 @@
+import { DocumentFoldersSkeleton } from './DocumentSkeletons'
 import { useEffect } from 'react'
 import { Link } from 'react-router'
 import { FolderIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { listSites } from '../sites/sitesApi'
@@ -28,13 +29,13 @@ export function DocumentsPage() {
         </div>
       </header>
 
-      {sites.status === 'loading' && <SkeletonList />}
+      {sites.status === 'loading' && !sites.data && <DocumentFoldersSkeleton />}
       {sites.status === 'error' && (
         <Notice tone="error" action={{ label: m.workspace.retry, onClick: sites.reload }}>
           {t.loadSitesError}
         </Notice>
       )}
-      {sites.status === 'ready' && (
+      {sites.data !== undefined && sites.status !== 'error' && (
         sites.data && sites.data.length > 0 ? (
           <ul className="document-folders-grid">
             {sites.data.map((site) => (

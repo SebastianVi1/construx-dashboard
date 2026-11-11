@@ -1,3 +1,4 @@
+import { FloorPlanGallerySkeleton } from './FloorPlanSkeletons'
 import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router'
 import { useLocale } from '../../i18n'
@@ -66,8 +67,8 @@ export function SiteFloorPlans({ siteId }: { siteId: string }) {
 
       {notice ? <div className="notice" data-tone="success" role="status">{notice}</div> : null}
 
-      {remote.status === 'loading' ? (
-        <div className="loading-state"><span className="loading-state__spinner" aria-hidden />{t.loading}</div>
+      {remote.status === 'loading' && !remote.data ? (
+        <FloorPlanGallerySkeleton />
       ) : remote.status === 'error' ? (
         <div className="empty-state">
           <p>{t.loadError}</p>

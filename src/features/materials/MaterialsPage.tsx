@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { FilterTabs, filterCounts, type FilterOption } from '../../components/filter'
-import { SkeletonList, Notice } from '../../components/page'
+import { SkeletonTable, Notice } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -118,7 +118,7 @@ export function MaterialsPage() {
             {t.load[loadKind(pricingErrorKind(materials.error))]}
           </Notice>
         ) : (
-          <SkeletonList />
+          <SkeletonTable columns={3} />
         )}
       </section>
 

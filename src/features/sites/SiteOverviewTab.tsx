@@ -1,10 +1,11 @@
 import { Link } from 'react-router'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { getBudgetSummary } from '../finance/financeApi'
 import { roleLabel } from '../permissions'
 import { Avatar } from '../profile/Avatar'
+import { BudgetOverviewSkeleton, SiteTeamSkeleton } from './SiteSkeletons'
 import { PhasesProgressCard } from './PhasesProgressCard'
 import { BudgetOverview } from './SiteBudget'
 import { siteSectionUrl } from './siteNavigation'
@@ -52,8 +53,8 @@ export function SiteOverviewTab({
               {canManageBudget ? t.manageBudget : t.viewBudget}
             </Link>
           </div>
-          {budget.status === 'loading' ? (
-            <SkeletonList />
+          {budget.status === 'loading' && !budget.data ? (
+            <BudgetOverviewSkeleton />
           ) : budget.status === 'error' ? (
             <Notice tone="error" action={{ label: m.sites.load.retry, onClick: budget.reload }}>
               {m.finance.loadError}
@@ -92,7 +93,7 @@ export function SiteOverviewTab({
           )
         ) : people.status === 'error' ? (
           <Notice tone="error" action={{ label: m.sites.load.retry, onClick: people.reload }}>{m.sites.people.loadError}</Notice>
-        ) : <SkeletonList />}
+        ) : <SiteTeamSkeleton />}
       </section>
     </div>
   )

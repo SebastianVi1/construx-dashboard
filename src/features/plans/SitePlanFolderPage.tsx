@@ -1,8 +1,9 @@
+import { PlanGridSkeleton } from './PlanGridSkeleton'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
-import { BackLink, SkeletonList, Notice } from '../../components/page'
+import { BackLink, SkeletonBlock, Notice } from '../../components/page'
 import { formatMessage, useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -80,7 +81,7 @@ export function SitePlanFolderPage() {
       <BackLink to={`/sites/${encodeURIComponent(siteId)}/plans`}>{t.back}</BackLink>
       <header className="page-header">
         <div className="page-header__text">
-          <h1>{title}</h1>
+          <h1>{folders.status === 'loading' && !folders.data ? <span role="status" aria-label={m.workspace.loading}><SkeletonBlock width="min(240px, 60vw)" height={36} /></span> : title}</h1>
           <p className="page-header__description">{t.description}</p>
         </div>
         {canManage && (
@@ -105,18 +106,18 @@ export function SitePlanFolderPage() {
         />
       )}
 
-      {remote.status === 'loading' && <SkeletonList />}
+      {remote.status === 'loading' && !remote.data && <PlanGridSkeleton />}
       {remote.status === 'error' && (
         <Notice tone="error" action={{ label: t.retry, onClick: remote.reload }}>
           {t.loadError}
         </Notice>
       )}
-      {remote.status === 'ready' && remote.data && (
+      {remote.data !== undefined && remote.status !== 'error' && remote.data && (
         remote.data.length > 0 ? (
-          <ul className="plan-grid">
+          <ul className="site-plans__grid">
             {remote.data.map((plan) => (
               <li key={plan.id} className="plan-card">
-                <div className="plan-card__image-wrap">
+                <div className="plan-card__thumb">
                   {plan.completedAt && plan.viewUrl && !viewUrlExpired(plan.viewUrlExpiresAt) ? (
                     <img
                       className="plan-card__image"

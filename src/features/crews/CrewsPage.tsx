@@ -1,6 +1,7 @@
+import { CrewsSectionSkeleton } from './CrewSkeleton'
 import { useEffect } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { Notice, SkeletonList } from '../../components/page'
+import { Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { listMembers } from '../members/membersApi'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -36,7 +37,7 @@ export function CrewsPage() {
           {m.members.loadError}
         </Notice>
       ) : (
-        <SkeletonList />
+        <CrewsSectionSkeleton />
       )}
     </div>
   )

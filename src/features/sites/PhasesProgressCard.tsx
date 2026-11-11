@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { isOverdue } from '../goals/dueAt'
 import { siteSectionUrl } from './siteNavigation'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { SkeletonList, Notice } from '../../components/page'
+import { SkeletonTable, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
 import { formatDate } from '../home/format'
 import { listGoals } from '../goals/goalsApi'
@@ -20,7 +20,7 @@ export function PhasesProgressCard({ organizationId, siteId }: Props) {
   const key = `${organizationId}:${siteId}:goals-progress`
   const goals = useRemoteData(key, () => listGoals(organizationId, siteId))
 
-  if (goals.status === 'loading') return <SkeletonList />
+  if (goals.status === 'loading' && !goals.data) return <SkeletonTable columns={4} />
   if (goals.status === 'error') {
     return (
       <Notice tone="error" action={{ label: m.sites.load.retry, onClick: goals.reload }}>
