@@ -1,7 +1,9 @@
 import { z } from 'zod'
+import { TEXT_LIMITS } from '../../components/form'
 import { localInputToInstant } from './dueAt'
 import type { Goal, GoalInput } from './goalsApi'
 import { colorSchema } from '../gantt/barColor'
+import type { MoneyConversion } from '../../currency'
 import { optionalBudgetField, type BudgetValidationMessages } from '../sites/budgetRules'
 
 export type GoalValidationMessages = {
@@ -17,9 +19,9 @@ export type GoalValidationMessages = {
 /** `budget` is only on the form for roles with MANAGE_BUDGET; it is saved through its own endpoint. */
 export type GoalValues = { color?: string; name: string; startAt: string; dueAt: string; budget?: string }
 
-/** Name trimmed to 1..160 characters (backend rule); the `date` value must be a valid YYYY-MM-DD. */
+/** Phase and task names: 1..100 characters once trimmed (the backend allows 160); the `date` value must be a valid YYYY-MM-DD. */
 export function nameSchema(messages: { nameRequired: string; nameMax: string }) {
-  return z.string().trim().min(1, messages.nameRequired).max(160, messages.nameMax)
+  return z.string().trim().min(1, messages.nameRequired).max(TEXT_LIMITS.phaseName, messages.nameMax)
 }
 
 /** Both dates hold day-level instants and the start is not after the due (the server rule). */
@@ -60,6 +62,7 @@ export function makeGoalSchema(
   invalidColor = 'Invalid color',
   budget?: BudgetValidationMessages,
   notBefore?: number,
+  money?: MoneyConversion,
 ) {
   return z
     .object({
@@ -67,7 +70,7 @@ export function makeGoalSchema(
       name: nameSchema(messages),
       startAt: dueSchema(messages.startRequired, messages.startPast, notBefore),
       dueAt: dueSchema(messages.dueRequired, messages.duePast, notBefore),
-      budget: budget ? optionalBudgetField(budget).optional() : z.string().optional(),
+      budget: budget ? optionalBudgetField(budget, money).optional() : z.string().optional(),
     })
     .refine(startNotAfterDue, { message: messages.startAfterDue, path: ['startAt'] })
 }

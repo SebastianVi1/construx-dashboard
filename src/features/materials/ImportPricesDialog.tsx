@@ -116,7 +116,7 @@ export function ImportPricesDialog({ organizationId, onImported, onClose }: Impo
       </div>
 
       <div className="button-row button-row--end modal-actions">
-        <button type="button" className="button" onClick={onClose}>
+        <button type="button" className="button" onClick={onClose} disabled={phase === 'importing'}>
           {ti.cancel}
         </button>
         {report ? (
@@ -124,6 +124,7 @@ export function ImportPricesDialog({ organizationId, onImported, onClose }: Impo
             type="button"
             className="button button--primary"
             disabled={!canConfirmImport(report, phase !== 'idle')}
+            aria-busy={phase === 'importing'}
             onClick={() => void confirm()}
           >
             {phase === 'importing' ? ti.importing : confirmLabel}
@@ -164,7 +165,7 @@ function ImportPreview({ report, t, locale }: { report: ImportReport; t: ImportM
                 <td className="data-mono">{row.line}</td>
                 <td>{row.material || '—'}</td>
                 <td>{row.supplier ? supplierLabel({ name: row.supplier, branch: row.branch ?? null }) : '—'}</td>
-                <td className="data-mono">{previewPrice(row.price, locale)}</td>
+                <td className="data-mono">{previewPrice(row.price)}</td>
                 <td>{previewDate(row.observedOn, locale)}</td>
                 <td>
                   {row.errors.length > 0 ? (

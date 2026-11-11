@@ -58,7 +58,7 @@ export const floorPlansMessages = defineMessages({
       tooLarge: 'The file is larger than 50 MB.',
       nameTooLong: 'Use at most 120 characters.',
       descriptionTooLong: 'Use at most 500 characters.',
-      levelTooLong: 'Use at most 60 characters.',
+      levelTooLong: 'Use at most 40 characters.',
       pageNumberInvalid: 'Page number must be at least 1.',
     },
     error: {
@@ -116,6 +116,11 @@ export const floorPlansMessages = defineMessages({
       deleteError: 'The zone could not be deleted. Try again.',
       conflictWarning: 'Zone was updated by another user — please refresh.',
       stateError: 'Could not load the zones and who is in them.',
+      validation: {
+        nameRequired: 'Enter a zone name.',
+        nameMax: 'Use at most 60 characters.',
+        descriptionMax: 'Use at most 500 characters.',
+      },
       status: {
         NOT_STARTED: 'Not started',
         IN_PROGRESS: 'In progress',
@@ -238,7 +243,7 @@ export const floorPlansMessages = defineMessages({
       tooLarge: 'El archivo pesa más de 50 MB.',
       nameTooLong: 'Usa como máximo 120 caracteres.',
       descriptionTooLong: 'Usa como máximo 500 caracteres.',
-      levelTooLong: 'Usa como máximo 60 caracteres.',
+      levelTooLong: 'Usa como máximo 40 caracteres.',
       pageNumberInvalid: 'El número de página debe ser al menos 1.',
     },
     error: {
@@ -296,6 +301,11 @@ export const floorPlansMessages = defineMessages({
       deleteError: 'No se pudo eliminar la zona. Inténtalo de nuevo.',
       conflictWarning: 'Otra persona actualizó esta zona — por favor recarga.',
       stateError: 'No se pudieron cargar las zonas ni quién está en ellas.',
+      validation: {
+        nameRequired: 'Escribe el nombre de la zona.',
+        nameMax: 'Usa como máximo 60 caracteres.',
+        descriptionMax: 'Usa como máximo 500 caracteres.',
+      },
       status: {
         NOT_STARTED: 'Sin iniciar',
         IN_PROGRESS: 'En progreso',

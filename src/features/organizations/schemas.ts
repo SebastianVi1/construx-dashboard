@@ -1,12 +1,13 @@
 import { z } from 'zod'
+import { TEXT_LIMITS } from '../../components/form'
 import { ApiError } from '../../lib/http'
 
 export type OrganizationValidationMessages = { nameRequired: string; nameMax: string }
 
-/** Company name: 1 to 160 characters after trimming, as the backend enforces. */
+/** Company name: 1 to 100 characters after trimming, within the backend's 160. */
 export function makeOrganizationSchema(messages: OrganizationValidationMessages) {
   return z.object({
-    name: z.string().trim().min(1, messages.nameRequired).max(160, messages.nameMax),
+    name: z.string().trim().min(1, messages.nameRequired).max(TEXT_LIMITS.companyName, messages.nameMax),
   })
 }
 

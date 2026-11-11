@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { AuthApiError } from './authApi'
 import { forgotPassword } from './passwordResetApi'
 import { AuthLayout } from './AuthLayout'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { makeForgotPasswordSchema } from './schemas'
 import { rateLimitText } from './retryAfter'
 import { useLocale } from '../../i18n'
@@ -54,6 +54,7 @@ export function ForgotPasswordPage() {
       autoComplete: 'email',
       inputMode: 'email',
       spellCheck: false,
+      maxLength: TEXT_LIMITS.email,
     },
   ]
 

@@ -58,7 +58,7 @@ export function ConfirmDialog({
         <button type="button" className="button" onClick={onClose} disabled={busy}>
           {cancelLabel}
         </button>
-        <button type="button" className={`button button--${confirmTone}`} onClick={() => void confirm()} disabled={busy || confirmDisabled}>
+        <button type="button" className={`button button--${confirmTone}`} onClick={() => void confirm()} disabled={busy || confirmDisabled} aria-busy={busy}>
           {busy ? pendingLabel : confirmLabel}
         </button>
       </div>

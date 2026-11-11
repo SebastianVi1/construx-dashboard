@@ -125,6 +125,7 @@ export function CompanySwitcher() {
                       type="button"
                       className="popover__item popover__item--danger"
                       disabled={isDeleting}
+                      aria-busy={isDeleting}
                       onClick={() => void handleDelete(organization)}
                     >
                       <TrashIcon width="16" height="16" />

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { FolderIcon, SearchIcon } from '../../components/icons'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { NameForm, TEXT_LIMITS } from '../../components/form'
+import { ConfirmDialog } from '../../components/modal'
 import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -35,8 +37,9 @@ export function SiteDocumentsPage() {
   const remote = useRemoteData(`${org.id}:${siteId}:doc-folders`, () => getDocumentFolders(org.id, siteId))
 
   const [creating, setCreating] = useState(false)
-  const [name, setName] = useState('')
   const [createError, setCreateError] = useState<string | null>(null)
+  const [deletingFolder, setDeletingFolder] = useState<DocumentFolder | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Search
   const [query, setQuery] = useState('')
@@ -70,27 +73,25 @@ export function SiteDocumentsPage() {
     return locale === 'es' ? hit.folderNameEs : hit.folderNameEn
   }
 
-  async function handleDeleteFolder(folderId: string) {
-    if (!confirm(t.deleteFolderConfirm)) return
+  async function handleDeleteFolder(folder: DocumentFolder) {
     try {
-      await deleteDocumentFolder(org.id, siteId, folderId)
-      remote.update((folders) => folders.filter((f) => f.id !== folderId))
+      await deleteDocumentFolder(org.id, siteId, folder.id)
+      remote.update((folders) => folders.filter((f) => f.id !== folder.id))
+      setDeletingFolder(null)
     } catch {
-      // deletion failed — folder stays in the list
+      setDeleteError(t.deleteFolderError)
     }
   }
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim()) return
+  async function handleCreate(name: string) {
     setCreateError(null)
     try {
-      const folder = await createDocumentFolder(org.id, siteId, name.trim(), name.trim())
+      const folder = await createDocumentFolder(org.id, siteId, name, name)
       remote.update((folders) => [...folders, folder])
-      setName('')
       setCreating(false)
-    } catch {
+    } catch (error) {
       setCreateError(t.createError)
+      throw error
     }
   }
 
@@ -124,24 +125,33 @@ export function SiteDocumentsPage() {
       </div>
 
       {creating && (
-        <form className="inline-form" onSubmit={handleCreate}>
-          <label>
-            <span>{t.folderName}</span>
-            <input
-              className="input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={120}
-              required
-              autoFocus
-            />
-          </label>
-          {createError && <p className="form-error">{createError}</p>}
-          <div className="inline-form__actions">
-            <button className="button button--primary" type="submit">{t.create}</button>
-            <button className="button button--ghost" type="button" onClick={() => { setCreating(false); setName('') }}>{t.cancel}</button>
-          </div>
-        </form>
+        <NameForm
+          label={t.folderName}
+          maxLength={TEXT_LIMITS.folderName}
+          messages={{ required: t.folderNameRequired, max: t.folderNameMax }}
+          submitLabel={t.create}
+          pendingLabel={t.creating}
+          cancelLabel={t.cancel}
+          error={createError}
+          onSubmit={handleCreate}
+          onCancel={() => {
+            setCreating(false)
+            setCreateError(null)
+          }}
+        />
+      )}
+
+      {deletingFolder && (
+        <ConfirmDialog
+          title={t.deleteFolder}
+          body={t.deleteFolderConfirm}
+          confirmLabel={t.deleteFolder}
+          pendingLabel={t.deleting}
+          cancelLabel={t.cancel}
+          error={deleteError}
+          onConfirm={() => handleDeleteFolder(deletingFolder)}
+          onClose={() => setDeletingFolder(null)}
+        />
       )}
 
       {/* Search results */}
@@ -205,7 +215,10 @@ export function SiteDocumentsPage() {
                       <button
                         className="button button--ghost document-folder-card__delete-btn"
                         type="button"
-                        onClick={() => handleDeleteFolder(folder.id)}
+                        onClick={() => {
+                          setDeleteError(null)
+                          setDeletingFolder(folder)
+                        }}
                       >
                         {t.deleteFolder}
                       </button>

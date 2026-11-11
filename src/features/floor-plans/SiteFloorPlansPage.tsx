@@ -113,6 +113,7 @@ export function SiteFloorPlans({ siteId }: { siteId: string }) {
                       className="button button--danger"
                       disabled={deletingId === fp.id}
                       onClick={() => void handleDelete(fp)}
+                      aria-busy={deletingId === fp.id}
                     >
                       {deletingId === fp.id ? t.deleting : t.delete}
                     </button>

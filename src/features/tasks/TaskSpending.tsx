@@ -7,17 +7,18 @@ import { ExpenseDialog } from '../finance/ExpenseDialog'
 import { ExpenseTable } from '../finance/ExpenseTable'
 import type { Expense } from '../finance/financeApi'
 import type { MyAccess } from '../permissions/can'
-import { budgetText } from '../sites/budgetRules'
 import { createTaskExpense, getTaskBudget, listTaskExpenses } from './taskExpensesApi'
 import { taskMoneyActions } from './taskMoney'
 import type { PhaseRef, Task } from './tasksApi'
 import '../finance/finance.css'
+import { useCurrency } from '../../currency'
 
 type Dialog = { kind: 'edit'; expense?: Expense } | { kind: 'delete'; expense: Expense } | null
 
 /** Mounted only when the current caller may see task money. Allocation is deliberately read-only. */
 export function TaskSpending({ at, task, access }: { at: PhaseRef; task: Task; access: MyAccess | null }) {
-  const { messages: m, locale } = useLocale()
+  const { messages: m } = useLocale()
+  const { money: moneyText } = useCurrency()
   const t = m.tasks.money
   const actions = taskMoneyActions(access, task)
   const key = `${at.organizationId}:${at.siteId}:${at.goalId}:${task.id}:${access?.membershipId}`
@@ -51,9 +52,9 @@ export function TaskSpending({ at, task, access }: { at: PhaseRef; task: Task; a
       ) : !money.data || !budget ? <SkeletonList /> : (
         <>
           <dl className="task-detail__facts">
-            <div><dt>{t.allocated}</dt><dd>{budget.allocatedBudget === null ? t.noBudget : budgetText(budget.allocatedBudget, locale)}</dd></div>
-            <div><dt>{t.spent}</dt><dd>{budgetText(budget.spent, locale)}</dd></div>
-            <div><dt>{overrun ? t.overrun : t.remaining}</dt><dd>{overrun ? budgetText(Math.abs(budget.remaining ?? budget.spent), locale) : budget.remaining === null ? '—' : budgetText(budget.remaining, locale)}</dd></div>
+            <div><dt>{t.allocated}</dt><dd>{budget.allocatedBudget === null ? t.noBudget : moneyText(budget.allocatedBudget)}</dd></div>
+            <div><dt>{t.spent}</dt><dd>{moneyText(budget.spent)}</dd></div>
+            <div><dt>{overrun ? t.overrun : t.remaining}</dt><dd>{overrun ? moneyText(Math.abs(budget.remaining ?? budget.spent)) : budget.remaining === null ? '—' : moneyText(budget.remaining)}</dd></div>
           </dl>
           {money.data.expenses.length === 0 ? <p>{t.empty}</p> : <ExpenseTable
             expenses={money.data.expenses}

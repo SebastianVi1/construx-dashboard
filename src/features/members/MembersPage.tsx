@@ -237,6 +237,7 @@ function PendingInvitations({ invitations, sites, busyId, onResend, onRevoke, m,
                           disabled={busyId !== null}
                           aria-label={formatMessage(t.resendLabel, { email: invitation.email })}
                           onClick={() => onResend(invitation)}
+                          aria-busy={busyId === invitation.id}
                         >
                           {busyId === invitation.id ? t.working : t.resend}
                         </button>
@@ -376,6 +377,7 @@ function MemberList({
                               disabled={busyId !== null}
                               aria-label={formatMessage(t.suspendLabel, { name })}
                               onClick={() => void suspend(member)}
+                              aria-busy={busy}
                             >
                               {busy ? t.working : t.suspend}
                             </button>
@@ -385,6 +387,7 @@ function MemberList({
                               disabled={busyId !== null}
                               aria-label={formatMessage(t.removeLabel, { name })}
                               onClick={() => void remove(member)}
+                              aria-busy={busy}
                             >
                               {busy ? t.working : t.remove}
                             </button>

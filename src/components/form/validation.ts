@@ -18,8 +18,9 @@ export function collectErrors(error: ZodError): Record<string, string | undefine
 
 /**
  * Decides what the user sees for each field. Errors and the "valid" mark only
- * appear once a field was touched (blurred) or a submit was attempted, but from
- * then on they follow the current values, so cross-field rules stay reactive.
+ * appear once a field was typed in, left, or submitted, and from then on they
+ * follow the current values, so cross-field rules stay reactive. An empty
+ * optional field stays neutral.
  */
 export function visibleFieldState(
   values: Record<string, string>,

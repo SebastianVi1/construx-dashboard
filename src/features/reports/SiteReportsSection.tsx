@@ -100,6 +100,7 @@ export function SiteReportsSection({ organizationId, siteId, canGenerate }: Prop
                         className="button button--ghost button--sm"
                         onClick={() => download(report)}
                         disabled={downloading === report.id}
+                        aria-busy={downloading === report.id}
                       >
                         {downloading === report.id ? t.downloading : t.download}
                       </button>

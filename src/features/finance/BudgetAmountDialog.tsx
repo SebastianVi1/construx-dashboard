@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Form, useForm } from '../../components/form'
 import { Modal } from '../../components/modal'
-import { useLocale } from '../../i18n'
+import { useCurrency } from '../../currency'
+import { formatMessage, useLocale } from '../../i18n'
 import { budgetAmount, budgetToInput, makeBudgetSchema } from '../sites/budgetRules'
 
 type BudgetAmountDialogProps = {
@@ -19,16 +20,17 @@ type BudgetAmountDialogProps = {
 export function BudgetAmountDialog({ title, description, current, save, errorMessage, onClose }: BudgetAmountDialogProps) {
   const { messages: m } = useLocale()
   const t = m.sites.budget
+  const money = useCurrency()
   const [error, setError] = useState<string | null>(null)
   const [removing, setRemoving] = useState(false)
 
   const form = useForm({
-    initialValues: { amount: budgetToInput(current) },
-    schema: makeBudgetSchema(t.validation),
+    initialValues: { amount: budgetToInput(current, money) },
+    schema: makeBudgetSchema(t.validation, money),
     onSubmit: async (values) => {
       setError(null)
       try {
-        await save(budgetAmount(values.amount))
+        await save(budgetAmount(values.amount, money))
       } catch (failure) {
         setError(errorMessage(failure))
         throw failure
@@ -55,7 +57,14 @@ export function BudgetAmountDialog({ title, description, current, save, errorMes
     <Modal title={title} description={description} onClose={onClose}>
       <Form
         controller={form}
-        fields={[{ name: 'amount', label: t.amount, placeholder: t.amountPlaceholder, inputMode: 'decimal', autoComplete: 'off' }]}
+        fields={[
+          {
+            name: 'amount',
+            label: formatMessage(t.amount, { currency: money.currency }),
+            type: 'money',
+            placeholder: t.amountPlaceholder,
+          },
+        ]}
         submitLabel={t.save}
         pendingLabel={t.saving}
       >
@@ -67,7 +76,13 @@ export function BudgetAmountDialog({ title, description, current, save, errorMes
       </Form>
       <div className="button-row button-row--end modal-actions">
         {current !== null ? (
-          <button type="button" className="button button--danger" onClick={() => void remove()} disabled={busy}>
+          <button
+            type="button"
+            className="button button--danger"
+            onClick={() => void remove()}
+            disabled={busy}
+            aria-busy={removing}
+          >
             {removing ? t.removing : t.remove}
           </button>
         ) : null}

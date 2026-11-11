@@ -37,13 +37,14 @@ describe('price age', () => {
 describe('money', () => {
   it('moneyText: formats a decimal string in the global currency (MXN) with two decimals', () => {
     expect(CURRENCY).toBe('MXN')
-    expect(moneyText('245.5', 'en')).toBe('$245.50')
-    expect(moneyText('1245.50', 'es')).toBe('$1,245.50')
+    expect(moneyText('245.5')).toBe('$245.50')
+    expect(moneyText('1245.50')).toBe('$1,245.50')
   })
 
-  it('copy names the active currency and has no leftover USD references', () => {
+  it('feature copy names the active currency and has no leftover USD references', () => {
     for (const locale of ['en', 'es'] as const) {
-      const text = JSON.stringify(messages[locale])
+      // The shared slice holds the MXN/USD switcher and its exchange-rate note.
+      const text = JSON.stringify({ ...messages[locale], common: undefined })
       expect(text).toContain(CURRENCY)
       expect(text).not.toContain('USD')
       expect(text).not.toMatch(/dólares|dollars/i)

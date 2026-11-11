@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TEXT_LIMITS } from '../../components/form'
 import { siteStatuses, type Site, type SitePatch, type SiteStatus } from './sitesApi'
 
 export type SiteValidationMessages = {
@@ -18,16 +19,16 @@ export type SiteValues = {
 }
 
 /**
- * Site form rules, mirroring the backend: name 1..160 after trimming, address
- * up to 255, and an expected end date not before the start date (ISO dates
+ * Site form rules, within the backend's: a name of 1..100 after trimming, an
+ * address up to 200, and an expected end date not before the start date (ISO dates
  * compare as strings). When editing, a date that is already set cannot be
  * emptied, because PATCH treats a missing date as "unchanged".
  */
 export function makeSiteSchema(messages: SiteValidationMessages, original?: Site) {
   return z
     .object({
-      name: z.string().trim().min(1, messages.nameRequired).max(160, messages.nameMax),
-      address: z.string().trim().max(255, messages.addressMax),
+      name: z.string().trim().min(1, messages.nameRequired).max(TEXT_LIMITS.siteName, messages.nameMax),
+      address: z.string().trim().max(TEXT_LIMITS.address, messages.addressMax),
       startDate: z.string(),
       expectedEndDate: z.string(),
       status: z.union([z.literal(''), z.enum(siteStatuses)]),

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { Notice } from '../../components/page'
-import { useLocale, type Messages } from '../../i18n'
+import { useCurrency, type Currency } from '../../currency'
+import { formatMessage, useLocale, type Messages } from '../../i18n'
 import { localToday } from '../materials/priceRules'
 import { siteErrorKind, type SiteErrorKind } from '../sites/sitesApi'
 import { buildExpenseDraft, buildExpensePatch, expenseToValues, makeExpenseSchema } from './expenseForm'
@@ -18,10 +19,16 @@ type ExpenseDialogProps = {
   onClose: () => void
 }
 
-function expenseFields(t: Messages['finance']): FieldConfig[] {
+function expenseFields(t: Messages['finance'], currency: Currency): FieldConfig[] {
   return [
-    { name: 'description', label: t.field.description, placeholder: t.field.descriptionPlaceholder, autoComplete: 'off' },
-    { name: 'amount', label: t.field.amount, placeholder: t.field.amountPlaceholder, inputMode: 'decimal', autoComplete: 'off' },
+    {
+      name: 'description',
+      label: t.field.description,
+      placeholder: t.field.descriptionPlaceholder,
+      autoComplete: 'off',
+      maxLength: TEXT_LIMITS.expenseDescription,
+    },
+    { name: 'amount', label: formatMessage(t.field.amount, { currency }), type: 'money', placeholder: t.field.amountPlaceholder },
     { name: 'spentOn', label: t.field.spentOn, type: 'date' },
     {
       name: 'category',
@@ -39,25 +46,27 @@ function expenseFields(t: Messages['finance']): FieldConfig[] {
 export function ExpenseDialog({ organizationId, siteId, expense, create, onSaved, onClose }: ExpenseDialogProps) {
   const { messages: m } = useLocale()
   const t = m.finance
+  const money = useCurrency()
   const [errorKind, setErrorKind] = useState<SiteErrorKind>('generic')
   const [unchanged, setUnchanged] = useState(false)
 
   const form = useForm({
     initialValues: expense
-      ? expenseToValues(expense)
+      ? expenseToValues(expense, money)
       : { description: '', amount: '', spentOn: localToday(), category: '' },
-    schema: makeExpenseSchema(t.validation),
+    schema: makeExpenseSchema(t.validation, money),
     onSubmit: async (values) => {
       try {
         if (expense) {
-          const patch = buildExpensePatch(expense, values)
+          const patch = buildExpensePatch(expense, values, money)
           if (Object.keys(patch).length === 0) {
             setUnchanged(true)
             return
           }
           await updateExpense(organizationId, siteId, expense.id, patch)
         } else {
-          await (create ? create(buildExpenseDraft(values)) : createExpense(organizationId, siteId, buildExpenseDraft(values)))
+          const draft = buildExpenseDraft(values, money)
+          await (create ? create(draft) : createExpense(organizationId, siteId, draft))
         }
         onSaved()
       } catch (error) {
@@ -81,7 +90,7 @@ export function ExpenseDialog({ organizationId, siteId, expense, create, onSaved
             form.onChange(name, value)
           },
         }}
-        fields={expenseFields(t)}
+        fields={expenseFields(t, money.currency)}
         submitLabel={t.dialog.save}
         pendingLabel={t.dialog.saving}
       >

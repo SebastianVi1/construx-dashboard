@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { useLocale } from '../../i18n'
 import { AuthLayout } from '../auth/AuthLayout'
 import { useOrganizations } from './organizations-context'
@@ -40,6 +40,7 @@ export function CreateOrganizationPage() {
       label: t.nameLabel,
       placeholder: t.namePlaceholder,
       autoComplete: 'organization',
+      maxLength: TEXT_LIMITS.companyName,
       hint: t.nameHint,
     },
   ]

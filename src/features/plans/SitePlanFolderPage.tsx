@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { ConfirmDialog } from '../../components/modal'
 import { BackLink, SkeletonList, Notice } from '../../components/page'
-import { useLocale, type Locale } from '../../i18n'
+import { formatMessage, useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { hasPermission } from '../permissions/landing'
@@ -29,7 +30,8 @@ export function SitePlanFolderPage() {
   const remote = useRemoteData(`${org.id}:${siteId}:${folderId}:plans`, () => getSitePlans(org.id, siteId, folderId))
 
   const [uploadOpen, setUploadOpen] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<Plan | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const currentFolder = folders.data?.find((f) => f.id === folderId)
   const title = currentFolder ? folderName(currentFolder, locale) : t.title
@@ -59,15 +61,12 @@ export function SitePlanFolderPage() {
   }
 
   async function handleDelete(plan: Plan) {
-    if (!confirm(t.deleteTitle)) return
-    setDeletingId(plan.id)
     try {
       await deletePlan(org.id, siteId, plan.id)
       remote.update((plans) => plans.filter((p) => p.id !== plan.id))
+      setDeleting(null)
     } catch {
-      // deletion failed — plan stays in the list
-    } finally {
-      setDeletingId(null)
+      setDeleteError(t.deleteError)
     }
   }
 
@@ -92,6 +91,19 @@ export function SitePlanFolderPage() {
           </div>
         )}
       </header>
+
+      {deleting && (
+        <ConfirmDialog
+          title={t.deleteTitle}
+          body={formatMessage(t.deleteBody, { name: deleting.name || deleting.fileName })}
+          confirmLabel={t.deleteConfirm}
+          pendingLabel={t.deleting}
+          cancelLabel={t.deleteCancel}
+          error={deleteError}
+          onConfirm={() => handleDelete(deleting)}
+          onClose={() => setDeleting(null)}
+        />
+      )}
 
       {remote.status === 'loading' && <SkeletonList />}
       {remote.status === 'error' && (
@@ -125,8 +137,10 @@ export function SitePlanFolderPage() {
                   <button
                     className="button button--ghost plan-card__delete"
                     type="button"
-                    disabled={deletingId === plan.id}
-                    onClick={() => handleDelete(plan)}
+                    onClick={() => {
+                      setDeleteError(null)
+                      setDeleting(plan)
+                    }}
                   >
                     {t.delete}
                   </button>

@@ -1,9 +1,10 @@
 import { useId, useState } from 'react'
+import { Field } from '../../components/form'
 import { ConfirmDialog, Modal } from '../../components/modal'
 import { formatMessage, type Messages } from '../../i18n'
 import type { ExcelFolder } from './excelModel'
 import type { DeleteSummary, TreeIssue } from './excelTree'
-import { folderPath } from './excelTree'
+import { folderPath, MAX_FOLDER_NAME } from './excelTree'
 import '../../components/form/form.css'
 
 type Copy = Messages['excel']
@@ -48,30 +49,23 @@ export function FolderNameDialog({
   return (
     <Modal title={title} onClose={onClose}>
       <form
+        noValidate
         onSubmit={(event) => {
           event.preventDefault()
           void submit()
         }}
       >
-        <div className="form-field" data-state={shownIssue ? 'invalid' : undefined}>
-          <label className="form-field__label" htmlFor={inputId}>
-            {t.folderName}
-          </label>
-          <input
-            id={inputId}
-            className="form-field__control"
-            value={name}
-            maxLength={120}
-            autoFocus
-            disabled={busy}
-            aria-invalid={shownIssue ? true : undefined}
-            onChange={(event) => {
-              setTouched(true)
-              setName(event.target.value)
-            }}
-          />
-          {shownIssue ? <p className="form-field__error">{shownIssue}</p> : null}
-        </div>
+        <Field
+          config={{ name: `${inputId}-folder-name`, label: t.folderName, autoComplete: 'off', maxLength: MAX_FOLDER_NAME }}
+          value={name}
+          error={shownIssue ?? undefined}
+          valid={touched && !issue}
+          disabled={busy}
+          onChange={(value) => {
+            setTouched(true)
+            setName(value)
+          }}
+        />
         {error ? (
           <p className="form-error" role="alert">
             {error}
@@ -81,7 +75,12 @@ export function FolderNameDialog({
           <button type="button" className="button" onClick={onClose} disabled={busy}>
             {t.cancel}
           </button>
-          <button type="submit" className="button button--primary" disabled={busy || (touched && issue !== null)}>
+          <button
+            type="submit"
+            className="button button--primary"
+            disabled={busy || (touched && issue !== null)}
+            aria-busy={busy}
+          >
             {busy ? pendingLabel : confirmLabel}
           </button>
         </div>
@@ -164,6 +163,7 @@ export function MoveDialog({
           className="button button--primary"
           disabled={selected === undefined || busy}
           onClick={() => void move()}
+          aria-busy={busy}
         >
           {busy ? t.moving : t.moveHere}
         </button>

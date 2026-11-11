@@ -10,7 +10,7 @@ import { dateText } from '../sites/siteDisplay'
 import { LatestPrices } from './MaterialBits'
 import { RecordPriceDialog } from './RecordPriceDialog'
 import { loadKind, supplierLabel } from './materialDisplay'
-import { localToday, moneyText } from './priceRules'
+import { localToday } from './priceRules'
 import {
   archiveMaterial,
   deleteObservation,
@@ -19,11 +19,13 @@ import {
   type PriceObservation,
 } from './pricingApi'
 import './materials.css'
+import { useCurrency } from '../../currency'
 
 /** One material: its facts, latest price per supplier and full price history. */
 export function MaterialDetailPage() {
   const { materialId = '' } = useParams()
   const { messages: m, locale } = useLocale()
+  const { money } = useCurrency()
   const t = m.materials
   const organization = useCurrentOrganization()
   const { can } = usePermissions()
@@ -167,7 +169,7 @@ export function MaterialDetailPage() {
                     <tr key={observation.id}>
                       <td className="data-mono">{date}</td>
                       <td>{supplier}</td>
-                      <td className="data-mono">{moneyText(observation.price, locale)}</td>
+                      <td className="data-mono">{money(observation.price)}</td>
                       <td className={observation.sku ? 'data-mono' : 'cell-muted'}>{observation.sku ?? '—'}</td>
                       <td>{t.detail.source[observation.source]}</td>
                       {canManage ? (
@@ -232,7 +234,7 @@ export function MaterialDetailPage() {
         >
           <p className="material-confirm__detail">
             {supplierLabel({ name: removing.supplierName, branch: removing.supplierBranch })} ·{' '}
-            {moneyText(removing.price, locale)} · {dateText(removing.observedOn, locale)}
+            {money(removing.price)} · {dateText(removing.observedOn, locale)}
           </p>
         </ConfirmDialog>
       ) : null}

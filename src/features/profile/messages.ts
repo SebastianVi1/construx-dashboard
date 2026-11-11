@@ -12,6 +12,9 @@ export const profileMessages = defineMessages({
       remove: 'Remove photo',
       uploading: 'Uploading…',
       removing: 'Removing…',
+      view: 'View photo',
+      preview: 'Profile photo',
+      close: 'Close',
       errors: {
         fileType: 'Choose a JPEG, PNG or WebP image.',
         tooLarge: 'The photo is too large. Choose one under 20 MB.',
@@ -70,10 +73,10 @@ export const profileMessages = defineMessages({
       },
       validation: {
         fullNameRequired: 'Enter your full name.',
-        fullNameMax: 'Use at most 160 characters.',
+        fullNameMax: 'Use at most 80 characters.',
         phoneRequired: 'Enter your phone number.',
         phoneFormat: 'Pick a country and enter a complete number.',
-        tradeMax: 'Use at most 80 characters.',
+        tradeMax: 'Use at most 60 characters.',
       },
       error: {
         invalid: 'Check your details and try again.',
@@ -93,6 +96,9 @@ export const profileMessages = defineMessages({
       remove: 'Quitar foto',
       uploading: 'Subiendo…',
       removing: 'Quitando…',
+      view: 'Ver foto',
+      preview: 'Foto de perfil',
+      close: 'Cerrar',
       errors: {
         fileType: 'Elige una imagen JPEG, PNG o WebP.',
         tooLarge: 'La foto es demasiado grande. Elige una de menos de 20 MB.',
@@ -151,10 +157,10 @@ export const profileMessages = defineMessages({
       },
       validation: {
         fullNameRequired: 'Escribe tu nombre completo.',
-        fullNameMax: 'Usa como máximo 160 caracteres.',
+        fullNameMax: 'Usa como máximo 80 caracteres.',
         phoneRequired: 'Escribe tu número de teléfono.',
         phoneFormat: 'Elige un país y escribe el número completo.',
-        tradeMax: 'Usa como máximo 80 caracteres.',
+        tradeMax: 'Usa como máximo 60 caracteres.',
       },
       error: {
         invalid: 'Revisa tus datos e inténtalo de nuevo.',

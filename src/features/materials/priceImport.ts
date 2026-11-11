@@ -55,9 +55,9 @@ export function canConfirmImport(report: ImportReport | null, pending: boolean):
 }
 
 /** Price cell of the preview: money when it is a valid amount, otherwise the text as written in the file. */
-export function previewPrice(price: string | null | undefined, locale: Locale): string {
+export function previewPrice(price: string | null | undefined): string {
   if (!price) return '—'
-  return /^\d+(\.\d{1,2})?$/.test(price) ? moneyText(price, locale) : price
+  return /^\d+(\.\d{1,2})?$/.test(price) ? moneyText(price) : price
 }
 
 /** Date cell of the preview: a formatted date when it is YYYY-MM-DD, otherwise the text as written. */

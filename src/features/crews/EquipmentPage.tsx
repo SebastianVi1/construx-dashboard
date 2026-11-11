@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
-import { z } from 'zod'
+import { useEffect, useRef, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { Field, useForm } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm } from '../../components/form'
+import { ConfirmDialog, Modal } from '../../components/modal'
 import { Notice, SkeletonList } from '../../components/page'
+import { useCurrency } from '../../currency'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -12,7 +13,9 @@ import {
   listEquipment,
   updateEquipment,
   type Equipment,
+  type CreateEquipmentRequest,
 } from './crewsApi'
+import { dailyCostCents, makeEquipmentSchema } from './equipmentForm'
 import './crews.css'
 
 export function EquipmentPage() {
@@ -39,46 +42,50 @@ export function EquipmentPage() {
 
 function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: boolean }) {
   const { messages: m } = useLocale()
+  const { money } = useCurrency()
   const t = m.equipment
 
   const equipment = useRemoteData(`${orgId}:equipment`, () => listEquipment(orgId))
 
   const [showCreate, setShowCreate] = useState(false)
+  const [deleting, setDeleting] = useState<Equipment | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  // The row whose activate/deactivate request is in flight; the ref also stops a second click before re-render.
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const toggling = useRef(false)
 
-  async function handleCreate(type: string, identifier: string, dailyCostCents: number | null) {
-    setBusy(true)
-    try {
-      const item = await createEquipment(orgId, { type, identifier, dailyCostCents })
-      equipment.update((prev) => [...(prev ?? []), item])
-      setShowCreate(false)
-      setNotice(t.created)
-    } catch {
-      setNotice(t.error.generic)
-    } finally {
-      setBusy(false)
-    }
+  async function handleCreate(input: CreateEquipmentRequest) {
+    const item = await createEquipment(orgId, input)
+    equipment.update((prev) => [...(prev ?? []), item])
+    setShowCreate(false)
+    setNotice(t.created)
   }
 
   async function handleToggleActive(item: Equipment) {
+    if (toggling.current) return
+    toggling.current = true
+    setTogglingId(item.id)
     try {
       const updated = await updateEquipment(orgId, item.id, { active: !item.active })
       equipment.update((prev) => prev?.map((e) => (e.id === item.id ? updated : e)) ?? [])
       setNotice(updated.active ? t.reactivated : t.deactivated)
     } catch {
       setNotice(t.error.generic)
+    } finally {
+      toggling.current = false
+      setTogglingId(null)
     }
   }
 
   async function handleDelete(item: Equipment) {
-    if (!confirm(formatMessage(t.deleteBody, { identifier: item.identifier }))) return
     try {
       await deleteEquipment(orgId, item.id)
       equipment.update((prev) => prev?.filter((e) => e.id !== item.id) ?? [])
+      setDeleting(null)
       setNotice(t.deleted)
     } catch {
-      setNotice(t.error.generic)
+      setDeleteError(t.error.generic)
     }
   }
 
@@ -101,11 +108,18 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
 
       {notice && <Notice tone="success">{notice}</Notice>}
 
-      {showCreate && (
-        <CreateEquipmentDialog
-          onSubmit={handleCreate}
-          onCancel={() => setShowCreate(false)}
-          busy={busy}
+      {showCreate && <CreateEquipmentDialog onSubmit={handleCreate} onCancel={() => setShowCreate(false)} />}
+
+      {deleting && (
+        <ConfirmDialog
+          title={t.deleteTitle}
+          body={formatMessage(t.deleteBody, { identifier: deleting.identifier })}
+          confirmLabel={t.deleteConfirm}
+          pendingLabel={t.deleting}
+          cancelLabel={t.cancel}
+          error={deleteError}
+          onConfirm={() => handleDelete(deleting)}
+          onClose={() => setDeleting(null)}
         />
       )}
 
@@ -127,7 +141,7 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
               <tr key={item.id} className={item.active ? '' : 'equipment-row--inactive'}>
                 <td>{item.type}</td>
                 <td>{item.identifier}</td>
-                <td>{item.dailyCostCents != null ? formatCost(item.dailyCostCents) : '—'}</td>
+                <td className="data-mono">{item.dailyCostCents != null ? money(item.dailyCostCents / 100) : '—'}</td>
                 <td>
                   <span className={`equipment-badge ${item.active ? 'equipment-badge--active' : 'equipment-badge--inactive'}`}>
                     {item.active ? t.active : t.inactive}
@@ -138,14 +152,20 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
                     <button
                       type="button"
                       className="button button--sm"
-                      onClick={() => handleToggleActive(item)}
+                      disabled={togglingId !== null}
+                      aria-busy={togglingId === item.id}
+                      onClick={() => void handleToggleActive(item)}
                     >
-                      {item.active ? t.deactivate : t.reactivate}
+                      {togglingId === item.id ? t.saving : item.active ? t.deactivate : t.reactivate}
                     </button>
                     <button
                       type="button"
                       className="button button--danger button--sm"
-                      onClick={() => handleDelete(item)}
+                      disabled={togglingId === item.id}
+                      onClick={() => {
+                        setDeleteError(null)
+                        setDeleting(item)
+                      }}
                     >
                       {t.delete}
                     </button>
@@ -163,77 +183,67 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
 function CreateEquipmentDialog({
   onSubmit,
   onCancel,
-  busy,
 }: {
-  onSubmit: (type: string, identifier: string, dailyCostCents: number | null) => void
+  /** Rejects to keep the dialog open with an error. */
+  onSubmit: (input: CreateEquipmentRequest) => Promise<void>
   onCancel: () => void
-  busy: boolean
 }) {
   const { messages: m } = useLocale()
+  const money = useCurrency()
   const t = m.equipment
-
-  const schema = z.object({
-    type: z.string().min(1, t.validation.typeRequired).max(80, t.validation.typeMax),
-    identifier: z.string().min(1, t.validation.identifierRequired).max(80, t.validation.identifierMax),
-    dailyCost: z.string().refine(
-      (v) => v === '' || (Number.isInteger(Number(v)) && Number(v) >= 0),
-      t.validation.dailyCostInvalid,
-    ),
-  })
 
   const form = useForm({
     initialValues: { type: '', identifier: '', dailyCost: '' },
-    schema,
+    schema: makeEquipmentSchema(t.validation, money),
     onSubmit: async (values) => {
-      const costCents = values.dailyCost.trim() ? Number(values.dailyCost) : null
-      onSubmit(values.type.trim(), values.identifier.trim(), costCents)
+      await onSubmit({
+        type: values.type.trim(),
+        identifier: values.identifier.trim(),
+        dailyCostCents: dailyCostCents(values.dailyCost, money),
+      })
     },
   })
 
   return (
-    <div className="dialog-overlay">
-      <form className="dialog" onSubmit={form.onSubmit} noValidate>
-        <h2>{t.add}</h2>
-        <Field
-          config={{ name: 'type', label: t.type, placeholder: t.typePlaceholder }}
-          value={form.values.type}
-          error={form.errors.type}
-          valid={form.valid.type}
-          disabled={busy}
-          onChange={(v) => form.onChange('type', v)}
-          onBlur={() => form.onBlur('type')}
-        />
-        <Field
-          config={{ name: 'identifier', label: t.identifier, placeholder: t.identifierPlaceholder }}
-          value={form.values.identifier}
-          error={form.errors.identifier}
-          valid={form.valid.identifier}
-          disabled={busy}
-          onChange={(v) => form.onChange('identifier', v)}
-          onBlur={() => form.onBlur('identifier')}
-        />
-        <Field
-          config={{ name: 'dailyCost', label: t.dailyCost, type: 'number', placeholder: t.dailyCostPlaceholder, min: '0' }}
-          value={form.values.dailyCost}
-          error={form.errors.dailyCost}
-          valid={form.valid.dailyCost}
-          disabled={busy}
-          onChange={(v) => form.onChange('dailyCost', v)}
-          onBlur={() => form.onBlur('dailyCost')}
-        />
-        <div className="dialog-actions">
-          <button type="button" className="button" onClick={onCancel} disabled={busy}>
-            {t.cancel}
-          </button>
-          <button type="submit" className="button button--primary" disabled={busy || form.isSubmitting}>
-            {t.add}
-          </button>
-        </div>
-      </form>
-    </div>
+    <Modal title={t.add} onClose={onCancel}>
+      <Form
+        controller={form}
+        fields={[
+          {
+            name: 'type',
+            label: t.type,
+            placeholder: t.typePlaceholder,
+            autoComplete: 'off',
+            maxLength: TEXT_LIMITS.equipmentType,
+          },
+          {
+            name: 'identifier',
+            label: t.identifier,
+            placeholder: t.identifierPlaceholder,
+            autoComplete: 'off',
+            maxLength: TEXT_LIMITS.equipmentIdentifier,
+          },
+          {
+            name: 'dailyCost',
+            label: formatMessage(t.dailyCostLabel, { currency: money.currency }),
+            type: 'money',
+            placeholder: t.dailyCostPlaceholder,
+          },
+        ]}
+        submitLabel={t.add}
+        pendingLabel={t.adding}
+      >
+        {form.submitError ? (
+          <p className="form-error" role="alert">
+            {t.error.generic}
+          </p>
+        ) : null}
+      </Form>
+      <div className="button-row button-row--end modal-actions">
+        <button type="button" className="button" onClick={onCancel} disabled={form.isSubmitting}>
+          {t.cancel}
+        </button>
+      </div>
+    </Modal>
   )
-}
-
-function formatCost(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`
 }

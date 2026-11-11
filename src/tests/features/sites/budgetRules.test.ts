@@ -2,10 +2,10 @@ import { describe, expect, it } from 'bun:test'
 import { messages } from '../../../i18n/messages'
 import { ApiError } from '../../../lib/http'
 import {
+  amountIssue,
   allocationIssue,
   budgetAmount,
   budgetChanged,
-  budgetText,
   budgetToInput,
   makeBudgetSchema,
   optionalBudgetAmount,
@@ -43,13 +43,8 @@ describe('site budget schema', () => {
 })
 
 describe('site budget display', () => {
-  it('formats the amount as pesos in both languages', () => {
-    expect(budgetText(250000.5, 'en')).toBe('$250,000.50')
-    expect(budgetText(250000.5, 'es')).toBe('$250,000.50')
-  })
-
   it('prefills the dialog with the stored amount, or nothing', () => {
-    expect(budgetToInput(250000.5)).toBe('250000.5')
+    expect(budgetToInput(250000.5)).toBe('250000.50')
     expect(budgetToInput(null)).toBe('')
   })
 })
@@ -86,5 +81,21 @@ describe('allocation errors', () => {
     expect(allocationIssue(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBeNull()
     expect(allocationIssue(new ApiError(403))).toBeNull()
     expect(allocationIssue(new Error('x'))).toBeNull()
+  })
+})
+
+describe('amounts typed in dollars', () => {
+  const dollars = { toMxn: (amount: number) => Math.round(amount * 2000) / 100, fromMxn: (mxn: number) => Math.round(mxn * 5) / 100 }
+
+  it('checks the backend cap in pesos', () => {
+    expect(amountIssue('49999999999', { allowZero: true, money: dollars })).toBeNull()
+    expect(amountIssue('50000000000', { allowZero: true, money: dollars })).toBe('max')
+  })
+
+  it('converts to pesos and back, and an untouched amount is not a change', () => {
+    expect(budgetAmount('100', dollars)).toBe(2000)
+    expect(budgetToInput(2000, dollars)).toBe('100.00')
+    expect(budgetChanged(2000, '100.00', dollars)).toBe(false)
+    expect(budgetChanged(2000, '100.01', dollars)).toBe(true)
   })
 })

@@ -254,7 +254,7 @@ export function ExcelLibraryPage() {
           <Link className="button button--small excel-list__action" to={`/excel/${item.id}`}>
             {t.open}
           </Link>
-          <button type="button" className="button button--small excel-list__action" disabled={downloadingId !== null} onClick={() => void download(item)}>
+          <button type="button" className="button button--small excel-list__action" disabled={downloadingId !== null} onClick={() => void download(item)} aria-busy={downloadingId === item.id}>
             {downloadingId === item.id ? t.downloading : t.download}
           </button>
           <button type="button" className="button button--small excel-list__action" onClick={() => setMoving({ kind: 'workbook', workbook: item })}>
@@ -347,7 +347,7 @@ export function ExcelLibraryPage() {
           >
             {here ? t.newSubfolder : t.newFolder}
           </button>
-          <label className="button button--primary" htmlFor={inputId} aria-disabled={uploading || undefined}>
+          <label className="button button--primary" htmlFor={inputId} aria-disabled={uploading || undefined} aria-busy={uploading}>
             {uploading ? t.uploading : t.upload}
           </label>
           <input

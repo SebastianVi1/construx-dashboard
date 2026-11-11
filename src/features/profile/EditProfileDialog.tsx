@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Field, Form, useForm, type FieldConfig } from '../../components/form'
+import { Field, Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { ConfirmDialog, Modal } from '../../components/modal'
 import { useLocale } from '../../i18n'
 import { formatPhone } from './phone'
@@ -83,8 +83,16 @@ export function EditProfileDialog({ profile, onSaved, onClose }: EditProfileDial
     )
   }
 
-  const fields: FieldConfig[] = [{ name: 'fullName', label: m.profile.fullName, autoComplete: 'name' }]
-  const trade: FieldConfig = { name: 'trade', label: m.profile.trade, placeholder: t.tradePlaceholder, hint: t.tradeHint }
+  const fields: FieldConfig[] = [
+    { name: 'fullName', label: m.profile.fullName, autoComplete: 'name', maxLength: TEXT_LIMITS.personName },
+  ]
+  const trade: FieldConfig = {
+    name: 'trade',
+    label: m.profile.trade,
+    placeholder: t.tradePlaceholder,
+    hint: t.tradeHint,
+    maxLength: TEXT_LIMITS.trade,
+  }
 
   return (
     <Modal title={t.title} description={t.description} onClose={onClose}>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChevronDownIcon, SignOutIcon, UserIcon } from '../../components/icons'
 import { usePopover } from '../../components/popover'
+import { CurrencySwitcher, ExchangeRateNote } from '../../currency'
 import { LocaleSwitcher, useLocale } from '../../i18n'
 import { ThemeSwitcher } from '../../theme'
 import { useAuth } from '../auth/auth-context'
@@ -64,6 +65,11 @@ export function AccountMenu() {
           <span>{m.common.language}</span>
           <LocaleSwitcher />
         </div>
+        <div className="popover__row">
+          <span>{m.common.currency}</span>
+          <CurrencySwitcher />
+        </div>
+        <ExchangeRateNote className="account-menu__rate" />
         <div className="popover__row">
           <span>{m.common.theme}</span>
           <ThemeSwitcher />

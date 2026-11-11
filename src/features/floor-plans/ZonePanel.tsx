@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { z } from 'zod'
 import { useLocale } from '../../i18n'
-import { useForm } from '../../components/form'
+import { Field, useForm } from '../../components/form'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { updateZone, deleteZone, ZONE_STATUS_COLORS } from './zonesApi'
-import type { Zone, ZoneStatus } from './zonesApi'
+import type { Zone } from './zonesApi'
+import { makeZoneSchema, zoneFields, zoneInput } from './zoneForm'
 import { listAssignments, closeAssignment, reassignToZone } from './zoneAssignmentsApi'
 import type { ReassignDrag } from './zoneAssignmentsApi'
 import { getZoneAudit } from './auditApi'
@@ -60,22 +60,14 @@ export function ZonePanel({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
 
-  const editSchema = z.object({
-    name: z.string().min(1).max(120),
-    description: z.string().max(500),
-    status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'ON_HOLD', 'DONE']),
-  })
-
   const editForm = useForm({
     initialValues: { name: zone.name, description: zone.description ?? '', status: zone.status as string },
-    schema: editSchema,
+    schema: makeZoneSchema(t.validation),
     onSubmit: async (values) => {
       setEditError(null)
       try {
         const updated = await updateZone(organizationId, siteId, floorPlanId, zone.id, {
-          name: values.name.trim(),
-          description: values.description.trim() || null,
-          status: values.status as ZoneStatus,
+          ...zoneInput(values),
           points: zone.points,
           version: zone.version,
         })
@@ -107,6 +99,7 @@ export function ZonePanel({
   const [closingId, setClosingId] = useState<string | null>(null)
   const [movingId, setMovingId] = useState<string | null>(null)
   const [moveTargetId, setMoveTargetId] = useState<string>('')
+  const [moveBusy, setMoveBusy] = useState(false)
 
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -143,8 +136,9 @@ export function ZonePanel({
   }
 
   const handleMove = async (assignmentId: string) => {
-    if (!moveTargetId) return
+    if (!moveTargetId || moveBusy) return
     setMovingId(assignmentId)
+    setMoveBusy(true)
     try {
       setActionError(false)
       await reassignToZone(organizationId, siteId, floorPlanId, zone.id, assignmentId, moveTargetId)
@@ -155,6 +149,8 @@ export function ZonePanel({
     } catch {
       setActionError(true)
       setMovingId(null)
+    } finally {
+      setMoveBusy(false)
     }
   }
 
@@ -196,6 +192,7 @@ export function ZonePanel({
                   className="button button--small button--danger"
                   onClick={handleDelete}
                   disabled={deleting}
+                  aria-busy={deleting}
                 >
                   {deleting ? t.deleting : t.deleteConfirm}
                 </button>
@@ -317,9 +314,11 @@ export function ZonePanel({
                               <button
                                 type="button"
                                 className="button button--small button--primary"
-                                onClick={() => handleMove(a.id)}
+                                disabled={moveBusy}
+                                aria-busy={moveBusy}
+                                onClick={() => void handleMove(a.id)}
                               >
-                                {th.confirmMove}
+                                {moveBusy ? t.saving : th.confirmMove}
                               </button>
                             ) : null}
                           </div>
@@ -366,55 +365,22 @@ export function ZonePanel({
           )}
         </>
       ) : (
-        <form className="zone-panel__form" onSubmit={editForm.onSubmit}>
-          <div className="form-field">
-            <label className="form-field__label" htmlFor="zone-edit-name">{t.nameLabel}</label>
-            <input
-              id="zone-edit-name"
-              className="form-field__control"
-              type="text"
-              value={editForm.values.name}
-              onChange={(e) => editForm.onChange('name', e.target.value)}
-              onBlur={() => editForm.onBlur('name')}
-              maxLength={120}
-              required
+        <form className="zone-panel__form" noValidate onSubmit={editForm.onSubmit}>
+          {zoneFields(t).map((field) => (
+            <Field
+              key={field.name}
+              config={{ ...field, name: `zone-edit-${field.name}` }}
+              value={editForm.values[field.name]}
+              error={editForm.errors[field.name]}
+              valid={editForm.valid[field.name]}
               disabled={editForm.isSubmitting}
-              aria-invalid={Boolean(editForm.errors.name)}
+              onChange={(value) => editForm.onChange(field.name, value)}
+              onBlur={() => editForm.onBlur(field.name)}
             />
-            {editForm.errors.name ? <p className="form-field__error">{editForm.errors.name}</p> : null}
-          </div>
-          <div className="form-field">
-            <label className="form-field__label" htmlFor="zone-edit-description">{t.descriptionLabel}</label>
-            <input
-              id="zone-edit-description"
-              className="form-field__control"
-              type="text"
-              value={editForm.values.description}
-              onChange={(e) => editForm.onChange('description', e.target.value)}
-              onBlur={() => editForm.onBlur('description')}
-              maxLength={500}
-              disabled={editForm.isSubmitting}
-            />
-          </div>
-          <div className="form-field">
-            <label className="form-field__label" htmlFor="zone-edit-status">{t.statusLabel}</label>
-            <select
-              id="zone-edit-status"
-              className="form-field__control"
-              value={editForm.values.status}
-              onChange={(e) => editForm.onChange('status', e.target.value)}
-              onBlur={() => editForm.onBlur('status')}
-              disabled={editForm.isSubmitting}
-            >
-              <option value="NOT_STARTED">{t.status.NOT_STARTED}</option>
-              <option value="IN_PROGRESS">{t.status.IN_PROGRESS}</option>
-              <option value="ON_HOLD">{t.status.ON_HOLD}</option>
-              <option value="DONE">{t.status.DONE}</option>
-            </select>
-          </div>
+          ))}
           {editError ? <p className="error-text">{editError}</p> : null}
           <div className="zone-panel__actions">
-            <button type="submit" className="button button--primary" disabled={editForm.isSubmitting || !editForm.values.name.trim()}>
+            <button type="submit" className="button button--primary" disabled={editForm.isSubmitting} aria-busy={editForm.isSubmitting}>
               {editForm.isSubmitting ? t.saving : t.save}
             </button>
             <button type="button" className="button" onClick={handleCancelEdit} disabled={editForm.isSubmitting}>

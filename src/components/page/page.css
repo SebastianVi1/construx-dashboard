@@ -258,6 +258,18 @@
   opacity: 0.6;
 }
 
+/* A button whose action is in flight: a spinner before its "…ing" label. Set aria-busy with disabled. */
+.button[aria-busy='true']::before {
+  content: '';
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: page-spin 800ms linear infinite;
+}
+
 .button--primary {
   border-color: var(--cx-primary);
   background: var(--cx-primary);

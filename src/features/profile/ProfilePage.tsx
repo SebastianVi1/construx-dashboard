@@ -172,6 +172,7 @@ export function ProfilePage() {
                     .then(() => setResetState('sent'))
                     .catch(() => setResetState('error'))
                 }}
+                aria-busy={resetState === 'pending'}
               >
                 {resetState === 'pending' ? t.security.sendLinkPending : t.security.sendLink}
               </button>

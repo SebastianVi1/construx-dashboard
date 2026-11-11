@@ -3,6 +3,7 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { Form, useForm } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { SkeletonList, Notice } from '../../components/page'
+import { useCurrency } from '../../currency'
 import { useLocale } from '../../i18n'
 import { priceFields } from './materialDisplay'
 import { NEW_SUPPLIER, makePriceSchema, type PriceValues } from './materialForm'
@@ -33,6 +34,7 @@ type RecordPriceDialogProps = {
  */
 export function RecordPriceDialog({ organizationId, materials, materialId = '', onRecorded, onClose }: RecordPriceDialogProps) {
   const { messages: m } = useLocale()
+  const money = useCurrency()
   const t = m.materials
   const suppliers = useRemoteData(`${organizationId}:suppliers`, () => listSuppliers(organizationId))
   const [errorKind, setErrorKind] = useState<PricingErrorKind>('generic')
@@ -51,7 +53,7 @@ export function RecordPriceDialog({ organizationId, materials, materialId = '', 
 
   const form = useForm({
     initialValues,
-    schema: makePriceSchema(t.validation, today),
+    schema: makePriceSchema(t.validation, today, money),
     onSubmit: async (values) => {
       try {
         let supplierId = values.supplierId
@@ -65,7 +67,8 @@ export function RecordPriceDialog({ organizationId, materials, materialId = '', 
           form.onChange('supplierId', supplier.id)
           supplierId = supplier.id
         }
-        onRecorded(await recordPrice(organizationId, { ...values, supplierId }))
+        const price = money.toMxn(Number(values.price.trim())).toFixed(2)
+        onRecorded(await recordPrice(organizationId, { ...values, supplierId, price }))
       } catch (error) {
         setErrorKind(pricingErrorKind(error))
         throw error
@@ -89,6 +92,7 @@ export function RecordPriceDialog({ organizationId, materials, materialId = '', 
             materials,
             suppliers: suppliers.data,
             newSupplier: form.values.supplierId === NEW_SUPPLIER,
+            currency: money.currency,
           })}
           submitLabel={t.record.submit}
           pendingLabel={t.record.pending}

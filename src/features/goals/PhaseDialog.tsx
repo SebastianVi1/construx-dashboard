@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { Modal } from '../../components/modal'
-import { useLocale } from '../../i18n'
+import { useCurrency } from '../../currency'
+import { formatMessage, useLocale } from '../../i18n'
 import { instantToLocalInput, localInputToInstant } from './dueAt'
 import { buildGoalPatch, makeGoalSchema } from './goalForm'
 import { createGoal, goalErrorKind, setGoalBudget, updateGoal, type Goal, type GoalErrorKind } from './goalsApi'
@@ -26,6 +27,7 @@ type PhaseDialogProps = {
  */
 export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onSaved, onClose }: PhaseDialogProps) {
   const { messages: m } = useLocale()
+  const money = useCurrency()
   const t = m.goals
   const copy = goal ? t.editDialog : t.create
   const [errorKind, setErrorKind] = useState<GoalErrorKind>('generic')
@@ -45,9 +47,9 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
       name: goal?.name ?? '',
       startAt: goal ? instantToLocalInput(goal.startAt) : '',
       dueAt: goal ? instantToLocalInput(goal.dueAt) : '',
-      budget: budgetToInput(goal?.allocatedBudget ?? null),
+      budget: budgetToInput(goal?.allocatedBudget ?? null, money),
     },
-    schema: makeGoalSchema(t.validation, m.gantt.invalidColor, canManageBudget ? m.sites.budget.validation : undefined, notBefore),
+    schema: makeGoalSchema(t.validation, m.gantt.invalidColor, canManageBudget ? m.sites.budget.validation : undefined, notBefore, money),
     onSubmit: async (values) => {
       try {
         let saved = goal ?? created
@@ -61,8 +63,8 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
           if (Object.keys(patch).length > 0) saved = await updateGoal(organizationId, siteId, saved.id, patch)
         }
         const budget = values.budget ?? ''
-        if (canManageBudget && budgetChanged(saved.allocatedBudget, budget)) {
-          saved = await setGoalBudget(organizationId, siteId, saved.id, optionalBudgetAmount(budget))
+        if (canManageBudget && budgetChanged(saved.allocatedBudget, budget, money)) {
+          saved = await setGoalBudget(organizationId, siteId, saved.id, optionalBudgetAmount(budget, money))
         }
         onSaved(saved, !goal)
       } catch (error) {
@@ -77,18 +79,17 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
   })
 
   const fields: FieldConfig[] = [
-    { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off' },
+    { name: 'name', label: t.field.name, placeholder: t.field.namePlaceholder, autoComplete: 'off', maxLength: TEXT_LIMITS.phaseName },
     { name: 'startAt', label: t.field.startAt, type: 'date', hint: t.field.startHint, min: goal ? undefined : todayStr },
     { name: 'dueAt', label: t.field.dueAt, type: 'date', hint: t.field.dueHint, min: goal ? undefined : todayStr },
     ...(canManageBudget
       ? [
           {
             name: 'budget',
-            label: t.field.budget,
+            label: formatMessage(t.field.budget, { currency: money.currency }),
+            type: 'money',
             placeholder: t.field.budgetPlaceholder,
             hint: t.field.budgetHint,
-            inputMode: 'decimal',
-            autoComplete: 'off',
           } satisfies FieldConfig,
         ]
       : []),

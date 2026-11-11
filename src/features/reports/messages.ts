@@ -38,7 +38,7 @@ export const reportsMessages = defineMessages({
     },
     validation: {
       titleRequired: 'Enter a report title',
-      titleMax: 'Use at most 200 characters',
+      titleMax: 'Use at most 120 characters',
     },
   },
   es: {
@@ -78,7 +78,7 @@ export const reportsMessages = defineMessages({
     },
     validation: {
       titleRequired: 'Ingresá el título del informe',
-      titleMax: 'Usá como máximo 200 caracteres',
+      titleMax: 'Usá como máximo 120 caracteres',
     },
   },
 })

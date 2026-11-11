@@ -126,6 +126,13 @@
   gap: 8px;
 }
 
+.avatar-picker__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
 .avatar-picker__input {
   display: none;
 }
@@ -140,6 +147,20 @@
   background: none;
   color: inherit;
   cursor: pointer;
+  /* Holding opens the preview; keep touch browsers from selecting or offering to save the image. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* The photo enlarged in the hold-to-preview modal. */
+.avatar-preview__photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-border);
 }
 
 .avatar-picker__portrait:disabled {

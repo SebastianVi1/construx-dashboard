@@ -106,9 +106,9 @@ describe('confirm rule', () => {
 
 describe('preview cells', () => {
   it('formats a valid price as pesos and shows an invalid one as typed', () => {
-    expect(previewPrice('245.5', 'en')).toBe('$245.50')
-    expect(previewPrice('12,50', 'en')).toBe('12,50')
-    expect(previewPrice(null, 'en')).toBe('—')
+    expect(previewPrice('245.5')).toBe('$245.50')
+    expect(previewPrice('12,50')).toBe('12,50')
+    expect(previewPrice(null)).toBe('—')
   })
 
   it('formats a valid date and shows an invalid one as typed', () => {

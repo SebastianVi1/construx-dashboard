@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from 'react'
+import { Field, TEXT_LIMITS } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { formatMessage, useLocale } from '../../i18n'
 import {
@@ -25,13 +26,13 @@ type FloorPlanUploadDialogProps = {
 export function FloorPlanUploadDialog({ organizationId, siteId, onUploaded, onClose }: FloorPlanUploadDialogProps) {
   const { messages: m } = useLocale()
   const t = m.floorPlans
-  const ids = { file: useId(), name: useId(), description: useId(), level: useId(), page: useId() }
+  const ids = { file: useId() }
 
   const [file, setFile] = useState<File | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [level, setLevel] = useState('')
-  const [pageNumber, setPageNumber] = useState(1)
+  const [pageNumber, setPageNumber] = useState('1')
   const [fileError, setFileError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [stage, setStage] = useState<Stage>({ kind: 'idle' })
@@ -56,19 +57,19 @@ export function FloorPlanUploadDialog({ organizationId, siteId, onUploaded, onCl
   }
 
   function nameIssue(): string | null {
-    if (name.trim().length > 120) return t.validation.nameTooLong
+    if (name.trim().length > TEXT_LIMITS.documentName) return t.validation.nameTooLong
     return null
   }
   function descriptionIssue(): string | null {
-    if (description.trim().length > 500) return t.validation.descriptionTooLong
+    if (description.trim().length > TEXT_LIMITS.longText) return t.validation.descriptionTooLong
     return null
   }
   function levelIssue(): string | null {
-    if (level.trim().length > 60) return t.validation.levelTooLong
+    if (level.trim().length > TEXT_LIMITS.zoneLevel) return t.validation.levelTooLong
     return null
   }
   function pageIssue(): string | null {
-    if (pageNumber < 1 || !Number.isInteger(pageNumber)) return t.validation.pageNumberInvalid
+    if (!(Number(pageNumber) >= 1)) return t.validation.pageNumberInvalid
     return null
   }
 
@@ -83,7 +84,7 @@ export function FloorPlanUploadDialog({ organizationId, siteId, onUploaded, onCl
     }
     if (nameIssue() || descriptionIssue() || levelIssue() || pageIssue()) return
 
-    const effectiveName = name.trim() || file.name.replace(/\.[^.]+$/, '').slice(0, 120)
+    const effectiveName = name.trim() || file.name.replace(/\.[^.]+$/, '').slice(0, TEXT_LIMITS.documentName)
     setError(null)
 
     try {
@@ -91,7 +92,7 @@ export function FloorPlanUploadDialog({ organizationId, siteId, onUploaded, onCl
         name: effectiveName,
         description: description.trim() || undefined,
         level: level.trim() || undefined,
-        pageNumber: isPdf ? pageNumber : 1,
+        pageNumber: isPdf ? Number(pageNumber) : 1,
         contentType: file.type,
         sizeBytes: file.size,
       })
@@ -133,74 +134,61 @@ export function FloorPlanUploadDialog({ organizationId, siteId, onUploaded, onCl
           ) : null}
         </div>
 
-        <div className="form-field">
-          <label className="form-field__label" htmlFor={ids.name}>
-            {t.dialog.name}
-          </label>
-          <input
-            id={ids.name}
-            className="form-field__control"
-            value={name}
-            placeholder={file ? file.name.replace(/\.[^.]+$/, '').slice(0, 120) : t.dialog.namePlaceholder}
-            disabled={busy}
-            aria-invalid={nameIssue() ? true : undefined}
-            onChange={(event) => setName(event.target.value)}
-          />
-          {nameIssue() ? <p className="form-field__error">{nameIssue()}</p> : null}
-        </div>
+        <Field
+          config={{
+            name: 'floorPlanName',
+            label: t.dialog.name,
+            placeholder: file ? file.name.replace(/\.[^.]+$/, '').slice(0, TEXT_LIMITS.documentName) : t.dialog.namePlaceholder,
+            autoComplete: 'off',
+            maxLength: TEXT_LIMITS.documentName,
+          }}
+          value={name}
+          error={nameIssue() ?? undefined}
+          valid={Boolean(name.trim()) && !nameIssue()}
+          disabled={busy}
+          onChange={setName}
+        />
 
-        <div className="form-field">
-          <label className="form-field__label" htmlFor={ids.description}>
-            {t.dialog.description}
-          </label>
-          <textarea
-            id={ids.description}
-            className="form-field__control"
-            value={description}
-            placeholder={t.dialog.descriptionPlaceholder}
-            rows={2}
-            disabled={busy}
-            aria-invalid={descriptionIssue() ? true : undefined}
-            onChange={(event) => setDescription(event.target.value)}
-          />
-          {descriptionIssue() ? <p className="form-field__error">{descriptionIssue()}</p> : null}
-        </div>
+        <Field
+          config={{
+            name: 'floorPlanDescription',
+            label: t.dialog.description,
+            type: 'textarea',
+            placeholder: t.dialog.descriptionPlaceholder,
+            rows: 2,
+            maxLength: TEXT_LIMITS.longText,
+          }}
+          value={description}
+          error={descriptionIssue() ?? undefined}
+          valid={Boolean(description.trim()) && !descriptionIssue()}
+          disabled={busy}
+          onChange={setDescription}
+        />
 
-        <div className="form-field">
-          <label className="form-field__label" htmlFor={ids.level}>
-            {t.dialog.level}
-          </label>
-          <input
-            id={ids.level}
-            className="form-field__control"
-            value={level}
-            placeholder={t.dialog.levelPlaceholder}
-            disabled={busy}
-            aria-invalid={levelIssue() ? true : undefined}
-            onChange={(event) => setLevel(event.target.value)}
-          />
-          {levelIssue() ? <p className="form-field__error">{levelIssue()}</p> : null}
-        </div>
+        <Field
+          config={{
+            name: 'floorPlanLevel',
+            label: t.dialog.level,
+            placeholder: t.dialog.levelPlaceholder,
+            autoComplete: 'off',
+            maxLength: TEXT_LIMITS.zoneLevel,
+          }}
+          value={level}
+          error={levelIssue() ?? undefined}
+          valid={Boolean(level.trim()) && !levelIssue()}
+          disabled={busy}
+          onChange={setLevel}
+        />
 
         {isPdf ? (
-          <div className="form-field">
-            <label className="form-field__label" htmlFor={ids.page}>
-              {t.dialog.pageNumber}
-            </label>
-            <input
-              id={ids.page}
-              className="form-field__control"
-              type="number"
-              min={1}
-              value={pageNumber}
-              disabled={busy}
-              aria-describedby={`${ids.page}-hint`}
-              aria-invalid={pageIssue() ? true : undefined}
-              onChange={(event) => setPageNumber(Math.max(1, parseInt(event.target.value, 10) || 1))}
-            />
-            <p id={`${ids.page}-hint`} className="form-field__hint">{t.dialog.pageNumberHint}</p>
-            {pageIssue() ? <p className="form-field__error">{pageIssue()}</p> : null}
-          </div>
+          <Field
+            config={{ name: 'floorPlanPage', label: t.dialog.pageNumber, type: 'number', maxDigits: 4, hint: t.dialog.pageNumberHint }}
+            value={pageNumber}
+            error={pageIssue() ?? undefined}
+            valid={!pageIssue()}
+            disabled={busy}
+            onChange={setPageNumber}
+          />
         ) : null}
 
         {stage.kind === 'uploading' ? (
@@ -217,7 +205,7 @@ export function FloorPlanUploadDialog({ organizationId, siteId, onUploaded, onCl
           <button type="button" className="button" onClick={onClose} disabled={busy}>
             {t.dialog.cancel}
           </button>
-          <button type="submit" className="button button--primary" disabled={busy}>
+          <button type="submit" className="button button--primary" disabled={busy} aria-busy={busy}>
             {stage.kind === 'uploading'
               ? formatMessage(t.dialog.uploading, { percent: Math.round(stage.progress * 100) })
               : stage.kind === 'confirming'

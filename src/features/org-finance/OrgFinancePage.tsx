@@ -2,6 +2,7 @@ import { Navigate } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { SkeletonList, Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
+import { useCurrency } from '../../currency'
 import { ApiError } from '../../lib/http'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -28,6 +29,7 @@ export function OrgFinancePage() {
 function OrgFinanceDashboard() {
   const organization = useCurrentOrganization()
   const { messages: m, locale } = useLocale()
+  const { currency } = useCurrency()
   const t = m.orgFinance
   const summary = useRemoteData(`${organization.id}:finance-summary`, () => getOrgFinanceSummary(organization.id))
   const forbidden = summary.error instanceof ApiError && summary.error.status === 403
@@ -41,7 +43,7 @@ function OrgFinanceDashboard() {
           <h1>{t.title}</h1>
           <p>{t.subtitle}</p>
         </div>
-        <p className="org-finance__scope">{t.currencyNote}</p>
+        <p className="org-finance__scope">{formatMessage(t.currencyNote, { currency })}</p>
       </header>
 
       {summary.status === 'error' ? (

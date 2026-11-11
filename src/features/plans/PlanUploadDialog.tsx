@@ -1,8 +1,11 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
+import { Field } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { formatMessage, useLocale } from '../../i18n'
 import {
+  MAX_DESCRIPTION_LENGTH,
   MAX_FINAL_BYTES,
+  MAX_NAME_LENGTH,
   compressPlanImage,
   planDescriptionIssue,
   planFileIssue,
@@ -25,7 +28,7 @@ type Stage = { kind: 'idle' } | { kind: 'compressing' } | { kind: 'uploading'; p
 export function PlanUploadDialog({ organizationId, siteId, folderId, onUploaded, onClose }: PlanUploadDialogProps) {
   const { messages: m } = useLocale()
   const t = m.plans
-  const ids = { file: useId(), name: useId(), description: useId() }
+  const ids = { file: useId() }
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [name, setName] = useState('')
@@ -130,38 +133,36 @@ export function PlanUploadDialog({ organizationId, siteId, folderId, onUploaded,
           {file && preview ? <img className="plan-upload__preview" src={preview} alt={t.dialog.preview} /> : null}
         </div>
 
-        <div className="form-field">
-          <label className="form-field__label" htmlFor={ids.name}>
-            {t.dialog.name}
-          </label>
-          <input
-            id={ids.name}
-            className="form-field__control"
-            value={name}
-            placeholder={file ? nameFromFile(file.name) : t.dialog.namePlaceholder}
-            disabled={busy}
-            aria-invalid={nameIssue ? true : undefined}
-            onChange={(event) => setName(event.target.value)}
-          />
-          {nameIssue ? <p className="form-field__error">{t.validation[nameIssue]}</p> : null}
-        </div>
+        <Field
+          config={{
+            name: 'planName',
+            label: t.dialog.name,
+            placeholder: file ? nameFromFile(file.name) : t.dialog.namePlaceholder,
+            autoComplete: 'off',
+            maxLength: MAX_NAME_LENGTH,
+          }}
+          value={name}
+          error={nameIssue ? t.validation[nameIssue] : undefined}
+          valid={Boolean(name.trim()) && !nameIssue}
+          disabled={busy}
+          onChange={setName}
+        />
 
-        <div className="form-field">
-          <label className="form-field__label" htmlFor={ids.description}>
-            {t.dialog.description}
-          </label>
-          <textarea
-            id={ids.description}
-            className="form-field__control plan-upload__description"
-            value={description}
-            placeholder={t.dialog.descriptionPlaceholder}
-            rows={2}
-            disabled={busy}
-            aria-invalid={descriptionIssue ? true : undefined}
-            onChange={(event) => setDescription(event.target.value)}
-          />
-          {descriptionIssue ? <p className="form-field__error">{t.validation[descriptionIssue]}</p> : null}
-        </div>
+        <Field
+          config={{
+            name: 'planDescription',
+            label: t.dialog.description,
+            type: 'textarea',
+            placeholder: t.dialog.descriptionPlaceholder,
+            rows: 2,
+            maxLength: MAX_DESCRIPTION_LENGTH,
+          }}
+          value={description}
+          error={descriptionIssue ? t.validation[descriptionIssue] : undefined}
+          valid={Boolean(description.trim()) && !descriptionIssue}
+          disabled={busy}
+          onChange={setDescription}
+        />
 
         {stage.kind === 'uploading' ? (
           <progress className="plan-upload__progress" max={1} value={stage.progress} aria-label={t.dialog.title} />
@@ -177,7 +178,7 @@ export function PlanUploadDialog({ organizationId, siteId, folderId, onUploaded,
           <button type="button" className="button" onClick={onClose} disabled={busy}>
             {t.dialog.cancel}
           </button>
-          <button type="submit" className="button button--primary" disabled={busy}>
+          <button type="submit" className="button button--primary" disabled={busy} aria-busy={busy}>
             {stageLabel(stage, t.dialog)}
           </button>
         </div>

@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { AuthApiError, login, register, resendVerification } from './authApi'
 import { useAuth } from './auth-context'
 import { AuthLayout } from './AuthLayout'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { makeLoginSchema, makeRegistrationSchema } from './schemas'
 import { getOAuth2AuthorizationUrl } from '../../config/env'
 import { useLocale } from '../../i18n'
@@ -89,6 +89,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
             label: m.auth.field.nameLabel,
             type: 'text',
             autoComplete: 'name',
+            maxLength: TEXT_LIMITS.personName,
           } satisfies FieldConfig,
         ]
       : []),
@@ -100,6 +101,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       autoComplete: 'email',
       inputMode: 'email',
       spellCheck: false,
+      maxLength: TEXT_LIMITS.email,
     },
     {
       name: 'password',
@@ -139,6 +141,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
                 className="auth-resend__button"
                 onClick={handleResend}
                 disabled={resendStatus === 'sending'}
+                aria-busy={resendStatus === 'sending'}
               >
                 {resendStatus === 'sending' ? m.auth.accepted.resendSending : m.auth.accepted.resendButton}
               </button>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Form, useForm, type FieldConfig } from '../../components/form'
+import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { formatMessage, useLocale } from '../../i18n'
 import { roleLabel } from '../permissions'
 import type { Site } from '../sites/sitesApi'
@@ -52,6 +52,7 @@ export function InviteForm({ organizationId, roles, sites, onInvited }: InviteFo
       type: 'email',
       placeholder: t.invite.emailPlaceholder,
       autoComplete: 'off',
+      maxLength: TEXT_LIMITS.email,
       inputMode: 'email',
       spellCheck: false,
     },

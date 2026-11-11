@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { OnboardingProvider } from './features/onboarding'
 import { OrganizationsProvider } from './features/organizations'
+import { CurrencyProvider } from './currency'
 import { LocaleProvider } from './i18n'
 import { ThemeProvider } from './theme'
 
@@ -15,13 +16,15 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <LocaleProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <OnboardingProvider>
-              <OrganizationsProvider>
-                <App />
-              </OrganizationsProvider>
-            </OnboardingProvider>
-          </AuthProvider>
+          <CurrencyProvider>
+            <AuthProvider>
+              <OnboardingProvider>
+                <OrganizationsProvider>
+                  <App />
+                </OrganizationsProvider>
+              </OnboardingProvider>
+            </AuthProvider>
+          </CurrencyProvider>
         </ThemeProvider>
       </LocaleProvider>
     </BrowserRouter>

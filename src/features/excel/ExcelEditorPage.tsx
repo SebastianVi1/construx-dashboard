@@ -158,7 +158,7 @@ export function ExcelEditorPage() {
         <h1 className="excel-editor__name">{loaded.record.name}</h1>
         {dirty ? <span className="badge" data-tone="warning">{t.unexported}</span> : null}
         {saveLabel ? <span className="excel-editor__save" role="status">{saveLabel}</span> : null}
-        <button type="button" className="button button--primary" disabled={downloading} onClick={() => void download()}>
+        <button type="button" className="button button--primary" disabled={downloading} onClick={() => void download()} aria-busy={downloading}>
           {downloading ? t.downloading : t.download}
         </button>
       </header>

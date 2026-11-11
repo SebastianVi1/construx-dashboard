@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import type { Locale } from '../../i18n'
+import { PESOS, type MoneyConversion } from '../../currency'
 import { ApiError } from '../../lib/http'
-import { moneyText } from '../materials/priceRules'
 
 export type BudgetValidationMessages = {
   required: string
@@ -12,48 +11,58 @@ export type BudgetValidationMessages = {
 
 export type AmountIssue = 'required' | 'invalid' | 'decimals' | 'max'
 
+/** Below 10^12 pesos: numeric(14,2) on the backend. */
+export const MAX_AMOUNT_MXN = 1e12
+
 /**
- * Money rules shared by budgets and expenses, mirroring numeric(14,2) on the backend:
- * plain digits with an optional dot, at most two decimals, below 10^12. Budgets allow 0,
- * expenses must be greater than 0.
+ * Money rules shared by budgets, expenses and prices: plain digits with an optional dot, at most two
+ * decimals, below `max` pesos once converted with `money` (the user may be typing dollars). Budgets
+ * allow 0; expenses and prices must be greater than 0.
  */
-export function amountIssue(raw: string, options: { allowZero: boolean }): AmountIssue | null {
+export function amountIssue(
+  raw: string,
+  { allowZero, max = MAX_AMOUNT_MXN, money = PESOS }: { allowZero: boolean; max?: number; money?: MoneyConversion },
+): AmountIssue | null {
   const value = raw.trim()
   if (!value) return 'required'
   if (!/^\d+(\.\d+)?$/.test(value)) return 'invalid'
-  if (!options.allowZero && Number(value) === 0) return 'invalid'
+  if (!allowZero && Number(value) === 0) return 'invalid'
   if (!/^\d+(\.\d{1,2})?$/.test(value)) return 'decimals'
-  if (Number(value) >= 1e12) return 'max'
+  if (money.toMxn(Number(value)) >= max) return 'max'
   return null
 }
 
 /** Budget rules: an amount >= 0. Removing the budget is a separate action, so empty is invalid. */
-export function makeBudgetSchema(messages: BudgetValidationMessages) {
+export function makeBudgetSchema(messages: BudgetValidationMessages, money: MoneyConversion = PESOS) {
   return z.object({
     amount: z.string().superRefine((raw, context) => {
-      const issue = amountIssue(raw, { allowZero: true })
+      const issue = amountIssue(raw, { allowZero: true, money })
       if (issue) context.addIssue({ code: 'custom', message: messages[issue] })
     }),
   })
 }
 
 /** Phase and task budgets are optional: empty means "no budget", anything typed follows the budget rules. */
-export function optionalBudgetField(messages: BudgetValidationMessages) {
+export function optionalBudgetField(messages: BudgetValidationMessages, money: MoneyConversion = PESOS) {
   return z.string().superRefine((raw, context) => {
     if (!raw.trim()) return
-    const issue = amountIssue(raw, { allowZero: true })
+    const issue = amountIssue(raw, { allowZero: true, money })
     if (issue) context.addIssue({ code: 'custom', message: messages[issue] })
   })
 }
 
-/** The validated optional input as the API value: null clears the budget. */
-export function optionalBudgetAmount(raw: string): number | null {
-  return raw.trim() ? budgetAmount(raw) : null
+/** The validated optional input as the API value in pesos: null clears the budget. */
+export function optionalBudgetAmount(raw: string, money: MoneyConversion = PESOS): number | null {
+  return raw.trim() ? budgetAmount(raw, money) : null
 }
 
-/** Whether the typed amount differs from the stored one, so the dialog only calls the budget endpoint when needed. */
-export function budgetChanged(current: number | null, raw: string): boolean {
-  return optionalBudgetAmount(raw) !== current
+/**
+ * Whether the typed amount differs from the stored one, so the dialog only calls the budget endpoint when
+ * needed. Compared in the typed currency, so an untouched dollar amount never drifts by a cent.
+ */
+export function budgetChanged(current: number | null, raw: string, money: MoneyConversion = PESOS): boolean {
+  if (!raw.trim()) return current !== null
+  return current === null || Number(raw.trim()) !== money.fromMxn(current)
 }
 
 export type AllocationIssue = 'budgetExceeded' | 'budgetParentMissing'
@@ -70,17 +79,13 @@ export function allocationIssue(error: unknown): AllocationIssue | null {
   return null
 }
 
-/** The validated input as the number the API takes. */
-export function budgetAmount(raw: string): number {
-  return Number(raw.trim())
+/** The validated input as the pesos the API takes. */
+export function budgetAmount(raw: string, money: MoneyConversion = PESOS): number {
+  return money.toMxn(Number(raw.trim()))
 }
 
-/** The stored budget as the dialog's initial text. */
-export function budgetToInput(amount: number | null): string {
-  return amount === null ? '' : String(amount)
+/** The stored budget as the dialog's initial text, in the typed currency with cents: "250000.50". */
+export function budgetToInput(amount: number | null, money: MoneyConversion = PESOS): string {
+  return amount === null ? '' : money.fromMxn(amount).toFixed(2)
 }
 
-/** Budgets share the global currency (MXN): "$250,000.50". */
-export function budgetText(amount: number, locale: Locale): string {
-  return moneyText(String(amount), locale)
-}
