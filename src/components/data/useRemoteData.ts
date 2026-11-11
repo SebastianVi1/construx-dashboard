@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
+import { isMainScreen } from '../../lib/mainScreen'
 import { hasSessionValue, readSessionValue, writeSessionValue } from '../../lib/sessionCache'
 
 export type RemoteStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -25,6 +26,12 @@ export type RemoteDataOptions = {
    * once instead of a generic panel and then the real one.
    */
   immediate?: boolean
+  /**
+   * Start from the value this tab last showed for the key. Turn it off for an
+   * answer that goes stale out of band, like a presigned image URL that expires:
+   * the next visit reads it again instead of rendering an expired address.
+   */
+  remember?: boolean
 }
 
 /** How long a screen's first load keeps its placeholder, so the skeleton can be read. */
@@ -64,32 +71,36 @@ export function clearFirstLoadWindows(): void {
  *
  * A key this tab has already shown starts from its last value and revalidates
  * in the background: no placeholder and no first-load wait on the way back.
- * Only a genuinely new screen stays in `loading` long enough to read its
- * skeleton (`FIRST_LOAD_MIN_MS`), even when the response arrives sooner.
+ * Only a genuinely new main screen stays in `loading` long enough to read its
+ * skeleton (`FIRST_LOAD_MIN_MS`), even when the response arrives sooner;
+ * sections inside a main screen (a site's tabs and panels) open immediately.
  */
 export function useRemoteData<T>(
   key: string | null,
   load: () => Promise<T>,
-  { immediate = false }: RemoteDataOptions = {},
+  { immediate = false, remember = true }: RemoteDataOptions = {},
 ): RemoteData<T> {
   const [request, setRequest] = useState(0)
   const [loaded, setLoaded] = useState<Loaded<T> | null>(null)
   const run = useEffectEvent(() => load())
-  const screen = useLocation().key
-  const screenRef = useRef(screen)
+  const location = useLocation()
+  const screenRef = useRef(location.key)
+  // Only a main screen holds its skeleton; a section inside one opens immediately.
+  const mainScreenRef = useRef(isMainScreen(location.pathname))
 
   // Keep the navigation key current without refetching when only the URL changes.
   useEffect(() => {
-    screenRef.current = screen
-  }, [screen])
+    screenRef.current = location.key
+    mainScreenRef.current = isMainScreen(location.pathname)
+  }, [location.key, location.pathname])
 
   useEffect(() => {
     if (key === null) return
     let active = true
     let timer: ReturnType<typeof setTimeout> | undefined
     // A screen already shown keeps its rows on screen while this request runs.
-    const alreadyShown = hasSessionValue(key)
-    const startedAt = alreadyShown || immediate ? 0 : firstLoadWindow(screenRef.current)
+    const alreadyShown = remember && hasSessionValue(key)
+    const startedAt = alreadyShown || immediate || !mainScreenRef.current ? 0 : firstLoadWindow(screenRef.current)
 
     function commit(next: Loaded<T>) {
       if (active) setLoaded(next)
@@ -114,15 +125,15 @@ export function useRemoteData<T>(
       active = false
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [key, request, immediate])
+  }, [key, request, immediate, remember])
 
   // Whatever this screen shows becomes the value a later visit starts from.
   useEffect(() => {
-    if (key !== null && loaded?.key === key && loaded.ok) writeSessionValue(key, loaded.data)
-  }, [key, loaded])
+    if (remember && key !== null && loaded?.key === key && loaded.ok) writeSessionValue(key, loaded.data)
+  }, [key, loaded, remember])
 
   const current = loaded?.key === key ? loaded : null
-  const cached = current === null && key !== null && hasSessionValue(key)
+  const cached = remember && current === null && key !== null && hasSessionValue(key)
     ? { key, request, ok: true as const, data: readSessionValue<T>(key) as T }
     : null
   const shown = current ?? cached

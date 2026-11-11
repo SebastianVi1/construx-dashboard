@@ -2,7 +2,7 @@ import { SkeletonBlock, SkeletonRegion } from '../../components/page'
 
 export function PhaseListSkeleton() {
   return <SkeletonRegion className="phase-timeline">
-    {Array.from({ length: 3 }, (_, i) => <div className="phase" key={i}>
+    {Array.from({ length: 6 }, (_, i) => <div className="phase" key={i}>
       <div className="phase__rail"><span className="phase__node" /></div>
       <div className="phase__body">
         <div className="phase__header">
@@ -48,7 +48,7 @@ export function ScheduleSkeleton() {
           <div className="gantt__corner"><SkeletonBlock width="70%" height={18} /></div>
           <SkeletonBlock height={48} />
         </div>
-        {Array.from({ length: 6 }, (_, i) => <div className="gantt__row" data-kind={i % 3 === 0 ? 'phase' : 'task'} key={i}>
+        {Array.from({ length: 10 }, (_, i) => <div className="gantt__row" data-kind={i % 3 === 0 ? 'phase' : 'task'} key={i}>
           <div className="gantt__name"><SkeletonBlock width="75%" height={18} /></div>
           <div className="gantt__name" style={{ paddingLeft: `${24 + (i % 3) * 80}px` }}><SkeletonBlock width="45%" height={18} /></div>
         </div>)}

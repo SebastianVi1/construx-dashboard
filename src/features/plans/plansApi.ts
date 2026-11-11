@@ -49,7 +49,11 @@ function planPath(organizationId: string, siteId: string, planId: string): strin
 
 /** Plans for a site in a given folder (by document-folder ID), newest first. */
 export function getSitePlans(organizationId: string, siteId: string, folderId: string): Promise<Plan[]> {
-  return getJson(`${plansPath(organizationId, siteId)}?folderId=${encodeURIComponent(folderId)}`, z.array(planSchema))
+  // The plans carry presigned image links, so the answer must not come from a cache.
+  return getJson(
+    `${plansPath(organizationId, siteId)}?folderId=${encodeURIComponent(folderId)}&fresh=${Date.now()}`,
+    z.array(planSchema),
+  )
 }
 
 /** Step 1: announce the file; blank name and description are left out. folderId is omitted when null. */

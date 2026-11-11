@@ -15,9 +15,10 @@ function render(component: () => ReturnType<typeof createElement>) {
 describe('resource loading containers', () => {
   test('floor plan loading reserves the actual gallery cards and thumbnails', () => {
     const html = render(FloorPlanGallerySkeleton)
-    expect(html).toContain('class="floor-plan-list"')
-    expect(html.match(/class="floor-plan-card"/g)).toHaveLength(3)
-    expect(html.match(/class="floor-plan-card__thumb"/g)).toHaveLength(3)
+    expect(html).toContain('floor-plan-list')
+    // The gallery placeholder is as full as a gallery with many plans would be.
+    expect(html.match(/class="floor-plan-card"/g)).toHaveLength(6)
+    expect(html.match(/class="floor-plan-card__thumb"/g)).toHaveLength(6)
     expect(html).not.toContain('<button')
   })
 
@@ -33,8 +34,8 @@ describe('resource loading containers', () => {
     const folders = render(DocumentFoldersSkeleton)
     const entries = render(DocumentEntriesSkeleton)
     expect(folders).toContain('document-folders-grid')
-    expect(folders.match(/class="document-folder-card"/g)).toHaveLength(4)
+    expect(folders.match(/class="document-folder-card"/g)).toHaveLength(8)
     expect(entries).toContain('document-entries-list')
-    expect(entries.match(/class="document-entry"/g)).toHaveLength(4)
+    expect(entries.match(/class="document-entry"/g)).toHaveLength(8)
   })
 })

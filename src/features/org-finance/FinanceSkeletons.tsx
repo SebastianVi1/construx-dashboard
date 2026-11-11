@@ -15,7 +15,7 @@ export function FinanceChartSkeleton() {
 }
 
 export function FinanceDashboardSkeleton() {
-  return <div className="page-section">
+  return <div className="page-section skeleton-screen">
     <SkeletonRegion className="org-kpis">
       {Array.from({ length: 4 }, (_, i) => <div className="org-kpis__item" key={i}>
         <SkeletonBlock width="65%" height={18} />

@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it, mock } from 'bun:test'
+import type { AxiosInstance } from 'axios'
+import { configureHttp } from '../../../lib/http'
 import {
   floorPlanSchema,
   floorPlanUploadTicketSchema,
+  getFloorPlan,
+  listFloorPlans,
   type FloorPlan,
 } from '../../../features/floor-plans/floorPlansApi'
 
@@ -82,8 +86,7 @@ describe('floorPlanSchema', () => {
   })
 })
 
-describe('floorPlanUploadTicketSchema', () => {
-  it('parses a valid upload ticket', () => {
+describe('floorPlanUploadTicketSchema', () => {  it('parses a valid upload ticket', () => {
     const ticket = {
       floorPlanId: 'fp-new',
       uploadUrl: 'https://s3.example.com/presigned',
@@ -98,5 +101,34 @@ describe('floorPlanUploadTicketSchema', () => {
   it('rejects an empty floorPlanId', () => {
     const result = floorPlanUploadTicketSchema.safeParse({ floorPlanId: '', uploadUrl: 'https://x', headers: {}, expiresAt: '2026-11-01' })
     expect(result.success).toBe(false)
+  })
+})
+
+describe('reads that carry a presigned URL', () => {
+  const csrfOk = { data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
+
+  function stubApi(answer: unknown) {
+    const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : { status: 200, data: answer }))
+    const client = { get, post: get, patch: get, put: get, delete: get }
+    configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
+    return get
+  }
+
+  afterEach(() => {
+    configureHttp({ baseUrl: '/api' })
+  })
+
+  it('never asks the browser cache for a plan', async () => {
+    const get = stubApi(baseFloorPlan)
+    await getFloorPlan('o-1', 'p-1', 'fp-1')
+    const url = (get.mock.calls[0] as unknown as [string])[0]
+    expect(url).toStartWith('/api/organizations/o-1/projects/p-1/floor-plans/fp-1?fresh=')
+  })
+
+  it('never asks the browser cache for the list of plans', async () => {
+    const get = stubApi([baseFloorPlan])
+    await listFloorPlans('o-1', 'p-1')
+    const url = (get.mock.calls[0] as unknown as [string])[0]
+    expect(url).toStartWith('/api/organizations/o-1/projects/p-1/floor-plans?fresh=')
   })
 })

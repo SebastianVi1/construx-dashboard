@@ -28,7 +28,10 @@ export function SitePlanFolderPage() {
   const canManage = can('MANAGE_PROJECT', siteId)
 
   const folders = useRemoteData(`${org.id}:${siteId}:doc-folders`, () => getDocumentFolders(org.id, siteId))
-  const remote = useRemoteData(`${org.id}:${siteId}:${folderId}:plans`, () => getSitePlans(org.id, siteId, folderId))
+  const remote = useRemoteData(`${org.id}:${siteId}:${folderId}:plans`, () => getSitePlans(org.id, siteId, folderId), {
+    // The plans carry presigned image links that expire; a past answer would show broken thumbnails.
+    remember: false,
+  })
 
   const [uploadOpen, setUploadOpen] = useState(false)
   const [deleting, setDeleting] = useState<Plan | null>(null)

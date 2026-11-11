@@ -410,6 +410,38 @@ a.button--primary {
   50% { opacity: 0.4; }
 }
 
+/* A first-load placeholder claims the content area the way a screen full of data would,
+   even when the answer turns out to hold a single row. */
+.skeleton-screen {
+  min-height: max(320px, calc(100svh - 320px));
+}
+
+.skeleton-screen--compact {
+  min-height: max(200px, calc(100svh - 560px));
+}
+
+/* Grid placeholders spread their rows over that height instead of stopping short. */
+.skeleton-screen.sites-grid,
+.skeleton-screen.floor-plan-list,
+.skeleton-screen.site-plans__grid,
+.skeleton-screen.document-folders-grid,
+.skeleton-screen.document-entries-list,
+.skeleton-screen.crews-list,
+.skeleton-screen.task-board {
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+/* List placeholders stretch their rows over that height too. */
+.skeleton-screen.member-rows > .member-row {
+  flex: 1 1 auto;
+}
+
+/* Table placeholders grow into the reserved height; the browser shares it between rows. */
+.skeleton-screen > table {
+  height: 100%;
+  min-height: inherit;
+}
+
 .skeleton-list {
   display: grid;
   gap: 12px;

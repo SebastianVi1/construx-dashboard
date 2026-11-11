@@ -294,6 +294,7 @@ export function FloorPlanPage() {
                   <FloorPlanViewer
                     floorPlan={floorPlan}
                     onMapReady={handleMapReady}
+                    onRetry={plan.reload}
                   />
                   {/* Floating cards over the plan (drawing, calibration); tools portal into it */}
                   <div ref={setOverlayHost} className="floor-plan-canvas__overlay">

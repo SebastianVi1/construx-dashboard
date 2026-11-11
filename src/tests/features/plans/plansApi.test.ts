@@ -120,11 +120,12 @@ describe('plans API', () => {
     await expect(sendToStorage(ticket, new Blob(['x']), () => {}, () => fakeRequest(0, true).request)).rejects.toBeInstanceOf(StorageUploadError)
   })
 
-  it('getSitePlans: GETs plans filtered by folderId', async () => {
+  it('getSitePlans: GETs plans filtered by folderId, never from a cache', async () => {
     const { get } = stubApi({ get: () => ({ status: 200, data: [plan] }) })
     const result = await getSitePlans('o-1', 'p-1', 'f-1')
     expect(result).toEqual([plan])
-    expect((get.mock.calls[0] as unknown as [string])[0]).toBe(`${base}?folderId=f-1`)
+    const url = (get.mock.calls[0] as unknown as [string])[0]
+    expect(url).toStartWith(`${base}?folderId=f-1&fresh=`)
   })
 
   it('requestPlanUpload: includes folderId in body when provided', async () => {

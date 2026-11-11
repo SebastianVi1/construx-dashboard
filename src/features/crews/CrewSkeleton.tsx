@@ -3,8 +3,8 @@ import './crews.css'
 
 export function CrewSkeleton() {
   return <SkeletonRegion>
-    <ul className="crews-list" aria-hidden="true">
-      {Array.from({ length: 3 }, (_, i) => <li className="crew-card" key={i}>
+    <ul className="crews-list skeleton-screen" aria-hidden="true">
+      {Array.from({ length: 6 }, (_, i) => <li className="crew-card" key={i}>
         <div className="crew-card__header">
           <div className="page-header__text">
             <SkeletonBlock height={24} width="65%" />

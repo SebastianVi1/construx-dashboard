@@ -45,7 +45,10 @@ export function useFloorPlan(organizationId: string, siteId: string, floorPlanId
   const keysFor = (floorPlan?: FloorPlan, calibration?: Calibration | null) =>
     floorPlanLoadKeys(organizationId, siteId, floorPlanId, floorPlan, calibration)
 
-  const plan = useRemoteData(keysFor().plan, () => getFloorPlan(organizationId, siteId, floorPlanId))
+  // The answer carries a presigned image URL that expires, so it is never reused from a past visit.
+  const plan = useRemoteData(keysFor().plan, () => getFloorPlan(organizationId, siteId, floorPlanId), {
+    remember: false,
+  })
   const floorPlan = plan.data
   const calibrationRead = useRemoteData(keysFor(floorPlan).calibration, () =>
     findCalibration(organizationId, siteId, floorPlanId),

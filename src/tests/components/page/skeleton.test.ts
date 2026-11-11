@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { SkeletonBlock, SkeletonRegion, SkeletonTable } from '../../../components/page/Skeleton'
+import { skeletonRowCount } from '../../../components/page/skeletonSize'
 import { CrewsSectionSkeleton } from '../../../features/crews/CrewSkeleton'
 import { PhasesPageSkeleton } from '../../../features/goals/PhaseSkeletons'
 import { LocaleContext } from '../../../i18n/locale-context'
@@ -45,5 +46,16 @@ describe('container loading placeholders', () => {
     expect(html).toContain('page-header')
     expect(html).toContain('filter-tabs')
     expect(html).toContain('gantt__sheet--skeleton')
+  })
+})
+
+describe('placeholder size', () => {
+  test('the row count stays between the floor and the ceiling of the viewport', () => {
+    expect(skeletonRowCount({ rowHeight: 50, reserved: 300, min: 6, max: 14 })).toBeGreaterThanOrEqual(6)
+    expect(skeletonRowCount({ rowHeight: 50, reserved: 300, min: 6, max: 14 })).toBeLessThanOrEqual(14)
+  })
+
+  test('without a viewport the placeholder keeps a full table of rows', () => {
+    expect(skeletonRowCount()).toBe(8)
   })
 })

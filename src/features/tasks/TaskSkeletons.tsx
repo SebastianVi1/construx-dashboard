@@ -2,10 +2,10 @@ import { SkeletonBlock, SkeletonRegion, SkeletonRows, SkeletonTable } from '../.
 
 export function TaskBoardSkeleton({ columns = 3 }: { columns?: number }) {
   return <SkeletonRegion>
-    <div className="task-board" data-columns={columns}>
+    <div className="task-board skeleton-screen" data-columns={columns}>
       {Array.from({ length: columns }, (_, i) => <div className="task-column" key={i}>
         <div className="task-column__title"><SkeletonBlock width="60%" height={18} /></div>
-        <div className="task-list">{Array.from({ length: 2 }, (_, j) => <div className="task-item" key={j}>
+        <div className="task-list">{Array.from({ length: 5 }, (_, j) => <div className="task-item" key={j}>
           <div className="task-item__name"><SkeletonBlock width="80%" height={20} /></div>
           <div className="task-item__meta"><SkeletonBlock width="65%" height={18} /></div>
           <div className="task-item__actions"><SkeletonBlock width="45%" height={24} /></div>

@@ -27,7 +27,8 @@ export function SiteFloorPlans({ siteId }: { siteId: string }) {
 
   const orgId = organization?.id ?? ''
   const canManage = can('MANAGE_PLAN') ?? false
-  const remote = useRemoteData(`floor-plans-${siteId}`, () => listFloorPlans(orgId, siteId))
+  // Thumbnails use presigned URLs, so a list from a past visit would show expired images.
+  const remote = useRemoteData(`floor-plans-${siteId}`, () => listFloorPlans(orgId, siteId), { remember: false })
 
   if (!siteId || !organization) return null
 

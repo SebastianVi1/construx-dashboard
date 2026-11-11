@@ -9,6 +9,8 @@ export const PROCESSING_POLL_MS = 3000
 export const VIEW_URL_MARGIN_MS = 5 * 60 * 1000
 /** Floor for URL refreshes, so a URL that comes back already near expiry cannot cause a reload loop. */
 export const MIN_URL_REFRESH_MS = 30_000
+/** A ready plan without a view URL is an anomaly; ask again at this pace instead of waiting forever. */
+export const MISSING_URL_POLL_MS = 10_000
 
 /**
  * When the plan itself should be read again, in ms from `now`, or null when nothing will change:
@@ -17,6 +19,10 @@ export const MIN_URL_REFRESH_MS = 30_000
 export function nextPollDelay(floorPlan: FloorPlan | undefined, now: number): number | null {
   if (!floorPlan) return null
   if (floorPlan.status === 'PENDING' || floorPlan.status === 'PROCESSING') return PROCESSING_POLL_MS
+  // A failed plan will never get an image; nothing to wait for.
+  if (floorPlan.status === 'ERROR') return null
+  // A ready plan without a URL must keep asking; otherwise the canvas could stay empty forever.
+  if (!floorPlan.viewUrl) return MISSING_URL_POLL_MS
   if (!floorPlan.viewUrlExpiresAt) return null
   const refreshAt = Date.parse(floorPlan.viewUrlExpiresAt) - VIEW_URL_MARGIN_MS
   return Math.max(MIN_URL_REFRESH_MS, refreshAt - now)
@@ -26,6 +32,8 @@ export function nextPollDelay(floorPlan: FloorPlan | undefined, now: number): nu
 export function refreshOnReturn(floorPlan: FloorPlan | undefined, now: number): boolean {
   if (!floorPlan) return false
   if (floorPlan.status === 'PENDING' || floorPlan.status === 'PROCESSING') return true
+  if (floorPlan.status === 'ERROR') return false
+  if (!floorPlan.viewUrl) return true
   if (!floorPlan.viewUrlExpiresAt) return false
   return Date.parse(floorPlan.viewUrlExpiresAt) - now < VIEW_URL_MARGIN_MS
 }

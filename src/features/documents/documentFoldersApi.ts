@@ -53,7 +53,8 @@ export function deleteDocumentFolder(org: string, site: string, folderId: string
 
 export function getDocumentEntries(org: string, site: string, folderId: string) {
   return getJson(
-    `${basePath(org, site)}/${encodeURIComponent(folderId)}/entries`,
+    // The entries carry presigned download links, so the answer must not come from a cache.
+    `${basePath(org, site)}/${encodeURIComponent(folderId)}/entries?fresh=${Date.now()}`,
     z.array(documentEntrySchema),
   )
 }

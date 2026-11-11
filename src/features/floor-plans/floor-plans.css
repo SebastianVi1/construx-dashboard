@@ -392,8 +392,48 @@
   inset: 0;
 }
 
-.floor-plan-viewer.leaflet-container {
+.floor-plan-viewer__map {
+  position: absolute;
+  inset: 0;
+}
+
+.floor-plan-viewer__map.leaflet-container {
   background: transparent;
+}
+
+/* Image on its way (or unavailable): say so instead of leaving a bare blue sheet. */
+.floor-plan-viewer__state {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: var(--cx-muted);
+  background: color-mix(in srgb, var(--cx-paper) 78%, transparent);
+}
+
+.floor-plan-viewer__state p {
+  max-width: 36ch;
+  margin: 0;
+}
+
+.floor-plan-viewer__spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--cx-border-strong);
+  border-top-color: var(--cx-accent);
+  border-radius: 50%;
+  animation: page-spin 800ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floor-plan-viewer__spinner {
+    animation-duration: 2400ms;
+  }
 }
 
 .floor-plan-canvas__overlay {

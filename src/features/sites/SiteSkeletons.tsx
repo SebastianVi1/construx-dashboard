@@ -1,8 +1,8 @@
 import { SkeletonBlock, SkeletonRegion } from '../../components/page'
 
 export function SitesGridSkeleton() {
-  return <SkeletonRegion className="sites-grid">
-    {Array.from({ length: 3 }, (_, i) => <div className="site-card" key={i}>
+  return <SkeletonRegion className="sites-grid skeleton-screen">
+    {Array.from({ length: 6 }, (_, i) => <div className="site-card" key={i}>
       <div className="site-card__header"><SkeletonBlock width={88} height={22} /></div>
       <div className="site-card__name"><SkeletonBlock width="72%" height={26} /></div>
       <div className="site-card__address"><SkeletonBlock width="88%" height={20} /></div>
@@ -30,7 +30,7 @@ export function BudgetOverviewSkeleton() {
 
 export function SiteTeamSkeleton() {
   return <SkeletonRegion className="site-team__roster">
-    {Array.from({ length: 4 }, (_, i) => <div className="site-team__person" key={i}>
+    {Array.from({ length: 6 }, (_, i) => <div className="site-team__person" key={i}>
       <SkeletonBlock width={32} height={32} />
       <div className="page-header__text" style={{ flex: 1 }}>
         <SkeletonBlock width="75%" height={20} /><SkeletonBlock width="50%" height={16} />

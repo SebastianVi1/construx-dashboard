@@ -122,10 +122,10 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
       )}
 
       {equipment.status === 'error' ? <Notice>{t.loadError}</Notice> : !equipment.data ? (
-        <SkeletonRegion>
+        <SkeletonRegion className="skeleton-screen">
           <table className="equipment-table" aria-hidden="true">
             <thead><tr>{[t.type, t.identifier, t.dailyCost, t.active, ...(canManage ? [''] : [])].map((label, i) => <th key={i}>{label}</th>)}</tr></thead>
-            <tbody>{Array.from({ length: 4 }, (_, row) => <tr key={row}>
+            <tbody>{Array.from({ length: 8 }, (_, row) => <tr key={row}>
               {Array.from({ length: canManage ? 5 : 4 }, (_, column) => <td key={column}><SkeletonBlock height={36} width="75%" /></td>)}
             </tr>)}</tbody>
           </table>

@@ -95,6 +95,8 @@ export function DocumentFolderPage() {
   const entriesRemote = useRemoteData(
     `${org.id}:${siteId}:${folderId}:entries`,
     () => getDocumentEntries(org.id, siteId, folderId),
+    // The entries carry presigned links that expire; a past answer would download nothing.
+    { remember: false },
   )
 
   const fileInputRef = useRef<HTMLInputElement>(null)

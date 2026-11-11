@@ -77,14 +77,22 @@ export function completeFloorPlanUpload(
   )
 }
 
+/**
+ * A read that carries a presigned image URL must not be answered from the browser's cache:
+ * the answer changes every time, and a cached one points at an address that may have expired.
+ */
+function freshQuery(): string {
+  return `?fresh=${Date.now()}`
+}
+
 /** List all floor plans for a site, newest first. */
 export function listFloorPlans(organizationId: string, siteId: string): Promise<FloorPlan[]> {
-  return getJson(floorPlansPath(organizationId, siteId), z.array(floorPlanSchema))
+  return getJson(`${floorPlansPath(organizationId, siteId)}${freshQuery()}`, z.array(floorPlanSchema))
 }
 
 /** Get a single floor plan with a fresh presigned view URL (1-hour TTL). */
 export function getFloorPlan(organizationId: string, siteId: string, floorPlanId: string): Promise<FloorPlan> {
-  return getJson(floorPlanPath(organizationId, siteId, floorPlanId), floorPlanSchema)
+  return getJson(`${floorPlanPath(organizationId, siteId, floorPlanId)}${freshQuery()}`, floorPlanSchema)
 }
 
 /** Delete a floor plan (removes row + S3 files). */

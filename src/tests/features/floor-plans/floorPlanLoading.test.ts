@@ -42,6 +42,10 @@ describe('nextPollDelay', () => {
     expect(nextPollDelay(plan({ status: 'ERROR', viewUrl: null, viewUrlExpiresAt: null }), NOW)).toBeNull()
     expect(nextPollDelay(undefined, NOW)).toBeNull()
   })
+
+  it('keeps asking for a ready plan that has no view URL yet', () => {
+    expect(nextPollDelay(plan({ viewUrl: null, viewUrlExpiresAt: null }), NOW)).toBe(10_000)
+  })
 })
 
 describe('refreshOnReturn', () => {
@@ -54,6 +58,10 @@ describe('refreshOnReturn', () => {
     expect(refreshOnReturn(plan(), NOW)).toBe(false)
     expect(refreshOnReturn(plan({ viewUrlExpiresAt: null }), NOW)).toBe(false)
     expect(refreshOnReturn(undefined, NOW)).toBe(false)
+  })
+
+  it('asks again for a ready plan with no view URL', () => {
+    expect(refreshOnReturn(plan({ viewUrl: null, viewUrlExpiresAt: null }), NOW)).toBe(true)
   })
 
   it('checks a rendering plan right away instead of waiting for the next poll', () => {

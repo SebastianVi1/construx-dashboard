@@ -3,8 +3,8 @@ import { SkeletonBlock, SkeletonRegion } from '../../components/page'
 export function FloorPlanGallerySkeleton() {
   return (
     <SkeletonRegion>
-      <ul className="floor-plan-list" aria-hidden="true">
-        {Array.from({ length: 3 }, (_, i) => (
+      <ul className="floor-plan-list skeleton-screen" aria-hidden="true">
+        {Array.from({ length: 6 }, (_, i) => (
           <li key={i} className="floor-plan-card">
             <div className="floor-plan-card__thumb"><SkeletonBlock height="100%" /></div>
             <div className="floor-plan-card__info">
@@ -42,7 +42,7 @@ export function PanelSkeleton({ kind }: { kind: 'roster' | 'pins' | 'audit' | 'a
   return (
     <SkeletonRegion>
       <ul className={listClass} aria-hidden="true" style={{ listStyle: 'none' }}>
-        {Array.from({ length: 3 }, (_, i) => (
+        {Array.from({ length: 6 }, (_, i) => (
           <li key={i} className={rowClass}>
             {kind === 'assignments' ? <>
               <div className="assignment-list__info"><SkeletonBlock width="75%" height={32} /></div>
