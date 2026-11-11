@@ -543,7 +543,8 @@
   color: var(--cx-ink);
 }
 
-.fp-segmented__option[aria-selected='true'] {
+.fp-segmented__option[aria-selected='true'],
+.fp-segmented__option[aria-pressed='true'] {
   background: var(--cx-surface);
   color: var(--cx-ink);
   box-shadow: 0 1px 3px var(--cx-shadow-color);
@@ -714,7 +715,9 @@
   max-width: 132px;
   padding: 3px;
   border-radius: var(--cx-radius-sm);
-  background: color-mix(in srgb, var(--cx-surface) 70%, transparent);
+  background: color-mix(in srgb, var(--cx-surface) 88%, transparent);
+  /* Framed in its zone's colour: the figures stand beside the zone, not on it */
+  box-shadow: 0 0 0 1.5px var(--zone-color, var(--cx-border-strong)), 0 2px 6px var(--cx-shadow-color);
   cursor: pointer;
 }
 
@@ -1157,5 +1160,463 @@
 
   .zone-panel--empty {
     padding: 20px 16px;
+  }
+}
+
+/* ── Pins: issues and progress photos on the plan ──────── */
+
+/* A pin's colour says what it is: open issues warn, resolved wait for a check, closed and photos stay quiet */
+.plan-pin--issue-open { --pin-color: var(--cx-danger); }
+.plan-pin--issue-resolved { --pin-color: var(--cx-warning); }
+.plan-pin--issue-closed { --pin-color: var(--cx-success); }
+.plan-pin--photo { --pin-color: var(--cx-primary); }
+.plan-pin--draft { --pin-color: var(--cx-brand); }
+
+.plan-pin-icon {
+  background: none;
+  border: 0;
+}
+
+/* A teardrop whose tip is the marked spot */
+.plan-pin {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0 2px;
+  border: 2px solid var(--cx-surface);
+  border-radius: 50% 50% 50% 0;
+  background: var(--pin-color);
+  color: var(--cx-on-primary);
+  box-shadow: 0 2px 6px var(--cx-shadow-color);
+  transform: rotate(-45deg);
+  transform-origin: 50% 50%;
+  cursor: pointer;
+}
+
+.plan-pin svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(45deg);
+}
+
+.plan-pin--selected {
+  outline: 3px solid color-mix(in srgb, var(--pin-color) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.plan-pin--draft {
+  animation: plan-pin-drop 180ms ease-out;
+}
+
+@keyframes plan-pin-drop {
+  from { transform: rotate(-45deg) translate(8px, -8px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-pin--draft { animation: none; }
+}
+
+.floor-plan-viewer--placing,
+.floor-plan-viewer--placing .leaflet-interactive {
+  cursor: crosshair;
+}
+
+/* The pin's colour runs along the top of its sheet, like a zone's does */
+.pin-sheet--issue-open { --zone-color: var(--cx-danger); }
+.pin-sheet--issue-resolved { --zone-color: var(--cx-warning); }
+.pin-sheet--issue-closed { --zone-color: var(--cx-success); }
+.pin-sheet--photo { --zone-color: var(--cx-primary); }
+
+.pin-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pin-color, var(--cx-muted)) 16%, transparent);
+  color: var(--cx-ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.pin-status--open { --pin-color: var(--cx-danger); }
+.pin-status--resolved { --pin-color: var(--cx-warning); }
+.pin-status--closed { --pin-color: var(--cx-success); }
+.pin-status--photo { --pin-color: var(--cx-primary); }
+
+/* An issue's life as a line: reached steps take their colour, the current one carries the weight */
+.pin-track {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pin-track__step {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 1px;
+  padding: 20px 8px 0 0;
+  color: var(--cx-muted);
+  font-size: 12.5px;
+  line-height: 17px;
+}
+
+.pin-track__step--open { --step-color: var(--cx-danger); }
+.pin-track__step--resolved { --step-color: var(--cx-warning); }
+.pin-track__step--closed { --step-color: var(--cx-success); }
+
+/* The rail to the next step */
+.pin-track__step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 16px;
+  right: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--cx-border);
+}
+
+.pin-track__step::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 2px solid var(--cx-border-strong);
+  border-radius: 50%;
+  background: var(--cx-surface);
+}
+
+.pin-track__step[data-reached]::before {
+  border-color: var(--step-color);
+  background: var(--step-color);
+}
+
+/* The rail fills once the step after it is reached */
+.pin-track__step[data-reached]:has(+ [data-reached])::after {
+  background: var(--cx-border-strong);
+}
+
+.pin-track__step[aria-current='step']::before {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--step-color) 22%, transparent);
+}
+
+.pin-track__step[aria-current='step'] .pin-track__label {
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.pin-track__date {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Who is behind the pin: a face, a name, and what they have to do with it */
+.pin-people {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pin-person {
+  --avatar-size: 34px;
+  --avatar-shadow: none;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.pin-person__text {
+  display: grid;
+  min-width: 0;
+}
+
+.pin-person__name {
+  color: var(--cx-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 19px;
+  overflow-wrap: anywhere;
+}
+
+.pin-person__note {
+  color: var(--cx-muted);
+  font-size: 12.5px;
+  line-height: 17px;
+}
+
+/* An empty seat for the person who has not been chosen */
+.pin-person__nobody {
+  width: 34px;
+  height: 34px;
+  box-sizing: border-box;
+  border: 2px dashed var(--cx-border-strong);
+  border-radius: 50%;
+}
+
+.pin-place {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+  font-size: 13.5px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.pin-place svg {
+  flex-shrink: 0;
+  color: var(--cx-muted);
+}
+
+.pin-sheet__subheading {
+  margin: 0 0 6px;
+  color: var(--cx-muted);
+  font: 600 12.5px/17px var(--cx-font-display);
+}
+
+.pin-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.pin-photo {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface-raised);
+}
+
+.pin-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pin-photo--uploading img,
+.pin-photo--failed img,
+.pin-photo--tooLarge img {
+  opacity: 0.45;
+}
+
+.pin-photo--failed,
+.pin-photo--tooLarge {
+  border-color: var(--cx-danger);
+}
+
+.pin-photo__state {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 3px 4px;
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.pin-photo__retry {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -70%);
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font: 600 12px/16px var(--cx-font-display);
+  cursor: pointer;
+}
+
+.pin-photo__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font-size: 16px;
+  line-height: 1;
+  box-shadow: 0 1px 3px var(--cx-shadow-color);
+  cursor: pointer;
+}
+
+.pin-list__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.pin-list__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  color: var(--cx-ink);
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.pin-list__items {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.pin-row:hover {
+  border-color: var(--cx-border-strong);
+  background: var(--cx-accent-subtle);
+}
+
+.pin-row__thumb {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--cx-radius-sm);
+  object-fit: cover;
+}
+
+.pin-row__thumb--empty {
+  background: color-mix(in srgb, var(--pin-color) 22%, transparent);
+  box-shadow: inset 0 0 0 2px var(--pin-color);
+}
+
+.pin-row__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pin-row__title {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pin-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* ── Phone: the plan fills the screen, panels become a bottom sheet ── */
+
+@media (max-width: 640px) {
+  .floor-plan-workspace,
+  .floor-plan-workspace--roster {
+    grid-template-rows: auto calc(100svh - 190px) auto;
+    grid-template-areas:
+      'toolbar'
+      'canvas'
+      'inspector';
+    border-radius: var(--cx-radius-md);
+  }
+
+  /* Calibrating, drawing zones and dragging staff need a pointer and room: desktop only */
+  .floor-plan-toolbar__group:not(.floor-plan-toolbar__group--pins):not(.floor-plan-toolbar__group--end),
+  .floor-plan-toolbar__note,
+  .assignment-panel {
+    display: none;
+  }
+
+  .floor-plan-toolbar__group--pins {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+    border-left: 0 !important;
+  }
+
+  .fp-tool,
+  .fp-switch {
+    min-height: 44px;
+  }
+
+  .pin-sheet .button,
+  .pin-list .button,
+  .pin-sheet .fp-segmented__option,
+  .pin-list .fp-segmented__option {
+    min-height: 44px;
+  }
+
+  .pin-sheet .fp-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* An open pin slides over the plan instead of sitting below it, so the spot stays in view */
+  .floor-plan-workspace--sheet .pin-sheet {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 1100;
+    max-height: 70svh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--cx-border);
+    border-radius: var(--cx-radius-lg) var(--cx-radius-lg) 0 0;
+    background: var(--cx-surface);
+    box-shadow: 0 -8px 24px -8px var(--cx-shadow-color), inset 0 3px 0 var(--zone-color, transparent);
+  }
+
+  .pin-photos {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
 }

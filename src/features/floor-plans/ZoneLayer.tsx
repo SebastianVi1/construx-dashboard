@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import type { Zone } from './zonesApi'
 import { ZONE_STATUS_COLORS } from './zonesApi'
 import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
 import type { Occupant } from './zoneOccupants'
 import { escapeHtml, occupantAnchorKey, parseDropPayload, zoneAtPoint } from './zoneOccupants'
+import { occupantStripSize, placeOccupants, type Box } from './occupantPlacement'
 
 interface ZoneLayerProps {
   map: L.Map
@@ -22,7 +23,12 @@ interface ZoneLayerProps {
   onOccupantClick?: (zone: Zone, occupant: Occupant) => void
   /** The figure whose bubble is open, as `occupantAnchorKey` gives it, to mark it as expanded. */
   activeOccupantKey?: string | null
+  /** Pins shown on the plan, in image pixels; the figures keep clear of them. */
+  avoidPins?: Array<{ x: number; y: number }>
 }
+
+/** Screen box of a pin marker: 32 px wide, standing on its point. */
+const PIN_BOX = { width: 32, height: 34 }
 
 /** Most figures drawn in one zone before the rest collapse into a "+N" chip. */
 const MAX_FIGURES = 12
@@ -32,7 +38,7 @@ const PERSON_SVG =
 const EQUIPMENT_SVG =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 17V9h11l3 4h4a2 2 0 0 1 2 2v2h-2a3 3 0 0 0-6 0H9a3 3 0 0 0-6 0z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>'
 
-function occupantsHtml(zone: Zone, list: Occupant[], activeKey: string | null | undefined): string {
+function occupantsHtml(zone: Zone, list: Occupant[], activeKey: string | null | undefined, color: string): string {
   const shown = list.slice(0, MAX_FIGURES)
   const figures = shown
     .map((o, i) => {
@@ -49,7 +55,8 @@ function occupantsHtml(zone: Zone, list: Occupant[], activeKey: string | null | 
     .join('')
   const rest = list.length - shown.length
   const more = rest > 0 ? `<span class="zone-occupant-more">+${rest}</span>` : ''
-  return `<div class="zone-occupants">${figures}${more}</div>`
+  // The zone's colour frames its figures, since they stand beside the zone and not on it
+  return `<div class="zone-occupants" style="--zone-color:${color}">${figures}${more}</div>`
 }
 
 /** Renders floor plan zones as filled Leaflet polygons in pixel coordinate space. */
@@ -65,7 +72,18 @@ export function ZoneLayer({
   onReassignDrop,
   onOccupantClick,
   activeOccupantKey,
+  avoidPins,
 }: ZoneLayerProps) {
+  // Figures have a fixed screen size while zones scale, so their side is chosen again at each zoom
+  const [zoom, setZoom] = useState(() => map.getZoom())
+  useEffect(() => {
+    const onZoom = () => setZoom(map.getZoom())
+    map.on('zoomend', onZoom)
+    return () => {
+      map.off('zoomend', onZoom)
+    }
+  }, [map])
+
   const layerGroupRef = useRef<L.LayerGroup | null>(null)
   const occupantGroupRef = useRef<L.LayerGroup | null>(null)
   const dropOverlayGroupRef = useRef<L.LayerGroup | null>(null)
@@ -84,6 +102,27 @@ export function ZoneLayer({
 
     if (!visible) return
 
+    const screenBox = (bounds: L.LatLngBounds): Box => {
+      const a = map.latLngToLayerPoint(bounds.getNorthWest())
+      const b = map.latLngToLayerPoint(bounds.getSouthEast())
+      return { minX: a.x, minY: a.y, maxX: b.x, maxY: b.y }
+    }
+    const zoneBoxes = new Map(
+      zones.map((zone) => [
+        zone.id,
+        screenBox(L.latLngBounds(zone.points.map(([x, y]) => L.latLng(y / metersPerPx, x / metersPerPx)))),
+      ]),
+    )
+    const pinBoxes: Box[] = (avoidPins ?? []).map((pin) => {
+      const point = map.latLngToLayerPoint([pin.y, pin.x])
+      return {
+        minX: point.x - PIN_BOX.width / 2,
+        minY: point.y - PIN_BOX.height,
+        maxX: point.x + PIN_BOX.width / 2,
+        maxY: point.y,
+      }
+    })
+
     for (const zone of zones) {
       // Convert metre coords to pixel coords: px = metres / metersPerPx
       // Leaflet CRS.Simple uses [lat=y, lng=x]
@@ -100,8 +139,12 @@ export function ZoneLayer({
 
       const list = occupants?.[zone.id] ?? []
       if (list.length > 0) {
-        const icon = L.divIcon({ className: 'zone-occupants-icon', html: occupantsHtml(zone, list, activeOccupantKey), iconSize: undefined })
-        const marker = L.marker(polygon.getBounds().getCenter(), { icon, keyboard: false })
+        const icon = L.divIcon({ className: 'zone-occupants-icon', html: occupantsHtml(zone, list, activeOccupantKey, color), iconSize: undefined })
+        // Beside the zone, on the first side clear of other zones and pins, so nothing pinned inside is covered
+        const shown = Math.min(list.length, MAX_FIGURES) + (list.length > MAX_FIGURES ? 1 : 0)
+        const others = [...zoneBoxes].filter(([id]) => id !== zone.id).map(([, box]) => box)
+        const spot = placeOccupants(zoneBoxes.get(zone.id)!, occupantStripSize(shown), [...others, ...pinBoxes])
+        const marker = L.marker(map.layerPointToLatLng([spot.x, spot.y]), { icon, keyboard: false })
         marker.on('click', (e: L.LeafletMouseEvent) => {
           const figure = (e.originalEvent.target as Element | null)?.closest('[data-occupant]')
           const occupant = figure ? list[Number(figure.getAttribute('data-occupant'))] : undefined
@@ -116,7 +159,7 @@ export function ZoneLayer({
       group.clearLayers()
       occupantGroup.clearLayers()
     }
-  }, [map, zones, metersPerPx, visible, onZoneClick, onOccupantClick, occupants, activeOccupantKey])
+  }, [map, zones, metersPerPx, visible, onZoneClick, onOccupantClick, occupants, activeOccupantKey, avoidPins, zoom])
 
   // Highlight every zone as a drop target while something is being dragged
   useEffect(() => {
