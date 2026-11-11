@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { clearSessionValues } from '../../lib/sessionCache'
+import { clearFirstLoadWindows } from '../../components/data/useRemoteData'
 import { getCurrentUser, logout as logoutApi, onSessionExpired } from './authApi'
 import { restoreSession } from './session'
 import { AuthContext, type AuthStatus } from './auth-context'
@@ -21,6 +23,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }),
     [],
   )
+
+  // One session's rows must never warm the next session's screens.
+  useEffect(() => {
+    if (status !== 'unauthenticated') return
+    clearSessionValues()
+    clearFirstLoadWindows()
+  }, [status])
 
   useEffect(() => {
     // Run the restore exactly once per mount. Refresh rotates the refresh

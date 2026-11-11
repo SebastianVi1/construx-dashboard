@@ -13,7 +13,9 @@ export function publishProfile(profile: Profile): void {
 /** The signed-in person's profile, loaded once per account. */
 export function useMyProfile() {
   const { user } = useAuth()
-  const profile = useRemoteData(user ? `profile:${user.id}` : null, getProfile)
+  // Immediate: the header avatar is chrome, so it must not start a screen's
+  // placeholder window before the page below mounts.
+  const profile = useRemoteData(user ? `profile:${user.id}` : null, getProfile, { immediate: true })
   const replace = useEffectEvent((saved: Profile) => profile.update(() => saved))
 
   useEffect(() => {

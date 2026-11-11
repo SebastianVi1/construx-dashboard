@@ -9,7 +9,8 @@ import { getMyAccess } from './permissionsApi'
  * organization id so a company switch starts from "no permissions".
  */
 export function PermissionsProvider({ organizationId, children }: { organizationId: string; children: ReactNode }) {
-  const remote = useRemoteData(organizationId, () => getMyAccess(organizationId))
+  // Immediate: this gates the screen below, which shows its own shaped placeholder.
+  const remote = useRemoteData(organizationId, () => getMyAccess(organizationId), { immediate: true })
   const access = remote.data ?? null
 
   return (
