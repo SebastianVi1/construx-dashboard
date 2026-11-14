@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getJson, sendJson } from '../../lib/http'
+import { deleteJson, getJson, sendJson } from '../../lib/http'
 import { sitePath } from '../../lib/apiPaths'
 
 /** Contract: `construx/docs/attendance.md`. `name` is the profile name, or the email without one. */
@@ -21,6 +21,8 @@ export const attendancePersonSchema = personRefSchema.extend({
   state: z.enum(['PRESENT']),
   /** The person's current (latest) Check-in of the day. */
   checkIn: checkInSchema,
+  /** Whether the caller may remove that Check-in now; the backend never says so on a past day. */
+  removable: z.boolean().default(false),
 })
 export type AttendancePerson = z.infer<typeof attendancePersonSchema>
 
@@ -45,4 +47,12 @@ export function getAttendance(orgId: string, siteId: string): Promise<Attendance
 /** Checks the caller in to the Site today; repeating it returns the Check-in already made. */
 export function checkIn(orgId: string, siteId: string): Promise<CheckIn> {
   return sendJson('post', `${attendancePath(orgId, siteId)}/check-ins`, {}, 201, checkInSchema)
+}
+
+/**
+ * Removes a Check-in made by mistake. Rejects with 409 when its day is over and 403 when the caller neither
+ * recorded it nor manages the plan; removing one already removed succeeds.
+ */
+export function removeCheckIn(orgId: string, siteId: string, checkInId: string): Promise<void> {
+  return deleteJson(`${attendancePath(orgId, siteId)}/check-ins/${encodeURIComponent(checkInId)}`)
 }

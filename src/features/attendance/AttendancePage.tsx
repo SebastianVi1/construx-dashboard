@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { ConfirmDialog } from '../../components/modal'
 import { BackLink, Notice, SkeletonRows } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { ApiError } from '../../lib/http'
@@ -8,7 +9,8 @@ import { useCurrentOrganization } from '../organizations/organizations-context'
 import { Avatar } from '../profile/Avatar'
 import { dateText } from '../sites/siteDisplay'
 import { getSite } from '../sites/sitesApi'
-import { checkInTime, recordedBySelf } from './attendanceView'
+import { removeCheckIn, type AttendancePerson } from './attendanceApi'
+import { canRemove, checkInTime, recordedBySelf, removalFailure } from './attendanceView'
 import { CheckInControl } from './CheckInControl'
 import { useAttendance } from './useAttendance'
 import './attendance.css'
@@ -23,6 +25,25 @@ export function AttendancePage() {
   const site = useRemoteData(`${organization.id}:${siteId}`, () => getSite(organization.id, siteId))
   const attendance = useAttendance(organization.id, siteId)
   const siteName = site.data?.name
+  const [removing, setRemoving] = useState<AttendancePerson | null>(null)
+  const [removeError, setRemoveError] = useState<string | null>(null)
+  // Counts removals: the Check-in control is rebuilt after one, so it forgets a Check-in it made itself.
+  const [removals, setRemovals] = useState(0)
+
+  async function confirmRemoval(person: AttendancePerson) {
+    setRemoveError(null)
+    try {
+      await removeCheckIn(organization.id, siteId, person.checkIn.id)
+      setRemoving(null)
+      setRemovals((count) => count + 1)
+      attendance.reload()
+    } catch (error) {
+      const failure = removalFailure(error)
+      setRemoveError(failure === 'locked' ? t.removeLocked : failure === 'forbidden' ? t.removeForbidden : t.removeFailed)
+      // The day moved on or the right is gone: the list on screen is stale either way.
+      if (failure !== 'failed') attendance.reload()
+    }
+  }
 
   useEffect(() => {
     document.title = `${t.title}${siteName ? ` · ${siteName}` : ''} | Construx`
@@ -46,7 +67,7 @@ export function AttendancePage() {
             </p>
           ) : null}
         </div>
-        {!denied ? <CheckInControl organizationId={organization.id} siteId={siteId} attendance={attendance} /> : null}
+        {!denied ? <CheckInControl key={removals} organizationId={organization.id} siteId={siteId} attendance={attendance} /> : null}
       </header>
 
       {!data ? (
@@ -84,12 +105,41 @@ export function AttendancePage() {
                   <time className="attendance-row__time data-mono" dateTime={person.checkIn.checkedInAt}>
                     {formatMessage(t.time, { time: checkInTime(person.checkIn.checkedInAt, intlLocales[locale]) })}
                   </time>
+                  {canRemove(data, person) ? (
+                    <button
+                      type="button"
+                      className="button button--small attendance-row__remove"
+                      aria-label={formatMessage(t.removeLabel, { name: person.name })}
+                      onClick={() => {
+                        setRemoveError(null)
+                        setRemoving(person)
+                      }}
+                    >
+                      {t.remove}
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>
           )}
         </section>
       )}
+
+      {removing ? (
+        <ConfirmDialog
+          title={t.removeTitle}
+          body={formatMessage(t.removeBody, {
+            name: removing.name,
+            time: checkInTime(removing.checkIn.checkedInAt, intlLocales[locale]),
+          })}
+          confirmLabel={t.removeConfirm}
+          pendingLabel={t.removing}
+          cancelLabel={t.cancel}
+          error={removeError}
+          onConfirm={() => confirmRemoval(removing)}
+          onClose={() => setRemoving(null)}
+        />
+      ) : null}
     </div>
   )
 }

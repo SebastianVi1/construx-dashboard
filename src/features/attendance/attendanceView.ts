@@ -1,3 +1,4 @@
+import { ApiError } from '../../lib/http'
 import type { Attendance, AttendancePerson, CheckIn } from './attendanceApi'
 
 /** The caller's Check-in of today, or null when they have none (or Attendance is not loaded or not today's). */
@@ -21,4 +22,19 @@ export function checkInTime(checkedInAt: string, intlLocale: string, timeZone?: 
 /** Where the Attendance page of a Site lives. */
 export function attendanceUrl(siteId: string): string {
   return `/sites/${encodeURIComponent(siteId)}/attendance`
+}
+
+/** Whether the row offers "Remove": only on today's Attendance, on the rows the backend marks removable. */
+export function canRemove(attendance: Attendance, person: AttendancePerson): boolean {
+  return attendance.today && person.removable
+}
+
+export type RemovalFailure = 'locked' | 'forbidden' | 'failed'
+
+/** Why a removal was refused: the day is over (409), the caller lacks the right (403), or anything else. */
+export function removalFailure(error: unknown): RemovalFailure {
+  const status = error instanceof ApiError ? error.status : undefined
+  if (status === 409) return 'locked'
+  if (status === 403) return 'forbidden'
+  return 'failed'
 }

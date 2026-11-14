@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'bun:test'
 import type { Attendance, AttendancePerson } from '../../../features/attendance/attendanceApi'
-import { checkInTime, myCheckIn, recordedBySelf } from '../../../features/attendance/attendanceView'
+import { ApiError } from '../../../lib/http'
+import { canRemove, checkInTime, myCheckIn, recordedBySelf, removalFailure } from '../../../features/attendance/attendanceView'
 
-function person(membershipId: string, recorderId = membershipId): AttendancePerson {
+function person(membershipId: string, recorderId = membershipId, removable = false): AttendancePerson {
   return {
     membershipId,
     name: `Person ${membershipId}`,
     avatarUrl: null,
     state: 'PRESENT',
+    removable,
     checkIn: {
       id: `c-${membershipId}`,
       membershipId,
@@ -44,5 +46,26 @@ describe('attendance view', () => {
   it('checkInTime: shows the moment as a clock time in the given zone', () => {
     expect(checkInTime('2026-03-10T15:05:00Z', 'en-US', 'America/Mexico_City')).toBe('9:05 AM')
     expect(checkInTime('2026-03-10T15:05:00Z', 'es-MX', 'UTC')).toMatch(/3:05/)
+  })
+
+  it('canRemove: offers removal on the rows the backend marks removable', () => {
+    const mine = person('m1', 'm1', true)
+    const theirs = person('m2')
+    const today = attendance('m1', [mine, theirs])
+
+    expect(canRemove(today, mine)).toBe(true)
+    expect(canRemove(today, theirs)).toBe(false)
+  })
+
+  it('canRemove: a past day shows no removal action, whatever the row says', () => {
+    const mine = person('m1', 'm1', true)
+    expect(canRemove(attendance('m1', [mine], false), mine)).toBe(false)
+  })
+
+  it('removalFailure: tells a locked day and a missing right from any other failure', () => {
+    expect(removalFailure(new ApiError(409))).toBe('locked')
+    expect(removalFailure(new ApiError(403))).toBe('forbidden')
+    expect(removalFailure(new ApiError(500))).toBe('failed')
+    expect(removalFailure(new Error('offline'))).toBe('failed')
   })
 })
