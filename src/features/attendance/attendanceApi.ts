@@ -29,9 +29,17 @@ export type CheckIn = z.infer<typeof checkInSchema>
 
 export const attendancePersonSchema = personRefSchema.extend({
   avatarUrl: z.string().nullable().default(null),
-  state: z.enum(['PRESENT']),
-  /** The person's current Check-in: the latest of the day that was not removed. */
-  checkIn: checkInSchema,
+  /**
+   * Against the zone plan: PRESENT is expected and checked in, ABSENT is expected with no Check-in (derived,
+   * never stored), UNPLANNED is checked in without being expected.
+   */
+  state: z.enum(['PRESENT', 'ABSENT', 'UNPLANNED']),
+  /** Whether the zone plan expected the person that day. */
+  planned: z.boolean().default(false),
+  /** Where the plan expected them; null when not planned. */
+  expectedZone: zoneRefSchema.nullable().default(null),
+  /** The person's current Check-in: the latest of the day that was not removed. Null when absent. */
+  checkIn: checkInSchema.nullable(),
   /** Whether the caller may remove that Check-in now; the backend never says so on a past day. */
   removable: z.boolean().default(false),
 })
@@ -42,7 +50,11 @@ export const attendanceSchema = z.object({
   date: z.string().min(1),
   today: z.boolean(),
   people: z.array(attendancePersonSchema),
-  me: z.object({ membershipId: z.string().min(1) }),
+  me: z.object({
+    membershipId: z.string().min(1),
+    /** Where the plan expects the caller that day; null when not expected. */
+    expectedZone: zoneRefSchema.nullable().default(null),
+  }),
 })
 export type Attendance = z.infer<typeof attendanceSchema>
 
@@ -50,9 +62,13 @@ function attendancePath(orgId: string, siteId: string): string {
   return `${sitePath(orgId, siteId)}/attendance`
 }
 
-/** Today's Attendance of the Site, as the backend defines today. */
-export function getAttendance(orgId: string, siteId: string): Promise<Attendance> {
-  return getJson(attendancePath(orgId, siteId), attendanceSchema)
+/**
+ * The Attendance of the Site on a day (YYYY-MM-DD). Without a date it is today's, as the backend defines
+ * today. A date after today is refused with 400.
+ */
+export function getAttendance(orgId: string, siteId: string, date?: string): Promise<Attendance> {
+  const query = date ? `?date=${encodeURIComponent(date)}` : ''
+  return getJson(`${attendancePath(orgId, siteId)}${query}`, attendanceSchema)
 }
 
 /** The zones of the Site a person can check in to, ordered by floor plan. */

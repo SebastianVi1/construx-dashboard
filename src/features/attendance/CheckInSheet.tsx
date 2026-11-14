@@ -4,19 +4,22 @@ import { Modal } from '../../components/modal'
 import { Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { ApiError } from '../../lib/http'
-import { checkIn, getCheckInZones, type CheckIn } from './attendanceApi'
+import { checkIn, getCheckInZones, type CheckIn, type ZoneRef } from './attendanceApi'
 import { NO_ZONE, inGoneZone, staysPut, zoneChoice, zonesByFloorPlan } from './attendanceView'
 import './attendance.css'
 
 /**
  * The check-in sheet: the Site's zones grouped by floor plan, plus "No zone". It starts on where the person
- * already is; picking another place and confirming moves them. A failure stays in the sheet with a retry.
+ * already is, or, before their first Check-in, on the zone the plan expects them in; picking another place
+ * and confirming moves them. A failure stays in the sheet with a retry.
  */
-export function CheckInSheet({ organizationId, siteId, current, onDone, onClose }: {
+export function CheckInSheet({ organizationId, siteId, current, expectedZone = null, onDone, onClose }: {
   organizationId: string
   siteId: string
   /** The caller's Check-in of today, when they have one. */
   current: CheckIn | null
+  /** Where the plan expects the person today, when it does. */
+  expectedZone?: ZoneRef | null
   onDone: (made: CheckIn) => void
   onClose: () => void
 }) {
@@ -26,7 +29,7 @@ export function CheckInSheet({ organizationId, siteId, current, onDone, onClose 
   const zones = useRemoteData(`${organizationId}:${siteId}:check-in-zones`, () => getCheckInZones(organizationId, siteId), {
     remember: false,
   })
-  const [choice, setChoice] = useState(() => zoneChoice(current))
+  const [choice, setChoice] = useState(() => zoneChoice(current, expectedZone))
   const [sending, setSending] = useState(false)
   const [failure, setFailure] = useState<'failed' | 'zoneGone' | null>(null)
 
@@ -64,7 +67,11 @@ export function CheckInSheet({ organizationId, siteId, current, onDone, onClose 
           <span>{label}</span>
           {hint ? <span className="check-in-sheet__hint">{hint}</span> : null}
         </span>
-        {staysPut(current, value) ? <span className="check-in-sheet__here">{t.here}</span> : null}
+        {staysPut(current, value) ? (
+          <span className="check-in-sheet__here">{t.here}</span>
+        ) : value === expectedZone?.id ? (
+          <span className="check-in-sheet__here">{t.expectedHere}</span>
+        ) : null}
       </label>
     )
   }
