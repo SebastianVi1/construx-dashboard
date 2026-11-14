@@ -19,6 +19,9 @@ import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
 import { memberName, occupantAnchorKey } from './zoneOccupants'
 import type { Occupant } from './zoneOccupants'
 import { useFloorPlan } from './useFloorPlan'
+import { usePlanAttendance } from './usePlanAttendance'
+import { overlayAttendance } from './attendanceOverlay'
+import { localIsoDate } from './floorPlanStateApi'
 import { PinIcon, ScaleIcon } from './floorPlanIcons'
 import { PinLayer } from './PinLayer'
 import { PinAddTool } from './PinAddTool'
@@ -41,6 +44,9 @@ export function FloorPlanPage() {
   const orgId = organization?.id ?? ''
   const plan = useFloorPlan(orgId, siteId, floorPlanId)
   const { floorPlan, calibration, zones, assignments } = plan
+  // Today's Attendance is combined on the dashboard; the plan state itself knows nothing about it.
+  const attendance = usePlanAttendance(orgId, siteId)
+  const occupantsByZone = overlayAttendance(plan.occupantsByZone, attendance.data, localIsoDate(), zones)
 
   const [calibrating, setCalibrating] = useState(false)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
@@ -332,7 +338,7 @@ export function FloorPlanPage() {
                       activeOccupantKey={
                         selectedOccupant ? occupantAnchorKey(selectedOccupant.zone, selectedOccupant.occupant) : null
                       }
-                      occupants={plan.occupantsByZone}
+                      occupants={occupantsByZone}
                       avoidPins={pinsVisible ? shownPins : undefined}
                       dragging={draggingResource !== null || draggingReassign !== null}
                       onDropResource={(zone, resource) => {

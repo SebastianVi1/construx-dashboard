@@ -2,13 +2,19 @@ import type { Zone } from './zonesApi'
 import type { AssignmentData, DraggableResource, ReassignDrag, Worker } from './zoneAssignmentsApi'
 import type { Person } from '../people/personSchema'
 
+/** Where Attendance puts a person today: in, expected and missing, or in without being expected. */
+export type AttendanceMark = 'PRESENT' | 'ABSENT' | 'UNPLANNED'
+
 /** One figure drawn inside a zone on the plan: a person or a piece of equipment. */
 export type Occupant = {
   key: string
   kind: 'person' | 'equipment'
   label: string
-  /** The assignment that put it in the zone; for a crew member, the crew's assignment. */
-  assignmentId: string
+  /**
+   * The assignment that put it in the zone; for a crew member, the crew's assignment. Absent for a
+   * person drawn only because they checked in there.
+   */
+  assignmentId?: string
   /** The person's membership id, or the equipment id. Absent for a crew with no members. */
   resourceId?: string
   crewName?: string
@@ -17,6 +23,8 @@ export type Occupant = {
   /** The person behind a person figure, as the backend named them. */
   worker?: Worker
   equipment?: { type: string; identifier: string }
+  /** Today's Attendance state, set by the overlay only; undefined when the plan is shown alone. */
+  attendance?: AttendanceMark
 }
 
 /** Ray-casting test; `polygon` and `point` share the same [x, y] space. */

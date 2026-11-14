@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
+import { useLocale } from '../../i18n'
 import type { Zone } from './zonesApi'
 import { ZONE_STATUS_COLORS } from './zonesApi'
 import type { DraggableResource, ReassignDrag } from './zoneAssignmentsApi'
-import type { Occupant } from './zoneOccupants'
+import type { AttendanceMark, Occupant } from './zoneOccupants'
 import { escapeHtml, occupantAnchorKey, parseDropPayload, zoneAtPoint } from './zoneOccupants'
+import { attendanceLabel } from './attendanceOverlay'
 import { occupantStripSize, placeOccupants, type Box } from './occupantPlacement'
 
 interface ZoneLayerProps {
@@ -38,7 +40,16 @@ const PERSON_SVG =
 const EQUIPMENT_SVG =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 17V9h11l3 4h4a2 2 0 0 1 2 2v2h-2a3 3 0 0 0-6 0H9a3 3 0 0 0-6 0z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>'
 
-function occupantsHtml(zone: Zone, list: Occupant[], activeKey: string | null | undefined, color: string): string {
+/** Labels today's Attendance adds to a figure, in the tooltip and for screen readers. */
+type AttendanceLabels = Record<AttendanceMark, string>
+
+function occupantsHtml(
+  zone: Zone,
+  list: Occupant[],
+  activeKey: string | null | undefined,
+  color: string,
+  attendance: AttendanceLabels,
+): string {
   const shown = list.slice(0, MAX_FIGURES)
   const figures = shown
     .map((o, i) => {
@@ -48,9 +59,13 @@ function occupantsHtml(zone: Zone, list: Occupant[], activeKey: string | null | 
       } else {
         inner = o.kind === 'person' ? PERSON_SVG : EQUIPMENT_SVG
       }
+      // A person who is absent or was not planned says so, both on hover and to a screen reader
+      const mark =
+        o.attendance === 'UNPLANNED' ? '<span class="zone-occupant__mark" aria-hidden="true">!</span>' : ''
+      const label = attendanceLabel(o.label, o.attendance, attendance)
       const key = occupantAnchorKey(zone, o)
       const expanded = key === activeKey ? 'true' : 'false'
-      return `<span class="zone-occupant zone-occupant--${o.kind}" data-occupant="${i}" data-occupant-key="${escapeHtml(key)}" role="button" aria-expanded="${expanded}" aria-label="${escapeHtml(o.label)}" title="${escapeHtml(o.label)}">${inner}</span>`
+      return `<span class="zone-occupant zone-occupant--${o.kind}${o.attendance ? ` zone-occupant--${o.attendance.toLowerCase()}` : ''}" data-occupant="${i}" data-occupant-key="${escapeHtml(key)}" role="button" aria-expanded="${expanded}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${inner}${mark}</span>`
     })
     .join('')
   const rest = list.length - shown.length
@@ -74,6 +89,8 @@ export function ZoneLayer({
   activeOccupantKey,
   avoidPins,
 }: ZoneLayerProps) {
+  const { messages: m } = useLocale()
+  const attendanceLabels = m.floorPlans.attendance
   // Figures have a fixed screen size while zones scale, so their side is chosen again at each zoom
   const [zoom, setZoom] = useState(() => map.getZoom())
   useEffect(() => {
@@ -139,7 +156,7 @@ export function ZoneLayer({
 
       const list = occupants?.[zone.id] ?? []
       if (list.length > 0) {
-        const icon = L.divIcon({ className: 'zone-occupants-icon', html: occupantsHtml(zone, list, activeOccupantKey, color), iconSize: undefined })
+        const icon = L.divIcon({ className: 'zone-occupants-icon', html: occupantsHtml(zone, list, activeOccupantKey, color, attendanceLabels), iconSize: undefined })
         // Beside the zone, on the first side clear of other zones and pins, so nothing pinned inside is covered
         const shown = Math.min(list.length, MAX_FIGURES) + (list.length > MAX_FIGURES ? 1 : 0)
         const others = [...zoneBoxes].filter(([id]) => id !== zone.id).map(([, box]) => box)
@@ -159,7 +176,7 @@ export function ZoneLayer({
       group.clearLayers()
       occupantGroup.clearLayers()
     }
-  }, [map, zones, metersPerPx, visible, onZoneClick, onOccupantClick, occupants, activeOccupantKey, avoidPins, zoom])
+  }, [map, zones, metersPerPx, visible, onZoneClick, onOccupantClick, occupants, activeOccupantKey, avoidPins, zoom, attendanceLabels])
 
   // Highlight every zone as a drop target while something is being dragged
   useEffect(() => {

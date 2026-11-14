@@ -762,6 +762,7 @@
 }
 
 .zone-occupant {
+  position: relative;
   display: inline-flex;
   width: 20px;
   height: 20px;
@@ -792,6 +793,34 @@
 
 .zone-occupant--equipment {
   color: var(--cx-warning);
+}
+
+/* Today's Attendance: expected but missing (dimmed) and present without being planned (marked) */
+.zone-occupant--absent {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.zone-occupant--unplanned {
+  outline: 2px dashed var(--cx-warning);
+  outline-offset: 1px;
+}
+
+.zone-occupant__mark {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cx-warning);
+  color: var(--cx-surface);
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .zone-occupant-more {

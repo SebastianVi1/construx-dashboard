@@ -171,6 +171,13 @@ export const floorPlansMessages = defineMessages({
         close: 'Close',
       },
     },
+    /** Today's Attendance on the plan: present, absent and unplanned people. */
+    attendance: {
+      label: 'Attendance',
+      PRESENT: 'Present',
+      ABSENT: 'Absent',
+      UNPLANNED: 'Unplanned',
+    },
     pins: {
       add: 'Add pin',
       toggleVisibility: 'Pins',
@@ -448,6 +455,13 @@ export const floorPlansMessages = defineMessages({
         shifts: { MORNING: 'Mañana', AFTERNOON: 'Tarde', FULL_DAY: 'Día completo' },
         close: 'Cerrar',
       },
+    },
+    /** Today's Attendance on the plan: present, absent and unplanned people. */
+    attendance: {
+      label: 'Asistencia',
+      PRESENT: 'Presente',
+      ABSENT: 'Ausente',
+      UNPLANNED: 'Sin planificar',
     },
     pins: {
       add: 'Agregar pin',
