@@ -9,22 +9,22 @@ describe('resolveLocale', () => {
     expect(resolveLocale('en', 'es-AR')).toBe('en')
   })
 
-  it('detects Spanish from a browser language starting with es', () => {
-    expect(resolveLocale(null, 'es-AR')).toBe('es')
-    expect(resolveLocale(null, 'ES')).toBe('es')
-    expect(resolveLocale(null, 'es')).toBe('es')
+  it('detects English from a browser language starting with en', () => {
+    expect(resolveLocale(null, 'en-US')).toBe('en')
+    expect(resolveLocale(null, 'EN')).toBe('en')
+    expect(resolveLocale(null, 'en')).toBe('en')
   })
 
-  it('falls back to English for anything else', () => {
-    expect(resolveLocale(null, 'en-US')).toBe('en')
-    expect(resolveLocale(null, 'pt-BR')).toBe('en')
-    expect(resolveLocale(null, undefined)).toBe('en')
+  it('defaults to Spanish for anything else', () => {
+    expect(resolveLocale(null, 'es-AR')).toBe('es')
+    expect(resolveLocale(null, 'pt-BR')).toBe('es')
+    expect(resolveLocale(null, undefined)).toBe('es')
   })
 
   it('ignores an invalid saved value', () => {
-    expect(resolveLocale('bogus', 'es')).toBe('es')
-    expect(resolveLocale('bogus', 'fr')).toBe('en')
-    expect(resolveLocale('', 'fr')).toBe('en')
+    expect(resolveLocale('bogus', 'en')).toBe('en')
+    expect(resolveLocale('bogus', 'fr')).toBe('es')
+    expect(resolveLocale('', 'fr')).toBe('es')
   })
 })
 
