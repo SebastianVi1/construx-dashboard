@@ -198,6 +198,11 @@
   text-align: right;
 }
 
+.attendance-row__remove {
+  flex: none;
+  min-height: 44px;
+}
+
 @media (max-width: 640px) {
   .check-in,
   .check-in__button,
@@ -214,8 +219,17 @@
   }
 
   .attendance-row__time {
-    flex-basis: 100%;
+    flex: 1 1 0;
+    order: 1;
     padding-left: 48px;
     text-align: left;
+  }
+
+  .attendance-row__who {
+    flex-basis: calc(100% - 48px);
+  }
+
+  .attendance-row__remove {
+    order: 2;
   }
 }

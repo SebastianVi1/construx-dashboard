@@ -1,23 +1,28 @@
 import { describe, expect, it } from 'bun:test'
 import type { Attendance, AttendancePerson, CheckIn, ZoneRef } from '../../../features/attendance/attendanceApi'
+import { ApiError } from '../../../lib/http'
 import {
   NO_ZONE,
+  canRemove,
   checkInTime,
   currentCheckIn,
   inGoneZone,
   myCheckIn,
+  pendingCheckIn,
   recordedBySelf,
+  removalFailure,
   staysPut,
   zoneChoice,
   zonesByFloorPlan,
 } from '../../../features/attendance/attendanceView'
 
-function person(membershipId: string, recorderId = membershipId): AttendancePerson {
+function person(membershipId: string, recorderId = membershipId, removable = false): AttendancePerson {
   return {
     membershipId,
     name: `Person ${membershipId}`,
     avatarUrl: null,
     state: 'PRESENT',
+    removable,
     checkIn: {
       id: `c-${membershipId}`,
       membershipId,
@@ -82,6 +87,27 @@ describe('attendance view', () => {
     expect(currentCheckIn(nextDay, made('c-new', '2026-03-10T17:00:00Z', slabA))).toBeNull()
   })
 
+  it('pendingCheckIn: a Check-in just made counts only until Attendance is loaded again', () => {
+    const before = attendance('m1', [person('m1')])
+    const moved = made('c-new', '2026-03-10T17:00:00Z', slabB)
+    expect(pendingCheckIn({ checkIn: moved, before }, before)?.id).toBe('c-new')
+    expect(pendingCheckIn({ checkIn: moved, before: undefined }, undefined)?.id).toBe('c-new')
+    expect(pendingCheckIn({ checkIn: moved, before }, attendance('m1', [person('m1')]))).toBeNull()
+    expect(pendingCheckIn(null, before)).toBeNull()
+  })
+
+  it('a removed Check-in just made stops showing: the person is back in their previous Check-in', () => {
+    const before = attendance('m1', [person('m1')])
+    const moved = { checkIn: made('c-new', '2026-03-10T17:00:00Z', slabB), before }
+    expect(currentCheckIn(before, pendingCheckIn(moved, before))?.id).toBe('c-new')
+    // The move was removed and Attendance reloaded: it answers the earlier Check-in again.
+    const reloaded = attendance('m1', [person('m1')])
+    expect(currentCheckIn(reloaded, pendingCheckIn(moved, reloaded))?.id).toBe('c-m1')
+    // The only Check-in was removed: not checked in any more.
+    const empty = attendance('m1', [])
+    expect(currentCheckIn(empty, pendingCheckIn(moved, empty))).toBeNull()
+  })
+
   it('zonesByFloorPlan: groups the zones under their floor plan, in the order received', () => {
     const ramp: ZoneRef = { id: 'z3', name: 'Ramp', floorPlanId: 'p2', floorPlanName: 'Basement' }
     expect(zonesByFloorPlan([ramp, slabA, slabB])).toEqual([
@@ -117,5 +143,26 @@ describe('attendance view', () => {
   it('checkInTime: shows the moment as a clock time in the given zone', () => {
     expect(checkInTime('2026-03-10T15:05:00Z', 'en-US', 'America/Mexico_City')).toBe('9:05 AM')
     expect(checkInTime('2026-03-10T15:05:00Z', 'es-MX', 'UTC')).toMatch(/3:05/)
+  })
+
+  it('canRemove: offers removal on the rows the backend marks removable', () => {
+    const mine = person('m1', 'm1', true)
+    const theirs = person('m2')
+    const today = attendance('m1', [mine, theirs])
+
+    expect(canRemove(today, mine)).toBe(true)
+    expect(canRemove(today, theirs)).toBe(false)
+  })
+
+  it('canRemove: a past day shows no removal action, whatever the row says', () => {
+    const mine = person('m1', 'm1', true)
+    expect(canRemove(attendance('m1', [mine], false), mine)).toBe(false)
+  })
+
+  it('removalFailure: tells a locked day and a missing right from any other failure', () => {
+    expect(removalFailure(new ApiError(409))).toBe('locked')
+    expect(removalFailure(new ApiError(403))).toBe('forbidden')
+    expect(removalFailure(new ApiError(500))).toBe('failed')
+    expect(removalFailure(new Error('offline'))).toBe('failed')
   })
 })

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { RemoteData } from '../../components/data/useRemoteData'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
-import type { Attendance, CheckIn } from './attendanceApi'
-import { checkInTime, currentCheckIn } from './attendanceView'
+import type { Attendance } from './attendanceApi'
+import { checkInTime, currentCheckIn, pendingCheckIn, type MadeCheckIn } from './attendanceView'
 import { CheckInSheet } from './CheckInSheet'
 import './attendance.css'
 
@@ -19,10 +19,11 @@ export function CheckInControl({ organizationId, siteId, attendance }: {
   const { messages: m, locale } = useLocale()
   const t = m.attendance
   const [open, setOpen] = useState(false)
-  // Shown until the reloaded Attendance carries the Check-in; ignored once the backend's day has moved on.
-  const [made, setMade] = useState<CheckIn | null>(null)
+  // Shown only until Attendance is loaded again: after that the loaded answer is the truth, so a Check-in
+  // removed afterwards does not linger here.
+  const [made, setMade] = useState<MadeCheckIn | null>(null)
 
-  const current = currentCheckIn(attendance.data, made)
+  const current = currentCheckIn(attendance.data, pendingCheckIn(made, attendance.data))
   const time = current ? checkInTime(current.checkedInAt, intlLocales[locale]) : ''
   const zone = current?.zone?.name ?? t.noZone
 
@@ -58,7 +59,7 @@ export function CheckInControl({ organizationId, siteId, attendance }: {
           current={current}
           onClose={() => setOpen(false)}
           onDone={(checkIn) => {
-            setMade(checkIn)
+            setMade({ checkIn, before: attendance.data })
             setOpen(false)
             attendance.reload()
           }}

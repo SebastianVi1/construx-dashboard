@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ApiError, configureHttp, type HttpRequest } from '../../../lib/http'
-import { checkIn, getAttendance, getCheckInZones } from '../../../features/attendance/attendanceApi'
+import { checkIn, getAttendance, getCheckInZones, removeCheckIn } from '../../../features/attendance/attendanceApi'
 
 const ownCheckIn = {
   id: 'c1',
@@ -97,5 +97,41 @@ describe('attendance API', () => {
   it('checkIn: a failure rejects, so the screen can offer a retry', async () => {
     serve(() => ({ status: 500, data: undefined }))
     await expect(checkIn('o1', 's1')).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('getAttendance: reads which rows the caller may remove, and takes a missing flag as not removable', async () => {
+    const removable = { ...attendance.people[0], removable: true }
+    serve(() => ({ status: 200, data: { ...attendance, people: [removable, attendance.people[0]] } }))
+
+    const result = await getAttendance('o1', 's1')
+
+    expect(result.people.map((person) => person.removable)).toEqual([true, false])
+  })
+
+  it('getAttendance: a removable row still carries the zone of its Check-in', async () => {
+    const zone = { id: 'z1', name: 'Slab A', floorPlanId: 'p1', floorPlanName: 'Level 1' }
+    const row = { ...attendance.people[0], removable: true, checkIn: { ...ownCheckIn, zone } }
+    serve(() => ({ status: 200, data: { ...attendance, people: [row] } }))
+
+    const result = await getAttendance('o1', 's1')
+
+    expect(result.people[0].removable).toBe(true)
+    expect(result.people[0].checkIn.zone).toEqual(zone)
+  })
+
+  it('removeCheckIn: deletes the Check-in with the CSRF proof and expects no body', async () => {
+    const seen: HttpRequest[] = []
+    serve(() => ({ status: 204, data: undefined }), seen)
+
+    await removeCheckIn('o1', 's 1', 'c/1')
+
+    const sent = seen.find((req) => req.method === 'delete')
+    expect(sent?.url).toBe('/api/organizations/o1/projects/s%201/attendance/check-ins/c%2F1')
+    expect(sent?.headers?.['X-XSRF-TOKEN']).toBe('proof')
+  })
+
+  it('removeCheckIn: a locked day rejects with the 409 of the backend', async () => {
+    serve(() => ({ status: 409, data: { code: 'STATE_CONFLICT' } }))
+    await expect(removeCheckIn('o1', 's1', 'c1')).rejects.toMatchObject({ status: 409 })
   })
 })
