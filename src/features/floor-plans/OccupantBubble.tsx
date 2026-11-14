@@ -27,6 +27,7 @@ type OccupantBubbleProps = {
 export function OccupantBubble({ getAnchor, occupant, zone, zones, assignments, onClose }: OccupantBubbleProps) {
   const { messages: m, locale } = useLocale()
   const t = m.floorPlans.assignments.occupant
+  const attendance = m.floorPlans.attendance
   const dateFormat = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium' })
   const worker = occupant.kind === 'person' ? occupant.worker : undefined
   const membershipId = worker?.membershipId
@@ -45,7 +46,7 @@ export function OccupantBubble({ getAnchor, occupant, zone, zones, assignments, 
     subtitle = eq ? eq.type : t.equipmentTitle
     if (eq) facts.push([t.type, eq.type], [t.identifier, eq.identifier])
   } else {
-    title = worker ? (worker.fullName ?? t.noName) : occupant.crewName || t.unknown
+    title = worker ? (worker.fullName ?? t.noName) : occupant.label || occupant.crewName || t.unknown
     subtitle = worker?.roleName ?? t.personTitle
     if (worker) {
       facts.push([t.name, worker.fullName ?? t.noName])
@@ -62,6 +63,7 @@ export function OccupantBubble({ getAnchor, occupant, zone, zones, assignments, 
   }
 
   facts.push([t.zone, zone.name])
+  if (occupant.attendance) facts.push([attendance.label, attendance[occupant.attendance]])
   if (since) facts.push([t.since, since])
   if (assignment) facts.push([t.shift, t.shifts[assignment.shift]])
   if (assignment?.activity) facts.push([t.activity, assignment.activity])
