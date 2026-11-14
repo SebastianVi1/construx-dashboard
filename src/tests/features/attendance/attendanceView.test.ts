@@ -3,6 +3,11 @@ import type { Attendance, AttendancePerson, CheckIn, ZoneRef } from '../../../fe
 import { ApiError } from '../../../lib/http'
 import {
   NO_ZONE,
+  attendanceGroups,
+  chooseDay,
+  dayFailure,
+  expectedElsewhere,
+  myExpectedZone,
   canRemove,
   checkInTime,
   currentCheckIn,
@@ -21,7 +26,9 @@ function person(membershipId: string, recorderId = membershipId, removable = fal
     membershipId,
     name: `Person ${membershipId}`,
     avatarUrl: null,
-    state: 'PRESENT',
+    state: 'UNPLANNED',
+    planned: false,
+    expectedZone: null,
     removable,
     checkIn: {
       id: `c-${membershipId}`,
@@ -35,7 +42,7 @@ function person(membershipId: string, recorderId = membershipId, removable = fal
 }
 
 function attendance(me: string, people: AttendancePerson[], today = true): Attendance {
-  return { date: '2026-03-10', today, people, me: { membershipId: me } }
+  return { date: '2026-03-10', today, people, me: { membershipId: me, expectedZone: null } }
 }
 
 const slabA: ZoneRef = { id: 'z1', name: 'Slab A', floorPlanId: 'p1', floorPlanName: 'Level 1' }
@@ -44,6 +51,97 @@ const slabB: ZoneRef = { id: 'z2', name: 'Slab B', floorPlanId: 'p1', floorPlanN
 function made(id: string, checkedInAt: string, zone: ZoneRef | null): CheckIn {
   return { id, membershipId: 'm1', zone, date: '2026-03-10', checkedInAt, recordedBy: { membershipId: 'm1', name: 'Ana' } }
 }
+
+/** A person the plan expects in a zone, checked in to `current` (undefined: not checked in). */
+function planned(membershipId: string, expected: ZoneRef, current?: ZoneRef | null): AttendancePerson {
+  const base = person(membershipId)
+  if (current === undefined) return { ...base, state: 'ABSENT', planned: true, expectedZone: expected, checkIn: null }
+  return { ...base, state: 'PRESENT', planned: true, expectedZone: expected, checkIn: { ...base.checkIn!, zone: current } }
+}
+
+describe('attendance against the plan', () => {
+  it('attendanceGroups: splits the people into present, absent and unplanned, keeping their order', () => {
+    const groups = attendanceGroups(
+      attendance('m1', [planned('a', slabA), person('b'), planned('c', slabA, slabA), planned('d', slabB), person('e')]),
+    )
+    expect(groups.present.map((p) => p.membershipId)).toEqual(['c'])
+    expect(groups.absent.map((p) => p.membershipId)).toEqual(['a', 'd'])
+    expect(groups.unplanned.map((p) => p.membershipId)).toEqual(['b', 'e'])
+  })
+
+  it('attendanceGroups: a day with nobody has three empty groups', () => {
+    expect(attendanceGroups(attendance('m1', []))).toEqual({ present: [], absent: [], unplanned: [] })
+  })
+
+  it('attendanceGroups: a planned person checked in to another zone is present, not unplanned', () => {
+    const groups = attendanceGroups(attendance('m1', [planned('a', slabA, slabB)]))
+    expect(groups.present).toHaveLength(1)
+    expect(groups.unplanned).toHaveLength(0)
+  })
+
+  it('expectedElsewhere: the expected zone, only when the person is somewhere else', () => {
+    expect(expectedElsewhere(planned('a', slabA, slabB))).toEqual(slabA)
+    expect(expectedElsewhere(planned('a', slabA, null))).toEqual(slabA)
+    expect(expectedElsewhere(planned('a', slabA, slabA))).toBeNull()
+  })
+
+  it('expectedElsewhere: nothing for an absent or an unplanned person', () => {
+    expect(expectedElsewhere(planned('a', slabA))).toBeNull()
+    expect(expectedElsewhere(person('b'))).toBeNull()
+  })
+
+  it('myExpectedZone: where the plan expects the caller today', () => {
+    const loaded = { ...attendance('m1', []), me: { membershipId: 'm1', expectedZone: slabB } }
+    expect(myExpectedZone(loaded)).toEqual(slabB)
+    expect(myExpectedZone(attendance('m1', []))).toBeNull()
+    expect(myExpectedZone(undefined)).toBeNull()
+  })
+
+  it('myExpectedZone: the plan of a past day preselects nothing', () => {
+    const past = { ...attendance('m1', [], false), me: { membershipId: 'm1', expectedZone: slabB } }
+    expect(myExpectedZone(past)).toBeNull()
+  })
+
+  it('zoneChoice: starts on the expected zone until the person has checked in', () => {
+    expect(zoneChoice(null, slabB)).toBe('z2')
+    expect(zoneChoice(null, null)).toBe(NO_ZONE)
+  })
+
+  it('zoneChoice: once checked in, where the person is wins over where they were expected', () => {
+    expect(zoneChoice(made('c1', '2026-03-10T15:00:00Z', slabA), slabB)).toBe('z1')
+    expect(zoneChoice(made('c1', '2026-03-10T15:00:00Z', null), slabB)).toBe(NO_ZONE)
+  })
+
+  it('myCheckIn: an absent caller has no Check-in', () => {
+    expect(myCheckIn(attendance('a', [planned('a', slabA)]))).toBeNull()
+  })
+
+  it('chooseDay: picking a past day asks for it and remembers which day the backend called today', () => {
+    const shown = attendance('m1', [])
+    expect(chooseDay({ date: null, today: null }, shown, '2026-03-08')).toEqual({ date: '2026-03-08', today: '2026-03-10' })
+  })
+
+  it('chooseDay: picking today again, or clearing the field, asks without a date', () => {
+    const past = { ...attendance('m1', [], false), date: '2026-03-08' }
+    const choice = { date: '2026-03-08', today: '2026-03-10' }
+    expect(chooseDay(choice, past, '2026-03-10')).toEqual({ date: null, today: '2026-03-10' })
+    expect(chooseDay(choice, past, '')).toEqual({ date: null, today: '2026-03-10' })
+  })
+
+  it('chooseDay: a past day on screen never becomes today', () => {
+    const past = { ...attendance('m1', [], false), date: '2026-03-08' }
+    expect(chooseDay({ date: '2026-03-08', today: '2026-03-10' }, past, '2026-03-07')).toEqual({
+      date: '2026-03-07',
+      today: '2026-03-10',
+    })
+  })
+
+  it('dayFailure: a refused date (400) is told apart from other failures', () => {
+    expect(dayFailure(new ApiError(400))).toBe('badDate')
+    expect(dayFailure(new ApiError(500))).toBe('failed')
+    expect(dayFailure(new Error('offline'))).toBe('failed')
+  })
+})
 
 describe('attendance view', () => {
   it('myCheckIn: finds the Check-in of the caller among the people present', () => {
@@ -83,7 +181,7 @@ describe('attendance view', () => {
   })
 
   it('currentCheckIn: a Check-in made on an earlier day is dropped when the day has moved on', () => {
-    const nextDay: Attendance = { date: '2026-03-11', today: true, people: [], me: { membershipId: 'm1' } }
+    const nextDay: Attendance = { date: '2026-03-11', today: true, people: [], me: { membershipId: 'm1', expectedZone: null } }
     expect(currentCheckIn(nextDay, made('c-new', '2026-03-10T17:00:00Z', slabA))).toBeNull()
   })
 

@@ -40,8 +40,52 @@ describe('attendance API', () => {
     expect(seen[0].url).toBe('/api/organizations/o%201/projects/s1/attendance')
     expect(result.date).toBe('2026-03-10')
     expect(result.today).toBe(true)
-    expect(result.people[0].checkIn.recordedBy.name).toBe('Ana Perez')
+    expect(result.people[0].checkIn?.recordedBy.name).toBe('Ana Perez')
     expect(result.me.membershipId).toBe('m1')
+  })
+
+  it('getAttendance: asks for a past day by its date', async () => {
+    const seen: HttpRequest[] = []
+    serve(() => ({ status: 200, data: { ...attendance, date: '2026-03-08', today: false } }), seen)
+
+    const result = await getAttendance('o1', 's1', '2026-03-08')
+
+    expect(seen[0].url).toBe('/api/organizations/o1/projects/s1/attendance?date=2026-03-08')
+    expect(result.today).toBe(false)
+  })
+
+  it('getAttendance: a refused date rejects with the 400 of the backend', async () => {
+    serve(() => ({ status: 400, data: { code: 'INVALID_ARGUMENT' } }))
+    await expect(getAttendance('o1', 's1', '2999-01-01')).rejects.toMatchObject({ status: 400 })
+  })
+
+  it('getAttendance: reads present, absent and unplanned rows with their expected zone', async () => {
+    const slabA = { id: 'z1', name: 'Slab A', floorPlanId: 'p1', floorPlanName: 'Level 1' }
+    const people = [
+      { membershipId: 'm1', name: 'Ana', avatarUrl: null, state: 'PRESENT', planned: true, expectedZone: slabA, checkIn: ownCheckIn, removable: true },
+      { membershipId: 'm2', name: 'Beto', avatarUrl: null, state: 'ABSENT', planned: true, expectedZone: slabA, checkIn: null, removable: false },
+      { membershipId: 'm3', name: 'Caro', avatarUrl: null, state: 'UNPLANNED', planned: false, expectedZone: null, checkIn: { ...ownCheckIn, id: 'c3', membershipId: 'm3' }, removable: false },
+    ]
+    serve(() => ({ status: 200, data: { ...attendance, people, me: { membershipId: 'm2', expectedZone: slabA } } }))
+
+    const result = await getAttendance('o1', 's1')
+
+    expect(result.people.map((p) => p.state)).toEqual(['PRESENT', 'ABSENT', 'UNPLANNED'])
+    expect(result.people[0].expectedZone).toEqual(slabA)
+    expect(result.people[1].checkIn).toBeNull()
+    expect(result.people[2].planned).toBe(false)
+    expect(result.people[2].expectedZone).toBeNull()
+    expect(result.me.expectedZone).toEqual(slabA)
+  })
+
+  it('getAttendance: an answer without the plan fields has nobody planned and no expected zone', async () => {
+    serve(() => ({ status: 200, data: attendance }))
+
+    const result = await getAttendance('o1', 's1')
+
+    expect(result.people[0].planned).toBe(false)
+    expect(result.people[0].expectedZone).toBeNull()
+    expect(result.me.expectedZone).toBeNull()
   })
 
   it('getAttendance: rejects with the API error', async () => {
@@ -116,7 +160,7 @@ describe('attendance API', () => {
     const result = await getAttendance('o1', 's1')
 
     expect(result.people[0].removable).toBe(true)
-    expect(result.people[0].checkIn.zone).toEqual(zone)
+    expect(result.people[0].checkIn?.zone).toEqual(zone)
   })
 
   it('removeCheckIn: deletes the Check-in with the CSRF proof and expects no body', async () => {

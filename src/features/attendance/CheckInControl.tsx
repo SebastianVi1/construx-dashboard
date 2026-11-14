@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { RemoteData } from '../../components/data/useRemoteData'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import type { Attendance } from './attendanceApi'
-import { checkInTime, currentCheckIn, pendingCheckIn, type MadeCheckIn } from './attendanceView'
+import { checkInTime, currentCheckIn, myExpectedZone, pendingCheckIn, type MadeCheckIn } from './attendanceView'
 import { CheckInSheet } from './CheckInSheet'
 import './attendance.css'
 
@@ -57,6 +57,7 @@ export function CheckInControl({ organizationId, siteId, attendance }: {
           organizationId={organizationId}
           siteId={siteId}
           current={current}
+          expectedZone={myExpectedZone(attendance.data)}
           onClose={() => setOpen(false)}
           onDone={(checkIn) => {
             setMade({ checkIn, before: attendance.data })

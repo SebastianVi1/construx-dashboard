@@ -47,9 +47,69 @@ export function zonesByFloorPlan(zones: ZoneRef[]): FloorPlanZones[] {
   return [...groups.values()]
 }
 
-/** What the sheet starts on: the zone the person is in now, or "No zone". */
-export function zoneChoice(current: CheckIn | null): string {
-  return current?.zone?.id ?? NO_ZONE
+/**
+ * What the sheet starts on: where the person is now once they have checked in; before that, the zone the plan
+ * expects them in, or "No zone".
+ */
+export function zoneChoice(current: CheckIn | null, expected: ZoneRef | null = null): string {
+  if (current) return current.zone?.id ?? NO_ZONE
+  return expected?.id ?? NO_ZONE
+}
+
+/** Where the plan expects the caller today; null when not expected, or when the day shown is not today. */
+export function myExpectedZone(attendance: Attendance | undefined): ZoneRef | null {
+  return attendance?.today ? attendance.me.expectedZone : null
+}
+
+export type AttendanceGroups = {
+  /** Expected and checked in. */
+  present: AttendancePerson[]
+  /** Expected, with no Check-in. */
+  absent: AttendancePerson[]
+  /** Checked in without being expected. */
+  unplanned: AttendancePerson[]
+}
+
+/** The people of the day in the three groups of the Attendance page, each in the order they came in. */
+export function attendanceGroups(attendance: Attendance): AttendanceGroups {
+  const groups: AttendanceGroups = { present: [], absent: [], unplanned: [] }
+  for (const person of attendance.people) {
+    if (person.state === 'ABSENT') groups.absent.push(person)
+    else if (person.state === 'UNPLANNED') groups.unplanned.push(person)
+    else groups.present.push(person)
+  }
+  return groups
+}
+
+/**
+ * The zone the plan expected a present person in, only when they checked in somewhere else (another zone or
+ * no zone); null when they are where they were expected, were not planned, or are absent.
+ */
+export function expectedElsewhere(person: AttendancePerson): ZoneRef | null {
+  if (!person.checkIn || !person.expectedZone) return null
+  return person.checkIn.zone?.id === person.expectedZone.id ? null : person.expectedZone
+}
+
+/**
+ * The day the Attendance page asks for. `date` null asks without a date, which is today as the backend
+ * defines it; `today` is the last day the backend called today, to cap the date picker.
+ */
+export type DayChoice = { date: string | null; today: string | null }
+
+/**
+ * The choice after the date picker changes to `value`, given the Attendance on screen. Picking today again,
+ * or clearing the field, goes back to asking without a date: the dashboard never sends its own "today".
+ */
+export function chooseDay(choice: DayChoice, shown: Attendance | undefined, value: string): DayChoice {
+  const today = shown?.today ? shown.date : choice.today
+  return { date: value === '' || value === today ? null : value, today }
+}
+
+export type DayFailure = 'badDate' | 'failed'
+
+/** Why a day could not be loaded: the backend refused the date (400: in the future or not a date), or anything else. */
+export function dayFailure(error: unknown): DayFailure {
+  return error instanceof ApiError && error.status === 400 ? 'badDate' : 'failed'
 }
 
 /** True when the choice is where the person already is, so checking in would change nothing. */
@@ -65,7 +125,7 @@ export function inGoneZone(current: CheckIn | null, zones: ZoneRef[]): boolean {
 
 /** True when the person checked themselves in, false when someone answered for them. */
 export function recordedBySelf(person: AttendancePerson): boolean {
-  return person.checkIn.recordedBy.membershipId === person.membershipId
+  return person.checkIn?.recordedBy.membershipId === person.membershipId
 }
 
 /** The moment of a Check-in as a clock time; in the browser's zone unless one is given. */
@@ -82,7 +142,7 @@ export function attendanceUrl(siteId: string): string {
 
 /** Whether the row offers "Remove": only on today's Attendance, on the rows the backend marks removable. */
 export function canRemove(attendance: Attendance, person: AttendancePerson): boolean {
-  return attendance.today && person.removable
+  return attendance.today && person.removable && person.checkIn !== null
 }
 
 export type RemovalFailure = 'locked' | 'forbidden' | 'failed'

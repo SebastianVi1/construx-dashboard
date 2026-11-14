@@ -203,7 +203,112 @@
   min-height: 44px;
 }
 
+.attendance-row__expected {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.attendance-row--absent .attendance-row__name,
+.attendance-row--absent .attendance-row__zone {
+  color: var(--cx-muted);
+}
+
+.attendance-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+
+.attendance-picker__field {
+  display: grid;
+  gap: 4px;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.attendance-picker__input {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font: inherit;
+  font-weight: 400;
+}
+
+.attendance-picker__input:focus-visible {
+  outline: 2px solid var(--cx-primary);
+  outline-offset: 2px;
+}
+
+.attendance-picker__today {
+  min-height: 44px;
+}
+
+.attendance-picker__note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.attendance-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.attendance-summary__item {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+}
+
+.attendance-summary__item dt {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.attendance-summary__item dd {
+  margin: 0;
+  color: var(--cx-ink);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.attendance-group__count {
+  color: var(--cx-muted);
+  font-weight: 400;
+}
+
+.attendance-group__empty {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
 @media (max-width: 640px) {
+  .attendance-picker__field,
+  .attendance-picker__input {
+    width: 100%;
+  }
+
   .check-in,
   .check-in__button,
   .site-attendance-bar__link {
