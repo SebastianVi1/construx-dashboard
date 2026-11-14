@@ -60,6 +60,9 @@ const SiteFloorPlansPage = lazy(() =>
 const FloorPlanPage = lazy(() =>
   import('./features/floor-plans/FloorPlanPage').then((module) => ({ default: module.FloorPlanPage })),
 )
+const AttendancePage = lazy(() =>
+  import('./features/attendance/AttendancePage').then((module) => ({ default: module.AttendancePage })),
+)
 const CrewsPage = lazy(() =>
   import('./features/crews/CrewsPage').then((module) => ({ default: module.CrewsPage })),
 )
@@ -101,6 +104,7 @@ function App() {
         <Route path="/sites/:siteId/plans/folders/:folderId" element={<SitePlanFolderPage />} />
         <Route path="/sites/:siteId/floor-plans" element={<SiteFloorPlansPage />} />
         <Route path="/sites/:siteId/floor-plans/:floorPlanId" element={<FloorPlanPage />} />
+        <Route path="/sites/:siteId/attendance" element={<AttendancePage />} />
         <Route path="/crews" element={<CrewsPage />} />
         <Route path="/equipment" element={<EquipmentPage />} />
         <Route path="/members" element={<MembersPage />} />

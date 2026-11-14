@@ -6,6 +6,7 @@ import { SiteDetailSkeleton } from './SiteSkeletons'
 import { formatMessage, useLocale } from '../../i18n'
 import { PhaseSchedule } from '../goals/PhasesPage'
 import { SitePhases } from '../goals/SitePhases'
+import { SiteAttendanceBar } from '../attendance/SiteAttendanceBar'
 import { SiteFloorPlans } from '../floor-plans/SiteFloorPlansPage'
 import { SiteReportsSection } from '../reports/SiteReportsSection'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -131,6 +132,7 @@ export function SiteDetailPage() {
             </div>
           ) : null}
         </dl>
+        <SiteAttendanceBar organizationId={organization.id} siteId={current.id} />
       </header>
 
       {savedNotice ? <Notice tone="success">{savedNotice}</Notice> : null}

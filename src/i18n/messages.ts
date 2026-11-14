@@ -23,6 +23,7 @@ import { invitationsMessages } from '../features/invitations/messages'
 import { homeMessages } from '../features/home/messages'
 import { orgFinanceMessages } from '../features/org-finance/messages'
 import { crewsMessages, equipmentMessages } from '../features/crews/messages'
+import { attendanceMessages } from '../features/attendance/messages'
 
 // Assembly only: each slice lives next to its feature (features/*/messages.ts) or in ./slices
 // for shared strings, with English and Spanish side by side via defineMessages.
@@ -53,6 +54,7 @@ const en = {
   orgFinance: orgFinanceMessages.en,
   crews: crewsMessages.en,
   equipment: equipmentMessages.en,
+  attendance: attendanceMessages.en,
 }
 
 export type Messages = DeepStringify<typeof en>
@@ -84,6 +86,7 @@ const es: Messages = {
   orgFinance: orgFinanceMessages.es,
   crews: crewsMessages.es,
   equipment: equipmentMessages.es,
+  attendance: attendanceMessages.es,
 }
 
 export const messages: Record<Locale, Messages> = { en, es }
