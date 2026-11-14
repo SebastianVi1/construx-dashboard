@@ -13,10 +13,10 @@ export function isLocale(value: unknown): value is Locale {
 }
 
 /**
- * Resolve the active locale. A saved user override wins; otherwise a browser
- * language starting with `es` selects Spanish and anything else English.
+ * Resolve the active locale. A saved user override wins; otherwise Spanish is
+ * the default and only a browser language starting with `en` selects English.
  */
 export function resolveLocale(saved: string | null, browserLanguage: string | undefined): Locale {
   if (isLocale(saved)) return saved
-  return browserLanguage?.toLowerCase().startsWith('es') ? 'es' : 'en'
+  return browserLanguage?.toLowerCase().startsWith('en') ? 'en' : 'es'
 }
