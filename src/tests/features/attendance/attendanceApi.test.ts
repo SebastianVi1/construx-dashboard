@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ApiError, configureHttp, type HttpRequest } from '../../../lib/http'
-import { checkIn, getAttendance } from '../../../features/attendance/attendanceApi'
+import { checkIn, getAttendance, getCheckInZones } from '../../../features/attendance/attendanceApi'
 
 const ownCheckIn = {
   id: 'c1',
   membershipId: 'm1',
+  zone: null,
   date: '2026-03-10',
   checkedInAt: '2026-03-10T15:00:00Z',
   recordedBy: { membershipId: 'm1', name: 'Ana Perez' },
@@ -57,8 +58,40 @@ describe('attendance API', () => {
     const post = seen.find((req) => req.method === 'post')
     expect(post?.url).toBe('/api/organizations/o1/projects/s1/attendance/check-ins')
     expect(post?.headers?.['X-XSRF-TOKEN']).toBe('proof')
-    expect(post?.body).toEqual({})
+    expect(post?.body).toEqual({ zoneId: null })
     expect(result).toEqual(ownCheckIn)
+  })
+
+  it('checkIn: sends the zone picked and returns the Check-in with its zone', async () => {
+    const seen: HttpRequest[] = []
+    const zone = { id: 'z1', name: 'Slab A', floorPlanId: 'p1', floorPlanName: 'Level 1' }
+    serve(() => ({ status: 201, data: { ...ownCheckIn, zone } }), seen)
+
+    const result = await checkIn('o1', 's1', 'z1')
+
+    expect(seen.find((req) => req.method === 'post')?.body).toEqual({ zoneId: 'z1' })
+    expect(result.zone).toEqual(zone)
+  })
+
+  it('checkIn: a Check-in without a zone field is present with no zone', async () => {
+    const { zone: _zone, ...older } = ownCheckIn
+    void _zone
+    serve(() => ({ status: 201, data: older }))
+    expect((await checkIn('o1', 's1')).zone).toBeNull()
+  })
+
+  it('checkIn: a zone that is gone rejects with 404', async () => {
+    serve(() => ({ status: 404, data: { code: 'NOT_FOUND' } }))
+    await expect(checkIn('o1', 's1', 'z9')).rejects.toMatchObject({ status: 404 })
+  })
+
+  it('getCheckInZones: reads the zones of the Site with their floor plan', async () => {
+    const seen: HttpRequest[] = []
+    const zones = [{ id: 'z1', name: 'Slab A', floorPlanId: 'p1', floorPlanName: 'Level 1' }]
+    serve(() => ({ status: 200, data: zones }), seen)
+
+    expect(await getCheckInZones('o1', 's 1')).toEqual(zones)
+    expect(seen[0].url).toBe('/api/organizations/o1/projects/s%201/attendance/zones')
   })
 
   it('checkIn: a failure rejects, so the screen can offer a retry', async () => {

@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'bun:test'
-import type { Attendance, AttendancePerson } from '../../../features/attendance/attendanceApi'
-import { checkInTime, myCheckIn, recordedBySelf } from '../../../features/attendance/attendanceView'
+import type { Attendance, AttendancePerson, CheckIn, ZoneRef } from '../../../features/attendance/attendanceApi'
+import {
+  NO_ZONE,
+  checkInTime,
+  currentCheckIn,
+  inGoneZone,
+  myCheckIn,
+  recordedBySelf,
+  staysPut,
+  zoneChoice,
+  zonesByFloorPlan,
+} from '../../../features/attendance/attendanceView'
 
 function person(membershipId: string, recorderId = membershipId): AttendancePerson {
   return {
@@ -11,6 +21,7 @@ function person(membershipId: string, recorderId = membershipId): AttendancePers
     checkIn: {
       id: `c-${membershipId}`,
       membershipId,
+      zone: null,
       date: '2026-03-10',
       checkedInAt: '2026-03-10T15:05:00Z',
       recordedBy: { membershipId: recorderId, name: `Person ${recorderId}` },
@@ -20,6 +31,13 @@ function person(membershipId: string, recorderId = membershipId): AttendancePers
 
 function attendance(me: string, people: AttendancePerson[], today = true): Attendance {
   return { date: '2026-03-10', today, people, me: { membershipId: me } }
+}
+
+const slabA: ZoneRef = { id: 'z1', name: 'Slab A', floorPlanId: 'p1', floorPlanName: 'Level 1' }
+const slabB: ZoneRef = { id: 'z2', name: 'Slab B', floorPlanId: 'p1', floorPlanName: 'Level 1' }
+
+function made(id: string, checkedInAt: string, zone: ZoneRef | null): CheckIn {
+  return { id, membershipId: 'm1', zone, date: '2026-03-10', checkedInAt, recordedBy: { membershipId: 'm1', name: 'Ana' } }
 }
 
 describe('attendance view', () => {
@@ -39,6 +57,61 @@ describe('attendance view', () => {
   it('recordedBySelf: tells a self Check-in from one recorded by someone else', () => {
     expect(recordedBySelf(person('m1'))).toBe(true)
     expect(recordedBySelf(person('m1', 'm9'))).toBe(false)
+  })
+
+  it('currentCheckIn: a move just made wins over the older Check-in still loaded', () => {
+    const loaded = attendance('m1', [person('m1')])
+    const moved = made('c-new', '2026-03-10T17:00:00Z', slabA)
+    expect(currentCheckIn(loaded, moved)?.id).toBe('c-new')
+  })
+
+  it('currentCheckIn: the loaded Check-in wins once it is the later one', () => {
+    const loaded = attendance('m1', [person('m1')])
+    expect(currentCheckIn(loaded, made('c-old', '2026-03-10T14:00:00Z', null))?.id).toBe('c-m1')
+    expect(currentCheckIn(loaded, null)?.id).toBe('c-m1')
+  })
+
+  it('currentCheckIn: a Check-in just made shows before Attendance has loaded it', () => {
+    const moved = made('c-new', '2026-03-10T17:00:00Z', slabA)
+    expect(currentCheckIn(undefined, moved)?.id).toBe('c-new')
+    expect(currentCheckIn(attendance('m1', []), moved)?.id).toBe('c-new')
+  })
+
+  it('currentCheckIn: a Check-in made on an earlier day is dropped when the day has moved on', () => {
+    const nextDay: Attendance = { date: '2026-03-11', today: true, people: [], me: { membershipId: 'm1' } }
+    expect(currentCheckIn(nextDay, made('c-new', '2026-03-10T17:00:00Z', slabA))).toBeNull()
+  })
+
+  it('zonesByFloorPlan: groups the zones under their floor plan, in the order received', () => {
+    const ramp: ZoneRef = { id: 'z3', name: 'Ramp', floorPlanId: 'p2', floorPlanName: 'Basement' }
+    expect(zonesByFloorPlan([ramp, slabA, slabB])).toEqual([
+      { floorPlanId: 'p2', floorPlanName: 'Basement', zones: [ramp] },
+      { floorPlanId: 'p1', floorPlanName: 'Level 1', zones: [slabA, slabB] },
+    ])
+    expect(zonesByFloorPlan([])).toEqual([])
+  })
+
+  it('zoneChoice: starts on the zone the person is in, or on "No zone"', () => {
+    expect(zoneChoice(null)).toBe(NO_ZONE)
+    expect(zoneChoice(made('c1', '2026-03-10T15:00:00Z', null))).toBe(NO_ZONE)
+    expect(zoneChoice(made('c1', '2026-03-10T15:00:00Z', slabA))).toBe('z1')
+  })
+
+  it('staysPut: only the place the person is already in changes nothing', () => {
+    const inSlabA = made('c1', '2026-03-10T15:00:00Z', slabA)
+    expect(staysPut(inSlabA, 'z1')).toBe(true)
+    expect(staysPut(inSlabA, 'z2')).toBe(false)
+    expect(staysPut(inSlabA, NO_ZONE)).toBe(false)
+    expect(staysPut(made('c1', '2026-03-10T15:00:00Z', null), NO_ZONE)).toBe(true)
+    expect(staysPut(null, NO_ZONE)).toBe(false)
+  })
+
+  it('inGoneZone: tells when the person is in a zone that can no longer be picked', () => {
+    const inSlabA = made('c1', '2026-03-10T15:00:00Z', slabA)
+    expect(inGoneZone(inSlabA, [slabB])).toBe(true)
+    expect(inGoneZone(inSlabA, [slabA, slabB])).toBe(false)
+    expect(inGoneZone(made('c1', '2026-03-10T15:00:00Z', null), [])).toBe(false)
+    expect(inGoneZone(null, [])).toBe(false)
   })
 
   it('checkInTime: shows the moment as a clock time in the given zone', () => {

@@ -75,6 +75,14 @@ export function AttendancePage() {
                   <Avatar fullName={person.name} avatarUrl={person.avatarUrl} decorative />
                   <div className="attendance-row__who">
                     <span className="attendance-row__name">{person.name}</span>
+                    <span className="attendance-row__zone">
+                      {person.checkIn.zone
+                        ? formatMessage(t.zoneOnPlan, {
+                            zone: person.checkIn.zone.name,
+                            plan: person.checkIn.zone.floorPlanName,
+                          })
+                        : t.noZone}
+                    </span>
                     <span className="attendance-row__by">
                       {recordedBySelf(person)
                         ? t.recordedBySelf

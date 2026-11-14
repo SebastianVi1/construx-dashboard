@@ -8,16 +8,105 @@
   min-height: 44px;
 }
 
-.check-in__done {
+.check-in__button--done {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  min-height: 44px;
-  margin: 0;
+  max-width: 100%;
+}
+
+.check-in__where {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.check-in-sheet {
+  display: grid;
+  gap: 16px;
+}
+
+.check-in-sheet__options {
+  display: grid;
+  gap: 8px;
+}
+
+.check-in-sheet__plan {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.check-in-sheet__plan legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.check-in-sheet__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
   color: var(--cx-ink);
   font-size: 15px;
   line-height: 22px;
+  cursor: pointer;
+}
+
+.check-in-sheet__option:hover {
+  border-color: var(--cx-primary);
+}
+
+.check-in-sheet__option:has(input:checked) {
+  border-color: var(--cx-primary);
+  background: var(--cx-primary-subtle);
+}
+
+.check-in-sheet__option:has(input:focus-visible) {
+  outline: 2px solid var(--cx-primary);
+  outline-offset: 2px;
+}
+
+.check-in-sheet__option input {
+  flex: none;
+  accent-color: var(--cx-primary);
+}
+
+.check-in-sheet__option-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.check-in-sheet__hint,
+.check-in-sheet__here,
+.check-in-sheet__loading {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.check-in-sheet__here {
+  flex: none;
   font-weight: 600;
+}
+
+.check-in-sheet__loading {
+  margin: 0;
 }
 
 .check-in__mark {
@@ -87,6 +176,12 @@
 .attendance-row__name {
   overflow-wrap: anywhere;
   font-weight: 600;
+}
+
+.attendance-row__zone {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .attendance-row__by {
