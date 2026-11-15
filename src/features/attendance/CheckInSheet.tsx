@@ -13,13 +13,16 @@ import './attendance.css'
  * already is, or, before their first Check-in, on the zone the plan expects them in; picking another place
  * and confirming moves them. A failure stays in the sheet with a retry.
  */
-export function CheckInSheet({ organizationId, siteId, current, expectedZone = null, onDone, onClose }: {
+export function CheckInSheet({ organizationId, siteId, current, expectedZone = null, membershipId, personName, onDone, onClose }: {
   organizationId: string
   siteId: string
   /** The caller's Check-in of today, when they have one. */
   current: CheckIn | null
   /** Where the plan expects the person today, when it does. */
   expectedZone?: ZoneRef | null
+  /** The member to check in, when this sheet is recording for someone else. */
+  membershipId?: string
+  personName?: string
   onDone: (made: CheckIn) => void
   onClose: () => void
 }) {
@@ -43,7 +46,7 @@ export function CheckInSheet({ organizationId, siteId, current, expectedZone = n
     setSending(true)
     setFailure(null)
     try {
-      onDone(await checkIn(organizationId, siteId, choice === NO_ZONE ? null : choice))
+      onDone(await checkIn(organizationId, siteId, choice === NO_ZONE ? null : choice, membershipId))
     } catch (error) {
       const zoneGone = choice !== NO_ZONE && error instanceof ApiError && error.status === 404
       setFailure(zoneGone ? 'zoneGone' : 'failed')
@@ -78,8 +81,8 @@ export function CheckInSheet({ organizationId, siteId, current, expectedZone = n
 
   return (
     <Modal
-      title={current ? t.moveTitle : t.sheetTitle}
-      description={current ? t.moveDescription : t.sheetDescription}
+      title={current ? t.moveTitle : personName ? formatMessage(t.checkInOtherTitle, { name: personName }) : t.sheetTitle}
+      description={current ? t.moveDescription : personName ? t.checkInOtherDescription : t.sheetDescription}
       onClose={onClose}
     >
       <form

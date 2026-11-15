@@ -117,6 +117,19 @@ describe('attendance API', () => {
     expect(result.zone).toEqual(zone)
   })
 
+  it('checkIn: sends the absent member and selected zone for a check-in recorded by someone else', async () => {
+    const seen: HttpRequest[] = []
+    const zone = { id: 'z2', name: 'Slab B', floorPlanId: 'p1', floorPlanName: 'Level 1' }
+    serve(() => ({ status: 201, data: { ...ownCheckIn, membershipId: 'm2', zone, recordedBy: { membershipId: 'm1', name: 'Ana Perez' } } }), seen)
+
+    const result = await checkIn('o1', 's1', 'z2', 'm2')
+
+    const post = seen.find((req) => req.method === 'post')
+    expect(post?.body).toEqual({ zoneId: 'z2', membershipId: 'm2' })
+    expect(result.membershipId).toBe('m2')
+    expect(result.recordedBy).toEqual({ membershipId: 'm1', name: 'Ana Perez' })
+  })
+
   it('checkIn: a Check-in without a zone field is present with no zone', async () => {
     const { zone: _zone, ...older } = ownCheckIn
     void _zone
@@ -150,6 +163,16 @@ describe('attendance API', () => {
     const result = await getAttendance('o1', 's1')
 
     expect(result.people.map((person) => person.removable)).toEqual([true, false])
+  })
+
+  it('getAttendance: reads whether the caller may check in other people and leaves a missing flag unauthorized', async () => {
+    serve(() => ({ status: 200, data: { ...attendance, me: { membershipId: 'm1', canCheckInOthers: true } } }))
+    const permitted = await getAttendance('o1', 's1')
+    expect(permitted.me.canCheckInOthers).toBe(true)
+
+    serve(() => ({ status: 200, data: attendance }))
+    const older = await getAttendance('o1', 's1')
+    expect(older.me.canCheckInOthers).toBeUndefined()
   })
 
   it('getAttendance: a removable row still carries the zone of its Check-in', async () => {

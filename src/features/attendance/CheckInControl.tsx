@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { RemoteData } from '../../components/data/useRemoteData'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
-import type { Attendance } from './attendanceApi'
+import type { Attendance, AttendancePerson } from './attendanceApi'
 import { checkInTime, currentCheckIn, myExpectedZone, pendingCheckIn, type MadeCheckIn } from './attendanceView'
 import { CheckInSheet } from './CheckInSheet'
 import './attendance.css'
@@ -11,10 +11,12 @@ import './attendance.css'
  * their current zone and the time, and still opens the sheet so they can move. Nothing is queued for later:
  * a failure is shown in the sheet with a retry.
  */
-export function CheckInControl({ organizationId, siteId, attendance }: {
+export function CheckInControl({ organizationId, siteId, attendance, target }: {
   organizationId: string
   siteId: string
   attendance: RemoteData<Attendance>
+  /** An absent member to record for; omitted for the caller's own Check-in control. */
+  target?: AttendancePerson
 }) {
   const { messages: m, locale } = useLocale()
   const t = m.attendance
@@ -23,7 +25,7 @@ export function CheckInControl({ organizationId, siteId, attendance }: {
   // removed afterwards does not linger here.
   const [made, setMade] = useState<MadeCheckIn | null>(null)
 
-  const current = currentCheckIn(attendance.data, pendingCheckIn(made, attendance.data))
+  const current = target ? target.checkIn : currentCheckIn(attendance.data, pendingCheckIn(made, attendance.data))
   const time = current ? checkInTime(current.checkedInAt, intlLocales[locale]) : ''
   const zone = current?.zone?.name ?? t.noZone
 
@@ -43,7 +45,7 @@ export function CheckInControl({ organizationId, siteId, attendance }: {
       ) : (
         <button
           type="button"
-          className="button button--primary check-in__button"
+          className={target ? 'button button--small attendance-row__check-in' : 'button button--primary check-in__button'}
           aria-haspopup="dialog"
           // Until today's Attendance answers, it is unknown whether the caller already checked in.
           disabled={attendance.status === 'loading' && !attendance.data}
@@ -57,10 +59,12 @@ export function CheckInControl({ organizationId, siteId, attendance }: {
           organizationId={organizationId}
           siteId={siteId}
           current={current}
-          expectedZone={myExpectedZone(attendance.data)}
+          expectedZone={target?.expectedZone ?? myExpectedZone(attendance.data)}
+          membershipId={target?.membershipId}
+          personName={target?.name}
           onClose={() => setOpen(false)}
           onDone={(checkIn) => {
-            setMade({ checkIn, before: attendance.data })
+            if (!target) setMade({ checkIn, before: attendance.data })
             setOpen(false)
             attendance.reload()
           }}

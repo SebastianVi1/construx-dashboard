@@ -54,6 +54,8 @@ export const attendanceSchema = z.object({
     membershipId: z.string().min(1),
     /** Where the plan expects the caller that day; null when not expected. */
     expectedZone: zoneRefSchema.nullable().default(null),
+    /** Whether the caller may check in another member today. */
+    canCheckInOthers: z.boolean().optional(),
   }),
 })
 export type Attendance = z.infer<typeof attendanceSchema>
@@ -77,11 +79,22 @@ export function getCheckInZones(orgId: string, siteId: string): Promise<ZoneRef[
 }
 
 /**
- * Checks the caller in to the Site today, in a zone or (null) in none. A later Check-in to another zone moves
- * them; repeating the zone they are already in returns the Check-in already made.
+ * Checks the caller, or an optional company member, in to the Site today, in a zone or (null) in none. A later
+ * Check-in to another zone moves them; repeating the zone they are already in returns the Check-in already made.
  */
-export function checkIn(orgId: string, siteId: string, zoneId: string | null = null): Promise<CheckIn> {
-  return sendJson('post', `${attendancePath(orgId, siteId)}/check-ins`, { zoneId }, 201, checkInSchema)
+export function checkIn(
+  orgId: string,
+  siteId: string,
+  zoneId: string | null = null,
+  membershipId?: string,
+): Promise<CheckIn> {
+  return sendJson(
+    'post',
+    `${attendancePath(orgId, siteId)}/check-ins`,
+    { zoneId, ...(membershipId === undefined ? {} : { membershipId }) },
+    201,
+    checkInSchema,
+  )
 }
 
 /**

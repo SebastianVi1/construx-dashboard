@@ -4,6 +4,7 @@ import { ApiError } from '../../../lib/http'
 import {
   NO_ZONE,
   attendanceGroups,
+  canCheckInPerson,
   chooseDay,
   dayFailure,
   expectedElsewhere,
@@ -144,6 +145,18 @@ describe('attendance against the plan', () => {
 })
 
 describe('attendance view', () => {
+  it('canCheckInPerson: permits only absent people on today when the caller may check in others', () => {
+    const absent = planned('m2', slabB)
+    const permitted = { ...attendance('m1', [absent]), me: { membershipId: 'm1', expectedZone: slabA, canCheckInOthers: true } }
+    const denied = { ...permitted, me: { ...permitted.me, canCheckInOthers: false } }
+    const present = planned('m2', slabB, slabB)
+
+    expect(canCheckInPerson(permitted, absent)).toBe(true)
+    expect(canCheckInPerson(denied, absent)).toBe(false)
+    expect(canCheckInPerson({ ...permitted, today: false }, absent)).toBe(false)
+    expect(canCheckInPerson(permitted, present)).toBe(false)
+  })
+
   it('myCheckIn: finds the Check-in of the caller among the people present', () => {
     expect(myCheckIn(attendance('m2', [person('m1'), person('m2')]))?.id).toBe('c-m2')
   })
