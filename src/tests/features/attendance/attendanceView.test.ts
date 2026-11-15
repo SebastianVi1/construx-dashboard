@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import type { Attendance, AttendancePerson, CheckIn, ZoneRef } from '../../../features/attendance/attendanceApi'
+import type { Attendance, AttendancePerson, CheckIn, RollCallCrew, ZoneRef } from '../../../features/attendance/attendanceApi'
 import { ApiError } from '../../../lib/http'
 import {
   NO_ZONE,
@@ -17,6 +17,8 @@ import {
   pendingCheckIn,
   recordedBySelf,
   removalFailure,
+  rollCallCrewsForToday,
+  rollCallMemberIds,
   staysPut,
   zoneChoice,
   zonesByFloorPlan,
@@ -145,6 +147,37 @@ describe('attendance against the plan', () => {
 })
 
 describe('attendance view', () => {
+  it('rollCallCrewsForToday: only offers the eligible Crew roster for today', () => {
+    const crew: RollCallCrew = {
+      crewId: 'crew1',
+      name: 'Concrete crew',
+      expectedZone: slabA,
+      members: [
+        { membershipId: 'm2', name: 'Beto', checkIn: null },
+        { membershipId: 'm3', name: 'Caro', checkIn: made('c3', '2026-03-10T15:00:00Z', slabA) },
+      ],
+    }
+    const loaded = { ...attendance('m1', []), me: { membershipId: 'm1', expectedZone: null, rollCallCrews: [crew] } }
+
+    expect(rollCallCrewsForToday(loaded)).toEqual([crew])
+    expect(rollCallCrewsForToday({ ...loaded, today: false })).toEqual([])
+  })
+
+  it('rollCallMemberIds: preselects absent roster members and omits already-present members', () => {
+    const crew: RollCallCrew = {
+      crewId: 'crew1',
+      name: 'Concrete crew',
+      expectedZone: slabA,
+      members: [
+        { membershipId: 'm2', name: 'Beto', checkIn: null },
+        { membershipId: 'm3', name: 'Caro', checkIn: made('c3', '2026-03-10T15:00:00Z', slabA) },
+        { membershipId: 'm4', name: 'Dani', checkIn: null },
+      ],
+    }
+
+    expect(rollCallMemberIds(crew)).toEqual(['m2', 'm4'])
+  })
+
   it('canCheckInPerson: permits only absent people on today when the caller may check in others', () => {
     const absent = planned('m2', slabB)
     const permitted = { ...attendance('m1', [absent]), me: { membershipId: 'm1', expectedZone: slabA, canCheckInOthers: true } }

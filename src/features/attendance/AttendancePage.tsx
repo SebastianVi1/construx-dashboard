@@ -20,9 +20,11 @@ import {
   expectedElsewhere,
   recordedBySelf,
   removalFailure,
+  rollCallCrewsForToday,
   type DayChoice,
 } from './attendanceView'
 import { CheckInControl } from './CheckInControl'
+import { RollCallControl } from './RollCallControl'
 import { useAttendance } from './useAttendance'
 import './attendance.css'
 
@@ -70,6 +72,7 @@ export function AttendancePage() {
   const denied = attendance.error instanceof ApiError && [403, 404].includes(attendance.error.status ?? 0)
   const badDate = !denied && attendance.status === 'error' && dayFailure(attendance.error) === 'badDate'
   const groups = data ? attendanceGroups(data) : null
+  const rollCallCrews = data ? rollCallCrewsForToday(data) : []
   // Past days are read-only: nobody checks in, moves or removes there.
   const pastDay = day.date !== null
 
@@ -166,6 +169,23 @@ export function AttendancePage() {
           <CheckInControl key={removals} organizationId={organization.id} siteId={siteId} attendance={attendance} />
         ) : null}
       </header>
+
+      {rollCallCrews.length > 0 ? (
+        <section className="attendance-roll-calls" aria-labelledby="attendance-roll-calls-heading">
+          <h2 id="attendance-roll-calls-heading">{t.rollCall}</h2>
+          <div className="attendance-roll-calls__controls">
+            {rollCallCrews.map((crew) => (
+              <RollCallControl
+                key={crew.crewId}
+                organizationId={organization.id}
+                siteId={siteId}
+                crew={crew}
+                onDone={attendance.reload}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {!denied ? (
         <div className="attendance-picker">
