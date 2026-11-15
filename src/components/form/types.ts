@@ -1,4 +1,4 @@
-import type { FormEvent, ReactNode } from 'react'
+import type { FormEvent, ReactNode, Ref } from 'react'
 
 export type FieldType =
   | 'text'
@@ -12,9 +12,25 @@ export type FieldType =
   | 'date'
   | 'datetime-local'
   | 'select'
+  | 'radio'
+  | 'checkboxes'
   | 'textarea'
 
-export type FieldOption = { value: string; label: string }
+export type FieldOption = {
+  value: string
+  label: string
+  disabled?: boolean
+  checked?: boolean
+  description?: string
+  statusLabel?: string
+}
+
+export type FieldOptionGroup = {
+  label?: string
+  options: FieldOption[]
+  className?: string
+  labelClassName?: string
+}
 
 export type InputMode = 'text' | 'email' | 'numeric' | 'decimal' | 'tel' | 'url' | 'search'
 
@@ -27,7 +43,7 @@ export type InputMode = 'text' | 'email' | 'numeric' | 'decimal' | 'tel' | 'url'
 export type FieldConfig = {
   /** Unique field name; used as the input `name` and to key values/errors. */
   name: string
-  /** Visible label rendered above the control. */
+  /** Visible label rendered above the control or as its choice-group legend. */
   label: string
   /** Native input type. Defaults to `text`. */
   type?: FieldType
@@ -45,6 +61,15 @@ export type FieldConfig = {
   revealLabels?: { show: string; hide: string }
   /** Choices of a `select` field, in display order. Use `value: ''` for "none". */
   options?: FieldOption[]
+  /** Options grouped under nested legends for radio and checkbox fields. */
+  optionGroups?: FieldOptionGroup[]
+  /** Class names for grouped choice controls and their visual labels. */
+  groupClassName?: string
+  groupLabelClassName?: string
+  optionClassName?: string
+  optionTextClassName?: string
+  optionDescriptionClassName?: string
+  optionStatusClassName?: string
   /** Minimum value for `date` or `datetime-local` inputs (YYYY-MM-DD). */
   min?: string
   /** Number of visible rows for `textarea` fields. */
@@ -86,6 +111,20 @@ export type FormProps = {
   submitLabel: string
   /** Text of the submit button while submitting. Falls back to `submitLabel`. */
   pendingLabel?: string
+  /** Extra class names for a screen-specific layout. */
+  className?: string
+  /** Class name for the action row around the submit button. */
+  actionsClassName?: string
+  /** Class name for the submit button. */
+  submitClassName?: string
+  /** Disable the submit button for a screen-specific unchanged or empty state. */
+  submitDisabled?: boolean
+  /** An optional control rendered before the submit button, such as Cancel. */
+  beforeSubmit?: ReactNode
+  /** Optional content rendered before the configured fields. */
+  beforeFields?: ReactNode
+  /** Ref for a screen-specific retry action that should submit the form again. */
+  formRef?: Ref<HTMLFormElement>
   /** Rendered between the fields and the submit button (alerts, status, etc.). */
   children?: ReactNode
 }

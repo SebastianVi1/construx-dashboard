@@ -84,8 +84,11 @@ export function overlayAttendance(
     const currentZoneId = person.checkIn?.zone?.id ?? null
 
     if (!person.checkIn) {
-      if (person.state !== 'ABSENT' || !expectedZoneId || !drawn.has(expectedZoneId)) continue
       const previous = positionOf(result, person.membershipId)
+      if (person.state !== 'ABSENT' || !expectedZoneId || !drawn.has(expectedZoneId)) {
+        result = withoutPerson(result, person.membershipId)
+        continue
+      }
       const figure = previous
         ? { ...previous.occupant, attendance: 'ABSENT' as const }
         : fromAttendance(person, 'ABSENT')

@@ -164,7 +164,7 @@ describe('overlayAttendance', () => {  it('leaves the plan alone when Attendance
 
   it('leaves the plan alone for someone expected on another floor plan', () => {
     const data = attendance([attendancePerson({ state: 'ABSENT', checkIn: null, expectedZone: upper })])
-    expect(overlayAttendance(plan, data, TODAY, zones)).toEqual(plan)
+    expect(overlayAttendance(plan, data, TODAY, zones)).toEqual({ z1: [], z2: plan.z2 })
   })
 
   it('draws an expected person who is absent even when the plan state omits them', () => {

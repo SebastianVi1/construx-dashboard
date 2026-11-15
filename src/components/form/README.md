@@ -54,19 +54,25 @@ function Login() {
 | --- | --- | --- |
 | `name` | `string` | Unique field key; used as the input `name` and to key values/errors. |
 | `label` | `string` | Label text rendered above the control. |
-| `type` | `FieldType` | `text` \| `email` \| `password` \| `tel` \| `number` \| `money` \| `url` \| `search` \| `date` \| `datetime-local` \| `select` \| `textarea`. Default `text`. `money` shows the active currency symbol, groups thousands while typing and pads cents on blur; its value is the plain amount (`"1234.50"`) in the **active currency**, so convert it with `useCurrency().toMxn` before sending. `number` takes digits only (see `decimals`). `datetime-local` values are wall-clock `YYYY-MM-DDTHH:mm` strings; convert them to instants before sending. |
+| `type` | `FieldType` | `text` \| `email` \| `password` \| `tel` \| `number` \| `money` \| `url` \| `search` \| `date` \| `datetime-local` \| `select` \| `radio` \| `checkboxes` \| `textarea`. Default `text`. `money` shows the active currency symbol, groups thousands while typing and pads cents on blur; its value is the plain amount (`"1234.50"`) in the **active currency**, so convert it with `useCurrency().toMxn` before sending. `number` takes digits only (see `decimals`). `datetime-local` values are wall-clock `YYYY-MM-DDTHH:mm` strings; convert them to instants before sending. |
 | `placeholder` | `string` | Placeholder shown while the field is empty. |
 | `autoComplete` | `string` | Native autocomplete hint (`email`, `current-password`, …). |
 | `inputMode` | `InputMode` | On-screen keyboard hint (`email`, `numeric`, …). |
 | `spellCheck` | `boolean` | Force spell-check on/off for the control. |
 | `hint` | `string` | Helper text shown while the field is valid. |
-| `options` | `FieldOption[]` | Choices of a `select` field (`{ value, label }`); use `value: ''` for "none". |
+| `options` | `FieldOption[]` | Choices for a `select` or `checkboxes` field; radio fields may also use `options` when no nested groups are needed. |
+| `optionGroups` | `FieldOptionGroup[]` | Radio or checkbox choices grouped under nested legends. Options may include `disabled`, `description`, and `statusLabel`. |
 | `min` | `string` | Earliest `date` / `datetime-local` value. |
 | `rows` | `number` | Visible rows of a `textarea`. |
 | `maxLength` | `number` | Most characters; pick it from `TEXT_LIMITS`. A `textarea` shows a counter. Keep the schema's `.max()` in step. |
 | `decimals` | `number` | Decimal places of a `number` field; 0 (default) means whole numbers. |
 | `maxDigits` | `number` | Digits before the dot of `number` / `money`; money defaults to `MONEY_DIGITS.amount`. |
-| `suffix` | `string` | Unit shown after a `number` value, such as `m`. |
+| `suffix` | `string` | Unit shown after a `number` field's value, such as `m`. |
+
+Checkbox-group values are JSON arrays stored as strings in the controller. Use
+`selectedOptionValues` to read them and `toggleOptionValue` to update one option.
+`Form` also accepts screen layout classes, `beforeSubmit`, and `submitDisabled`
+for modal action rows and state-dependent submit buttons.
 
 ## `useForm` options
 

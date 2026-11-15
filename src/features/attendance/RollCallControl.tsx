@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { Form, selectedOptionValues, useForm, type FieldConfig } from '../../components/form'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Modal } from '../../components/modal'
 import { Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { rollCall, getCheckInZones, type RollCallCrew } from './attendanceApi'
-import { NO_ZONE, rollCallMemberIds, zonesByFloorPlan } from './attendanceView'
+import { NO_ZONE, rollCallFormSchema, rollCallMemberIds, zonesByFloorPlan } from './attendanceView'
 import './attendance.css'
 
 export function RollCallControl({ organizationId, siteId, crew, onDone }: {
@@ -50,36 +51,65 @@ function RollCallSheet({ organizationId, siteId, crew, onDone, onClose }: {
   const zones = useRemoteData(`${organizationId}:${siteId}:check-in-zones`, () => getCheckInZones(organizationId, siteId), {
     remember: false,
   })
-  const [selected, setSelected] = useState(() => new Set(rollCallMemberIds(crew)))
-  const [zoneId, setZoneId] = useState(crew.expectedZone?.id ?? NO_ZONE)
-  const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)
+  const form = useForm({
+    initialValues: {
+      membershipIds: JSON.stringify(rollCallMemberIds(crew)),
+      zoneId: crew.expectedZone?.id ?? NO_ZONE,
+    },
+    schema: rollCallFormSchema,
+    onSubmit: async ({ membershipIds, zoneId }) => {
+      setFailed(false)
+      try {
+        const selected = new Set(selectedOptionValues(membershipIds))
+        const memberIds = crew.members
+          .filter((member) => selected.has(member.membershipId) && member.checkIn === null)
+          .map((member) => member.membershipId)
+        await rollCall(organizationId, siteId, crew.crewId, memberIds, zoneId === NO_ZONE ? null : zoneId)
+        onDone()
+      } catch (error) {
+        setFailed(true)
+        throw error
+      }
+    },
+  })
   const groups = zonesByFloorPlan(zones.data ?? [])
-
-  function toggleMember(membershipId: string) {
-    setSelected((current) => {
-      const next = new Set(current)
-      if (next.has(membershipId)) next.delete(membershipId)
-      else next.add(membershipId)
-      return next
-    })
-  }
-
-  async function submit() {
-    if (sending || selected.size === 0) return
-    setSending(true)
-    setFailed(false)
-    try {
-      const membershipIds = crew.members
-        .filter((member) => selected.has(member.membershipId) && member.checkIn === null)
-        .map((member) => member.membershipId)
-      await rollCall(organizationId, siteId, crew.crewId, membershipIds, zoneId === NO_ZONE ? null : zoneId)
-      onDone()
-    } catch {
-      setFailed(true)
-      setSending(false)
-    }
-  }
+  const selectedCount = selectedOptionValues(form.values.membershipIds).length
+  const fields: FieldConfig[] = [
+    {
+      name: 'membershipIds',
+      label: crew.name,
+      type: 'checkboxes',
+      groupClassName: 'roll-call-sheet__roster',
+      optionClassName: 'roll-call-sheet__member',
+      optionTextClassName: 'roll-call-sheet__member-name',
+      optionStatusClassName: 'roll-call-sheet__present',
+      options: crew.members.map((member) => ({
+        value: member.membershipId,
+        label: member.name,
+        checked: member.checkIn !== null,
+        disabled: member.checkIn !== null,
+        statusLabel: member.checkIn !== null ? t.rollCallPresent : undefined,
+      })),
+    },
+    {
+      name: 'zoneId',
+      label: t.zonesLabel,
+      type: 'radio',
+      groupClassName: 'roll-call-sheet__zones',
+      optionClassName: 'check-in-sheet__option',
+      optionTextClassName: 'check-in-sheet__option-text',
+      optionDescriptionClassName: 'check-in-sheet__hint',
+      optionGroups: [
+        { options: [{ value: NO_ZONE, label: t.noZone, description: t.noZoneHint }] },
+        ...groups.map((group) => ({
+          label: group.floorPlanName,
+          className: 'check-in-sheet__plan',
+          options: group.zones.map((zone) => ({ value: zone.id, label: zone.name })),
+        })),
+      ],
+    },
+  ]
 
   return (
     <Modal
@@ -87,89 +117,28 @@ function RollCallSheet({ organizationId, siteId, crew, onDone, onClose }: {
       description={t.rollCallDescription}
       onClose={onClose}
     >
-      <form
+      <Form
+        controller={form}
+        fields={fields}
         className="roll-call-sheet"
-        aria-busy={sending}
-        onSubmit={(event) => {
-          event.preventDefault()
-          void submit()
-        }}
+        actionsClassName="button-row button-row--end modal-actions"
+        submitClassName="button button--primary"
+        submitDisabled={selectedCount === 0}
+        submitLabel={t.rollCallSubmit}
+        pendingLabel={t.rollCallSubmitting}
+        beforeSubmit={(
+          <button type="button" className="button button--ghost" onClick={onClose} disabled={form.isSubmitting}>
+            {t.cancel}
+          </button>
+        )}
       >
-        <fieldset className="roll-call-sheet__roster">
-          <legend>{crew.name}</legend>
-          {crew.members.map((member) => {
-            const present = member.checkIn !== null
-            return (
-              <label key={member.membershipId} className="roll-call-sheet__member">
-                <input
-                  type="checkbox"
-                  checked={present || selected.has(member.membershipId)}
-                  disabled={sending || present}
-                  onChange={() => toggleMember(member.membershipId)}
-                />
-                <span className="roll-call-sheet__member-name">{member.name}</span>
-                {present ? <span className="roll-call-sheet__present">{t.rollCallPresent}</span> : null}
-              </label>
-            )
-          })}
-        </fieldset>
-
-        <fieldset className="roll-call-sheet__zones">
-          <legend>{t.zonesLabel}</legend>
-          <label className="check-in-sheet__option">
-            <input
-              type="radio"
-              name={`roll-call-zone-${crew.crewId}`}
-              value={NO_ZONE}
-              checked={zoneId === NO_ZONE}
-              disabled={sending}
-              onChange={() => setZoneId(NO_ZONE)}
-            />
-            <span className="check-in-sheet__option-text">
-              <span>{t.noZone}</span>
-              <span className="check-in-sheet__hint">{t.noZoneHint}</span>
-            </span>
-          </label>
-          {groups.map((group) => (
-            <fieldset key={group.floorPlanId} className="check-in-sheet__plan">
-              <legend>{group.floorPlanName}</legend>
-              {group.zones.map((zone) => (
-                <label key={zone.id} className="check-in-sheet__option">
-                  <input
-                    type="radio"
-                    name={`roll-call-zone-${crew.crewId}`}
-                    value={zone.id}
-                    checked={zoneId === zone.id}
-                    disabled={sending}
-                    onChange={() => setZoneId(zone.id)}
-                  />
-                  <span className="check-in-sheet__option-text">{zone.name}</span>
-                </label>
-              ))}
-            </fieldset>
-          ))}
-        </fieldset>
-
         {zones.data === undefined && zones.status === 'error' ? (
           <Notice tone="error" action={{ label: t.retry, onClick: zones.reload }}>{t.zonesError}</Notice>
         ) : zones.data === undefined ? (
           <p className="check-in-sheet__loading" role="status">{t.zonesLoading}</p>
         ) : null}
         {failed ? <Notice tone="error">{t.rollCallFailed}</Notice> : null}
-        <div className="button-row button-row--end modal-actions">
-          <button type="button" className="button button--ghost" onClick={onClose} disabled={sending}>
-            {t.cancel}
-          </button>
-          <button
-            type="submit"
-            className="button button--primary"
-            disabled={sending || selected.size === 0}
-            aria-busy={sending}
-          >
-            {sending ? t.rollCallSubmitting : t.rollCallSubmit}
-          </button>
-        </div>
-      </form>
+      </Form>
     </Modal>
   )
 }
