@@ -1,4 +1,6 @@
 import { ApiError } from '../../lib/http'
+import { selectedOptionValues } from '../../components/form/optionValues'
+import { z } from 'zod'
 import type { Attendance, AttendancePerson, CheckIn, RollCallCrew, ZoneRef } from './attendanceApi'
 
 /** The caller's Check-in of today, or null when they have none (or Attendance is not loaded or not today's). */
@@ -33,6 +35,13 @@ export function currentCheckIn(attendance: Attendance | undefined, made: CheckIn
 
 /** The choice "No zone" in the check-in sheet. */
 export const NO_ZONE = ''
+
+export const checkInFormSchema = z.object({ zoneId: z.string() })
+
+export const rollCallFormSchema = z.object({
+  membershipIds: z.string().refine((value) => selectedOptionValues(value).length > 0),
+  zoneId: z.string(),
+})
 
 export type FloorPlanZones = { floorPlanId: string; floorPlanName: string; zones: ZoneRef[] }
 

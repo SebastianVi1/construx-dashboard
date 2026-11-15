@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react'
 import { currencySymbol, ExchangeRateNote, useCurrency } from '../../currency'
 import { MONEY_DIGITS } from './limits'
 import { NumberControl } from './NumberControl'
+import { selectedOptionValues, toggleOptionValue } from './optionValues'
 import type { FieldConfig } from './types'
 
 type FieldProps = {
@@ -26,6 +27,13 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
     hint,
     revealLabels,
     options = [],
+    optionGroups = [],
+    groupClassName,
+    groupLabelClassName,
+    optionClassName,
+    optionTextClassName,
+    optionDescriptionClassName,
+    optionStatusClassName,
     min,
     rows = 3,
     maxLength,
@@ -58,6 +66,35 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
     'aria-describedby': describedBy,
     disabled,
   }
+  const choices = optionGroups.length > 0 ? optionGroups : [{ options }]
+
+  function renderChoices(groupOptions: typeof options, groupIndex: number) {
+    return groupOptions.map((option, optionIndex) => {
+      const optionId = `${controlId}-${groupIndex}-${optionIndex}`
+      const checked = type === 'radio'
+        ? value === option.value
+        : option.checked === true || selectedOptionValues(value).includes(option.value)
+      return (
+        <label key={option.value} className={optionClassName} htmlFor={optionId}>
+          <input
+            id={optionId}
+            type={type === 'radio' ? 'radio' : 'checkbox'}
+            name={name}
+            value={option.value}
+            checked={checked}
+            disabled={disabled || option.disabled}
+            onBlur={onBlur}
+            aria-invalid={Boolean(error)}
+            aria-describedby={describedBy}
+            onChange={() => onChange(type === 'radio' ? option.value : toggleOptionValue(value, option.value))}
+          />
+          <span className={optionTextClassName}>{option.label}</span>
+          {option.description ? <span className={optionDescriptionClassName}>{option.description}</span> : null}
+          {option.statusLabel ? <span className={optionStatusClassName}>{option.statusLabel}</span> : null}
+        </label>
+      )
+    })
+  }
 
   return (
     <div
@@ -68,9 +105,9 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
       data-suffix={suffix ? true : undefined}
       style={affixStyle}
     >
-      <label className="form-field__label" htmlFor={controlId}>
-        {label}
-      </label>
+      {type === 'radio' || type === 'checkboxes' ? null : (
+        <label className="form-field__label" htmlFor={controlId}>{label}</label>
+      )}
       <div className="form-field__box">
         {type === 'select' ? (
           <select
@@ -90,6 +127,26 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
               </option>
             ))}
           </select>
+        ) : type === 'radio' || type === 'checkboxes' ? (
+          <fieldset
+            className={groupClassName ?? 'form-field__choices'}
+            id={controlId}
+            aria-label={label}
+            aria-invalid={Boolean(error)}
+            aria-describedby={describedBy}
+          >
+            <legend className={groupLabelClassName}>{label}</legend>
+            {choices.map((group, groupIndex) => group.label ? (
+              <fieldset key={`${group.label}-${groupIndex}`} className={group.className ?? 'form-field__option-group'}>
+                <legend className={group.labelClassName}>{group.label}</legend>
+                {renderChoices(group.options, groupIndex)}
+              </fieldset>
+            ) : (
+              <div key={`options-${groupIndex}`} className={group.className}>
+                {renderChoices(group.options, groupIndex)}
+              </div>
+            ))}
+          </fieldset>
         ) : type === 'textarea' ? (
           <textarea
             {...common}
@@ -154,7 +211,7 @@ export function Field({ config, value, error, valid, disabled, onChange, onBlur 
             {suffix}
           </span>
         ) : null}
-        <span className="form-field__status" aria-hidden="true" />
+        {type === 'radio' || type === 'checkboxes' ? null : <span className="form-field__status" aria-hidden="true" />}
       </div>
       <div className="form-field__footer">
         {error ? (

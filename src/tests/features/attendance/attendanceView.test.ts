@@ -5,6 +5,7 @@ import {
   NO_ZONE,
   attendanceGroups,
   canCheckInPerson,
+  checkInFormSchema,
   chooseDay,
   dayFailure,
   expectedElsewhere,
@@ -18,6 +19,7 @@ import {
   recordedBySelf,
   removalFailure,
   rollCallCrewsForToday,
+  rollCallFormSchema,
   rollCallMemberIds,
   staysPut,
   zoneChoice,
@@ -50,6 +52,14 @@ function attendance(me: string, people: AttendancePerson[], today = true): Atten
 
 const slabA: ZoneRef = { id: 'z1', name: 'Slab A', floorPlanId: 'p1', floorPlanName: 'Level 1' }
 const slabB: ZoneRef = { id: 'z2', name: 'Slab B', floorPlanId: 'p1', floorPlanName: 'Level 1' }
+
+describe('attendance form schemas', () => {
+  it('accepts no zone for check-in and requires at least one roll-call member', () => {
+    expect(checkInFormSchema.safeParse({ zoneId: NO_ZONE }).success).toBe(true)
+    expect(rollCallFormSchema.safeParse({ membershipIds: '[]', zoneId: NO_ZONE }).success).toBe(false)
+    expect(rollCallFormSchema.safeParse({ membershipIds: '["m1"]', zoneId: NO_ZONE }).success).toBe(true)
+  })
+})
 
 function made(id: string, checkedInAt: string, zone: ZoneRef | null): CheckIn {
   return { id, membershipId: 'm1', zone, date: '2026-03-10', checkedInAt, recordedBy: { membershipId: 'm1', name: 'Ana' } }

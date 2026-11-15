@@ -7,11 +7,38 @@ import './form.css'
  * config, it renders the whole form: one labelled control per field, any
  * injected status/alerts, and the submit button.
  */
-export function Form({ controller, fields, submitLabel, pendingLabel, children }: FormProps) {
+export function Form({
+  controller,
+  fields,
+  submitLabel,
+  pendingLabel,
+  className,
+  actionsClassName,
+  submitClassName,
+  submitDisabled = false,
+  beforeSubmit,
+  beforeFields,
+  formRef,
+  children,
+}: FormProps) {
   const { values, errors, valid, isSubmitting, onChange, onBlur, onSubmit } = controller
+  const submitButton = (
+    <button
+      className={submitClassName ?? 'form-submit'}
+      type="submit"
+      disabled={isSubmitting || submitDisabled}
+      aria-busy={isSubmitting}
+    >
+      {isSubmitting && pendingLabel ? pendingLabel : submitLabel}
+    </button>
+  )
+  const actions = beforeSubmit || actionsClassName
+    ? <div className={actionsClassName}>{beforeSubmit}{submitButton}</div>
+    : submitButton
 
   return (
-    <form className="form" noValidate onSubmit={onSubmit} aria-busy={isSubmitting}>
+    <form ref={formRef} className={['form', className].filter(Boolean).join(' ')} noValidate onSubmit={onSubmit} aria-busy={isSubmitting}>
+      {beforeFields}
       {fields.map((field) => (
         <Field
           key={field.name}
@@ -27,9 +54,7 @@ export function Form({ controller, fields, submitLabel, pendingLabel, children }
 
       {children}
 
-      <button className="form-submit" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-        {isSubmitting && pendingLabel ? pendingLabel : submitLabel}
-      </button>
+      {actions}
     </form>
   )
 }
