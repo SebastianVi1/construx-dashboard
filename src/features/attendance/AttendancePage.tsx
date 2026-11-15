@@ -12,6 +12,7 @@ import { getSite } from '../sites/sitesApi'
 import { removeCheckIn, type AttendancePerson } from './attendanceApi'
 import {
   attendanceGroups,
+  canCheckInPerson,
   canRemove,
   checkInTime,
   chooseDay,
@@ -120,6 +121,9 @@ export function AttendancePage() {
           >
             {t.remove}
           </button>
+        ) : null}
+        {data && canCheckInPerson(data, person) ? (
+          <CheckInControl organizationId={organization.id} siteId={siteId} attendance={attendance} target={person} />
         ) : null}
       </li>
     )

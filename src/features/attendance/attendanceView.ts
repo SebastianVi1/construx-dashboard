@@ -81,6 +81,11 @@ export function attendanceGroups(attendance: Attendance): AttendanceGroups {
   return groups
 }
 
+/** Whether this caller may check this absent person in today. */
+export function canCheckInPerson(attendance: Attendance, person: AttendancePerson): boolean {
+  return attendance.today && attendance.me.canCheckInOthers === true && person.state === 'ABSENT'
+}
+
 /**
  * The zone the plan expected a present person in, only when they checked in somewhere else (another zone or
  * no zone); null when they are where they were expected, were not planned, or are absent.
