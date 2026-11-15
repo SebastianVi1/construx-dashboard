@@ -308,6 +308,94 @@
   line-height: 20px;
 }
 
+.attendance-roll-calls {
+  display: grid;
+  gap: 10px;
+}
+
+.attendance-roll-calls h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.attendance-roll-calls__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.attendance-roll-call__launch {
+  min-height: 44px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.roll-call-sheet {
+  display: grid;
+  gap: 16px;
+}
+
+.roll-call-sheet__roster,
+.roll-call-sheet__zones {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.roll-call-sheet__roster > legend,
+.roll-call-sheet__zones > legend {
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--cx-ink);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.roll-call-sheet__member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  cursor: pointer;
+}
+
+.roll-call-sheet__member:has(input:checked) {
+  border-color: var(--cx-primary);
+  background: var(--cx-primary-subtle);
+}
+
+.roll-call-sheet__member input {
+  flex: none;
+  accent-color: var(--cx-primary);
+}
+
+.roll-call-sheet__member-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.roll-call-sheet__present {
+  flex: none;
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.roll-call-sheet__zones > .check-in-sheet__plan {
+  margin-top: 4px;
+}
+
 @media (max-width: 640px) {
   .attendance-picker__field,
   .attendance-picker__input {
@@ -316,8 +404,14 @@
 
   .check-in,
   .check-in__button,
+  .attendance-roll-calls__controls,
+  .attendance-roll-call__launch,
   .site-attendance-bar__link {
     width: 100%;
+  }
+
+  .attendance-roll-calls__controls {
+    display: grid;
   }
 
   .site-attendance-bar {

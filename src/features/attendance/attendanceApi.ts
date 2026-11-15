@@ -45,6 +45,19 @@ export const attendancePersonSchema = personRefSchema.extend({
 })
 export type AttendancePerson = z.infer<typeof attendancePersonSchema>
 
+/** A Crew member and the Check-in already recorded for them today, when present. */
+export const rollCallMemberSchema = personRefSchema.extend({ checkIn: checkInSchema.nullable() })
+export type RollCallMember = z.infer<typeof rollCallMemberSchema>
+
+/** A Crew the caller may record today, with its expected zone and roster. */
+export const rollCallCrewSchema = z.object({
+  crewId: z.string().min(1),
+  name: z.string(),
+  expectedZone: zoneRefSchema.nullable(),
+  members: z.array(rollCallMemberSchema),
+})
+export type RollCallCrew = z.infer<typeof rollCallCrewSchema>
+
 export const attendanceSchema = z.object({
   /** The day shown, chosen by the backend; the dashboard never sends its own "today". */
   date: z.string().min(1),
@@ -56,6 +69,8 @@ export const attendanceSchema = z.object({
     expectedZone: zoneRefSchema.nullable().default(null),
     /** Whether the caller may check in another member today. */
     canCheckInOthers: z.boolean().optional(),
+    /** Crews the caller may record a roll call for today. */
+    rollCallCrews: z.array(rollCallCrewSchema).optional(),
   }),
 })
 export type Attendance = z.infer<typeof attendanceSchema>
@@ -94,6 +109,23 @@ export function checkIn(
     { zoneId, ...(membershipId === undefined ? {} : { membershipId }) },
     201,
     checkInSchema,
+  )
+}
+
+/** Records the selected members of one eligible Crew in a single roll call today. */
+export function rollCall(
+  orgId: string,
+  siteId: string,
+  crewId: string,
+  membershipIds: string[],
+  zoneId: string | null,
+): Promise<CheckIn[]> {
+  return sendJson(
+    'post',
+    `${attendancePath(orgId, siteId)}/roll-calls`,
+    { crewId, membershipIds, zoneId },
+    201,
+    z.array(checkInSchema),
   )
 }
 

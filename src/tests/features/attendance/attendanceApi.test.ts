@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ApiError, configureHttp, type HttpRequest } from '../../../lib/http'
-import { checkIn, getAttendance, getCheckInZones, removeCheckIn } from '../../../features/attendance/attendanceApi'
+import { checkIn, getAttendance, getCheckInZones, removeCheckIn, rollCall } from '../../../features/attendance/attendanceApi'
 
 const ownCheckIn = {
   id: 'c1',
@@ -173,6 +173,39 @@ describe('attendance API', () => {
     serve(() => ({ status: 200, data: attendance }))
     const older = await getAttendance('o1', 's1')
     expect(older.me.canCheckInOthers).toBeUndefined()
+  })
+
+  it('getAttendance: reads eligible Crew roll-call rosters and their current Check-ins', async () => {
+    const zone = { id: 'z1', name: 'Slab A', floorPlanId: 'p1', floorPlanName: 'Level 1' }
+    const checkIn = { ...ownCheckIn, membershipId: 'm2', recordedBy: { membershipId: 'm1', name: 'Ana Perez' } }
+    const crew = {
+      crewId: 'crew1',
+      name: 'Concrete crew',
+      expectedZone: zone,
+      members: [
+        { membershipId: 'm2', name: 'Beto', checkIn: null },
+        { membershipId: 'm3', name: 'Caro', checkIn },
+      ],
+    }
+    serve(() => ({ status: 200, data: { ...attendance, me: { ...attendance.me, rollCallCrews: [crew] } } }))
+
+    const result = await getAttendance('o1', 's1')
+
+    expect(result.me.rollCallCrews).toEqual([crew])
+  })
+
+  it('rollCall: posts selected Crew members and zone, then reads all returned Check-ins', async () => {
+    const seen: HttpRequest[] = []
+    const created = { ...ownCheckIn, membershipId: 'm2', recordedBy: { membershipId: 'm1', name: 'Ana Perez' } }
+    serve(() => ({ status: 201, data: [created] }), seen)
+
+    const result = await rollCall('o1', 's 1', 'crew1', ['m2'], null)
+
+    const post = seen.find((req) => req.method === 'post')
+    expect(post?.url).toBe('/api/organizations/o1/projects/s%201/attendance/roll-calls')
+    expect(post?.headers?.['X-XSRF-TOKEN']).toBe('proof')
+    expect(post?.body).toEqual({ crewId: 'crew1', membershipIds: ['m2'], zoneId: null })
+    expect(result).toEqual([created])
   })
 
   it('getAttendance: a removable row still carries the zone of its Check-in', async () => {

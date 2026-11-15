@@ -1,5 +1,5 @@
 import { ApiError } from '../../lib/http'
-import type { Attendance, AttendancePerson, CheckIn, ZoneRef } from './attendanceApi'
+import type { Attendance, AttendancePerson, CheckIn, RollCallCrew, ZoneRef } from './attendanceApi'
 
 /** The caller's Check-in of today, or null when they have none (or Attendance is not loaded or not today's). */
 export function myCheckIn(attendance: Attendance | undefined): CheckIn | null {
@@ -84,6 +84,16 @@ export function attendanceGroups(attendance: Attendance): AttendanceGroups {
 /** Whether this caller may check this absent person in today. */
 export function canCheckInPerson(attendance: Attendance, person: AttendancePerson): boolean {
   return attendance.today && attendance.me.canCheckInOthers === true && person.state === 'ABSENT'
+}
+
+/** The Crew rosters the backend marked eligible, only while the page shows today's Attendance. */
+export function rollCallCrewsForToday(attendance: Attendance): RollCallCrew[] {
+  return attendance.today ? (attendance.me.rollCallCrews ?? []) : []
+}
+
+/** The roster members to preselect; an existing Check-in means the member is already present. */
+export function rollCallMemberIds(crew: RollCallCrew): string[] {
+  return crew.members.filter((member) => member.checkIn === null).map((member) => member.membershipId)
 }
 
 /**
