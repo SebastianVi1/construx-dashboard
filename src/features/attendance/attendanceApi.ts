@@ -42,6 +42,8 @@ export const attendancePersonSchema = personRefSchema.extend({
   checkIn: checkInSchema.nullable(),
   /** Whether the caller may remove that Check-in now; the backend never says so on a past day. */
   removable: z.boolean().default(false),
+  /** Whether the caller may check in this absent person today. */
+  checkInAllowed: z.boolean().optional(),
 })
 export type AttendancePerson = z.infer<typeof attendancePersonSchema>
 

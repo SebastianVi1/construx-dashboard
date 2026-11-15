@@ -83,7 +83,7 @@ export function attendanceGroups(attendance: Attendance): AttendanceGroups {
 
 /** Whether this caller may check this absent person in today. */
 export function canCheckInPerson(attendance: Attendance, person: AttendancePerson): boolean {
-  return attendance.today && attendance.me.canCheckInOthers === true && person.state === 'ABSENT'
+  return attendance.today && attendance.me.canCheckInOthers === true && person.checkInAllowed === true && person.state === 'ABSENT'
 }
 
 /** The Crew rosters the backend marked eligible, only while the page shows today's Attendance. */

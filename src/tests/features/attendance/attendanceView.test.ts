@@ -178,13 +178,15 @@ describe('attendance view', () => {
     expect(rollCallMemberIds(crew)).toEqual(['m2', 'm4'])
   })
 
-  it('canCheckInPerson: permits only absent people on today when the caller may check in others', () => {
-    const absent = planned('m2', slabB)
+  it('canCheckInPerson: permits only absent people the caller may check in today', () => {
+    const absent = { ...planned('m2', slabB), checkInAllowed: true }
+    const outsider = { ...planned('m3', slabB), checkInAllowed: false }
     const permitted = { ...attendance('m1', [absent]), me: { membershipId: 'm1', expectedZone: slabA, canCheckInOthers: true } }
     const denied = { ...permitted, me: { ...permitted.me, canCheckInOthers: false } }
     const present = planned('m2', slabB, slabB)
 
     expect(canCheckInPerson(permitted, absent)).toBe(true)
+    expect(canCheckInPerson(permitted, outsider)).toBe(false)
     expect(canCheckInPerson(denied, absent)).toBe(false)
     expect(canCheckInPerson({ ...permitted, today: false }, absent)).toBe(false)
     expect(canCheckInPerson(permitted, present)).toBe(false)
