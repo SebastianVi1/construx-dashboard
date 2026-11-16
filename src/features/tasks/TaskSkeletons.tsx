@@ -15,34 +15,54 @@ export function TaskBoardSkeleton({ columns = 3 }: { columns?: number }) {
   </SkeletonRegion>
 }
 
-export function TaskFactsSkeleton({ count = 6 }: { count?: number }) {
-  return <SkeletonRegion>
-    <dl className="task-detail__facts">{Array.from({ length: count }, (_, i) => <div key={i}>
-      <dt><SkeletonBlock width="50%" height={20} /></dt>
-      <dd><SkeletonBlock width="75%" height={22} /></dd>
-    </div>)}</dl>
-  </SkeletonRegion>
+function TaskMoneySkeleton() {
+  return <div className="task-money">{Array.from({ length: 3 }, (_, i) => <div className="task-money__figure" key={i}>
+    <SkeletonBlock width={90} height={18} />
+    <SkeletonBlock width="65%" height={24} />
+  </div>)}</div>
 }
 
 export function TaskDetailSkeleton() {
-  return <div className="page-section">
-    <SkeletonRegion className="page-header__text">
-      <SkeletonBlock width="50%" height={36} /><SkeletonBlock width={90} height={22} />
-    </SkeletonRegion>
-    <div className="page-section">
-      <SkeletonBlock width="75%" height={22} />
-      <TaskFactsSkeleton count={4} />
+  return <>
+    <div className="task-sheet site-sheet">
+      <div className="task-sheet__top">
+        <SkeletonBlock width={210} height={18} />
+      </div>
+      <div className="task-sheet__heading">
+        <SkeletonBlock width="58%" height={38} />
+        <div className="task-sheet__actions"><SkeletonBlock width={168} height={44} /></div>
+      </div>
+      <div className="site-sheet__facts">{Array.from({ length: 3 }, (_, i) => <div key={i}>
+        <SkeletonBlock width={64} height={18} />
+        <SkeletonBlock width={112} height={20} />
+      </div>)}</div>
     </div>
-    <div className="page-section">
-      <SkeletonBlock width={180} height={28} />
-      <SkeletonRows avatar rows={3} />
+    <div className="task-detail__body">
+      <div className="task-detail__main">
+        <SkeletonRegion>
+          <SkeletonBlock width={148} height={28} />
+          <SkeletonBlock width="72%" height={18} />
+        </SkeletonRegion>
+        <TaskMoneySkeleton />
+        <SkeletonTable columns={4} compact />
+      </div>
+      <div className="task-detail__aside">
+        <SkeletonRegion>
+          <SkeletonBlock width={90} height={28} />
+          <SkeletonRows avatar rows={2} />
+        </SkeletonRegion>
+      </div>
     </div>
-  </div>
+  </>
 }
 
 export function TaskSpendingSkeleton({ canManage }: { canManage: boolean }) {
-  return <div className="page-section">
-    <TaskFactsSkeleton count={3} />
+  return <>
+    <SkeletonRegion>
+      <SkeletonBlock width={148} height={28} />
+      <SkeletonBlock width="72%" height={18} />
+    </SkeletonRegion>
+    <TaskMoneySkeleton />
     <SkeletonTable columns={canManage ? 5 : 4} compact />
-  </div>
+  </>
 }
