@@ -1,0 +1,260 @@
+/* Prices: catalog tabs, filters, table and detail drawer. Tokens only (design.md). */
+
+.prices-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.prices-tabs__tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--cx-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.prices-tabs__tab:hover:not(:disabled) {
+  color: var(--cx-ink);
+}
+
+.prices-tabs__tab[aria-selected='true'] {
+  border-bottom-color: var(--cx-accent);
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.prices-tabs__tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.prices-tabs__tab:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 2px;
+}
+
+.prices-tabs__soon {
+  color: var(--cx-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.prices-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.prices-filters__field {
+  display: grid;
+  gap: 4px;
+  min-width: 140px;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.prices-filters__field--wide {
+  flex: 1 1 240px;
+  max-width: 360px;
+}
+
+.prices-filters__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  color: var(--cx-ink);
+  font-size: 14px;
+}
+
+.prices-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-canvas);
+  color: var(--cx-ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.prices-input:focus-visible {
+  outline: none;
+  border-color: var(--cx-accent);
+  box-shadow: 0 0 0 3px var(--cx-accent-subtle);
+}
+
+.prices-table__row {
+  cursor: pointer;
+}
+
+.prices-table__row:hover td {
+  background: var(--cx-surface-raised);
+}
+
+.prices-table__open {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.prices-table__number {
+  text-align: right;
+}
+
+.prices-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.prices-sort__arrow {
+  min-width: 1ch;
+}
+
+.prices-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.prices-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.prices-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+  background: color-mix(in srgb, var(--cx-ink) 40%, transparent);
+}
+
+.prices-drawer {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 640px);
+  height: 100%;
+  background: var(--cx-surface);
+  border-left: 1px solid var(--cx-border);
+  box-shadow: -16px 0 40px -16px var(--cx-shadow-color);
+  animation: prices-drawer-in 180ms ease-out;
+}
+
+.prices-drawer:focus {
+  outline: none;
+}
+
+@keyframes prices-drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prices-drawer {
+    animation: none;
+  }
+}
+
+.prices-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.prices-drawer__header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.prices-drawer__code {
+  margin: 0 0 4px;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.prices-drawer__body {
+  display: grid;
+  gap: 24px;
+  padding: 20px 24px 32px;
+  overflow: auto;
+}
+
+.prices-drawer__body h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.prices-drawer__cost {
+  display: grid;
+  gap: 2px;
+}
+
+.prices-drawer__cost strong {
+  font-size: 24px;
+}
+
+.prices-drawer__label {
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.prices-fields {
+  display: grid;
+  margin: 0;
+}
+
+.prices-fields__row {
+  display: grid;
+  grid-template-columns: minmax(120px, 35%) 1fr;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--cx-border);
+  font-size: 14px;
+}
+
+.prices-fields__row dt {
+  color: var(--cx-muted);
+}
+
+.prices-fields__row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}

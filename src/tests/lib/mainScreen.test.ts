@@ -3,7 +3,7 @@ import { isMainScreen } from '../../lib/mainScreen'
 
 describe('main screens', () => {
   test('the screens a person lands on from the navigation are main screens', () => {
-    for (const path of ['/sites', '/tasks', '/materials', '/finance', '/documents', '/members', '/account']) {
+    for (const path of ['/sites', '/tasks', '/prices', '/finance', '/documents', '/members', '/account']) {
       expect(isMainScreen(path)).toBe(true)
     }
   })
@@ -13,7 +13,7 @@ describe('main screens', () => {
     expect(isMainScreen('/sites/abc/floor-plans/123')).toBe(false)
     expect(isMainScreen('/sites/abc/phases')).toBe(false)
     expect(isMainScreen('/documents/sites/abc')).toBe(false)
-    expect(isMainScreen('/materials/abc')).toBe(false)
+    expect(isMainScreen('/prices/abc')).toBe(false)
     expect(isMainScreen('/excel/folders/abc')).toBe(false)
   })
 

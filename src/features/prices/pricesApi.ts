@@ -1,0 +1,237 @@
+import { z } from 'zod'
+import { ApiError, getJson } from '../../lib/http'
+import { organizationPath } from '../../lib/apiPaths'
+
+/** Read side of the cost catalog (backend `docs/pricing.md` §2.1, §2.2, §2.4). */
+
+export const resourceTypes = ['MATERIAL', 'LABOR', 'EQUIPMENT', 'WORK_ITEM'] as const
+
+export type ResourceType = (typeof resourceTypes)[number]
+
+export const resourceSortFields = ['code', 'name', 'currentCost', 'costUpdatedAt'] as const
+
+export type ResourceSortField = (typeof resourceSortFields)[number]
+
+export type SortDirection = 'asc' | 'desc'
+
+export type ResourceSort = { field: ResourceSortField; direction: SortDirection }
+
+/** Money is a decimal string with two decimals, MXN. */
+const moneySchema = z.string().regex(/^-?\d+\.\d{2}$/)
+
+const catalogSourceSchema = z.enum(['SEED', 'MANUAL', 'CSV', 'NEODATA_CONSTRUBASE'])
+
+const costSourceSchema = z.enum(['MANUAL', 'CSV', 'NEODATA_CONSTRUBASE', 'FASAR'])
+
+export type CostSource = z.infer<typeof costSourceSchema>
+
+const supplierRefSchema = z.object({ id: z.string().min(1), name: z.string() })
+
+/** `ResourceResponse`: one list row. */
+export const resourceSchema = z.object({
+  id: z.string().min(1),
+  code: z.string(),
+  type: z.enum(resourceTypes),
+  name: z.string(),
+  unit: z.object({ id: z.string().min(1), code: z.string() }),
+  family: z.object({ id: z.string().min(1), code: z.string(), name: z.string() }).nullable(),
+  supplier: supplierRefSchema.nullable(),
+  brand: z.string().nullable(),
+  isPercentage: z.boolean(),
+  isComposite: z.boolean(),
+  isHourlyCost: z.boolean(),
+  discontinued: z.boolean(),
+  currentCost: moneySchema.nullable(),
+  costUpdatedAt: z.string().nullable(),
+  source: catalogSourceSchema,
+  missingFromImportAt: z.string().nullable(),
+  archivedAt: z.string().nullable(),
+})
+
+export type Resource = z.infer<typeof resourceSchema>
+
+/** One immutable Cost history entry. */
+export const costSchema = z.object({
+  id: z.string().min(1),
+  amount: moneySchema,
+  effectiveFrom: z.string(),
+  source: costSourceSchema,
+  recordedBy: z.object({ membershipId: z.string().min(1), fullName: z.string() }).nullable(),
+  importId: z.string().nullable(),
+  supplier: supplierRefSchema.nullable(),
+  sku: z.string().nullable(),
+  note: z.string().nullable(),
+})
+
+export type Cost = z.infer<typeof costSchema>
+
+/** `ResourceDetailResponse`; `history` is the newest 100 entries, null for a composite. */
+export const resourceDetailSchema = resourceSchema.extend({
+  description: z.string().nullable(),
+  reference: z.string().nullable(),
+  sapCode: z.string().nullable(),
+  technicalSheet: z.string().nullable(),
+  procedure: z.string().nullable(),
+  grouper: z.string().nullable(),
+  importedCost: moneySchema.nullable(),
+  importedCostOn: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  history: z.array(costSchema).nullable(),
+  usedIn: z.object({
+    count: z.number().int(),
+    sample: z.array(z.object({ id: z.string(), code: z.string(), name: z.string(), type: z.enum(resourceTypes) })),
+  }),
+})
+
+export type ResourceDetail = z.infer<typeof resourceDetailSchema>
+
+function pageSchema<T extends z.ZodType>(item: T) {
+  return z.object({
+    content: z.array(item),
+    page: z.number().int(),
+    size: z.number().int(),
+    totalElements: z.number().int(),
+    totalPages: z.number().int(),
+  })
+}
+
+export type Page<T> = { content: T[]; page: number; size: number; totalElements: number; totalPages: number }
+
+export const catalogSchema = z.object({
+  exists: z.boolean(),
+  currency: z.string(),
+  counts: z.object({
+    MATERIAL: z.number().int(),
+    LABOR: z.number().int(),
+    EQUIPMENT: z.number().int(),
+    WORK_ITEM: z.number().int(),
+    suppliers: z.number().int(),
+    units: z.number().int(),
+    families: z.number().int(),
+  }),
+  missingFromImport: z.number().int(),
+  lastImport: z.unknown().nullable(),
+  fasar: z.object({ status: z.string() }).passthrough().nullable(),
+  activeImport: z.unknown().nullable(),
+})
+
+export type CatalogSummary = z.infer<typeof catalogSchema>
+
+export const unitSchema = z.object({
+  id: z.string().min(1),
+  code: z.string(),
+  description: z.string().nullable(),
+  source: catalogSourceSchema,
+  archivedAt: z.string().nullable(),
+  resourceCount: z.number().int(),
+})
+
+export type Unit = z.infer<typeof unitSchema>
+
+export const familySchema = z.object({
+  id: z.string().min(1),
+  code: z.string(),
+  name: z.string(),
+  source: catalogSourceSchema,
+  archivedAt: z.string().nullable(),
+  resourceCount: z.number().int(),
+})
+
+export type Family = z.infer<typeof familySchema>
+
+export const supplierSchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  branch: z.string().nullable(),
+  website: z.string().nullable(),
+  archivedAt: z.string().nullable(),
+})
+
+export type Supplier = z.infer<typeof supplierSchema>
+
+/** What the Resource table asks for; unset filters are left out of the request. */
+export type ResourceQuery = {
+  types?: ResourceType[]
+  query?: string
+  familyId?: string
+  unitId?: string
+  supplierId?: string
+  includeArchived?: boolean
+  /** null or undefined: both. */
+  discontinued?: boolean | null
+  sort?: ResourceSort
+  page: number
+  size: number
+}
+
+export const PAGE_SIZE = 50
+
+/** Query string of `GET /resources`, `type` repeated, in a stable order. */
+export function resourceSearch(query: ResourceQuery): string {
+  const search = new URLSearchParams()
+  for (const type of query.types ?? []) search.append('type', type)
+  const text = query.query?.trim()
+  if (text) search.set('query', text)
+  if (query.familyId) search.set('familyId', query.familyId)
+  if (query.unitId) search.set('unitId', query.unitId)
+  if (query.supplierId) search.set('supplierId', query.supplierId)
+  if (query.includeArchived) search.set('includeArchived', 'true')
+  if (query.discontinued !== undefined && query.discontinued !== null) search.set('discontinued', String(query.discontinued))
+  if (query.sort) search.set('sort', `${query.sort.field},${query.sort.direction}`)
+  search.set('page', String(query.page))
+  search.set('size', String(query.size))
+  return search.toString()
+}
+
+function resourcesPath(organizationId: string): string {
+  return `${organizationPath(organizationId)}/resources`
+}
+
+function resourcePath(organizationId: string, resourceId: string): string {
+  return `${resourcesPath(organizationId)}/${encodeURIComponent(resourceId)}`
+}
+
+export function getCatalog(organizationId: string): Promise<CatalogSummary> {
+  return getJson(`${organizationPath(organizationId)}/catalog`, catalogSchema)
+}
+
+export function listResources(organizationId: string, query: ResourceQuery): Promise<Page<Resource>> {
+  return getJson(`${resourcesPath(organizationId)}?${resourceSearch(query)}`, pageSchema(resourceSchema))
+}
+
+export function getResource(organizationId: string, resourceId: string): Promise<ResourceDetail> {
+  return getJson(resourcePath(organizationId, resourceId), resourceDetailSchema)
+}
+
+/** The whole Cost history, newest first, one page at a time. */
+export function listResourceCosts(organizationId: string, resourceId: string, page: number, size = PAGE_SIZE): Promise<Page<Cost>> {
+  return getJson(`${resourcePath(organizationId, resourceId)}/costs?page=${page}&size=${size}`, pageSchema(costSchema))
+}
+
+/** Active Units ordered by code. */
+export function listUnits(organizationId: string): Promise<Unit[]> {
+  return getJson(`${organizationPath(organizationId)}/units`, z.array(unitSchema))
+}
+
+/** Active Families ordered by code. */
+export function listFamilies(organizationId: string): Promise<Family[]> {
+  return getJson(`${organizationPath(organizationId)}/families`, z.array(familySchema))
+}
+
+/** Active Suppliers ordered by name. */
+export function listSuppliers(organizationId: string): Promise<Supplier[]> {
+  return getJson(`${organizationPath(organizationId)}/suppliers`, z.array(supplierSchema))
+}
+
+export type PricesErrorKind = 'invalid' | 'session' | 'forbidden' | 'notFound' | 'generic'
+
+/** Message to show when a catalog read fails. */
+export function pricesErrorKind(error: unknown): PricesErrorKind {
+  if (!(error instanceof ApiError)) return 'generic'
+  if (error.status === 400) return 'invalid'
+  if (error.status === 401) return 'session'
+  if (error.status === 403) return 'forbidden'
+  if (error.status === 404) return 'notFound'
+  return 'generic'
+}

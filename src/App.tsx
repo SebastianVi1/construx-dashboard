@@ -20,12 +20,7 @@ const PhasesPage = lazy(() => import('./features/goals/PhasesPage').then((module
 const MembersPage = lazy(() => import('./features/members/MembersPage').then((module) => ({ default: module.MembersPage })))
 const TaskDetailPage = lazy(() => import('./features/tasks/TaskDetailPage').then((module) => ({ default: module.TaskDetailPage })))
 const MyTasksPage = lazy(() => import('./features/tasks/MyTasksPage').then((module) => ({ default: module.MyTasksPage })))
-const MaterialsPage = lazy(() =>
-  import('./features/materials/MaterialsPage').then((module) => ({ default: module.MaterialsPage })),
-)
-const MaterialDetailPage = lazy(() =>
-  import('./features/materials/MaterialDetailPage').then((module) => ({ default: module.MaterialDetailPage })),
-)
+const PricesPage = lazy(() => import('./features/prices/PricesPage').then((module) => ({ default: module.PricesPage })))
 const ExcelLibraryPage = lazy(() =>
   import('./features/excel/ExcelLibraryPage').then((module) => ({ default: module.ExcelLibraryPage })),
 )
@@ -92,8 +87,7 @@ function App() {
         <Route path="/sites/:siteId/phases" element={<PhasesPage />} />
         <Route path="/sites/:siteId/phases/:goalId/tasks/:taskId" element={<TaskDetailPage />} />
         <Route path="/tasks" element={<MyTasksPage />} />
-        <Route path="/materials" element={<MaterialsPage />} />
-        <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
+        <Route path="/prices" element={<PricesPage />} />
         <Route path="/excel" element={<RequireWorkbooks><ExcelLibraryPage /></RequireWorkbooks>} />
         <Route path="/excel/folders/:folderId" element={<RequireWorkbooks><ExcelLibraryPage /></RequireWorkbooks>} />
         <Route path="/excel/:fileId" element={<RequireWorkbooks><ExcelEditorPage /></RequireWorkbooks>} />

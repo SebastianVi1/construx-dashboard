@@ -14,7 +14,7 @@ import { plansMessages } from '../features/plans/messages'
 import { floorPlansMessages } from '../features/floor-plans/messages'
 import { financeMessages } from '../features/finance/messages'
 import { excelMessages } from '../features/excel/messages'
-import { materialsMessages } from '../features/materials/messages'
+import { pricesMessages } from '../features/prices/messages'
 import { membersMessages } from '../features/members/messages'
 import { goalsMessages, phasesPageMessages } from '../features/goals/messages'
 import { ganttMessages } from '../features/gantt/messages'
@@ -43,7 +43,7 @@ const en = {
   floorPlans: floorPlansMessages.en,
   finance: financeMessages.en,
   excel: excelMessages.en,
-  materials: materialsMessages.en,
+  prices: pricesMessages.en,
   members: membersMessages.en,
   goals: goalsMessages.en,
   phasesPage: phasesPageMessages.en,
@@ -75,7 +75,7 @@ const es: Messages = {
   floorPlans: floorPlansMessages.es,
   finance: financeMessages.es,
   excel: excelMessages.es,
-  materials: materialsMessages.es,
+  prices: pricesMessages.es,
   members: membersMessages.es,
   goals: goalsMessages.es,
   phasesPage: phasesPageMessages.es,
