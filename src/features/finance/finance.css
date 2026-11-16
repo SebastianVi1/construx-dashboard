@@ -242,6 +242,10 @@
   white-space: nowrap;
 }
 
+.expense-table td:nth-child(2) {
+  overflow-wrap: anywhere;
+}
+
 .data-table .expense-table__amount {
   text-align: right;
   white-space: nowrap;
@@ -274,4 +278,14 @@
   .budget-chart__tooltip {
     transition: none;
   }
+}
+
+/* A narrow spending column must give the row actions their natural width
+   instead of squeezing the two buttons into a stack. */
+.expense-table .cell-actions {
+  width: 1%;
+}
+
+.expense-table .cell-actions .button-row {
+  flex-wrap: nowrap;
 }
