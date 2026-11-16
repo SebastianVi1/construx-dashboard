@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
-import { SkeletonBlock, SkeletonRegion, SkeletonForm, SkeletonTable, Notice } from '../../components/page'
+import { SkeletonBlock, SkeletonRegion, SkeletonTable, Notice } from '../../components/page'
 import { skeletonRowCount } from '../../components/page/skeletonSize'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -106,10 +106,9 @@ function MembersContent() {
   const { access } = usePermissions()
   const myMembershipId = access?.membershipId ?? null
 
-  // Without the site list the invite still works, just without a site field. Wait
-  // for it to settle so the form does not remount under the user's typing.
+  // The invite form is always on screen: the role and site lists fill in when
+  // they arrive, so the section never shows a placeholder.
   const siteOptions = canInviteToSite ? (sites.data ?? null) : null
-  const sitesSettled = !canInviteToSite || sites.data !== undefined || sites.status === 'error'
 
   return (
     <div className="page">
@@ -129,11 +128,15 @@ function MembersContent() {
                 <p>{t.invite.description}</p>
               </div>
             </div>
-            {roles.data && sitesSettled ? (
+            {roles.status === 'error' ? (
+              <Notice tone="error" action={{ label: t.retry, onClick: roles.reload }}>
+                {t.invite.rolesError}
+              </Notice>
+            ) : (
               <InviteForm
                 key={formVersion}
                 organizationId={orgId}
-                roles={roles.data}
+                roles={roles.data ?? []}
                 sites={siteOptions}
                 onInvited={(invitation, message) => {
                   upsert(invitation)
@@ -141,12 +144,6 @@ function MembersContent() {
                   setFeedback({ tone: 'success', text: message })
                 }}
               />
-            ) : roles.status === 'error' ? (
-              <Notice tone="error" action={{ label: t.retry, onClick: roles.reload }}>
-                {t.invite.rolesError}
-              </Notice>
-            ) : (
-              <SkeletonForm fields={4} />
             )}
           </section>
           {can('VIEW_PLAN') && members.data ? (

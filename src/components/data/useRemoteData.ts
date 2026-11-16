@@ -35,7 +35,7 @@ export type RemoteDataOptions = {
 }
 
 /** How long a screen's first load keeps its placeholder, so the skeleton can be read. */
-export const FIRST_LOAD_MIN_MS = 2000
+export const FIRST_LOAD_MIN_MS = 500
 
 /** Time left of the first-load minimum; zero once it has elapsed. */
 export function firstLoadDelay(startedAt: number, now = Date.now(), minMs = FIRST_LOAD_MIN_MS): number {
@@ -46,7 +46,7 @@ export function firstLoadDelay(startedAt: number, now = Date.now(), minMs = FIRS
 const windows = new Map<string, number>()
 
 /**
- * The 2 s window belongs to the navigation, not to each request: a container
+ * The 0.5 s window belongs to the navigation, not to each request: a container
  * that mounts after the page (a tab, a panel) waits only for what is left of
  * the same window instead of adding a second delay of its own.
  */
