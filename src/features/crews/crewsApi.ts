@@ -54,6 +54,10 @@ export const equipmentSchema = z.object({
   dailyCostCents: z.number().int().nullable(),
   active: z.boolean(),
   createdAt: z.string(),
+  /** The linked Catalog Equipment rate; `hourlyCost` is its current cost, a pointer and not a snapshot. */
+  equipmentRate: z
+    .object({ id: z.string().min(1), code: z.string(), name: z.string(), hourlyCost: z.string().nullable() })
+    .nullish(),
 })
 
 export type Equipment = z.infer<typeof equipmentSchema>
@@ -62,13 +66,19 @@ export type CreateEquipmentRequest = {
   type: string
   identifier: string
   dailyCostCents?: number | null
+  equipmentRateResourceId?: string | null
 }
 
+/**
+ * `equipmentRateResourceId`: absent keeps the link, `''` removes it, an id links that rate. Sending the linked id
+ * again without `dailyCostCents` refreshes the daily cost from the rate.
+ */
 export type UpdateEquipmentRequest = {
   type?: string
   identifier?: string
   dailyCostCents?: number | null
   active?: boolean
+  equipmentRateResourceId?: string
 }
 
 export function listEquipment(organizationId: string, activeOnly?: boolean): Promise<Equipment[]> {

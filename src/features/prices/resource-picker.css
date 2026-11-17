@@ -1,0 +1,128 @@
+/* Resource picker: search the Catalog and pick one Resource. Tokens only (design.md). */
+
+.resource-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.resource-picker__label {
+  color: var(--cx-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.resource-picker__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.resource-picker__field {
+  display: grid;
+  gap: 4px;
+  min-width: 140px;
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.resource-picker__field--wide {
+  flex: 1 1 200px;
+}
+
+.resource-picker__results {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+}
+
+.resource-picker__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resource-picker__option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--cx-border);
+  background: none;
+  color: var(--cx-ink);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.resource-picker__option:hover:not(:disabled),
+.resource-picker__option:focus-visible {
+  outline: none;
+  background: var(--cx-accent-subtle);
+}
+
+.resource-picker__option:disabled {
+  color: var(--cx-muted);
+  cursor: not-allowed;
+}
+
+.resource-picker__name {
+  flex: 1 1 160px;
+}
+
+.resource-picker__meta,
+.resource-picker__note {
+  color: var(--cx-muted);
+  font-size: 13px;
+}
+
+.resource-picker__note {
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.resource-picker__selected {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+}
+
+.expense-mode {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 3px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+}
+
+.expense-mode__option {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--cx-radius-md);
+  background: none;
+  color: var(--cx-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.expense-mode__option[aria-pressed='true'] {
+  background: var(--cx-accent-subtle);
+  color: var(--cx-ink);
+}
+
+.expense-resource {
+  display: block;
+  color: var(--cx-muted);
+  font-size: 12px;
+}

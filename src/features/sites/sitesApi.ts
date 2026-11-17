@@ -3,6 +3,7 @@ import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
 import { personSchema } from '../people/personSchema'
 import { roleSchema } from '../permissions/can'
 import { organizationPath } from '../../lib/apiPaths'
+import { laborRateSchema } from './laborRateSchema'
 
 export const siteStatuses = ['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'ARCHIVED'] as const
 
@@ -26,12 +27,16 @@ export const siteSchema = z.object({
 
 export type Site = z.infer<typeof siteSchema>
 
-/** `AccessResponse`: a person on a site. No email, because workers can read it. */
+/**
+ * `AccessResponse`: a person on a site. No email, because workers can read it. `laborRate` is null unless the
+ * caller holds VIEW_BUDGET or MANAGE_PROJECT on the site (and absent on older backends).
+ */
 export const siteAccessSchema = personSchema.extend({
   accessId: z.string().min(1),
   membershipId: z.string().min(1),
   userId: z.string().min(1),
   role: roleSchema,
+  laborRate: laborRateSchema.nullable().default(null),
 })
 
 export type SiteAccess = z.infer<typeof siteAccessSchema>

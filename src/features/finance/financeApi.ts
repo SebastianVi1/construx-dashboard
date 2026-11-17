@@ -7,7 +7,19 @@ export const expenseCategories = ['MATERIALS', 'LABOR', 'EQUIPMENT', 'OTHER'] as
 
 export type ExpenseCategory = (typeof expenseCategories)[number]
 
-/** `ExpenseData`: money spent on a site, in USD. */
+/** The Catalog Resource an expense was charged from (docs/pricing.md §6.5). */
+export const expenseResourceSchema = z.object({
+  id: z.string().min(1),
+  code: z.string(),
+  name: z.string(),
+  type: z.enum(['MATERIAL', 'LABOR', 'EQUIPMENT', 'WORK_ITEM']),
+  unitCode: z.string(),
+})
+
+/**
+ * `ExpenseData`: money spent on a site, in pesos. An expense from the Catalog also carries its Resource, the
+ * quantity and the unit cost frozen when it was recorded (decimal strings); a typed one has them null.
+ */
 export const expenseSchema = z.object({
   id: z.string().min(1),
   projectId: z.string().min(1),
@@ -15,6 +27,9 @@ export const expenseSchema = z.object({
   spentOn: z.string(),
   description: z.string(),
   category: z.enum(expenseCategories),
+  resource: expenseResourceSchema.nullish(),
+  quantity: z.string().nullish(),
+  unitCost: z.string().nullish(),
 })
 
 export type Expense = z.infer<typeof expenseSchema>
@@ -39,6 +54,16 @@ export type ExpenseDraft = {
   category: ExpenseCategory
 }
 
+/** An expense from the Catalog: the backend computes amount and category; no concept means the Resource name. */
+export type CatalogExpenseDraft = {
+  resourceId: string
+  quantity: string
+  spentOn: string
+  description?: string
+}
+
+export type NewExpense = ExpenseDraft | CatalogExpenseDraft
+
 export type ExpensePatch = Partial<ExpenseDraft>
 
 /** Allocated budget, total spent, what remains and spend per category (VIEW_BUDGET). */
@@ -51,7 +76,7 @@ export function listExpenses(organizationId: string, siteId: string): Promise<Ex
   return getJson(`${sitePath(organizationId, siteId)}/expenses`, z.array(expenseSchema))
 }
 
-export function createExpense(organizationId: string, siteId: string, draft: ExpenseDraft): Promise<Expense> {
+export function createExpense(organizationId: string, siteId: string, draft: NewExpense): Promise<Expense> {
   return sendJson('post', `${sitePath(organizationId, siteId)}/expenses`, draft, 201, expenseSchema)
 }
 
