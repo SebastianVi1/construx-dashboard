@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { getJson, sendJson } from '../../lib/http'
-import { expenseSchema, type ExpenseDraft } from '../finance/financeApi'
+import { expenseSchema, type NewExpense } from '../finance/financeApi'
 import { goalPath } from '../goals/goalsApi'
 import type { PhaseRef } from './tasksApi'
 
@@ -27,6 +27,6 @@ export function listTaskExpenses(at: PhaseRef, taskId: string) {
   return getJson(`${path(at, taskId)}/expenses`, z.array(taskExpenseSchema))
 }
 
-export function createTaskExpense(at: PhaseRef, taskId: string, draft: ExpenseDraft) {
+export function createTaskExpense(at: PhaseRef, taskId: string, draft: NewExpense) {
   return sendJson('post', `${path(at, taskId)}/expenses`, draft, 201, taskExpenseSchema)
 }

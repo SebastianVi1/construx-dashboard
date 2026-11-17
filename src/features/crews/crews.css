@@ -312,3 +312,9 @@
 .equipment-empty {
   color: var(--cx-muted);
 }
+
+.equipment-rate-picker {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+}
