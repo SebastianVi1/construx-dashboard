@@ -8,6 +8,7 @@ import { budgetChart } from '../finance/budgetLayout'
 import { DeleteExpenseDialog } from '../finance/DeleteExpenseDialog'
 import { ExpenseDialog } from '../finance/ExpenseDialog'
 import { ExpenseTable } from '../finance/ExpenseTable'
+import { LaborCostSection } from '../finance/LaborCostSection'
 import { getBudgetSummary, listExpenses, type BudgetSummary, type Expense } from '../finance/financeApi'
 import '../finance/finance.css'
 import { BudgetOverviewSkeleton } from './SiteSkeletons'
@@ -67,6 +68,8 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
       {summary.status === 'error' ? (
         <Notice tone="error" action={{ label: t.retry, onClick: summary.reload }}>{t.loadError}</Notice>
       ) : summary.data ? <BudgetOverview summary={summary.data} /> : <BudgetOverviewSkeleton />}
+
+      <LaborCostSection organizationId={organizationId} siteId={site.id} />
 
       <div className="site-budget__expenses">
         <h3>{t.expenses}</h3>
@@ -139,6 +142,14 @@ export function BudgetOverview({ summary }: { summary: BudgetSummary }) {
             <dd className="budget-figures__value">
               {summary.allocatedBudget === null ? t.noBudget : money(summary.allocatedBudget)}
             </dd>
+          </div>
+          <div>
+            <dt>{t.recordedExpenses}</dt>
+            <dd className="budget-figures__value">{money(summary.recordedExpenses)}</dd>
+          </div>
+          <div>
+            <dt>{t.laborAccrued}</dt>
+            <dd className="budget-figures__value">{money(summary.laborAccrued)}</dd>
           </div>
           <div>
             <dt>{t.spent}</dt>

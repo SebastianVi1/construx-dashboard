@@ -14,6 +14,8 @@ const expense: Expense = {
 }
 const summary = {
   allocatedBudget: 10000,
+  recordedExpenses: 1200.5,
+  laborAccrued: 0,
   spent: 1200.5,
   remaining: 8799.5,
   allocatedToPhases: 6000,
@@ -55,6 +57,37 @@ describe('finance API', () => {
     const read = await getBudgetSummary('org-1', 'p-1')
     expect(read.allocatedToPhases).toBe(0)
     expect(read.unallocated).toBeNull()
+  })
+
+  it('getBudgetSummary: reads the accrued labor beside recorded expenses', async () => {
+    const withLabor = {
+      ...summary,
+      recordedExpenses: 1200.5,
+      laborAccrued: 1250,
+      spent: 2450.5,
+      remaining: 7549.5,
+      byCategory: [
+        { category: 'MATERIALS', amount: 1200.5 },
+        { category: 'LABOR', amount: 1250 },
+        { category: 'EQUIPMENT', amount: 0 },
+        { category: 'OTHER', amount: 0 },
+      ],
+    }
+    stubApi({ get: () => ({ status: 200, data: withLabor }) })
+    const read = await getBudgetSummary('org-1', 'p-1')
+    expect(read.laborAccrued).toBe(1250)
+    expect(read.recordedExpenses).toBe(1200.5)
+    expect(read.spent).toBe(2450.5)
+  })
+
+  it('getBudgetSummary: reads a summary without the accrual as all spending recorded', async () => {
+    const older: Partial<typeof summary> = { ...summary }
+    delete older.recordedExpenses
+    delete older.laborAccrued
+    stubApi({ get: () => ({ status: 200, data: older }) })
+    const read = await getBudgetSummary('org-1', 'p-1')
+    expect(read.laborAccrued).toBe(0)
+    expect(read.recordedExpenses).toBe(1200.5)
   })
 
   it('listExpenses: gets the site expenses', async () => {
