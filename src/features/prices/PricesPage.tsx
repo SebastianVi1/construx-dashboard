@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice, SkeletonTable } from '../../components/page'
 import { useCurrency } from '../../currency'
@@ -8,6 +9,7 @@ import { usePermissions } from '../permissions'
 import { ResourceBadges } from './ResourceBadges'
 import { ResourceDrawer } from './ResourceDrawer'
 import { ResourceFormDialog } from './ResourceFormDialog'
+import { SuppliersTab } from './SuppliersTab'
 import {
   listFamilies,
   listResources,
@@ -71,6 +73,7 @@ export function PricesPage() {
       {active?.type ? (
         <ResourceCatalog key={active.key} tab={active.key} type={active.type} canManage={can('MANAGE_PRICES')} t={t} />
       ) : null}
+      {active?.key === 'suppliers' ? <SuppliersTab t={t} /> : null}
     </div>
   )
 }
@@ -82,6 +85,11 @@ function PricesHeader({ t }: { t: PricesMessages }) {
       <div className="page-header__text">
         <h1>{t.title}</h1>
         <p>{formatMessage(t.description, { currency })}</p>
+      </div>
+      <div className="page-header__actions">
+        <Link className="button" to="/prices/units">
+          {t.manageLists}
+        </Link>
       </div>
     </header>
   )
@@ -214,7 +222,7 @@ function ResourceCatalog({ tab, type, canManage, t }: ResourceCatalogProps) {
           </button>
         ) : null}
         {canManage && creatable ? (
-          <button type="button" className="button button--primary button--small prices-filters__create" onClick={() => setCreating(true)}>
+          <button type="button" className="button button--primary button--small prices-filters__action" onClick={() => setCreating(true)}>
             {creatable === 'MATERIAL' ? t.write.newMaterial : creatable === 'LABOR' ? t.write.newLabor : t.write.newEquipment}
           </button>
         ) : null}

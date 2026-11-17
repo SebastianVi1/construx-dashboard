@@ -5,13 +5,13 @@ export type PriceTabKey = 'materials' | 'labor' | 'equipment' | 'workItems' | 's
 /** A tab of the Prices screen; `type` is the Resource type it lists, null for the non-catalog tabs. */
 export type PriceTab = { key: PriceTabKey; type: ResourceType | null; enabled: boolean }
 
-/** Display order. The four catalog lists exist; Suppliers and Import say "coming soon". */
+/** Display order. The four catalog lists and Suppliers exist; Import says "coming soon". */
 export const priceTabs: PriceTab[] = [
   { key: 'materials', type: 'MATERIAL', enabled: true },
   { key: 'labor', type: 'LABOR', enabled: true },
   { key: 'equipment', type: 'EQUIPMENT', enabled: true },
   { key: 'workItems', type: 'WORK_ITEM', enabled: true },
-  { key: 'suppliers', type: null, enabled: false },
+  { key: 'suppliers', type: null, enabled: true },
   { key: 'import', type: null, enabled: false },
 ]
 

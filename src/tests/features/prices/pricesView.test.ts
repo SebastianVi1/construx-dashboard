@@ -13,13 +13,13 @@ import {
 const filters: PriceFilters = { query: '', familyId: '', unitId: '', supplierId: '', includeArchived: false, discontinued: '', composite: '' }
 
 describe('priceTabs', () => {
-  it('lists the six tabs in order, the four catalog tabs active', () => {
+  it('lists the six tabs in order, all but Import active', () => {
     expect(priceTabs.map((tab) => [tab.key, tab.type, tab.enabled])).toEqual([
       ['materials', 'MATERIAL', true],
       ['labor', 'LABOR', true],
       ['equipment', 'EQUIPMENT', true],
       ['workItems', 'WORK_ITEM', true],
-      ['suppliers', null, false],
+      ['suppliers', null, true],
       ['import', null, false],
     ])
   })
