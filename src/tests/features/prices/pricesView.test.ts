@@ -4,13 +4,13 @@ import { costAuthor, nextSort, pageRange, priceTabs, resourceActions, resourceQu
 const filters: PriceFilters = { query: '', familyId: '', unitId: '', supplierId: '', includeArchived: false, discontinued: '' }
 
 describe('priceTabs', () => {
-  it('lists the six tabs in order, only Materials and Equipment active', () => {
+  it('lists the six tabs in order, Materials, Equipment and Suppliers active', () => {
     expect(priceTabs.map((tab) => [tab.key, tab.type, tab.enabled])).toEqual([
       ['materials', 'MATERIAL', true],
       ['labor', 'LABOR', false],
       ['equipment', 'EQUIPMENT', true],
       ['workItems', 'WORK_ITEM', false],
-      ['suppliers', null, false],
+      ['suppliers', null, true],
       ['import', null, false],
     ])
   })

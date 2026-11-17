@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { PESOS, type MoneyConversion } from '../../currency'
 import { ApiError } from '../../lib/http'
 import { amountIssue } from '../sites/budgetRules'
-import type { CostEntryBody, ResourceCreateBody, ResourceDetail, ResourcePatchBody } from './pricesApi'
+import { pricesErrorKind, type CostEntryBody, type PricesErrorKind, type ResourceCreateBody, type ResourceDetail, type ResourcePatchBody } from './pricesApi'
 
 /** Limits of `docs/pricing.md` §1.5, §1.6: the form never accepts what the server would refuse. */
 export const RESOURCE_LIMITS = {
@@ -177,11 +177,7 @@ export type ResourceWriteErrorKind =
   | 'archivedFamily'
   | 'archivedSupplier'
   | 'archivedResource'
-  | 'invalid'
-  | 'forbidden'
-  | 'notFound'
-  | 'session'
-  | 'generic'
+  | PricesErrorKind
 
 const conflictKinds: Record<string, ResourceWriteErrorKind> = {
   DUPLICATE_CODE: 'duplicateCode',
@@ -193,11 +189,6 @@ const conflictKinds: Record<string, ResourceWriteErrorKind> = {
 
 /** Message to show when creating, editing, archiving or recording a cost fails. */
 export function resourceWriteErrorKind(error: unknown): ResourceWriteErrorKind {
-  if (!(error instanceof ApiError)) return 'generic'
-  if (error.status === 409) return (error.code && conflictKinds[error.code]) || 'generic'
-  if (error.status === 400) return 'invalid'
-  if (error.status === 401) return 'session'
-  if (error.status === 403) return 'forbidden'
-  if (error.status === 404) return 'notFound'
-  return 'generic'
+  if (error instanceof ApiError && error.status === 409) return conflictKinds[error.code ?? ''] ?? 'generic'
+  return pricesErrorKind(error)
 }
