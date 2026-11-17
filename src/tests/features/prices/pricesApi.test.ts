@@ -19,6 +19,7 @@ import {
   type Family,
   type Resource,
   type ResourceDetail,
+  type Supplier,
   type Unit,
 } from '../../../features/prices/pricesApi'
 
@@ -166,7 +167,11 @@ describe('prices API', () => {
   it('listUnits, listFamilies and listSuppliers read the pickers', async () => {
     const unit: Unit = { id: 'u-1', code: 'M3', description: 'Metro cúbico', source: 'SEED', archivedAt: null, resourceCount: 2 }
     const family: Family = { id: 'f-1', code: '301', name: 'AGREGADOS', source: 'SEED', archivedAt: null, resourceCount: 1 }
-    const supplier = { id: 's-1', name: 'VARIOS', branch: null, website: null, archivedAt: null }
+    const supplier: Supplier = {
+      id: 's-1', name: 'VARIOS', branch: null, website: null, code: 'VAR', rfc: null, address: null, neighborhood: null,
+      city: null, state: null, postalCode: null, phone: null, mobile: null, fax: null, email: null, contact: null,
+      notes: null, isDefault: false, source: 'NEODATA_CONSTRUBASE', archivedAt: null, resourceCount: 4,
+    }
     const get = stubApi((url) => ({
       status: 200,
       data: url.endsWith('/units') ? [unit] : url.endsWith('/families') ? [family] : [supplier],

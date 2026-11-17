@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ApiError, getJson, sendJson } from '../../lib/http'
 import { organizationPath } from '../../lib/apiPaths'
 
-/** The cost catalog API (backend `docs/pricing.md` §2.1, §2.2, §2.4, §2.5). */
+/** The cost catalog API (backend `docs/pricing.md` §2.1 to §2.5): reads, Units, Families and Suppliers writes, and hand-made Resources. */
 
 export const resourceTypes = ['MATERIAL', 'LABOR', 'EQUIPMENT', 'WORK_ITEM'] as const
 
@@ -145,7 +145,24 @@ export const supplierSchema = z.object({
   name: z.string(),
   branch: z.string().nullable(),
   website: z.string().nullable(),
+  /** Neodata `Proveedor`; read-only when `source` is `NEODATA_CONSTRUBASE`. */
+  code: z.string().nullable(),
+  rfc: z.string().nullable(),
+  address: z.string().nullable(),
+  neighborhood: z.string().nullable(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  postalCode: z.string().nullable(),
+  phone: z.string().nullable(),
+  mobile: z.string().nullable(),
+  fax: z.string().nullable(),
+  email: z.string().nullable(),
+  contact: z.string().nullable(),
+  notes: z.string().nullable(),
+  isDefault: z.boolean(),
+  source: catalogSourceSchema,
   archivedAt: z.string().nullable(),
+  resourceCount: z.number().int(),
 })
 
 export type Supplier = z.infer<typeof supplierSchema>
@@ -209,19 +226,105 @@ export function listResourceCosts(organizationId: string, resourceId: string, pa
   return getJson(`${resourcePath(organizationId, resourceId)}/costs?page=${page}&size=${size}`, pageSchema(costSchema))
 }
 
-/** Active Units ordered by code. */
-export function listUnits(organizationId: string): Promise<Unit[]> {
-  return getJson(`${organizationPath(organizationId)}/units`, z.array(unitSchema))
+export type ListOptions = { includeArchived?: boolean }
+
+function listSearch(options: ListOptions & { query?: string }): string {
+  const search = new URLSearchParams()
+  const text = options.query?.trim()
+  if (text) search.set('query', text)
+  if (options.includeArchived) search.set('includeArchived', 'true')
+  const query = search.toString()
+  return query ? `?${query}` : ''
 }
 
-/** Active Families ordered by code. */
-export function listFamilies(organizationId: string): Promise<Family[]> {
-  return getJson(`${organizationPath(organizationId)}/families`, z.array(familySchema))
+function unitsPath(organizationId: string): string {
+  return `${organizationPath(organizationId)}/units`
 }
 
-/** Active Suppliers ordered by name. */
-export function listSuppliers(organizationId: string): Promise<Supplier[]> {
-  return getJson(`${organizationPath(organizationId)}/suppliers`, z.array(supplierSchema))
+function familiesPath(organizationId: string): string {
+  return `${organizationPath(organizationId)}/families`
+}
+
+function suppliersPath(organizationId: string): string {
+  return `${organizationPath(organizationId)}/suppliers`
+}
+
+/** Units ordered by code; archived ones only when asked. */
+export function listUnits(organizationId: string, options: ListOptions = {}): Promise<Unit[]> {
+  return getJson(`${unitsPath(organizationId)}${listSearch(options)}`, z.array(unitSchema))
+}
+
+/** Families ordered by code; archived ones only when asked. */
+export function listFamilies(organizationId: string, options: ListOptions = {}): Promise<Family[]> {
+  return getJson(`${familiesPath(organizationId)}${listSearch(options)}`, z.array(familySchema))
+}
+
+/** Suppliers ordered by name; `query` matches name, code or contact. */
+export function listSuppliers(organizationId: string, options: ListOptions & { query?: string } = {}): Promise<Supplier[]> {
+  return getJson(`${suppliersPath(organizationId)}${listSearch(options)}`, z.array(supplierSchema))
+}
+
+export type UnitCreate = { code: string; description?: string }
+/** `description: ''` clears it; the code never changes. */
+export type UnitPatch = { description?: string }
+export type FamilyCreate = { code: string; name: string }
+export type FamilyPatch = { name?: string }
+
+/** Writable supplier fields; on a patch, a field left out keeps its value and `''` clears it. */
+export type SupplierBody = Partial<{
+  name: string
+  branch: string
+  website: string
+  code: string
+  rfc: string
+  address: string
+  neighborhood: string
+  city: string
+  state: string
+  postalCode: string
+  phone: string
+  mobile: string
+  fax: string
+  email: string
+  contact: string
+  notes: string
+  isDefault: boolean
+}>
+
+export function createUnit(organizationId: string, body: UnitCreate): Promise<Unit> {
+  return sendJson('post', unitsPath(organizationId), body, 201, unitSchema)
+}
+
+export function updateUnit(organizationId: string, unitId: string, body: UnitPatch): Promise<Unit> {
+  return sendJson('patch', `${unitsPath(organizationId)}/${encodeURIComponent(unitId)}`, body, 200, unitSchema)
+}
+
+export function archiveUnit(organizationId: string, unitId: string): Promise<Unit> {
+  return sendJson('post', `${unitsPath(organizationId)}/${encodeURIComponent(unitId)}/archive`, undefined, 200, unitSchema)
+}
+
+export function createFamily(organizationId: string, body: FamilyCreate): Promise<Family> {
+  return sendJson('post', familiesPath(organizationId), body, 201, familySchema)
+}
+
+export function updateFamily(organizationId: string, familyId: string, body: FamilyPatch): Promise<Family> {
+  return sendJson('patch', `${familiesPath(organizationId)}/${encodeURIComponent(familyId)}`, body, 200, familySchema)
+}
+
+export function archiveFamily(organizationId: string, familyId: string): Promise<Family> {
+  return sendJson('post', `${familiesPath(organizationId)}/${encodeURIComponent(familyId)}/archive`, undefined, 200, familySchema)
+}
+
+export function createSupplier(organizationId: string, body: SupplierBody & { name: string }): Promise<Supplier> {
+  return sendJson('post', suppliersPath(organizationId), body, 201, supplierSchema)
+}
+
+export function updateSupplier(organizationId: string, supplierId: string, body: SupplierBody): Promise<Supplier> {
+  return sendJson('patch', `${suppliersPath(organizationId)}/${encodeURIComponent(supplierId)}`, body, 200, supplierSchema)
+}
+
+export function archiveSupplier(organizationId: string, supplierId: string): Promise<Supplier> {
+  return sendJson('post', `${suppliersPath(organizationId)}/${encodeURIComponent(supplierId)}/archive`, undefined, 200, supplierSchema)
 }
 
 /** `POST /resources` for a simple Material or Equipment rate; money in pesos with two decimals. */
@@ -277,4 +380,24 @@ export function pricesErrorKind(error: unknown): PricesErrorKind {
   if (error.status === 403) return 'forbidden'
   if (error.status === 404) return 'notFound'
   return 'generic'
+}
+
+export type CatalogWriteErrorKind =
+  | 'duplicateSupplier'
+  | 'duplicateUnit'
+  | 'duplicateFamily'
+  | 'importedField'
+  | PricesErrorKind
+
+const conflictKinds: Record<string, CatalogWriteErrorKind> = {
+  DUPLICATE_SUPPLIER: 'duplicateSupplier',
+  DUPLICATE_UNIT: 'duplicateUnit',
+  DUPLICATE_FAMILY: 'duplicateFamily',
+  IMPORTED_FIELD: 'importedField',
+}
+
+/** Message to show when a Unit, Family or Supplier write fails. */
+export function catalogWriteErrorKind(error: unknown): CatalogWriteErrorKind {
+  if (error instanceof ApiError && error.status === 409) return conflictKinds[error.code ?? ''] ?? 'generic'
+  return pricesErrorKind(error)
 }
