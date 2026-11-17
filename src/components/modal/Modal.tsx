@@ -7,6 +7,10 @@ type ModalProps = {
   description?: string
   children: ReactNode
   onClose: () => void
+  /** `drawer` slides in from the right edge at full height, for reading a record beside its list. */
+  variant?: 'dialog' | 'drawer'
+  /** Accessible name of a close button in the header; without it the header has none. */
+  closeLabel?: string
 }
 
 /**
@@ -14,7 +18,7 @@ type ModalProps = {
  * and ARIA wiring; callers supply the title and body. Nothing here is app or
  * feature specific.
  */
-export function Modal({ title, description, children, onClose }: ModalProps) {
+export function Modal({ title, description, children, onClose, variant = 'dialog', closeLabel }: ModalProps) {
   const titleId = useId()
   const descriptionId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -33,10 +37,10 @@ export function Modal({ title, description, children, onClose }: ModalProps) {
   }, [])
 
   return createPortal(
-    <div className="modal-overlay" onClick={onClose}>
+    <div className={`modal-overlay modal-overlay--${variant}`} onClick={onClose}>
       <div
         ref={dialogRef}
-        className="modal"
+        className={`modal modal--${variant}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -45,8 +49,17 @@ export function Modal({ title, description, children, onClose }: ModalProps) {
         onClick={(event) => event.stopPropagation()}
       >
         <header className="modal__header">
-          <h2 id={titleId}>{title}</h2>
-          {description ? <p id={descriptionId}>{description}</p> : null}
+          <div className="modal__heading">
+            <h2 id={titleId}>{title}</h2>
+            {description ? <p id={descriptionId}>{description}</p> : null}
+          </div>
+          {closeLabel ? (
+            <button type="button" className="modal__close" aria-label={closeLabel} onClick={onClose}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          ) : null}
         </header>
         {children}
       </div>

@@ -37,7 +37,74 @@
 }
 
 .modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 20px;
+}
+
+.modal__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal__close {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px 0 0;
+  border: 0;
+  border-radius: var(--cx-radius-md);
+  background: transparent;
+  color: var(--cx-muted);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.modal__close:hover {
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+}
+
+.modal__close:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 2px;
+}
+
+/* Drawer: a full-height sheet on the right edge, the list stays visible beside it. */
+.modal-overlay--drawer {
+  place-items: stretch end;
+  padding: 0;
+}
+
+.modal--drawer {
+  width: min(100%, 560px);
+  height: 100svh;
+  max-height: none;
+  border-width: 0 0 0 1px;
+  border-radius: 0;
+  padding: 24px 28px 40px;
+  animation: drawer-in 200ms ease-out;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  .modal--drawer {
+    padding: 20px 16px 32px;
+  }
 }
 
 .modal__header h2 {
