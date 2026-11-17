@@ -34,18 +34,29 @@ export const expenseSchema = z.object({
 
 export type Expense = z.infer<typeof expenseSchema>
 
-/** `BudgetSummary`: `remaining` is null without a budget and negative on an overrun. */
-export const budgetSummarySchema = z.object({
-  allocatedBudget: z.number().nullable(),
-  spent: z.number(),
-  remaining: z.number().nullable(),
-  /** Sum of the phase budgets, and what the site has left to give phases (null without a budget). */
-  allocatedToPhases: z.number().default(0),
-  unallocated: z.number().nullable().default(null),
-  byCategory: z.array(z.object({ category: z.enum(expenseCategories), amount: z.number() })),
-})
+/**
+ * `BudgetSummary`: `spent` is `recordedExpenses` plus `laborAccrued`, the site's Accrued labor cost to date,
+ * which `byCategory` counts under LABOR (docs/pricing.md §6.4). `remaining` is null without a budget and
+ * negative on an overrun. A summary without the accrual reads as all spending recorded.
+ */
+export const budgetSummarySchema = z
+  .object({
+    allocatedBudget: z.number().nullable(),
+    recordedExpenses: z.number().nullish(),
+    laborAccrued: z.number().default(0),
+    spent: z.number(),
+    remaining: z.number().nullable(),
+    /** Sum of the phase budgets, and what the site has left to give phases (null without a budget). */
+    allocatedToPhases: z.number().default(0),
+    unallocated: z.number().nullable().default(null),
+    byCategory: z.array(z.object({ category: z.enum(expenseCategories), amount: z.number() })),
+  })
+  .transform((summary) => ({
+    ...summary,
+    recordedExpenses: summary.recordedExpenses ?? summary.spent - summary.laborAccrued,
+  }))
 
-export type BudgetSummary = z.infer<typeof budgetSummarySchema>
+export type BudgetSummary = z.output<typeof budgetSummarySchema>
 
 export type ExpenseDraft = {
   amount: number

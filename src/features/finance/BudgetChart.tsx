@@ -96,7 +96,14 @@ export function BudgetChart({ chart, summary }: BudgetChartProps) {
             onMouseLeave={() => setActive(null)}
           >
             <span className="budget-chart__swatch" data-category={segment.category} aria-hidden="true" />
-            <span className="budget-chart__name">{t.category[segment.category]}</span>
+            <span className="budget-chart__name">
+              {t.category[segment.category]}
+              {segment.category === 'LABOR' && summary.laborAccrued > 0 ? (
+                <span className="budget-chart__detail">
+                  {formatMessage(t.laborIncludesAccrued, { amount: money(summary.laborAccrued) })}
+                </span>
+              ) : null}
+            </span>
             <span className="budget-chart__value data-mono">{money(segment.amount)}</span>
             <span className="budget-chart__share">
               {formatMessage(t.shareOfSpend, { percent: percent(spent > 0 ? segment.amount / spent : 0) })}
