@@ -194,10 +194,11 @@ function fsrField(messages: LaborValidationMessages) {
   })
 }
 
-export function makeLaborSchema(messages: LaborValidationMessages, money: MoneyConversion = PESOS) {
+/** With complete FASAR parameters (`fsrComputed`) the server computes the FSR, so none is asked for. */
+export function makeLaborSchema(messages: LaborValidationMessages, money: MoneyConversion = PESOS, { fsrComputed = false } = {}) {
   return z.object({
     nominalWage: wageField(messages, money, true),
-    fsr: fsrField(messages),
+    fsr: fsrComputed ? z.string() : fsrField(messages),
     perDiem: wageField(messages, money, false),
     mealsLodging: wageField(messages, money, false),
     funeralExpenses: wageField(messages, money, false),
@@ -235,10 +236,13 @@ export function realWagePreview(values: LaborValues): string | null {
 }
 
 /** Wage fields of a Labor category, shared by the create form and this dialog. */
-export function laborFields(w: Messages['prices']['write'], currency: Currency): FieldConfig[] {
+export function laborFields(w: Messages['prices']['write'], currency: Currency, { fsrComputed = false } = {}): FieldConfig[] {
+  const fsr: FieldConfig[] = fsrComputed
+    ? []
+    : [{ name: 'fsr', label: w.field.fsr, type: 'number', decimals: 8, maxDigits: 1, hint: w.field.fsrHint, placeholder: '1.7' }]
   return [
     { name: 'nominalWage', label: formatMessage(w.field.nominalWage, { currency }), type: 'money', placeholder: w.field.amountPlaceholder },
-    { name: 'fsr', label: w.field.fsr, type: 'number', decimals: 8, maxDigits: 1, hint: w.field.fsrHint, placeholder: '1.7' },
+    ...fsr,
     ...benefitFields.map(
       (name): FieldConfig => ({
         name,
@@ -259,9 +263,11 @@ function factor(value: string): string {
 
 function laborWageBody(values: LaborValues, money: MoneyConversion): LaborWageBody {
   const benefit = (raw: string) => (raw.trim() === '' ? '0.00' : pesos(raw, money))
+  const fsr = factor(values.fsr)
   return {
     nominalWage: pesos(values.nominalWage, money),
-    fsr: factor(values.fsr),
+    // A blank FSR is left out: complete FASAR parameters compute it.
+    ...(fsr === '' ? {} : { fsr }),
     perDiem: benefit(values.perDiem),
     mealsLodging: benefit(values.mealsLodging),
     funeralExpenses: benefit(values.funeralExpenses),
@@ -312,7 +318,7 @@ export function laborPatchBody(
   const changed: Partial<LaborWageBody> = {}
   const differs = (field: keyof LaborValues) => Number(values[field].trim() || '0') !== Number(shown[field].trim() || '0')
   if (!detail.laborDetail || differs('nominalWage')) changed.nominalWage = next.nominalWage
-  if (!detail.laborDetail || differs('fsr')) changed.fsr = next.fsr
+  if (next.fsr !== undefined && (!detail.laborDetail || differs('fsr'))) changed.fsr = next.fsr
   for (const field of benefitFields) {
     if (differs(field)) changed[field] = next[field]
   }

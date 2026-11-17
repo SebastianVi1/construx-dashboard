@@ -1,5 +1,5 @@
 import type { Messages } from '../../i18n'
-import type { Resource } from './pricesApi'
+import type { FasarStatus, Resource } from './pricesApi'
 
 /** Archived, discontinued and "not in the last import" markers of a Resource; nothing when none applies. */
 export function ResourceBadges({ resource, t }: { resource: Resource; t: Messages['prices'] }) {
@@ -17,6 +17,16 @@ export function ResourceBadges({ resource, t }: { resource: Resource; t: Message
           {t.missingBadge}
         </span>
       ) : null}
+    </span>
+  )
+}
+
+/** The FASAR status, on the FASAR screen and the catalog header. */
+export function FasarStatusBadge({ status, t }: { status: FasarStatus; t: Messages['prices']['fasar'] }) {
+  const tone = status === 'COMPLETE' ? 'success' : status === 'PARTIAL' ? 'warning' : undefined
+  return (
+    <span className="badge" data-tone={tone} title={t.statusHint[status]}>
+      {t.status[status]}
     </span>
   )
 }

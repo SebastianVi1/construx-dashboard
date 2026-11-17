@@ -7,6 +7,7 @@ import { useCurrency, type Currency } from '../../currency'
 import { formatMessage, useLocale, type Messages } from '../../i18n'
 import {
   createResource,
+  getCatalog,
   listFamilies,
   listSuppliers,
   listUnits,
@@ -17,6 +18,7 @@ import {
   type Supplier,
   type Unit,
 } from './pricesApi'
+import { fsrIsComputed } from './fasarForm'
 import { RealWagePreview } from './LaborWageDialog'
 import {
   RESOURCE_LIMITS,
@@ -57,7 +59,7 @@ function withCurrent(options: FieldOption[], current: { id: string; label: strin
 function resourceFields(
   w: WriteMessages,
   pickers: Pickers,
-  { type, resource, currency }: { type: ResourceType; resource?: ResourceDetail; currency: Currency },
+  { type, resource, currency, fsrComputed }: { type: ResourceType; resource?: ResourceDetail; currency: Currency; fsrComputed: boolean },
 ): FieldConfig[] {
   const fields: FieldConfig[] = []
   if (!resource) {
@@ -118,7 +120,7 @@ function resourceFields(
   }
   fields.push({ name: 'description', label: w.field.description, type: 'textarea', rows: 3 })
   if (!resource && type === 'LABOR') {
-    fields.push(...laborFields(w, currency))
+    fields.push(...laborFields(w, currency, { fsrComputed }))
   } else if (!resource) {
     fields.push({ name: 'cost', label: formatMessage(w.field.cost, { currency }), type: 'money', placeholder: w.field.amountPlaceholder })
   }
@@ -132,6 +134,10 @@ export function ResourceFormDialog({ organizationId, type, resource, onSaved, on
   const units = useRemoteData(`${organizationId}:units`, () => listUnits(organizationId))
   const families = useRemoteData(`${organizationId}:families`, () => listFamilies(organizationId))
   const suppliers = useRemoteData(`${organizationId}:suppliers`, () => listSuppliers(organizationId))
+  // A new Labor category gets a computed FSR when the company has complete FASAR parameters.
+  const laborCreate = !resource && type === 'LABOR'
+  const catalog = useRemoteData(laborCreate ? `${organizationId}:catalog` : null, () => getCatalog(organizationId), { remember: false })
+  const catalogReady = !laborCreate || catalog.data !== undefined || catalog.status === 'error'
 
   const title = resource ? formatMessage(w.editTitle, { code: resource.code }) : w.createTitle[type]
   const description = resource ? w.editDescription : type === 'LABOR' ? w.createLaborDescription : w.createDescription
@@ -139,7 +145,7 @@ export function ResourceFormDialog({ organizationId, type, resource, onSaved, on
 
   return (
     <Modal title={title} description={description} onClose={onClose}>
-      {units.data && families.data && suppliers.data ? (
+      {units.data && families.data && suppliers.data && catalogReady ? (
         !resource && units.data.length === 0 ? (
           <Notice>{w.noUnits}</Notice>
         ) : (
@@ -148,6 +154,7 @@ export function ResourceFormDialog({ organizationId, type, resource, onSaved, on
             type={resource?.type ?? type}
             resource={resource}
             pickers={{ units: units.data, families: families.data, suppliers: suppliers.data }}
+            fsrComputed={laborCreate && fsrIsComputed(catalog.data?.fasar?.status)}
             onSaved={onSaved}
           />
         )
@@ -178,10 +185,12 @@ type ResourceFormProps = {
   type: ResourceType
   resource?: ResourceDetail
   pickers: Pickers
+  /** Complete FASAR parameters compute the FSR of a new Labor category. */
+  fsrComputed: boolean
   onSaved: (detail: ResourceDetail) => void
 }
 
-function ResourceForm({ organizationId, type, resource, pickers, onSaved }: ResourceFormProps) {
+function ResourceForm({ organizationId, type, resource, pickers, fsrComputed, onSaved }: ResourceFormProps) {
   const { messages: m } = useLocale()
   const w = m.prices.write
   const money = useCurrency()
@@ -193,7 +202,7 @@ function ResourceForm({ organizationId, type, resource, pickers, onSaved }: Reso
   const schema = makeResourceSchema(w.validation, { withCost: !resource && !laborCreate, money })
   const form = useForm({
     initialValues: resource ? resourceValuesFrom(resource) : laborCreate ? { ...emptyResourceValues, ...emptyLaborValues } : emptyResourceValues,
-    schema: laborCreate ? schema.extend(makeLaborSchema(w.validation, money).shape) : schema,
+    schema: laborCreate ? schema.extend(makeLaborSchema(w.validation, money, { fsrComputed }).shape) : schema,
     onSubmit: async (values) => {
       try {
         if (resource) {
@@ -243,10 +252,11 @@ function ResourceForm({ organizationId, type, resource, pickers, onSaved }: Reso
           form.onChange(name, value)
         },
       }}
-      fields={resourceFields(w, pickers, { type, resource, currency: money.currency })}
+      fields={resourceFields(w, pickers, { type, resource, currency: money.currency, fsrComputed })}
       submitLabel={resource ? w.save : w.create}
       pendingLabel={resource ? w.saving : w.creating}
     >
+      {laborCreate && fsrComputed ? <p className="cell-muted">{w.field.fsrComputed}</p> : null}
       {laborCreate ? <RealWagePreview values={{ ...emptyLaborValues, ...form.values }} w={w} /> : null}
       {form.submitError ? (
         <p className="form-error" role="alert">

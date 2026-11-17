@@ -242,7 +242,15 @@ export const catalogSchema = z.object({
   }),
   missingFromImport: z.number().int(),
   lastImport: z.unknown().nullable(),
-  fasar: z.object({ status: z.string() }).passthrough().nullable(),
+  fasar: z
+    .object({
+      status: z.enum(['NONE', 'PARTIAL', 'COMPLETE']),
+      year: z.number().int().nullable(),
+      uma: decimalSchema.nullable(),
+      minimumWage: moneySchema.nullable(),
+      updatedAt: z.string().nullable(),
+    })
+    .nullable(),
   activeImport: z.unknown().nullable(),
 })
 
@@ -460,10 +468,13 @@ export function archiveSupplier(organizationId: string, supplierId: string): Pro
   return sendJson('post', `${suppliersPath(organizationId)}/${encodeURIComponent(supplierId)}/archive`, undefined, 200, supplierSchema)
 }
 
-/** The wage of a Labor category in pesos with two decimals; the FSR is a factor from 1 to 3. */
+/**
+ * The wage of a Labor category in pesos with two decimals; the FSR is a factor from 1 to 3, left out when complete
+ * FASAR parameters compute it.
+ */
 export type LaborWageBody = {
   nominalWage: string
-  fsr: string
+  fsr?: string
   perDiem: string
   mealsLodging: string
   funeralExpenses: string
@@ -557,5 +568,108 @@ const conflictKinds: Record<string, CatalogWriteErrorKind> = {
 /** Message to show when a Unit, Family or Supplier write fails. */
 export function catalogWriteErrorKind(error: unknown): CatalogWriteErrorKind {
   if (error instanceof ApiError && error.status === 409) return conflictKinds[error.code ?? ''] ?? 'generic'
+  return pricesErrorKind(error)
+}
+
+/** `NONE` without parameters, `PARTIAL` when imported without the FASAR workbook (FSRs not recomputable), `COMPLETE`. */
+export const fasarStatuses = ['NONE', 'PARTIAL', 'COMPLETE'] as const
+
+export type FasarStatus = (typeof fasarStatuses)[number]
+
+/** The twelve contribution concepts, in the order the backend lists them (`docs/pricing.md` §1.10). */
+export const fasarConcepts = [
+  'RISK',
+  'FIXED_FEE',
+  'EXCESS_3_UMA',
+  'CASH_BENEFITS',
+  'PENSIONERS_MEDICAL',
+  'DISABILITY_LIFE',
+  'RETIREMENT',
+  'UNEMPLOYMENT_OLD_AGE',
+  'DAYCARE',
+  'INFONAVIT',
+  'PAYROLL_TAX',
+  'OTHER_CHARGES',
+] as const
+
+export type FasarConcept = (typeof fasarConcepts)[number]
+
+export const fasarDayFields = [
+  'calendar',
+  'sundays',
+  'workedSundays',
+  'vacation',
+  'mondays',
+  'holidays',
+  'weather',
+  'custom',
+  'leaveSick',
+  'union',
+  'bonus',
+] as const
+
+export type FasarDayField = (typeof fasarDayFields)[number]
+
+const fasarDaysSchema = z.object(Object.fromEntries(fasarDayFields.map((field) => [field, decimalSchema])) as Record<FasarDayField, typeof decimalSchema>)
+
+const fasarContributionSchema = z.object({ concept: z.enum(fasarConcepts), employerRate: decimalSchema, workerRate: decimalSchema })
+
+export type FasarContribution = z.infer<typeof fasarContributionSchema>
+
+/** `FasarResponse` (§2.6); with `status: 'NONE'` every other field is null. `recomputation` only answers a save. */
+export const fasarSchema = z.object({
+  status: z.enum(fasarStatuses),
+  source: z.enum(['FASAR_FILE', 'GENERAL_FIELDS', 'MANUAL']).nullable(),
+  version: z.number().int().nullable(),
+  year: z.number().int().nullable(),
+  uma: decimalSchema.nullable(),
+  minimumWage: moneySchema.nullable(),
+  sumEmployerAndWorker: z.boolean().nullable(),
+  days: fasarDaysSchema.nullable(),
+  premiums: z.object({ vacationPct: decimalSchema, sundayPct: decimalSchema, otherChargesPct: decimalSchema }).nullable(),
+  caps: z.object({ excessThresholdUma: decimalSchema, sbcCapUma: decimalSchema, factorRounding: z.number().int() }).nullable(),
+  contributions: z.array(fasarContributionSchema).nullable(),
+  derived: z.object({ tp: decimalSchema, tl: decimalSchema, tpOverTl: decimalSchema, fsbc: decimalSchema }).nullable(),
+  laborCategories: z.object({ total: z.number().int(), computed: z.number().int(), mismatches: z.number().int() }).nullable(),
+  updatedAt: z.string().nullable(),
+  updatedBy: z.object({ membershipId: z.string().min(1), fullName: z.string() }).nullable(),
+  recomputation: z
+    .object({ laborCategories: z.number().int(), realWagesChanged: z.number().int(), workItemsRecomputed: z.number().int() })
+    .nullable()
+    .optional(),
+})
+
+export type Fasar = z.infer<typeof fasarSchema>
+
+/** `PUT /fasar`: a full replacement, every field present. Days, rates and premiums are decimal strings. */
+export type FasarBody = {
+  year: number
+  uma: string
+  minimumWage: string
+  sumEmployerAndWorker: boolean
+  days: Record<FasarDayField, string>
+  premiums: { vacationPct: string; sundayPct: string; otherChargesPct: string }
+  caps: { excessThresholdUma: string; sbcCapUma: string; factorRounding: number }
+  contributions: FasarContribution[]
+}
+
+function fasarPath(organizationId: string): string {
+  return `${organizationPath(organizationId)}/fasar`
+}
+
+export function getFasar(organizationId: string): Promise<Fasar> {
+  return getJson(fasarPath(organizationId), fasarSchema)
+}
+
+/** Replaces the parameters; the server recomputes every Labor category and the derived costs. */
+export function replaceFasar(organizationId: string, body: FasarBody): Promise<Fasar> {
+  return sendJson('put', fasarPath(organizationId), body, 200, fasarSchema)
+}
+
+export type FasarWriteErrorKind = 'importInProgress' | PricesErrorKind
+
+/** Message to show when saving the FASAR parameters fails. */
+export function fasarWriteErrorKind(error: unknown): FasarWriteErrorKind {
+  if (error instanceof ApiError && error.status === 409 && error.code === 'IMPORT_IN_PROGRESS') return 'importInProgress'
   return pricesErrorKind(error)
 }

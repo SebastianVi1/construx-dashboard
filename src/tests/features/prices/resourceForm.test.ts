@@ -305,6 +305,22 @@ describe('labor wage', () => {
       laborDetail: { fsr: '1.6', otherBenefits: '5.00' },
     })
   })
+
+  it('with complete FASAR parameters the FSR is not asked for and not sent', () => {
+    const schema = makeLaborSchema(laborMessages, undefined, { fsrComputed: true })
+    expect(schema.safeParse({ ...wage, fsr: '' }).success).toBe(true)
+    expect(errors(schema.safeParse({ ...emptyLaborValues }))).toEqual({ nominalWage: 'wage required' })
+    expect(createLaborBody(valid, { ...wage, fsr: '' }).laborDetail).toEqual({
+      nominalWage: '350.00',
+      perDiem: '10.50',
+      mealsLodging: '0.00',
+      funeralExpenses: '0.00',
+      otherBenefits: '0.00',
+    })
+    expect(laborPatchBody(peon, { ...laborValuesFrom(peon), fsr: '', nominalWage: '400' })).toEqual({
+      laborDetail: { nominalWage: '400.00' },
+    })
+  })
 })
 
 describe('resourceWriteErrorKind', () => {

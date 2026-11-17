@@ -6,11 +6,12 @@ import { useCurrency } from '../../currency'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
-import { ResourceBadges } from './ResourceBadges'
+import { FasarStatusBadge, ResourceBadges } from './ResourceBadges'
 import { ResourceDrawer } from './ResourceDrawer'
 import { ResourceFormDialog } from './ResourceFormDialog'
 import { SuppliersTab } from './SuppliersTab'
 import {
+  getCatalog,
   listFamilies,
   listResources,
   listSuppliers,
@@ -80,13 +81,24 @@ export function PricesPage() {
 
 function PricesHeader({ t }: { t: PricesMessages }) {
   const { currency } = useCurrency()
+  const organization = useCurrentOrganization()
+  const catalog = useRemoteData(`${organization.id}:catalog`, () => getCatalog(organization.id), { remember: false })
+  const fasarStatus = catalog.data?.fasar?.status ?? 'NONE'
   return (
     <header className="page-header">
       <div className="page-header__text">
         <h1>{t.title}</h1>
         <p>{formatMessage(t.description, { currency })}</p>
+        {catalog.data ? (
+          <p className="prices-badges">
+            <FasarStatusBadge status={fasarStatus} t={t.fasar} />
+          </p>
+        ) : null}
       </div>
       <div className="page-header__actions">
+        <Link className="button" to="/prices/fasar">
+          {t.fasar.link}
+        </Link>
         <Link className="button" to="/prices/units">
           {t.manageLists}
         </Link>

@@ -313,3 +313,66 @@
   max-height: min(70vh, 720px);
   overflow-y: auto;
 }
+
+/* FASAR parameters screen. */
+.fasar-status {
+  display: grid;
+  gap: 8px;
+}
+
+.fasar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 16px;
+}
+
+.fasar-derived {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.fasar-derived dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The rate inputs of the contributions table keep their label for screen readers only. */
+.prices-table .form-field__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Result of a FASAR save; errors stay until dismissed. */
+.prices-toast {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + var(--cx-tabbar-height, 0px));
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 12px 12px 16px;
+  border: 1px solid var(--cx-border-strong);
+  border-left: 3px solid var(--cx-success);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface-raised);
+  box-shadow: 0 16px 40px -16px var(--cx-shadow-color);
+  color: var(--cx-ink);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.prices-toast[data-tone='error'] {
+  border-left-color: var(--cx-danger);
+}
+
+.prices-toast p {
+  margin: 0;
+}
