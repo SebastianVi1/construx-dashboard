@@ -258,3 +258,28 @@
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
+
+/* Suppliers tab and the Units / Families lists. */
+
+.prices-filters__action {
+  margin-left: auto;
+}
+
+.prices-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 12px;
+}
+
+.prices-list-header h2 {
+  margin: 0;
+  margin-right: auto;
+  font-size: 18px;
+}
+
+.prices-dialog-form {
+  max-height: min(70vh, 720px);
+  overflow-y: auto;
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice, SkeletonTable } from '../../components/page'
 import { useCurrency } from '../../currency'
@@ -7,6 +8,7 @@ import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { ResourceBadges } from './ResourceBadges'
 import { ResourceDrawer } from './ResourceDrawer'
+import { SuppliersTab } from './SuppliersTab'
 import {
   listFamilies,
   listResources,
@@ -68,6 +70,7 @@ export function PricesPage() {
         ))}
       </div>
       {active?.type ? <ResourceCatalog key={active.key} tab={active.key} type={active.type} t={t} /> : null}
+      {active?.key === 'suppliers' ? <SuppliersTab t={t} /> : null}
     </div>
   )
 }
@@ -79,6 +82,11 @@ function PricesHeader({ t }: { t: PricesMessages }) {
       <div className="page-header__text">
         <h1>{t.title}</h1>
         <p>{formatMessage(t.description, { currency })}</p>
+      </div>
+      <div className="page-header__actions">
+        <Link className="button" to="/prices/units">
+          {t.manageLists}
+        </Link>
       </div>
     </header>
   )
