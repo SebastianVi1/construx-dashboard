@@ -7,7 +7,8 @@ import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n
 import { getResource, listResourceCosts, type CostEntry, type ResourceDetail } from './pricesApi'
 import { pricesLoadKind } from './pricesErrors'
 import { ResourceBadges } from './ResourceBadges'
-import { formatDay, formatInstant, hasMoreHistory } from './resourceDisplay'
+import { familyLabel } from './filterOptions'
+import { formatDay, formatInstant, hasMoreHistory, moneyText } from './resourceDisplay'
 
 type ResourceDrawerProps = {
   organizationId: string
@@ -71,7 +72,7 @@ function ResourceDetailBody({ organizationId, detail, t, locale }: BodyProps) {
           <p className="prices-detail__cost-value prices-detail__cost-value--none">{t.noCost}</p>
         ) : (
           <p className="prices-detail__cost-value data-mono">
-            {money(Number(detail.currentCost))}
+            {moneyText(money, detail.currentCost)}
             <span className="prices-detail__per">{formatMessage(d.perUnit, { unit: detail.unit.code })}</span>
           </p>
         )}
@@ -87,7 +88,7 @@ function ResourceDetailBody({ organizationId, detail, t, locale }: BodyProps) {
           <DetailRow label={d.type}>{t.type[detail.type]}</DetailRow>
           <DetailRow label={d.description} wide>{detail.description}</DetailRow>
           <DetailRow label={d.unit} mono>{detail.unit.code}</DetailRow>
-          <DetailRow label={d.family}>{detail.family ? `${detail.family.name} (${detail.family.code})` : null}</DetailRow>
+          <DetailRow label={d.family}>{detail.family ? familyLabel(detail.family) : null}</DetailRow>
           <DetailRow label={d.supplier}>{detail.supplier?.name}</DetailRow>
           <DetailRow label={d.brand}>{detail.brand}</DetailRow>
           <DetailRow label={d.reference}>{detail.reference}</DetailRow>
@@ -97,7 +98,7 @@ function ResourceDetailBody({ organizationId, detail, t, locale }: BodyProps) {
           <DetailRow label={d.grouper} mono>{detail.grouper}</DetailRow>
           <DetailRow label={d.flags}>{flags.length > 0 ? flags.join(', ') : d.noFlags}</DetailRow>
           <DetailRow label={d.source}>{t.source[detail.source]}</DetailRow>
-          <DetailRow label={d.importedCost} mono>{detail.importedCost === null ? null : money(Number(detail.importedCost))}</DetailRow>
+          <DetailRow label={d.importedCost} mono>{moneyText(money, detail.importedCost)}</DetailRow>
           <DetailRow label={d.importedCostOn}>{detail.importedCostOn ? formatDay(detail.importedCostOn, locale) : null}</DetailRow>
           <DetailRow label={d.missingFromImportAt}>
             {detail.missingFromImportAt ? formatInstant(detail.missingFromImportAt, locale) : null}
@@ -196,7 +197,7 @@ function CostHistoryEntry({ entry, t, locale }: { entry: CostEntry; t: PricesMes
 
   return (
     <li className="prices-history__entry">
-      <p className="prices-history__amount data-mono">{money(Number(entry.amount))}</p>
+      <p className="prices-history__amount data-mono">{moneyText(money, entry.amount)}</p>
       <p className="prices-history__date">{formatMessage(d.effectiveFrom, { date: formatInstant(entry.effectiveFrom, locale) })}</p>
       <p className="prices-history__meta">{meta.join(', ')}</p>
       {entry.note ? <p className="prices-history__note">{entry.note}</p> : null}

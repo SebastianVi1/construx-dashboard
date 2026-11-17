@@ -175,3 +175,23 @@ export function hasFilters(filters: ResourceFilters): boolean {
     filters.discontinued !== 'all'
   )
 }
+
+/** Guard for a select value: one of the known discontinued choices. */
+export function isDiscontinuedChoice(value: string): value is DiscontinuedChoice {
+  return oneOf(discontinuedChoices, value) !== undefined
+}
+
+/** Route that opens a Resource's drawer over the list; add the list's search to keep its state. */
+export function resourceRoute(resourceId: string): string {
+  return `/prices/${encodeURIComponent(resourceId)}`
+}
+
+/** DOM id of a tab, referenced by its panel's `aria-labelledby`. */
+export function tabId(tab: PricesTab): string {
+  return `prices-tab-${tab}`
+}
+
+/** DOM id of a tab's panel, referenced by the tab's `aria-controls`. */
+export function panelId(tab: PricesTab): string {
+  return `prices-panel-${tab}`
+}

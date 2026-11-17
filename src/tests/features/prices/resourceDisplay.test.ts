@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { formatDay, formatInstant, hasMoreHistory } from '../../../features/prices/resourceDisplay'
+import { formatDay, formatInstant, hasMoreHistory, moneyText } from '../../../features/prices/resourceDisplay'
 
 describe('resource display', () => {
   it('shows a calendar date as that same day in both languages', () => {
@@ -15,5 +15,18 @@ describe('resource display', () => {
     expect(hasMoreHistory(100)).toBe(true)
     expect(hasMoreHistory(99)).toBe(false)
     expect(hasMoreHistory(0)).toBe(false)
+  })
+})
+
+describe('moneyText', () => {
+  const money = (amountMxn: number | string) => `MXN ${typeof amountMxn}:${amountMxn}`
+
+  it('passes an API amount to the display formatter as a number', () => {
+    expect(moneyText(money, '290.00')).toBe('MXN number:290')
+    expect(moneyText(money, '0.00')).toBe('MXN number:0')
+  })
+
+  it('gives null for a missing amount, so the caller shows its own "no cost"', () => {
+    expect(moneyText(money, null)).toBeNull()
   })
 })

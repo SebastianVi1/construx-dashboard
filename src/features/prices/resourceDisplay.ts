@@ -17,3 +17,11 @@ export function formatDay(day: string, locale: Locale): string {
 export function hasMoreHistory(shown: number): boolean {
   return shown >= DETAIL_HISTORY_LIMIT
 }
+
+/**
+ * An API amount (an MXN string with two decimals) through the display
+ * formatter of `useCurrency().money`; null when there is no amount.
+ */
+export function moneyText(money: (amountMxn: number) => string, amount: string | null): string | null {
+  return amount === null ? null : money(Number(amount))
+}
