@@ -1,12 +1,16 @@
-import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { ConfirmDialog } from '../../components/modal'
 import { Notice, SkeletonRows } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { ResourceBadges } from './ResourceBadges'
-import { getResource, pricesErrorKind, type ResourceDetail } from './pricesApi'
-import { costAuthor } from './pricesView'
+import { RecordCostDialog } from './RecordCostDialog'
+import { ResourceFormDialog } from './ResourceFormDialog'
+import { archiveResource, getResource, pricesErrorKind, type ResourceDetail } from './pricesApi'
+import { costAuthor, resourceActions } from './pricesView'
+import { resourceWriteErrorKind } from './resourceForm'
 
 /** Entries the detail carries; the full history is paged by `GET /resources/{id}/costs`. */
 const DETAIL_HISTORY = 100
@@ -14,11 +18,17 @@ const DETAIL_HISTORY = 100
 type ResourceDrawerProps = {
   organizationId: string
   resourceId: string
+  /** Show the edit, archive and record-cost actions (MANAGE_PRICES). */
+  canManage: boolean
+  /** After a write, so the list behind the drawer shows it. */
+  onChanged: () => void
   onClose: () => void
 }
 
+type DrawerDialog = 'edit' | 'cost' | 'archive' | null
+
 /** Side panel with every descriptive field of a Resource, its current cost and its cost history. */
-export function ResourceDrawer({ organizationId, resourceId, onClose }: ResourceDrawerProps) {
+export function ResourceDrawer({ organizationId, resourceId, canManage, onChanged, onClose }: ResourceDrawerProps) {
   const { messages: m } = useLocale()
   const t = m.prices
   const titleId = useId()
@@ -27,9 +37,19 @@ export function ResourceDrawer({ organizationId, resourceId, onClose }: Resource
     remember: false,
   })
 
+  const [dialog, setDialog] = useState<DrawerDialog>(null)
+  const [archiveError, setArchiveError] = useState<string | null>(null)
+
+  // A dialog on top handles its own Escape; only close the drawer when none is open.
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (event.key === 'Escape') onClose()
+    if (event.key === 'Escape' && dialog === null) onClose()
   })
+
+  function saved(next: ResourceDetail) {
+    resource.update(() => next)
+    setDialog(null)
+    onChanged()
+  }
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -38,6 +58,7 @@ export function ResourceDrawer({ organizationId, resourceId, onClose }: Resource
   }, [])
 
   const detail = resource.data
+  const actions = detail && canManage ? resourceActions(detail) : null
   return createPortal(
     <div className="prices-drawer-overlay" onClick={onClose}>
       <div
@@ -59,6 +80,32 @@ export function ResourceDrawer({ organizationId, resourceId, onClose }: Resource
             {t.detail.close}
           </button>
         </header>
+        {actions && (actions.edit || actions.recordCost || actions.archive) ? (
+          <div className="prices-drawer__actions">
+            {actions.recordCost ? (
+              <button type="button" className="button button--primary button--small" onClick={() => setDialog('cost')}>
+                {t.write.recordCost}
+              </button>
+            ) : null}
+            {actions.edit ? (
+              <button type="button" className="button button--small" onClick={() => setDialog('edit')}>
+                {t.write.edit}
+              </button>
+            ) : null}
+            {actions.archive ? (
+              <button
+                type="button"
+                className="button button--small"
+                onClick={() => {
+                  setArchiveError(null)
+                  setDialog('archive')
+                }}
+              >
+                {t.write.archive}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <div className="prices-drawer__body">
           {detail ? (
             <ResourceDetailBody detail={detail} />
@@ -70,6 +117,36 @@ export function ResourceDrawer({ organizationId, resourceId, onClose }: Resource
             <SkeletonRows rows={6} />
           )}
         </div>
+        {detail && dialog === 'edit' ? (
+          <ResourceFormDialog
+            organizationId={organizationId}
+            type={detail.type === 'EQUIPMENT' ? 'EQUIPMENT' : 'MATERIAL'}
+            resource={detail}
+            onSaved={saved}
+            onClose={() => setDialog(null)}
+          />
+        ) : null}
+        {detail && dialog === 'cost' ? (
+          <RecordCostDialog organizationId={organizationId} resource={detail} onRecorded={saved} onClose={() => setDialog(null)} />
+        ) : null}
+        {detail && dialog === 'archive' ? (
+          <ConfirmDialog
+            title={formatMessage(t.write.archiveTitle, { code: detail.code })}
+            body={t.write.archiveBody}
+            confirmLabel={t.write.archive}
+            pendingLabel={t.write.archiving}
+            cancelLabel={t.write.cancel}
+            error={archiveError}
+            onConfirm={async () => {
+              try {
+                saved(await archiveResource(organizationId, detail.id))
+              } catch (error) {
+                setArchiveError(t.write.error[resourceWriteErrorKind(error)])
+              }
+            }}
+            onClose={() => setDialog(null)}
+          />
+        ) : null}
       </div>
     </div>,
     document.body,

@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
 import { ApiError, configureHttp } from '../../../lib/http'
 import {
+  archiveResource,
+  createResource,
   getCatalog,
+  recordResourceCost,
+  updateResource,
   getResource,
   listFamilies,
   listResourceCosts,
@@ -182,5 +186,61 @@ describe('pricesErrorKind', () => {
     expect(pricesErrorKind(new ApiError(401))).toBe('session')
     expect(pricesErrorKind(new ApiError(500))).toBe('generic')
     expect(pricesErrorKind(new Error('offline'))).toBe('generic')
+  })
+})
+
+describe('prices write API', () => {
+  afterEach(() => mock.restore())
+
+  function stubWrites(status: number) {
+    const get = mock(async () => ({ data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }))
+    const send = mock(async (...args: [url: string, body?: unknown]) => ({ status, data: detail, args }))
+    configureHttp({ client: { get, post: send, patch: send } as unknown as AxiosInstance, baseUrl: '/api' })
+    return send
+  }
+
+  it('createResource: posts the body and expects 201 with the detail', async () => {
+    const send = stubWrites(201)
+    const body = {
+      type: 'MATERIAL' as const,
+      code: 'MAN-1',
+      name: 'Cemento',
+      description: null,
+      unitId: 'u-1',
+      familyId: null,
+      supplierId: null,
+      brand: null,
+      cost: '1.00',
+    }
+
+    expect(await createResource('org-1', body)).toEqual(detail)
+    expect(send.mock.calls[0][0]).toBe(`${base}/resources`)
+    expect(send.mock.calls[0][1]).toEqual(body)
+  })
+
+  it('updateResource and archiveResource expect 200', async () => {
+    const send = stubWrites(200)
+
+    expect(await updateResource('org-1', 'r-1', { name: 'X' })).toEqual(detail)
+    expect(await archiveResource('org-1', 'r-1')).toEqual(detail)
+    expect(send.mock.calls.map((call) => call[0])).toEqual([`${base}/resources/r-1`, `${base}/resources/r-1/archive`])
+    expect(send.mock.calls[0][1]).toEqual({ name: 'X' })
+  })
+
+  it('recordResourceCost: posts one cost and expects 201', async () => {
+    const send = stubWrites(201)
+    const cost = { amount: '250.00', supplierId: null, sku: null, note: 'Cotizacion' }
+
+    expect(await recordResourceCost('org-1', 'r-1', cost)).toEqual(detail)
+    expect(send.mock.calls[0][0]).toBe(`${base}/resources/r-1/costs`)
+    expect(send.mock.calls[0][1]).toEqual(cost)
+  })
+
+  it('a refused write is an ApiError', async () => {
+    stubWrites(409)
+
+    await expect(recordResourceCost('org-1', 'r-1', { amount: '1.00', supplierId: null, sku: null, note: null })).rejects.toBeInstanceOf(
+      ApiError,
+    )
   })
 })

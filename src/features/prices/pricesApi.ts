@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { ApiError, getJson } from '../../lib/http'
+import { ApiError, getJson, sendJson } from '../../lib/http'
 import { organizationPath } from '../../lib/apiPaths'
 
-/** Read side of the cost catalog (backend `docs/pricing.md` §2.1, §2.2, §2.4). */
+/** The cost catalog API (backend `docs/pricing.md` §2.1, §2.2, §2.4, §2.5). */
 
 export const resourceTypes = ['MATERIAL', 'LABOR', 'EQUIPMENT', 'WORK_ITEM'] as const
 
@@ -222,6 +222,49 @@ export function listFamilies(organizationId: string): Promise<Family[]> {
 /** Active Suppliers ordered by name. */
 export function listSuppliers(organizationId: string): Promise<Supplier[]> {
   return getJson(`${organizationPath(organizationId)}/suppliers`, z.array(supplierSchema))
+}
+
+/** `POST /resources` for a simple Material or Equipment rate; money in pesos with two decimals. */
+export type ResourceCreateBody = {
+  type: 'MATERIAL' | 'EQUIPMENT'
+  code: string
+  name: string
+  description: string | null
+  unitId: string
+  familyId: string | null
+  supplierId: string | null
+  brand?: string | null
+  cost: string
+}
+
+/** Fields left out keep their value; `''` clears an optional text, the family or the supplier. */
+export type ResourcePatchBody = Partial<{
+  name: string
+  description: string
+  unitId: string
+  familyId: string
+  supplierId: string
+  brand: string
+}>
+
+export type CostEntryBody = { amount: string; supplierId: string | null; sku: string | null; note: string | null }
+
+export function createResource(organizationId: string, body: ResourceCreateBody): Promise<ResourceDetail> {
+  return sendJson('post', resourcesPath(organizationId), body, 201, resourceDetailSchema)
+}
+
+export function updateResource(organizationId: string, resourceId: string, body: ResourcePatchBody): Promise<ResourceDetail> {
+  return sendJson('patch', resourcePath(organizationId, resourceId), body, 200, resourceDetailSchema)
+}
+
+/** Idempotent; the Resource leaves lists and pickers but keeps its history. */
+export function archiveResource(organizationId: string, resourceId: string): Promise<ResourceDetail> {
+  return sendJson('post', `${resourcePath(organizationId, resourceId)}/archive`, undefined, 200, resourceDetailSchema)
+}
+
+/** A new Cost history entry effective now; it becomes the current cost. */
+export function recordResourceCost(organizationId: string, resourceId: string, body: CostEntryBody): Promise<ResourceDetail> {
+  return sendJson('post', `${resourcePath(organizationId, resourceId)}/costs`, body, 201, resourceDetailSchema)
 }
 
 export type PricesErrorKind = 'invalid' | 'session' | 'forbidden' | 'notFound' | 'generic'

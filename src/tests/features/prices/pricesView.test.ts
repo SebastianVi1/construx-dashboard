@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { costAuthor, nextSort, pageRange, priceTabs, resourceQueryFor, type PriceFilters } from '../../../features/prices/pricesView'
+import { costAuthor, nextSort, pageRange, priceTabs, resourceActions, resourceQueryFor, type PriceFilters } from '../../../features/prices/pricesView'
 
 const filters: PriceFilters = { query: '', familyId: '', unitId: '', supplierId: '', includeArchived: false, discontinued: '' }
 
@@ -82,5 +82,24 @@ describe('costAuthor', () => {
     expect(costAuthor({ recordedBy: { membershipId: 'm-1', fullName: 'Ana López' }, importId: null }, labels)).toBe('Ana López')
     expect(costAuthor({ recordedBy: null, importId: 'i-1' }, labels)).toBe('Import')
     expect(costAuthor({ recordedBy: null, importId: null }, labels)).toBe('—')
+  })
+})
+
+describe('resourceActions', () => {
+  const simple = { type: 'MATERIAL' as const, isComposite: false, archivedAt: null }
+
+  it('offers edit, record cost and archive on an active simple material or equipment', () => {
+    expect(resourceActions(simple)).toEqual({ edit: true, recordCost: true, archive: true })
+    expect(resourceActions({ ...simple, type: 'EQUIPMENT' })).toEqual({ edit: true, recordCost: true, archive: true })
+  })
+
+  it('never records a cost by hand on a composite or a labor category', () => {
+    expect(resourceActions({ ...simple, isComposite: true }).recordCost).toBe(false)
+    expect(resourceActions({ ...simple, type: 'LABOR' }).recordCost).toBe(false)
+    expect(resourceActions({ ...simple, type: 'WORK_ITEM', isComposite: true }).recordCost).toBe(false)
+  })
+
+  it('keeps only editing on an archived resource', () => {
+    expect(resourceActions({ ...simple, archivedAt: '2026-11-15T18:02:11Z' })).toEqual({ edit: true, recordCost: false, archive: false })
   })
 })

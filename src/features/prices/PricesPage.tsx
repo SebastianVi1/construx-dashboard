@@ -7,6 +7,7 @@ import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { ResourceBadges } from './ResourceBadges'
 import { ResourceDrawer } from './ResourceDrawer'
+import { ResourceFormDialog } from './ResourceFormDialog'
 import {
   listFamilies,
   listResources,
@@ -67,7 +68,9 @@ export function PricesPage() {
           </button>
         ))}
       </div>
-      {active?.type ? <ResourceCatalog key={active.key} tab={active.key} type={active.type} t={t} /> : null}
+      {active?.type ? (
+        <ResourceCatalog key={active.key} tab={active.key} type={active.type} canManage={can('MANAGE_PRICES')} t={t} />
+      ) : null}
     </div>
   )
 }
@@ -84,7 +87,9 @@ function PricesHeader({ t }: { t: PricesMessages }) {
   )
 }
 
-function ResourceCatalog({ tab, type, t }: { tab: PriceTabKey; type: ResourceType; t: PricesMessages }) {
+type ResourceCatalogProps = { tab: PriceTabKey; type: ResourceType; canManage: boolean; t: PricesMessages }
+
+function ResourceCatalog({ tab, type, canManage, t }: ResourceCatalogProps) {
   const { locale } = useLocale()
   const { money } = useCurrency()
   const organization = useCurrentOrganization()
@@ -93,6 +98,8 @@ function ResourceCatalog({ tab, type, t }: { tab: PriceTabKey; type: ResourceTyp
   const [sort, setSort] = useState<ResourceSort | undefined>(undefined)
   const [page, setPage] = useState(0)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const creatable = type === 'MATERIAL' || type === 'EQUIPMENT' ? type : null
 
   // The search box applies after the person pauses typing, so each keystroke is not a request.
   useEffect(() => {
@@ -192,6 +199,11 @@ function ResourceCatalog({ tab, type, t }: { tab: PriceTabKey; type: ResourceTyp
             {t.filters.clear}
           </button>
         ) : null}
+        {canManage && creatable ? (
+          <button type="button" className="button button--primary button--small prices-filters__create" onClick={() => setCreating(true)}>
+            {creatable === 'MATERIAL' ? t.write.newMaterial : t.write.newEquipment}
+          </button>
+        ) : null}
       </div>
 
       {resources.status === 'error' && !data ? (
@@ -239,7 +251,27 @@ function ResourceCatalog({ tab, type, t }: { tab: PriceTabKey; type: ResourceTyp
         </>
       )}
 
-      {openId ? <ResourceDrawer organizationId={organization.id} resourceId={openId} onClose={() => setOpenId(null)} /> : null}
+      {openId ? (
+        <ResourceDrawer
+          organizationId={organization.id}
+          resourceId={openId}
+          canManage={canManage}
+          onChanged={resources.reload}
+          onClose={() => setOpenId(null)}
+        />
+      ) : null}
+      {creating && creatable ? (
+        <ResourceFormDialog
+          organizationId={organization.id}
+          type={creatable}
+          onSaved={(created) => {
+            setCreating(false)
+            resources.reload()
+            setOpenId(created.id)
+          }}
+          onClose={() => setCreating(false)}
+        />
+      ) : null}
     </section>
   )
 }

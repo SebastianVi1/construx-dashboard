@@ -1,4 +1,4 @@
-import { PAGE_SIZE, type Cost, type Page, type ResourceQuery, type ResourceSort, type ResourceSortField, type ResourceType } from './pricesApi'
+import { PAGE_SIZE, type Cost, type Page, type Resource, type ResourceQuery, type ResourceSort, type ResourceSortField, type ResourceType } from './pricesApi'
 
 export type PriceTabKey = 'materials' | 'labor' | 'equipment' | 'workItems' | 'suppliers' | 'import'
 
@@ -65,6 +65,18 @@ export function resourceQueryFor(type: ResourceType, filters: PriceFilters, sort
     page,
     size: PAGE_SIZE,
   }
+}
+
+export type ResourceActions = { edit: boolean; recordCost: boolean; archive: boolean }
+
+/**
+ * What someone with MANAGE_PRICES can do from the detail: every Resource can be edited; only an active simple
+ * Material or Equipment rate takes a hand-recorded cost (composites are derived, labor comes from its wage).
+ */
+export function resourceActions(resource: Pick<Resource, 'type' | 'isComposite' | 'archivedAt'>): ResourceActions {
+  const active = resource.archivedAt === null
+  const handCosted = !resource.isComposite && (resource.type === 'MATERIAL' || resource.type === 'EQUIPMENT')
+  return { edit: true, recordCost: active && handCosted, archive: active }
 }
 
 /** Who recorded a cost: the person, the import that wrote it, or nobody known (converted old prices). */
