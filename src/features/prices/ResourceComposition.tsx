@@ -3,7 +3,8 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { formatMessage, useLocale, type Messages } from '../../i18n'
-import { listStandbyPercentages, type Analysis, type EquipmentDetail, type EquipmentLine, type LaborDetail, type ResourceDetail } from './pricesApi'
+import { laborFsrBadge } from './fasarForm'
+import { getCatalog, listStandbyPercentages, type Analysis, type FasarStatus, type EquipmentDetail, type EquipmentLine, type LaborDetail, type ResourceDetail } from './pricesApi'
 import { analysisLineLabel, fractionToPercent } from './pricesView'
 
 type CompositionMessages = Messages['prices']['composition']
@@ -16,7 +17,7 @@ export function ResourceComposition({ organizationId, detail, onOpen }: { organi
   return (
     <>
       {detail.analysis ? <AnalysisSection analysis={detail.analysis} onOpen={onOpen} /> : null}
-      {detail.type === 'LABOR' && !detail.isComposite ? <LaborSection labor={detail.laborDetail} /> : null}
+      {detail.type === 'LABOR' && !detail.isComposite ? <LaborSection organizationId={organizationId} labor={detail.laborDetail} /> : null}
       {detail.equipmentDetail ? (
         <EquipmentSection organizationId={organizationId} equipment={detail.equipmentDetail} onOpen={onOpen} />
       ) : null}
@@ -116,10 +117,11 @@ function AnalysisSection({ analysis, onOpen }: { analysis: Analysis; onOpen: Nav
   )
 }
 
-function LaborSection({ labor }: { labor: LaborDetail | null }) {
+function LaborSection({ organizationId, labor }: { organizationId: string; labor: LaborDetail | null }) {
   const { messages: m } = useLocale()
   const { money } = useCurrency()
   const c = m.prices.composition
+  const catalog = useRemoteData(labor ? `${organizationId}:catalog` : null, () => getCatalog(organizationId), { remember: false })
   const none = <span className="cell-muted">{m.prices.detail.none}</span>
   if (!labor) {
     return (
@@ -147,10 +149,28 @@ function LaborSection({ labor }: { labor: LaborDetail | null }) {
   return (
     <section aria-label={c.laborTitle}>
       <h3>{c.laborTitle}</h3>
+      <FasarBadge labor={labor} status={catalog.data?.fasar?.status ?? null} c={c} />
       <FieldList rows={rows} />
       <p className="cell-muted">{c.realWageNote}</p>
-      {labor.fsrMismatch ? <Notice>{c.fsrMismatch}</Notice> : null}
+      {labor.fsrMismatch ? <Notice>{labor.fsrSource === 'COMPUTED' ? c.fsrComputedMismatch : c.fsrMismatch}</Notice> : null}
     </section>
+  )
+}
+
+/** "FSR importado, no recalculable" without complete FASAR parameters; a mismatch marker on a computed FSR. */
+function FasarBadge({ labor, status, c }: { labor: LaborDetail; status: FasarStatus | null; c: CompositionMessages }) {
+  const badge = laborFsrBadge(labor, status)
+  if (badge === null) return null
+  return (
+    <p className="prices-badges">
+      {badge === 'notRecomputable' ? (
+        <span className="badge" data-tone="warning" title={c.fsrNotRecomputableHint}>
+          {c.fsrNotRecomputable}
+        </span>
+      ) : (
+        <span className="badge" data-tone="danger">{c.fsrComputedMismatch}</span>
+      )}
+    </p>
   )
 }
 

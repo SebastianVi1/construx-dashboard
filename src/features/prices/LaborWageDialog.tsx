@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Form, useForm } from '../../components/form'
 import { Modal } from '../../components/modal'
-import { Notice } from '../../components/page'
+import { Notice, SkeletonForm } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { formatMessage, useLocale, type Messages } from '../../i18n'
-import { updateResource, type ResourceDetail } from './pricesApi'
+import { useRemoteData } from '../../components/data/useRemoteData'
+import { fsrIsComputed } from './fasarForm'
+import { getCatalog, updateResource, type ResourceDetail } from './pricesApi'
 import {
   benefitFields,
   emptyLaborValues,
@@ -43,6 +45,35 @@ type LaborWageDialogProps = {
 export function LaborWageDialog({ organizationId, resource, onSaved, onClose }: LaborWageDialogProps) {
   const { messages: m } = useLocale()
   const w = m.prices.write
+  // With complete FASAR parameters the FSR follows the wage and is not typed.
+  const catalog = useRemoteData(`${organizationId}:catalog`, () => getCatalog(organizationId), { remember: false })
+  const ready = catalog.data !== undefined || catalog.status === 'error'
+  return (
+    <Modal title={formatMessage(w.wageTitle, { code: resource.code })} description={w.wageDescription} onClose={onClose}>
+      {ready ? (
+        <LaborWageForm
+          organizationId={organizationId}
+          resource={resource}
+          fsrComputed={fsrIsComputed(catalog.data?.fasar?.status)}
+          onSaved={onSaved}
+        />
+      ) : (
+        <SkeletonForm fields={6} />
+      )}
+      <div className="button-row button-row--end modal-actions">
+        <button type="button" className="button" onClick={onClose}>
+          {w.cancel}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+type LaborWageFormProps = Omit<LaborWageDialogProps, 'onClose'> & { fsrComputed: boolean }
+
+function LaborWageForm({ organizationId, resource, fsrComputed, onSaved }: LaborWageFormProps) {
+  const { messages: m } = useLocale()
+  const w = m.prices.write
   const money = useCurrency()
   const [errorKind, setErrorKind] = useState<ResourceWriteErrorKind>('generic')
   const [unchanged, setUnchanged] = useState(false)
@@ -66,7 +97,7 @@ export function LaborWageDialog({ organizationId, resource, onSaved, onClose }: 
 
   const form = useForm({
     initialValues: shown,
-    schema: makeLaborSchema(w.validation, money),
+    schema: makeLaborSchema(w.validation, money, { fsrComputed }),
     onSubmit: async (values) => {
       try {
         const patch = laborPatchBody(resource, values, money, shown)
@@ -87,7 +118,7 @@ export function LaborWageDialog({ organizationId, resource, onSaved, onClose }: 
   })
 
   return (
-    <Modal title={formatMessage(w.wageTitle, { code: resource.code })} description={w.wageDescription} onClose={onClose}>
+    <>
       <Form
         controller={{
           ...form,
@@ -96,11 +127,11 @@ export function LaborWageDialog({ organizationId, resource, onSaved, onClose }: 
             form.onChange(name, value)
           },
         }}
-        fields={laborFields(w, money.currency)}
+        fields={laborFields(w, money.currency, { fsrComputed })}
         submitLabel={w.save}
         pendingLabel={w.saving}
       >
-        <RealWagePreview values={{ ...emptyLaborValues, ...form.values }} w={w} />
+        {fsrComputed ? <p className="cell-muted">{w.field.fsrComputed}</p> : <RealWagePreview values={{ ...emptyLaborValues, ...form.values }} w={w} />}
         {form.submitError ? (
           <p className="form-error" role="alert">
             {w.error[errorKind]}
@@ -109,11 +140,6 @@ export function LaborWageDialog({ organizationId, resource, onSaved, onClose }: 
           <Notice>{w.noChanges}</Notice>
         ) : null}
       </Form>
-      <div className="button-row button-row--end modal-actions">
-        <button type="button" className="button" onClick={onClose}>
-          {w.cancel}
-        </button>
-      </div>
-    </Modal>
+    </>
   )
 }
