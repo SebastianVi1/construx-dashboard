@@ -43,3 +43,25 @@ export function makeEquipmentSchema(messages: EquipmentValidationMessages, money
 export function dailyCostCents(raw: string, money: MoneyConversion = PESOS): number | null {
   return raw.trim() ? Math.round(money.toMxn(Number(raw.trim())) * 100) : null
 }
+
+/** Hours of the working day an hourly Equipment rate is charged for (docs/pricing.md §6.6). */
+const HOURS_PER_DAY = 8n
+
+/** `round(hourlyCost × 8 × 100)` computed exactly from the two-decimal string; null while the rate has no cost. */
+export function dailyCostCentsFromRate(hourlyCost: string | null | undefined): number | null {
+  const value = hourlyCost?.trim()
+  if (!value || !/^\d+(\.\d{1,2})?$/.test(value)) return null
+  const [whole, fraction = ''] = value.split('.')
+  return Number(BigInt(whole + fraction.padEnd(2, '0')) * HOURS_PER_DAY)
+}
+
+/** The daily cost field after picking a rate: a typed value wins, an empty one takes eight hours of the rate. */
+export function prefilledDailyCost(
+  current: string,
+  hourlyCost: string | null | undefined,
+  money: MoneyConversion = PESOS,
+): string {
+  if (current.trim()) return current
+  const cents = dailyCostCentsFromRate(hourlyCost)
+  return cents === null ? current.trim() : money.fromMxn(cents / 100).toFixed(2)
+}

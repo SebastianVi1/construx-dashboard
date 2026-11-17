@@ -68,6 +68,23 @@ describe('finance API', () => {
     expect(await listExpenses('org-1', 'p-1').catch((error: unknown) => error)).toBeInstanceOf(ApiError)
   })
 
+  it('createExpense: sends a catalog expense and reads back its resource, quantity and frozen unit cost', async () => {
+    const recorded = {
+      ...expense,
+      amount: 3068.75,
+      resource: { id: 'r-1', code: 'MAN-CEM-001', name: 'Cemento', type: 'MATERIAL', unitCode: 'SACO' },
+      quantity: '12.5',
+      unitCost: '245.50',
+    }
+    const { send } = stubApi({ send: () => ({ status: 201, data: recorded }) })
+    const draft = { resourceId: 'r-1', quantity: '12.5', spentOn: '2026-10-01' }
+    expect(await createExpense('org-1', 'p-1', draft)).toEqual(recorded as never)
+    expect(send.mock.calls[0] as unknown).toEqual([`${site}/expenses`, draft, expect.anything()])
+
+    stubApi({ get: () => ({ status: 200, data: [{ ...expense, resource: null, quantity: null, unitCost: null }] }) })
+    expect((await listExpenses('org-1', 'p-1'))[0].resource).toBeNull()
+  })
+
   it('createExpense, updateExpense and deleteExpense hit the expense paths', async () => {
     const { send } = stubApi({ send: () => ({ status: 201, data: expense }) })
     const draft = { amount: 1200.5, spentOn: '2026-10-01', description: 'Cement', category: 'MATERIALS' as const }

@@ -5,19 +5,34 @@ import { Notice } from '../../components/page'
 import { useCurrency, type Currency } from '../../currency'
 import { formatMessage, useLocale, type Messages } from '../../i18n'
 import { localToday } from '../../lib/localDate'
-import { siteErrorKind, type SiteErrorKind } from '../sites/sitesApi'
+import { ResourcePicker } from '../prices/ResourcePicker'
+import type { Resource } from '../prices/pricesApi'
+import {
+  buildCatalogExpenseDraft,
+  buildCatalogExpensePatch,
+  catalogAmount,
+  catalogExpenseToValues,
+  expensableTypes,
+  expenseErrorKind,
+  isFromCatalog,
+  makeCatalogExpenseSchema,
+  type ExpenseErrorKind,
+} from './catalogExpense'
 import { buildExpenseDraft, buildExpensePatch, expenseToValues, makeExpenseSchema } from './expenseForm'
-import { createExpense, expenseCategories, updateExpense, type Expense, type ExpenseDraft } from './financeApi'
+import { createExpense, expenseCategories, updateExpense, type Expense, type NewExpense } from './financeApi'
+import '../prices/resource-picker.css'
 
 type ExpenseDialogProps = {
   organizationId: string
   siteId: string
   /** Edit this expense; without it the dialog adds a new one. */
   expense?: Expense
-  create?: (draft: ExpenseDraft) => Promise<Expense>
+  create?: (draft: NewExpense) => Promise<Expense>
   onSaved: () => void
   onClose: () => void
 }
+
+type Mode = 'typed' | 'catalog'
 
 function expenseFields(t: Messages['finance'], currency: Currency): FieldConfig[] {
   return [
@@ -42,12 +57,67 @@ function expenseFields(t: Messages['finance'], currency: Currency): FieldConfig[
   ]
 }
 
-/** Add or edit an expense; on edit only changed fields are sent. */
-export function ExpenseDialog({ organizationId, siteId, expense, create, onSaved, onClose }: ExpenseDialogProps) {
+/**
+ * Add or edit an expense; on edit only changed fields are sent. A new expense is typed or picked from the Catalog;
+ * an expense from the Catalog only changes its date and concept (docs/pricing.md §6.5).
+ */
+export function ExpenseDialog(props: ExpenseDialogProps) {
+  const { messages: m } = useLocale()
+  const t = m.finance
+  const [mode, setMode] = useState<Mode>('typed')
+  const catalog = props.expense ? isFromCatalog(props.expense) : mode === 'catalog'
+
+  return (
+    <Modal title={props.expense ? t.dialog.editTitle : t.dialog.createTitle} description={t.dialog.description} onClose={props.onClose}>
+      {props.expense ? null : (
+        <div className="expense-mode" role="group" aria-label={t.catalog.mode}>
+          {(['typed', 'catalog'] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              className="expense-mode__option"
+              aria-pressed={mode === option}
+              onClick={() => setMode(option)}
+            >
+              {option === 'typed' ? t.catalog.typed : t.catalog.fromCatalog}
+            </button>
+          ))}
+        </div>
+      )}
+      {catalog ? <CatalogExpenseForm key="catalog" {...props} /> : <TypedExpenseForm key="typed" {...props} />}
+    </Modal>
+  )
+}
+
+function SubmitFeedback({ failed, errorKind, unchanged }: { failed: boolean; errorKind: ExpenseErrorKind; unchanged: boolean }) {
+  const { messages: m } = useLocale()
+  const t = m.finance
+  if (failed) {
+    return (
+      <p className="form-error" role="alert">
+        {t.error[errorKind]}
+      </p>
+    )
+  }
+  return unchanged ? <Notice>{t.dialog.noChanges}</Notice> : null
+}
+
+function CancelRow({ onClose, disabled }: { onClose: () => void; disabled: boolean }) {
+  const { messages: m } = useLocale()
+  return (
+    <div className="button-row button-row--end modal-actions">
+      <button type="button" className="button" onClick={onClose} disabled={disabled}>
+        {m.finance.dialog.cancel}
+      </button>
+    </div>
+  )
+}
+
+function TypedExpenseForm({ organizationId, siteId, expense, create, onSaved, onClose }: ExpenseDialogProps) {
   const { messages: m } = useLocale()
   const t = m.finance
   const money = useCurrency()
-  const [errorKind, setErrorKind] = useState<SiteErrorKind>('generic')
+  const [errorKind, setErrorKind] = useState<ExpenseErrorKind>('generic')
   const [unchanged, setUnchanged] = useState(false)
 
   const form = useForm({
@@ -70,7 +140,7 @@ export function ExpenseDialog({ organizationId, siteId, expense, create, onSaved
         }
         onSaved()
       } catch (error) {
-        setErrorKind(siteErrorKind(error))
+        setErrorKind(expenseErrorKind(error))
         throw error
       }
     },
@@ -81,7 +151,7 @@ export function ExpenseDialog({ organizationId, siteId, expense, create, onSaved
   })
 
   return (
-    <Modal title={expense ? t.dialog.editTitle : t.dialog.createTitle} description={t.dialog.description} onClose={onClose}>
+    <>
       <Form
         controller={{
           ...form,
@@ -94,19 +164,128 @@ export function ExpenseDialog({ organizationId, siteId, expense, create, onSaved
         submitLabel={t.dialog.save}
         pendingLabel={t.dialog.saving}
       >
-        {form.submitError ? (
-          <p className="form-error" role="alert">
-            {t.error[errorKind]}
-          </p>
-        ) : unchanged ? (
-          <Notice>{t.dialog.noChanges}</Notice>
-        ) : null}
+        <SubmitFeedback failed={form.submitError} errorKind={errorKind} unchanged={unchanged} />
       </Form>
-      <div className="button-row button-row--end modal-actions">
-        <button type="button" className="button" onClick={onClose} disabled={form.isSubmitting}>
-          {t.dialog.cancel}
-        </button>
-      </div>
-    </Modal>
+      <CancelRow onClose={onClose} disabled={form.isSubmitting} />
+    </>
+  )
+}
+
+function CatalogExpenseForm({ organizationId, siteId, expense, create, onSaved, onClose }: ExpenseDialogProps) {
+  const { messages: m } = useLocale()
+  const t = m.finance
+  const { money } = useCurrency()
+  const [resource, setResource] = useState<Resource | null>(null)
+  const [errorKind, setErrorKind] = useState<ExpenseErrorKind>('generic')
+  const [unchanged, setUnchanged] = useState(false)
+
+  const form = useForm({
+    initialValues: expense
+      ? catalogExpenseToValues(expense)
+      : { resourceId: '', quantity: '', spentOn: localToday(), description: '' },
+    schema: makeCatalogExpenseSchema(t.validation),
+    onSubmit: async (values) => {
+      try {
+        if (expense) {
+          const patch = buildCatalogExpensePatch(expense, values)
+          if (Object.keys(patch).length === 0) {
+            setUnchanged(true)
+            return
+          }
+          await updateExpense(organizationId, siteId, expense.id, patch)
+        } else {
+          const draft = buildCatalogExpenseDraft(values)
+          await (create ? create(draft) : createExpense(organizationId, siteId, draft))
+        }
+        onSaved()
+      } catch (error) {
+        setErrorKind(expenseErrorKind(error))
+        throw error
+      }
+    },
+    onInvalid: (errors) => {
+      const first = ['quantity', 'spentOn', 'description'].find((name) => errors[name])
+      if (first) document.getElementById(`field-${first}`)?.focus()
+    },
+  })
+
+  function change(name: string, value: string) {
+    setUnchanged(false)
+    form.onChange(name, value)
+  }
+
+  const unit = expense?.resource?.unitCode ?? resource?.unit.code ?? ''
+  const unitCost = expense ? expense.unitCost : resource?.currentCost
+  const amount = expense ? null : catalogAmount(form.values.quantity, unitCost)
+  const fields: FieldConfig[] = [
+    ...(expense
+      ? []
+      : [
+          {
+            name: 'quantity',
+            label: formatMessage(t.catalog.quantity, { unit }),
+            type: 'number' as const,
+            decimals: 6,
+            maxDigits: 12,
+            placeholder: t.catalog.quantityPlaceholder,
+          },
+        ]),
+    { name: 'spentOn', label: t.field.spentOn, type: 'date' },
+    {
+      name: 'description',
+      label: t.field.description,
+      placeholder: resource?.name ?? t.field.descriptionPlaceholder,
+      hint: expense ? undefined : t.catalog.descriptionHint,
+      autoComplete: 'off',
+      maxLength: TEXT_LIMITS.expenseDescription,
+    },
+  ]
+
+  return (
+    <>
+      {expense ? (
+        <Notice>
+          {formatMessage(t.catalog.locked, {
+            quantity: expense.quantity ?? '',
+            unit,
+            unitCost: money(Number(expense.unitCost ?? 0)),
+          })}
+        </Notice>
+      ) : (
+        <ResourcePicker
+          organizationId={organizationId}
+          types={expensableTypes}
+          typeLabels={{ MATERIAL: t.category.MATERIALS, EQUIPMENT: t.category.EQUIPMENT, LABOR: t.category.LABOR }}
+          value={resource}
+          label={t.catalog.resource}
+          error={form.errors.resourceId}
+          onChange={(picked) => {
+            setResource(picked)
+            change('resourceId', picked?.id ?? '')
+          }}
+        />
+      )}
+      <Form
+        controller={{ ...form, onChange: change }}
+        fields={fields}
+        submitLabel={t.dialog.save}
+        pendingLabel={t.dialog.saving}
+      >
+        {expense ? null : (
+          <p className="form-field__hint" aria-live="polite">
+            {t.catalog.amount}:{' '}
+            {amount === null || unitCost == null
+              ? t.catalog.amountPending
+              : formatMessage(t.catalog.amountPreview, {
+                  quantity: form.values.quantity.trim(),
+                  unitCost: money(Number(unitCost)),
+                  amount: money(amount),
+                })}
+          </p>
+        )}
+        <SubmitFeedback failed={form.submitError} errorKind={errorKind} unchanged={unchanged} />
+      </Form>
+      <CancelRow onClose={onClose} disabled={form.isSubmitting} />
+    </>
   )
 }
