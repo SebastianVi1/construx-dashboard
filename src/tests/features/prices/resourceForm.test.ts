@@ -3,13 +3,20 @@ import { ApiError } from '../../../lib/http'
 import type { ResourceDetail } from '../../../features/prices/pricesApi'
 import {
   costBody,
+  createLaborBody,
   createResourceBody,
+  emptyLaborValues,
   emptyResourceValues,
+  laborPatchBody,
+  laborValuesFrom,
   makeCostSchema,
+  makeLaborSchema,
   makeResourceSchema,
+  realWagePreview,
   resourcePatchBody,
   resourceValuesFrom,
   resourceWriteErrorKind,
+  type LaborValues,
   type ResourceValues,
 } from '../../../features/prices/resourceForm'
 
@@ -72,7 +79,46 @@ const detail: ResourceDetail = {
   createdAt: '2026-11-15T18:02:11Z',
   updatedAt: '2026-11-15T18:02:11Z',
   history: [],
+  laborDetail: null,
+  equipmentDetail: null,
+  analysis: null,
   usedIn: { count: 0, sample: [] },
+}
+
+const laborMessages = {
+  wageRequired: 'wage required',
+  wageInvalid: 'wage invalid',
+  wageDecimals: 'wage decimals',
+  wageMax: 'wage max',
+  fsrRequired: 'fsr required',
+  fsrRange: 'fsr range',
+  fsrDecimals: 'fsr decimals',
+}
+
+const wage: LaborValues = { ...emptyLaborValues, nominalWage: '350', fsr: '1.7', perDiem: '10.5' }
+
+const peon: ResourceDetail = {
+  ...detail,
+  id: 'r-2',
+  code: 'MO-PEON',
+  type: 'LABOR',
+  brand: null,
+  currentCost: '500.00',
+  laborDetail: {
+    nominalWage: '333.33',
+    fsr: '1.5',
+    fsrSource: 'IMPORTED',
+    fsbc: null,
+    sbc: null,
+    perDiem: '0.00',
+    mealsLodging: '0.00',
+    funeralExpenses: '0.00',
+    otherBenefits: '0.00',
+    fasarType: null,
+    imported: { fsr: '1.5', realWage: '500.00', fsbc: null, sbc: null },
+    fsrMismatch: false,
+    realWage: '500.00',
+  },
 }
 
 describe('makeResourceSchema', () => {
@@ -198,6 +244,69 @@ describe('cost entry', () => {
   })
 })
 
+describe('labor wage', () => {
+  it('requires a nominal wage and an FSR from 1 to 3 with up to eight decimals; benefits may be empty', () => {
+    const schema = makeLaborSchema(laborMessages)
+    expect(schema.safeParse(wage).success).toBe(true)
+    expect(schema.safeParse({ ...wage, fsr: '3' }).success).toBe(true)
+    expect(errors(schema.safeParse({ ...emptyLaborValues }))).toEqual({ nominalWage: 'wage required', fsr: 'fsr required' })
+    expect(errors(schema.safeParse({ ...wage, fsr: '3.01' }))).toEqual({ fsr: 'fsr range' })
+    expect(errors(schema.safeParse({ ...wage, fsr: '0.99' }))).toEqual({ fsr: 'fsr range' })
+    expect(errors(schema.safeParse({ ...wage, fsr: '1.123456789' }))).toEqual({ fsr: 'fsr decimals' })
+    expect(errors(schema.safeParse({ ...wage, nominalWage: '350.001', perDiem: '-1' }))).toEqual({
+      nominalWage: 'wage decimals',
+      perDiem: 'wage invalid',
+    })
+  })
+
+  it('previews the real wage as round(wage x FSR) plus the daily benefits, null until both are typed', () => {
+    expect(realWagePreview(wage)).toBe('605.50')
+    expect(realWagePreview({ ...emptyLaborValues, nominalWage: '333.33', fsr: '1.5' })).toBe('500.00')
+    expect(realWagePreview({ ...emptyLaborValues, nominalWage: '100.01', fsr: '1.25' })).toBe('125.01')
+    expect(realWagePreview({ ...emptyLaborValues, nominalWage: '350' })).toBeNull()
+    expect(realWagePreview({ ...wage, fsr: 'x' })).toBeNull()
+  })
+
+  it('creates a labor category with its wage in pesos and no cost', () => {
+    expect(createLaborBody({ ...valid, cost: '', brand: 'ignored' }, wage)).toEqual({
+      type: 'LABOR',
+      code: 'MAN-CEM-001',
+      name: 'Cemento gris',
+      description: null,
+      unitId: 'u-1',
+      familyId: null,
+      supplierId: null,
+      laborDetail: {
+        nominalWage: '350.00',
+        fsr: '1.7',
+        perDiem: '10.50',
+        mealsLodging: '0.00',
+        funeralExpenses: '0.00',
+        otherBenefits: '0.00',
+      },
+    })
+    expect(createLaborBody(valid, { ...wage, nominalWage: '20' }, dollars).laborDetail.nominalWage).toBe('400.00')
+  })
+
+  it('edits only the wage fields that changed', () => {
+    expect(laborValuesFrom(peon)).toEqual({
+      nominalWage: '333.33',
+      fsr: '1.5',
+      perDiem: '0.00',
+      mealsLodging: '0.00',
+      funeralExpenses: '0.00',
+      otherBenefits: '0.00',
+    })
+    expect(laborPatchBody(peon, laborValuesFrom(peon))).toEqual({})
+    expect(laborPatchBody(peon, { ...laborValuesFrom(peon), nominalWage: '400', perDiem: '0' })).toEqual({
+      laborDetail: { nominalWage: '400.00' },
+    })
+    expect(laborPatchBody(peon, { ...laborValuesFrom(peon), fsr: '1.60', otherBenefits: '5' })).toEqual({
+      laborDetail: { fsr: '1.6', otherBenefits: '5.00' },
+    })
+  })
+})
+
 describe('resourceWriteErrorKind', () => {
   it('maps the conflict codes and statuses of a write', () => {
     expect(resourceWriteErrorKind(new ApiError(409, undefined, 'DUPLICATE_CODE'))).toBe('duplicateCode')
@@ -205,6 +314,8 @@ describe('resourceWriteErrorKind', () => {
     expect(resourceWriteErrorKind(new ApiError(409, undefined, 'ARCHIVED_FAMILY'))).toBe('archivedFamily')
     expect(resourceWriteErrorKind(new ApiError(409, undefined, 'ARCHIVED_SUPPLIER'))).toBe('archivedSupplier')
     expect(resourceWriteErrorKind(new ApiError(409, undefined, 'ARCHIVED_RESOURCE'))).toBe('archivedResource')
+    expect(resourceWriteErrorKind(new ApiError(409, undefined, 'DERIVED_COST'))).toBe('derivedCost')
+    expect(resourceWriteErrorKind(new ApiError(409, undefined, 'LABOR_COST_FROM_WAGE'))).toBe('laborCostFromWage')
     expect(resourceWriteErrorKind(new ApiError(409, undefined, 'DATA_CONFLICT'))).toBe('generic')
     expect(resourceWriteErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalid')
     expect(resourceWriteErrorKind(new ApiError(403))).toBe('forbidden')

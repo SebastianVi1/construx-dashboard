@@ -99,7 +99,7 @@ function ResourceCatalog({ tab, type, canManage, t }: ResourceCatalogProps) {
   const [page, setPage] = useState(0)
   const [openId, setOpenId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
-  const creatable = type === 'MATERIAL' || type === 'EQUIPMENT' ? type : null
+  const creatable = type === 'MATERIAL' || type === 'EQUIPMENT' || type === 'LABOR' ? type : null
 
   // The search box applies after the person pauses typing, so each keystroke is not a request.
   useEffect(() => {
@@ -190,6 +190,20 @@ function ResourceCatalog({ tab, type, canManage, t }: ResourceCatalogProps) {
             <option value="no">{t.filters.discontinuedNo}</option>
           </select>
         </label>
+        {type === 'LABOR' ? (
+          <label className="prices-filters__field">
+            <span>{t.filters.composite}</span>
+            <select
+              className="prices-input"
+              value={filters.composite}
+              onChange={(event) => change({ composite: event.target.value as PriceFilters['composite'] })}
+            >
+              <option value="">{t.filters.any}</option>
+              <option value="no">{t.filters.compositeNo}</option>
+              <option value="yes">{t.filters.compositeYes}</option>
+            </select>
+          </label>
+        ) : null}
         <label className="prices-filters__check">
           <input type="checkbox" checked={filters.includeArchived} onChange={(event) => change({ includeArchived: event.target.checked })} />
           <span>{t.filters.archived}</span>
@@ -201,7 +215,7 @@ function ResourceCatalog({ tab, type, canManage, t }: ResourceCatalogProps) {
         ) : null}
         {canManage && creatable ? (
           <button type="button" className="button button--primary button--small prices-filters__create" onClick={() => setCreating(true)}>
-            {creatable === 'MATERIAL' ? t.write.newMaterial : t.write.newEquipment}
+            {creatable === 'MATERIAL' ? t.write.newMaterial : creatable === 'LABOR' ? t.write.newLabor : t.write.newEquipment}
           </button>
         ) : null}
       </div>

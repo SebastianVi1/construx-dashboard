@@ -17,10 +17,15 @@ import {
   type Supplier,
   type Unit,
 } from './pricesApi'
+import { RealWagePreview } from './LaborWageDialog'
 import {
   RESOURCE_LIMITS,
+  createLaborBody,
   createResourceBody,
+  emptyLaborValues,
   emptyResourceValues,
+  laborFields,
+  makeLaborSchema,
   makeResourceSchema,
   resourcePatchBody,
   resourceValuesFrom,
@@ -32,14 +37,14 @@ type WriteMessages = Messages['prices']['write']
 
 type ResourceFormDialogProps = {
   organizationId: string
-  /** Create a new simple Material or Equipment rate, or edit `resource` (any type). */
+  /** Create a new simple Material, Equipment rate or Labor category, or edit `resource` (any type). */
   type: CreatableType
   resource?: ResourceDetail
   onSaved: (detail: ResourceDetail) => void
   onClose: () => void
 }
 
-type CreatableType = 'MATERIAL' | 'EQUIPMENT'
+export type CreatableType = 'MATERIAL' | 'EQUIPMENT' | 'LABOR'
 
 type Pickers = { units: Unit[]; families: Family[]; suppliers: Supplier[] }
 
@@ -112,13 +117,15 @@ function resourceFields(
     fields.push({ name: 'brand', label: w.field.brand, autoComplete: 'off', maxLength: RESOURCE_LIMITS.brand })
   }
   fields.push({ name: 'description', label: w.field.description, type: 'textarea', rows: 3 })
-  if (!resource) {
+  if (!resource && type === 'LABOR') {
+    fields.push(...laborFields(w, currency))
+  } else if (!resource) {
     fields.push({ name: 'cost', label: formatMessage(w.field.cost, { currency }), type: 'money', placeholder: w.field.amountPlaceholder })
   }
   return fields
 }
 
-/** "Nuevo insumo" / "Nuevo equipo", or the edit form of an existing Resource (only changed fields are sent). */
+/** "Nuevo insumo" / "Nuevo equipo" / "Nueva categoría", or the edit form of an existing Resource (only changed fields are sent). */
 export function ResourceFormDialog({ organizationId, type, resource, onSaved, onClose }: ResourceFormDialogProps) {
   const { messages: m } = useLocale()
   const w = m.prices.write
@@ -127,7 +134,7 @@ export function ResourceFormDialog({ organizationId, type, resource, onSaved, on
   const suppliers = useRemoteData(`${organizationId}:suppliers`, () => listSuppliers(organizationId))
 
   const title = resource ? formatMessage(w.editTitle, { code: resource.code }) : w.createTitle[type]
-  const description = resource ? w.editDescription : w.createDescription
+  const description = resource ? w.editDescription : type === 'LABOR' ? w.createLaborDescription : w.createDescription
   const failed = [units, families, suppliers].find((data) => data.status === 'error')
 
   return (
@@ -181,9 +188,12 @@ function ResourceForm({ organizationId, type, resource, pickers, onSaved }: Reso
   const [errorKind, setErrorKind] = useState<ResourceWriteErrorKind>('generic')
   const [unchanged, setUnchanged] = useState(false)
 
+  // A new Labor category takes its wage instead of a cost.
+  const laborCreate = !resource && type === 'LABOR'
+  const schema = makeResourceSchema(w.validation, { withCost: !resource && !laborCreate, money })
   const form = useForm({
-    initialValues: resource ? resourceValuesFrom(resource) : emptyResourceValues,
-    schema: makeResourceSchema(w.validation, { withCost: !resource, money }),
+    initialValues: resource ? resourceValuesFrom(resource) : laborCreate ? { ...emptyResourceValues, ...emptyLaborValues } : emptyResourceValues,
+    schema: laborCreate ? schema.extend(makeLaborSchema(w.validation, money).shape) : schema,
     onSubmit: async (values) => {
       try {
         if (resource) {
@@ -193,6 +203,8 @@ function ResourceForm({ organizationId, type, resource, pickers, onSaved }: Reso
             return
           }
           onSaved(await updateResource(organizationId, resource.id, patch))
+        } else if (laborCreate) {
+          onSaved(await createResource(organizationId, createLaborBody(values, { ...emptyLaborValues, ...values }, money)))
         } else if (type === 'MATERIAL' || type === 'EQUIPMENT') {
           onSaved(await createResource(organizationId, createResourceBody(type, values, money)))
         }
@@ -202,7 +214,22 @@ function ResourceForm({ organizationId, type, resource, pickers, onSaved }: Reso
       }
     },
     onInvalid: (errors) => {
-      const first = ['code', 'name', 'unitId', 'familyId', 'supplierId', 'brand', 'description', 'cost'].find((name) => errors[name])
+      const first = [
+        'code',
+        'name',
+        'unitId',
+        'familyId',
+        'supplierId',
+        'brand',
+        'description',
+        'cost',
+        'nominalWage',
+        'fsr',
+        'perDiem',
+        'mealsLodging',
+        'funeralExpenses',
+        'otherBenefits',
+      ].find((name) => errors[name])
       if (first) document.getElementById(`field-${first}`)?.focus()
     },
   })
@@ -220,6 +247,7 @@ function ResourceForm({ organizationId, type, resource, pickers, onSaved }: Reso
       submitLabel={resource ? w.save : w.create}
       pendingLabel={resource ? w.saving : w.creating}
     >
+      {laborCreate ? <RealWagePreview values={{ ...emptyLaborValues, ...form.values }} w={w} /> : null}
       {form.submitError ? (
         <p className="form-error" role="alert">
           {w.error[errorKind]}

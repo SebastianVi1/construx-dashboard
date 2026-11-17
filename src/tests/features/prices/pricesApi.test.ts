@@ -12,6 +12,7 @@ import {
   listResourceCosts,
   listResources,
   listSuppliers,
+  listStandbyPercentages,
   listUnits,
   pricesErrorKind,
   resourceSearch,
@@ -69,6 +70,44 @@ const detail: ResourceDetail = {
       note: null,
     },
   ],
+  laborDetail: null,
+  equipmentDetail: null,
+  analysis: null,
+  usedIn: { count: 0, sample: [] },
+}
+
+const workItem: ResourceDetail = {
+  ...detail,
+  id: 'w-1',
+  code: 'BLOCK-01',
+  type: 'WORK_ITEM',
+  isComposite: true,
+  history: null,
+  analysis: {
+    derivedCost: '174.75',
+    importedCost: '170.00',
+    mismatch: true,
+    incomplete: false,
+    laborSubtotal: '162.50',
+    lines: [
+      {
+        lineNo: 1,
+        component: { id: 'r-1', code: 'CEM-01', name: 'Cemento', type: 'MATERIAL', unitCode: 'SACO', isPercentage: false, currentCost: '245.50' },
+        operator: '*',
+        quantity: '0.03',
+        expression: null,
+        amount: '7.37',
+      },
+      {
+        lineNo: 2,
+        component: { id: 'g-1', code: 'CUAD-01', name: 'Cuadrilla', type: 'LABOR', unitCode: 'JOR', isPercentage: false, currentCost: null },
+        operator: '/',
+        quantity: '8',
+        expression: null,
+        amount: '162.50',
+      },
+    ],
+  },
   usedIn: { count: 0, sample: [] },
 }
 
@@ -137,6 +176,57 @@ describe('prices API', () => {
     stubApi(() => ({ status: 200, data: { ...detail, isComposite: true, history: null } }))
 
     expect((await getResource('org-1', 'r-1')).history).toBeNull()
+  })
+
+  it('getResource: reads the analysis of a work item', async () => {
+    stubApi(() => ({ status: 200, data: workItem }))
+
+    expect(await getResource('org-1', 'w-1')).toEqual(workItem)
+  })
+
+  it('getResource: reads the wage of a labor category and the machinery of an equipment rate', async () => {
+    const laborDetail = {
+      nominalWage: '350.00',
+      fsr: '1.7',
+      fsrSource: 'MANUAL' as const,
+      fsbc: null,
+      sbc: null,
+      perDiem: '10.50',
+      mealsLodging: '0.00',
+      funeralExpenses: '0.00',
+      otherBenefits: '0.00',
+      fasarType: null,
+      imported: { fsr: null, realWage: null, fsbc: null, sbc: null },
+      fsrMismatch: false,
+      realWage: '605.50',
+    }
+    stubApi(() => ({ status: 200, data: { ...detail, type: 'LABOR', laborDetail } }))
+    expect((await getResource('org-1', 'r-1')).laborDetail).toEqual(laborDetail)
+
+    const line = { lineNo: 1, component: { id: 'r-2', code: 'MO-OFI', name: 'Oficial', type: 'LABOR', unit: { id: 'u-2', code: 'JOR' } }, operator: '*', quantity: '1' }
+    const equipmentDetail = {
+      powerUnit: 'HP',
+      power: '95.5',
+      brand: 'CAT',
+      commercialValue: '1500000.00',
+      calculationType: 1,
+      fuelType: null,
+      operationLines: [line],
+      consumptionLines: [],
+    }
+    stubApi(() => ({ status: 200, data: { ...detail, type: 'EQUIPMENT', equipmentDetail } }))
+    const equipment = (await getResource('org-1', 'r-1')).equipmentDetail
+    expect(equipment?.power).toBe('95.5')
+    expect(equipment?.economicLifeHours).toBeNull()
+    expect(equipment?.operationLines[0].component.unit.code).toBe('JOR')
+  })
+
+  it('listStandbyPercentages: reads the catalog standby shares', async () => {
+    const rows = [{ charge: 'CARGOS FIJOS', standbyPct: '0.3', reservePct: '0.1' }]
+    const get = stubApi(() => ({ status: 200, data: rows }))
+
+    expect(await listStandbyPercentages('org-1')).toEqual(rows)
+    expect(get.mock.calls[0][0]).toBe(`${base}/equipment-standby-percentages`)
   })
 
   it('listResourceCosts: pages the whole history', async () => {

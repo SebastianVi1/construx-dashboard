@@ -1,15 +1,24 @@
 import { describe, expect, it } from 'bun:test'
-import { costAuthor, nextSort, pageRange, priceTabs, resourceActions, resourceQueryFor, type PriceFilters } from '../../../features/prices/pricesView'
+import {
+  analysisLineLabel,
+  costAuthor,
+  nextSort,
+  pageRange,
+  priceTabs,
+  resourceActions,
+  resourceQueryFor,
+  type PriceFilters,
+} from '../../../features/prices/pricesView'
 
-const filters: PriceFilters = { query: '', familyId: '', unitId: '', supplierId: '', includeArchived: false, discontinued: '' }
+const filters: PriceFilters = { query: '', familyId: '', unitId: '', supplierId: '', includeArchived: false, discontinued: '', composite: '' }
 
 describe('priceTabs', () => {
-  it('lists the six tabs in order, only Materials and Equipment active', () => {
+  it('lists the six tabs in order, the four catalog tabs active', () => {
     expect(priceTabs.map((tab) => [tab.key, tab.type, tab.enabled])).toEqual([
       ['materials', 'MATERIAL', true],
-      ['labor', 'LABOR', false],
+      ['labor', 'LABOR', true],
       ['equipment', 'EQUIPMENT', true],
-      ['workItems', 'WORK_ITEM', false],
+      ['workItems', 'WORK_ITEM', true],
       ['suppliers', null, false],
       ['import', null, false],
     ])
@@ -50,10 +59,16 @@ describe('resourceQueryFor', () => {
       supplierId: undefined,
       includeArchived: false,
       discontinued: null,
+      composite: null,
       sort: undefined,
       page: 0,
       size: 50,
     })
+  })
+
+  it('narrows the labor tab to categories or gangs', () => {
+    expect(resourceQueryFor('LABOR', { ...filters, composite: 'yes' }, undefined, 0).composite).toBe(true)
+    expect(resourceQueryFor('LABOR', { ...filters, composite: 'no' }, undefined, 0).composite).toBe(false)
   })
 
   it('maps the discontinued choice and keeps the sort and page', () => {
@@ -89,8 +104,14 @@ describe('resourceActions', () => {
   const simple = { type: 'MATERIAL' as const, isComposite: false, archivedAt: null }
 
   it('offers edit, record cost and archive on an active simple material or equipment', () => {
-    expect(resourceActions(simple)).toEqual({ edit: true, recordCost: true, archive: true })
-    expect(resourceActions({ ...simple, type: 'EQUIPMENT' })).toEqual({ edit: true, recordCost: true, archive: true })
+    expect(resourceActions(simple)).toEqual({ edit: true, recordCost: true, editWage: false, archive: true })
+    expect(resourceActions({ ...simple, type: 'EQUIPMENT' })).toEqual({ edit: true, recordCost: true, editWage: false, archive: true })
+  })
+
+  it('changes the wage of an active simple labor category instead of recording a cost', () => {
+    expect(resourceActions({ ...simple, type: 'LABOR' })).toEqual({ edit: true, recordCost: false, editWage: true, archive: true })
+    expect(resourceActions({ ...simple, type: 'LABOR', isComposite: true }).editWage).toBe(false)
+    expect(resourceActions({ ...simple, type: 'LABOR', archivedAt: '2026-11-15T18:02:11Z' }).editWage).toBe(false)
   })
 
   it('never records a cost by hand on a composite or a labor category', () => {
@@ -100,6 +121,18 @@ describe('resourceActions', () => {
   })
 
   it('keeps only editing on an archived resource', () => {
-    expect(resourceActions({ ...simple, archivedAt: '2026-11-15T18:02:11Z' })).toEqual({ edit: true, recordCost: false, archive: false })
+    expect(resourceActions({ ...simple, archivedAt: '2026-11-15T18:02:11Z' })).toEqual({ edit: true, recordCost: false, editWage: false, archive: false })
+  })
+})
+
+describe('analysisLineLabel', () => {
+  it('reads a consumption as a quantity and an output as a per-unit yield', () => {
+    expect(analysisLineLabel({ operator: '*', quantity: '0.03', component: { isPercentage: false } })).toEqual({ kind: 'consumption', value: '0.03' })
+    expect(analysisLineLabel({ operator: '/', quantity: '8', component: { isPercentage: false } })).toEqual({ kind: 'output', value: '8' })
+  })
+
+  it('shows a percentage line as a share of the labor subtotal', () => {
+    expect(analysisLineLabel({ operator: '*', quantity: '0.03', component: { isPercentage: true } })).toEqual({ kind: 'percentage', value: '3' })
+    expect(analysisLineLabel({ operator: '*', quantity: '0.125', component: { isPercentage: true } })).toEqual({ kind: 'percentage', value: '12.5' })
   })
 })

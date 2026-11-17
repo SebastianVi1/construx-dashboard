@@ -5,7 +5,9 @@ import { ConfirmDialog } from '../../components/modal'
 import { Notice, SkeletonRows } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
+import { LaborWageDialog } from './LaborWageDialog'
 import { ResourceBadges } from './ResourceBadges'
+import { ResourceComposition } from './ResourceComposition'
 import { RecordCostDialog } from './RecordCostDialog'
 import { ResourceFormDialog } from './ResourceFormDialog'
 import { archiveResource, getResource, pricesErrorKind, type ResourceDetail } from './pricesApi'
@@ -25,10 +27,16 @@ type ResourceDrawerProps = {
   onClose: () => void
 }
 
-type DrawerDialog = 'edit' | 'cost' | 'archive' | null
+type DrawerDialog = 'edit' | 'cost' | 'wage' | 'archive' | null
 
-/** Side panel with every descriptive field of a Resource, its current cost and its cost history. */
-export function ResourceDrawer({ organizationId, resourceId, canManage, onChanged, onClose }: ResourceDrawerProps) {
+/**
+ * Side panel with every descriptive field of a Resource, its current cost, its composition (analysis, wage,
+ * machinery, where it is used) and its cost history. Opening a component or a parent stacks it in the same
+ * panel; "back" returns to the previous one.
+ */
+export function ResourceDrawer({ organizationId, resourceId: initialId, canManage, onChanged, onClose }: ResourceDrawerProps) {
+  const [trail, setTrail] = useState<{ id: string; code: string }[]>([])
+  const [resourceId, setResourceId] = useState(initialId)
   const { messages: m } = useLocale()
   const t = m.prices
   const titleId = useId()
@@ -44,6 +52,21 @@ export function ResourceDrawer({ organizationId, resourceId, canManage, onChange
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (event.key === 'Escape' && dialog === null) onClose()
   })
+
+  function open(nextId: string) {
+    if (nextId === resourceId || !resource.data) return
+    setTrail([...trail, { id: resourceId, code: resource.data.code }])
+    setResourceId(nextId)
+    setDialog(null)
+  }
+
+  function back() {
+    const previous = trail[trail.length - 1]
+    if (!previous) return
+    setTrail(trail.slice(0, -1))
+    setResourceId(previous.id)
+    setDialog(null)
+  }
 
   function saved(next: ResourceDetail) {
     resource.update(() => next)
@@ -72,6 +95,11 @@ export function ResourceDrawer({ organizationId, resourceId, canManage, onChange
       >
         <header className="prices-drawer__header">
           <div>
+            {trail.length > 0 ? (
+              <button type="button" className="table-link prices-drawer__back" onClick={back}>
+                ← {formatMessage(t.composition.back, { code: trail[trail.length - 1].code })}
+              </button>
+            ) : null}
             <p className="prices-drawer__code data-mono">{detail?.code ?? ''}</p>
             <h2 id={titleId}>{detail?.name ?? t.detail.loading}</h2>
             {detail ? <ResourceBadges resource={detail} t={t} /> : null}
@@ -80,8 +108,13 @@ export function ResourceDrawer({ organizationId, resourceId, canManage, onChange
             {t.detail.close}
           </button>
         </header>
-        {actions && (actions.edit || actions.recordCost || actions.archive) ? (
+        {actions && (actions.edit || actions.recordCost || actions.editWage || actions.archive) ? (
           <div className="prices-drawer__actions">
+            {actions.editWage ? (
+              <button type="button" className="button button--primary button--small" onClick={() => setDialog('wage')}>
+                {t.write.editWage}
+              </button>
+            ) : null}
             {actions.recordCost ? (
               <button type="button" className="button button--primary button--small" onClick={() => setDialog('cost')}>
                 {t.write.recordCost}
@@ -108,7 +141,7 @@ export function ResourceDrawer({ organizationId, resourceId, canManage, onChange
         ) : null}
         <div className="prices-drawer__body">
           {detail ? (
-            <ResourceDetailBody detail={detail} />
+            <ResourceDetailBody organizationId={organizationId} detail={detail} onOpen={open} />
           ) : resource.status === 'error' ? (
             <Notice tone="error" action={{ label: t.load.retry, onClick: resource.reload }}>
               {t.load[pricesErrorKind(resource.error)]}
@@ -125,6 +158,9 @@ export function ResourceDrawer({ organizationId, resourceId, canManage, onChange
             onSaved={saved}
             onClose={() => setDialog(null)}
           />
+        ) : null}
+        {detail && dialog === 'wage' ? (
+          <LaborWageDialog organizationId={organizationId} resource={detail} onSaved={saved} onClose={() => setDialog(null)} />
         ) : null}
         {detail && dialog === 'cost' ? (
           <RecordCostDialog organizationId={organizationId} resource={detail} onRecorded={saved} onClose={() => setDialog(null)} />
@@ -153,7 +189,9 @@ export function ResourceDrawer({ organizationId, resourceId, canManage, onChange
   )
 }
 
-function ResourceDetailBody({ detail }: { detail: ResourceDetail }) {
+type DetailBodyProps = { organizationId: string; detail: ResourceDetail; onOpen: (resourceId: string) => void }
+
+function ResourceDetailBody({ organizationId, detail, onOpen }: DetailBodyProps) {
   const { messages: m, locale } = useLocale()
   const { money } = useCurrency()
   const t = m.prices
@@ -191,6 +229,8 @@ function ResourceDetailBody({ detail }: { detail: ResourceDetail }) {
           <span className="cell-muted">{formatMessage(d.costSince, { date: dateTime.format(new Date(detail.costUpdatedAt)) })}</span>
         ) : null}
       </section>
+
+      <ResourceComposition organizationId={organizationId} detail={detail} onOpen={onOpen} />
 
       <section aria-label={d.fields}>
         <h3>{d.fields}</h3>

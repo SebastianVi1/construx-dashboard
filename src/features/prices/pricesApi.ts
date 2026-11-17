@@ -65,7 +65,134 @@ export const costSchema = z.object({
 
 export type Cost = z.infer<typeof costSchema>
 
-/** `ResourceDetailResponse`; `history` is the newest 100 entries, null for a composite. */
+/** Quantities and factors: plain decimal strings without trailing zeros (`"0.03"`, `"1.7"`). */
+const decimalSchema = z.string().regex(/^-?\d+(\.\d+)?$/)
+
+/** One line of a Unit price analysis; `*` is a consumption, `/` an output per day. */
+export const analysisLineSchema = z.object({
+  lineNo: z.number().int(),
+  component: z.object({
+    id: z.string().min(1),
+    code: z.string(),
+    name: z.string(),
+    type: z.enum(resourceTypes),
+    unitCode: z.string(),
+    isPercentage: z.boolean(),
+    currentCost: moneySchema.nullable(),
+  }),
+  operator: z.enum(['*', '/']),
+  quantity: decimalSchema,
+  expression: z.string().nullable(),
+  amount: moneySchema,
+})
+
+export type AnalysisLine = z.infer<typeof analysisLineSchema>
+
+/** The derived cost of a composite: `mismatch` against the file's cost, `incomplete` when a component has no cost. */
+export const analysisSchema = z.object({
+  derivedCost: moneySchema,
+  importedCost: moneySchema.nullable(),
+  mismatch: z.boolean(),
+  incomplete: z.boolean(),
+  laborSubtotal: moneySchema,
+  lines: z.array(analysisLineSchema),
+})
+
+export type Analysis = z.infer<typeof analysisSchema>
+
+/** The wage of a simple Labor category; `realWage` is its cost. */
+export const laborDetailSchema = z.object({
+  nominalWage: moneySchema,
+  fsr: decimalSchema,
+  fsrSource: z.enum(['IMPORTED', 'MANUAL', 'COMPUTED']),
+  fsbc: decimalSchema.nullable(),
+  sbc: moneySchema.nullable(),
+  perDiem: moneySchema,
+  mealsLodging: moneySchema,
+  funeralExpenses: moneySchema,
+  otherBenefits: moneySchema,
+  fasarType: z.number().int().nullable(),
+  imported: z.object({
+    fsr: decimalSchema.nullable(),
+    realWage: moneySchema.nullable(),
+    fsbc: decimalSchema.nullable(),
+    sbc: moneySchema.nullable(),
+  }),
+  fsrMismatch: z.boolean(),
+  realWage: moneySchema.nullable(),
+})
+
+export type LaborDetail = z.infer<typeof laborDetailSchema>
+
+const equipmentLineSchema = z.object({
+  lineNo: z.number().int(),
+  component: z.object({
+    id: z.string().min(1),
+    code: z.string(),
+    name: z.string(),
+    type: z.enum(resourceTypes),
+    unit: z.object({ id: z.string().min(1), code: z.string() }),
+  }),
+  operator: z.enum(['*', '/']),
+  quantity: decimalSchema,
+})
+
+export type EquipmentLine = z.infer<typeof equipmentLineSchema>
+
+const optionalText = z.string().nullable().default(null)
+const optionalDecimal = decimalSchema.nullable().default(null)
+const optionalInt = z.number().int().nullable().default(null)
+
+/** The machinery data of an Equipment rate as imported; display only, nothing is recomputed from it. */
+export const equipmentDetailSchema = z.object({
+  powerUnit: optionalText,
+  fixedChargeCode: optionalText,
+  acquisitionValueCode: optionalText,
+  standbyCode: optionalText,
+  reserveCode: optionalText,
+  tiresCode: optionalText,
+  specialPartsCode: optionalText,
+  fuelCode: optionalText,
+  lubricantCode: optionalText,
+  otherEnergyCode: optionalText,
+  tiresLifeHours: optionalDecimal,
+  specialPartsLifeHours: optionalDecimal,
+  economicLifeHours: optionalDecimal,
+  hoursPerYear: optionalDecimal,
+  oilChangeHours: optionalDecimal,
+  calculationType: optionalInt,
+  power: optionalDecimal,
+  operationFactor: optionalDecimal,
+  fuelType: optionalInt,
+  fuelFactor: optionalDecimal,
+  otherEnergyFactor: optionalDecimal,
+  lubricantFactor: optionalDecimal,
+  crankcaseCapacity: optionalDecimal,
+  salvagePct: optionalDecimal,
+  insurancePct: optionalDecimal,
+  maintenanceFactor: optionalDecimal,
+  interestRate: optionalDecimal,
+  brand: optionalText,
+  model: optionalText,
+  serialNumber: optionalText,
+  capacity: optionalText,
+  location: optionalText,
+  usefulLife: optionalText,
+  owner: optionalText,
+  availability: optionalText,
+  commercialValue: moneySchema.nullable().default(null),
+  fuelQtyPerHour: optionalDecimal,
+  lubricantQtyPerHour: optionalDecimal,
+  operationLines: z.array(equipmentLineSchema),
+  consumptionLines: z.array(equipmentLineSchema),
+})
+
+export type EquipmentDetail = z.infer<typeof equipmentDetailSchema>
+
+/**
+ * `ResourceDetailResponse`; `history` is the newest 100 entries, null for a composite. `analysis` only on
+ * composites, `laborDetail` on simple Labor categories, `equipmentDetail` on Equipment rates with machinery data.
+ */
 export const resourceDetailSchema = resourceSchema.extend({
   description: z.string().nullable(),
   reference: z.string().nullable(),
@@ -78,6 +205,9 @@ export const resourceDetailSchema = resourceSchema.extend({
   createdAt: z.string(),
   updatedAt: z.string(),
   history: z.array(costSchema).nullable(),
+  laborDetail: laborDetailSchema.nullable(),
+  equipmentDetail: equipmentDetailSchema.nullable(),
+  analysis: analysisSchema.nullable(),
   usedIn: z.object({
     count: z.number().int(),
     sample: z.array(z.object({ id: z.string(), code: z.string(), name: z.string(), type: z.enum(resourceTypes) })),
@@ -160,6 +290,8 @@ export type ResourceQuery = {
   includeArchived?: boolean
   /** null or undefined: both. */
   discontinued?: boolean | null
+  /** Labor tab: true for Gangs, false for categories; null or undefined: both. */
+  composite?: boolean | null
   sort?: ResourceSort
   page: number
   size: number
@@ -178,6 +310,7 @@ export function resourceSearch(query: ResourceQuery): string {
   if (query.supplierId) search.set('supplierId', query.supplierId)
   if (query.includeArchived) search.set('includeArchived', 'true')
   if (query.discontinued !== undefined && query.discontinued !== null) search.set('discontinued', String(query.discontinued))
+  if (query.composite !== undefined && query.composite !== null) search.set('composite', String(query.composite))
   if (query.sort) search.set('sort', `${query.sort.field},${query.sort.direction}`)
   search.set('page', String(query.page))
   search.set('size', String(query.size))
@@ -224,18 +357,32 @@ export function listSuppliers(organizationId: string): Promise<Supplier[]> {
   return getJson(`${organizationPath(organizationId)}/suppliers`, z.array(supplierSchema))
 }
 
-/** `POST /resources` for a simple Material or Equipment rate; money in pesos with two decimals. */
-export type ResourceCreateBody = {
-  type: 'MATERIAL' | 'EQUIPMENT'
+/** The wage of a Labor category in pesos with two decimals; the FSR is a factor from 1 to 3. */
+export type LaborWageBody = {
+  nominalWage: string
+  fsr: string
+  perDiem: string
+  mealsLodging: string
+  funeralExpenses: string
+  otherBenefits: string
+}
+
+type ResourceCreateCommon = {
   code: string
   name: string
   description: string | null
   unitId: string
   familyId: string | null
   supplierId: string | null
-  brand?: string | null
-  cost: string
 }
+
+/**
+ * `POST /resources` for a simple Material or Equipment rate (with its first cost) or a Labor category (with its
+ * wage, whose real wage becomes the first cost); money in pesos with two decimals.
+ */
+export type ResourceCreateBody =
+  | (ResourceCreateCommon & { type: 'MATERIAL' | 'EQUIPMENT'; brand?: string | null; cost: string })
+  | (ResourceCreateCommon & { type: 'LABOR'; laborDetail: LaborWageBody })
 
 /** Fields left out keep their value; `''` clears an optional text, the family or the supplier. */
 export type ResourcePatchBody = Partial<{
@@ -245,6 +392,8 @@ export type ResourcePatchBody = Partial<{
   familyId: string
   supplierId: string
   brand: string
+  /** Only on a simple Labor category; a changed real wage writes a cost history entry. */
+  laborDetail: Partial<LaborWageBody>
 }>
 
 export type CostEntryBody = { amount: string; supplierId: string | null; sku: string | null; note: string | null }
@@ -265,6 +414,15 @@ export function archiveResource(organizationId: string, resourceId: string): Pro
 /** A new Cost history entry effective now; it becomes the current cost. */
 export function recordResourceCost(organizationId: string, resourceId: string, body: CostEntryBody): Promise<ResourceDetail> {
   return sendJson('post', `${resourcePath(organizationId, resourceId)}/costs`, body, 201, resourceDetailSchema)
+}
+
+/** Standby and reserve shares per equipment charge, catalog-wide. */
+export const standbyPercentageSchema = z.object({ charge: z.string(), standbyPct: decimalSchema, reservePct: decimalSchema })
+
+export type StandbyPercentage = z.infer<typeof standbyPercentageSchema>
+
+export function listStandbyPercentages(organizationId: string): Promise<StandbyPercentage[]> {
+  return getJson(`${organizationPath(organizationId)}/equipment-standby-percentages`, z.array(standbyPercentageSchema))
 }
 
 export type PricesErrorKind = 'invalid' | 'session' | 'forbidden' | 'notFound' | 'generic'
