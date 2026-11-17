@@ -219,6 +219,7 @@ export function SiteDetailPage() {
                 siteId={current.id}
                 people={people}
                 canManage={canManage}
+                canSeeRates={canManage || (can('VIEW_BUDGET') ?? false)}
                 myMembershipId={myMembershipId}
               />
             </div>

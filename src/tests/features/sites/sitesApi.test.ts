@@ -141,7 +141,7 @@ describe('sites API', () => {
   it('listSiteAccess: gets the people on a site, allowing a null full name', async () => {
     const { get } = stubApi({ get: () => ({ status: 200, data: [access] }) })
 
-    expect(await listSiteAccess('org-1', 'p-1')).toEqual([access])
+    expect(await listSiteAccess('org-1', 'p-1')).toEqual([{ ...access, laborRate: null }])
     expect(get.mock.calls[0][0]).toBe('/api/organizations/org-1/projects/p-1/access')
   })
 
