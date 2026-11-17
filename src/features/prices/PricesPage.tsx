@@ -6,6 +6,7 @@ import { useCurrency } from '../../currency'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
+import { ImportTab } from './ImportTab'
 import { FasarStatusBadge, ResourceBadges } from './ResourceBadges'
 import { ResourceDrawer } from './ResourceDrawer'
 import { ResourceFormDialog } from './ResourceFormDialog'
@@ -75,6 +76,7 @@ export function PricesPage() {
         <ResourceCatalog key={active.key} tab={active.key} type={active.type} canManage={can('MANAGE_PRICES')} t={t} />
       ) : null}
       {active?.key === 'suppliers' ? <SuppliersTab t={t} /> : null}
+      {active?.key === 'import' ? <ImportTab t={t} /> : null}
     </div>
   )
 }

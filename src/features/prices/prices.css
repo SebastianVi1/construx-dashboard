@@ -376,3 +376,40 @@
 .prices-toast p {
   margin: 0;
 }
+
+.prices-import {
+  display: grid;
+  gap: 12px;
+  max-width: 64rem;
+}
+
+.prices-import__intro,
+.prices-import__hint {
+  color: var(--cx-muted);
+}
+
+.prices-import__progress progress {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.prices-import__job,
+.prices-import__summary {
+  display: grid;
+  gap: 8px;
+}
+
+.prices-import__failure p {
+  margin: 4px 0 0;
+}
+
+.prices-import__licence {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 48rem;
+}
+
+.prices-import__licence input {
+  margin-top: 3px;
+}
