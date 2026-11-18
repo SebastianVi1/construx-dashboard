@@ -42,4 +42,10 @@ describe('task spending affordances', () => {
     expect(manager.record).toBe(true)
     expect(manager.manage('lead')).toBe(true)
   })
+  it('offers charging the Catalog only to callers who may see prices', () => {
+    expect(taskMoneyActions(access('lead'), task).chargeCatalog).toBe(false)
+    expect(taskMoneyActions(access('lead', [{ action: 'VIEW_PRICES', scope: 'ORGANIZATION' }]), task).chargeCatalog)
+      .toBe(true)
+    expect(taskMoneyActions(null, task).chargeCatalog).toBe(false)
+  })
 })

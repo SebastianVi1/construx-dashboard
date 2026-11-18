@@ -10,6 +10,8 @@ export function taskMoneyActions(access: MyAccess | null, task: Task) {
     lead,
     view: lead || canPerform(access, 'VIEW_BUDGET', task.projectId),
     record: lead || manager,
+    /** Charging the Catalog also needs VIEW_PRICES (docs/pricing.md §6.5). */
+    chargeCatalog: canPerform(access, 'VIEW_PRICES'),
     manage: (createdByMembershipId: string | null | undefined) =>
       manager || (lead && createdByMembershipId === access?.membershipId),
   }

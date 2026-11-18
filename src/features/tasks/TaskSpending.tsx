@@ -68,6 +68,7 @@ export function TaskSpending({ at, task, access }: { at: PhaseRef; task: Task; a
       )}
       {dialog?.kind === 'edit' && actions.record && (!dialog.expense || canManage(dialog.expense)) ? (
         <ExpenseDialog organizationId={at.organizationId} siteId={at.siteId} expense={dialog.expense}
+          canUseCatalog={actions.chargeCatalog}
           create={(draft) => createTaskExpense(at, task.id, draft)}
           onSaved={() => changed(t.saved)} onClose={() => setDialog(null)} />
       ) : null}

@@ -27,6 +27,8 @@ type ExpenseDialogProps = {
   siteId: string
   /** Edit this expense; without it the dialog adds a new one. */
   expense?: Expense
+  /** The caller holds VIEW_PRICES; without it a new expense can only be typed (docs/pricing.md §6.5). */
+  canUseCatalog: boolean
   create?: (draft: NewExpense) => Promise<Expense>
   onSaved: () => void
   onClose: () => void
@@ -65,11 +67,11 @@ export function ExpenseDialog(props: ExpenseDialogProps) {
   const { messages: m } = useLocale()
   const t = m.finance
   const [mode, setMode] = useState<Mode>('typed')
-  const catalog = props.expense ? isFromCatalog(props.expense) : mode === 'catalog'
+  const catalog = props.expense ? isFromCatalog(props.expense) : props.canUseCatalog && mode === 'catalog'
 
   return (
     <Modal title={props.expense ? t.dialog.editTitle : t.dialog.createTitle} description={t.dialog.description} onClose={props.onClose}>
-      {props.expense ? null : (
+      {props.expense || !props.canUseCatalog ? null : (
         <div className="expense-mode" role="group" aria-label={t.catalog.mode}>
           {(['typed', 'catalog'] as const).map((option) => (
             <button

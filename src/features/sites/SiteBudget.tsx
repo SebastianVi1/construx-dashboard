@@ -15,6 +15,7 @@ import { BudgetOverviewSkeleton } from './SiteSkeletons'
 import { allocationIssue } from './budgetRules'
 import { setSiteBudget, siteErrorKind, type Site } from './sitesApi'
 import { useCurrency } from '../../currency'
+import { usePermissions } from '../permissions'
 
 type SiteBudgetProps = {
   organizationId: string
@@ -31,6 +32,7 @@ type Dialog = { kind: 'budget' } | { kind: 'expense'; expense?: Expense } | { ki
 export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice }: SiteBudgetProps) {
   const { messages: m } = useLocale()
   const { currency } = useCurrency()
+  const { can } = usePermissions()
   const t = m.finance
   const key = `${organizationId}:${site.id}`
   const summary = useRemoteData(`${key}:budget`, () => getBudgetSummary(organizationId, site.id))
@@ -107,6 +109,7 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
           organizationId={organizationId}
           siteId={site.id}
           expense={dialog.expense}
+          canUseCatalog={can('VIEW_PRICES')}
           onClose={() => setDialog(null)}
           onSaved={() => changed(t.saved)}
         />
