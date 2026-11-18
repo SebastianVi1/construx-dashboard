@@ -413,3 +413,35 @@
 .prices-import__licence input {
   margin-top: 3px;
 }
+
+.prices-import__block {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.prices-import__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+
+.prices-import__facts dd {
+  margin: 0;
+}
+
+.prices-import__warning summary {
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.prices-import__history {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.prices-header__import {
+  color: var(--cx-muted);
+  margin: 0;
+}

@@ -10,7 +10,7 @@ import {
   type PriceFilters,
 } from '../../../features/prices/pricesView'
 
-const filters: PriceFilters = { query: '', familyId: '', unitId: '', supplierId: '', includeArchived: false, discontinued: '', composite: '' }
+const filters: PriceFilters = { query: '', familyId: '', unitId: '', supplierId: '', includeArchived: false, discontinued: '', composite: '', missingFromImport: false }
 
 describe('priceTabs', () => {
   it('lists the six tabs in order, all active', () => {
@@ -60,10 +60,15 @@ describe('resourceQueryFor', () => {
       includeArchived: false,
       discontinued: null,
       composite: null,
+      missingFromImport: false,
       sort: undefined,
       page: 0,
       size: 50,
     })
+  })
+
+  it('narrows to Resources the last import no longer had', () => {
+    expect(resourceQueryFor('MATERIAL', { ...filters, missingFromImport: true }, undefined, 0).missingFromImport).toBe(true)
   })
 
   it('narrows the labor tab to categories or gangs', () => {

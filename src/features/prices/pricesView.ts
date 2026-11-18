@@ -25,6 +25,8 @@ export type PriceFilters = {
   discontinued: '' | 'yes' | 'no'
   /** Labor tab only: `yes` Gangs, `no` Labor categories. */
   composite: '' | 'yes' | 'no'
+  /** Only Resources flagged missing from the last import. */
+  missingFromImport: boolean
 }
 
 export const emptyFilters: PriceFilters = {
@@ -35,6 +37,7 @@ export const emptyFilters: PriceFilters = {
   includeArchived: false,
   discontinued: '',
   composite: '',
+  missingFromImport: false,
 }
 
 /** The server orders by code ascending when no sort is sent. */
@@ -72,6 +75,7 @@ export function resourceQueryFor(type: ResourceType, filters: PriceFilters, sort
     includeArchived: filters.includeArchived,
     discontinued: filters.discontinued === '' ? null : filters.discontinued === 'yes',
     composite: filters.composite === '' ? null : filters.composite === 'yes',
+    missingFromImport: filters.missingFromImport,
     sort,
     page,
     size: PAGE_SIZE,

@@ -216,7 +216,7 @@ export const resourceDetailSchema = resourceSchema.extend({
 
 export type ResourceDetail = z.infer<typeof resourceDetailSchema>
 
-function pageSchema<T extends z.ZodType>(item: T) {
+export function pageSchema<T extends z.ZodType>(item: T) {
   return z.object({
     content: z.array(item),
     page: z.number().int(),
@@ -241,7 +241,9 @@ export const catalogSchema = z.object({
     families: z.number().int(),
   }),
   missingFromImport: z.number().int(),
-  lastImport: z.unknown().nullable(),
+  lastImport: z
+    .object({ id: z.string().min(1), status: z.string(), finishedAt: z.string().nullable(), fileName: z.string() })
+    .nullable(),
   fasar: z
     .object({
       status: z.enum(['NONE', 'PARTIAL', 'COMPLETE']),
@@ -251,7 +253,8 @@ export const catalogSchema = z.object({
       updatedAt: z.string().nullable(),
     })
     .nullable(),
-  activeImport: z.unknown().nullable(),
+  /** The running job, only for members who manage prices; the Importar tab reads the whole job. */
+  activeImport: z.object({ id: z.string().min(1), status: z.string(), createdAt: z.string() }).nullable(),
 })
 
 export type CatalogSummary = z.infer<typeof catalogSchema>
@@ -317,6 +320,8 @@ export type ResourceQuery = {
   discontinued?: boolean | null
   /** Labor tab: true for Gangs, false for categories; null or undefined: both. */
   composite?: boolean | null
+  /** Only Resources an earlier import had and the latest one did not. */
+  missingFromImport?: boolean
   sort?: ResourceSort
   page: number
   size: number
@@ -336,6 +341,7 @@ export function resourceSearch(query: ResourceQuery): string {
   if (query.includeArchived) search.set('includeArchived', 'true')
   if (query.discontinued !== undefined && query.discontinued !== null) search.set('discontinued', String(query.discontinued))
   if (query.composite !== undefined && query.composite !== null) search.set('composite', String(query.composite))
+  if (query.missingFromImport) search.set('missingFromImport', 'true')
   if (query.sort) search.set('sort', `${query.sort.field},${query.sort.direction}`)
   search.set('page', String(query.page))
   search.set('size', String(query.size))

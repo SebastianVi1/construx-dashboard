@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ApiError, getJson, sendJson } from '../../lib/http'
 import { organizationPath } from '../../lib/apiPaths'
 import { StorageUploadError } from '../plans/plansApi'
-import { pricesErrorKind, type PricesErrorKind } from './pricesApi'
+import { pageSchema, pricesErrorKind, type Page, type PricesErrorKind } from './pricesApi'
 
 /** Catalog import from the PU Win+ Presupuesto workbook (backend `docs/pricing.md` §4). */
 
@@ -27,7 +27,38 @@ const countsSchema = z.object({
 
 const newUnchangedSchema = z.object({ new: z.number().int(), unchanged: z.number().int() })
 
-/** The dry-run summary (§4.5). Samples are kept loose: the report view of a later slice reads them. */
+const resourceTypeSchema = z.enum(['MATERIAL', 'LABOR', 'EQUIPMENT', 'WORK_ITEM'])
+
+/** One warning of a dry run; `detail` holds code-specific values such as the imported and derived cost. */
+export const warningSampleSchema = z.object({
+  code: z.string(),
+  sheet: z.string().nullable(),
+  row: z.number().int().nullable(),
+  resourceCode: z.string().nullable(),
+  detail: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).nullable(),
+})
+
+export type WarningSample = z.infer<typeof warningSampleSchema>
+
+export const warningsSchema = z.object({
+  total: z.number().int(),
+  byCode: z.record(z.string(), z.number().int()),
+  sample: z.array(warningSampleSchema),
+})
+
+export type ImportWarnings = z.infer<typeof warningsSchema>
+
+const changeSampleSchema = z.object({
+  resourceCode: z.string(),
+  type: resourceTypeSchema,
+  name: z.string(),
+  from: z.string().nullable(),
+  to: z.string().nullable(),
+})
+
+const missingSampleSchema = z.object({ resourceCode: z.string(), type: resourceTypeSchema, name: z.string() })
+
+/** The dry-run summary (§4.5); each sample holds at most 200 entries, the totals are in the counts. */
 export const importSummarySchema = z.object({
   rows: z.record(z.string(), z.number().int()),
   resources: z.object({ MATERIAL: countsSchema, LABOR: countsSchema, EQUIPMENT: countsSchema, WORK_ITEM: countsSchema }),
@@ -43,9 +74,9 @@ export const importSummarySchema = z.object({
     fsrMismatches: z.number().int(),
     realWageMismatches: z.number().int(),
   }),
-  warnings: z.object({ total: z.number().int(), byCode: z.record(z.string(), z.number().int()), sample: z.array(z.unknown()) }),
-  changes: z.object({ sample: z.array(z.unknown()) }),
-  missingFromFile: z.object({ sample: z.array(z.unknown()) }),
+  warnings: warningsSchema,
+  changes: z.object({ sample: z.array(changeSampleSchema) }),
+  missingFromFile: z.object({ sample: z.array(missingSampleSchema) }),
 })
 
 export type ImportSummary = z.infer<typeof importSummarySchema>
@@ -109,6 +140,16 @@ export function requestImportUpload(organizationId: string, file: { name: string
 /** Step 3, after the bytes are in storage: start the job; validation runs in the background. */
 export function startImport(organizationId: string, uploadId: string): Promise<CatalogImport> {
   return sendJson('post', importsPath(organizationId), { presupuestoUploadId: uploadId, fasarUploadId: null }, 202, catalogImportSchema)
+}
+
+/** Rows of the import history. */
+export const IMPORT_PAGE_SIZE = 20
+
+const importPageSchema = pageSchema(catalogImportSchema)
+
+/** Past and current imports of the company, newest first (§4.3). */
+export function listImports(organizationId: string, page: number): Promise<Page<CatalogImport>> {
+  return getJson(`${importsPath(organizationId)}?page=${page}&size=${IMPORT_PAGE_SIZE}`, importPageSchema)
 }
 
 export function getImport(organizationId: string, importId: string): Promise<CatalogImport> {

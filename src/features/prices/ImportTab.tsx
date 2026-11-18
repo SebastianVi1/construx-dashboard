@@ -1,6 +1,8 @@
-import { useEffect, useReducer, useRef, type ChangeEvent } from 'react'
+import { useEffect, useReducer, useRef, useState, type ChangeEvent } from 'react'
+import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice } from '../../components/page'
-import { formatMessage, type Messages } from '../../i18n'
+import { useCurrency } from '../../currency'
+import { formatMessage, intlLocales, useLocale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { sendToStorage } from '../plans/plansApi'
@@ -9,13 +11,14 @@ import {
   confirmImport,
   getImport,
   importErrorKind,
+  listImports,
   requestImportUpload,
   startImport,
   type CatalogImport,
   type ImportSummary,
 } from './catalogImportApi'
+import { formatDetail, warningGroups } from './importReport'
 import {
-  activeImportKey,
   canCancel,
   canConfirm,
   canStartOver,
@@ -23,9 +26,11 @@ import {
   formatFileSize,
   initialWizard,
   pollDelay,
+  resourceTotals,
   wizardReducer,
 } from './importWizard'
-import type { ResourceType } from './pricesApi'
+import { getCatalog, type ResourceType } from './pricesApi'
+import { pageRange } from './pricesView'
 
 type PricesMessages = Messages['prices']
 type ImportMessages = PricesMessages['importTab']
@@ -39,26 +44,9 @@ const typeTabs: Record<ResourceType, keyof PricesMessages['tab']> = {
 
 const outcomes = ['new', 'costChanged', 'unchanged', 'missingFromFile'] as const
 
-function remember(organizationId: string, importId: string | null) {
-  try {
-    if (importId) localStorage.setItem(activeImportKey(organizationId), importId)
-    else localStorage.removeItem(activeImportKey(organizationId))
-  } catch {
-    // only a convenience: the job keeps running without it
-  }
-}
-
-function remembered(organizationId: string): string | null {
-  try {
-    return localStorage.getItem(activeImportKey(organizationId))
-  } catch {
-    return null
-  }
-}
-
 /**
  * The Importar tab: upload the PU Win+ Presupuesto workbook straight to storage, follow the job every two
- * seconds, show the dry run or the failure, and confirm with the licence statement.
+ * seconds, show the dry-run report or the failure, confirm with the licence statement, and list past imports.
  */
 export function ImportTab({ t }: { t: PricesMessages }) {
   const i = t.importTab
@@ -68,17 +56,18 @@ export function ImportTab({ t }: { t: PricesMessages }) {
   const [state, dispatch] = useReducer(wizardReducer, initialWizard)
   const fileInput = useRef<HTMLInputElement>(null)
 
-  // Come back to a job started earlier from this browser.
+  // Come back to the company's running job, whoever started it.
   useEffect(() => {
     if (!canManage) return
-    const id = remembered(organization.id)
-    if (!id) return
     let live = true
-    getImport(organization.id, id)
+    getCatalog(organization.id)
+      .then((catalog) => (catalog.activeImport ? getImport(organization.id, catalog.activeImport.id) : null))
       .then((job) => {
-        if (live) dispatch({ type: 'jobLoaded', job })
+        if (live && job) dispatch({ type: 'jobLoaded', job })
       })
-      .catch(() => remember(organization.id, null))
+      .catch(() => {
+        // the picker stays; the history still lists the job
+      })
     return () => {
       live = false
     }
@@ -100,7 +89,6 @@ export function ImportTab({ t }: { t: PricesMessages }) {
   if (!canManage) return <Notice>{i.forbidden}</Notice>
 
   function loaded(job: CatalogImport) {
-    remember(organization.id, ['DONE', 'FAILED', 'CANCELLED'].includes(job.status) ? null : job.id)
     dispatch({ type: 'jobLoaded', job })
   }
 
@@ -143,9 +131,11 @@ export function ImportTab({ t }: { t: PricesMessages }) {
   }
 
   function startOver() {
-    remember(organization.id, null)
     dispatch({ type: 'reset' })
   }
+
+  // The history refreshes whenever the job on screen changes state.
+  const historyKey = state.step === 'job' ? `${state.job.id}:${state.job.status}` : state.step
 
   return (
     <section className="page-section prices-import" aria-label={i.title}>
@@ -190,7 +180,7 @@ export function ImportTab({ t }: { t: PricesMessages }) {
           {state.job.status === 'DONE' ? <Notice tone="success">{i.done}</Notice> : null}
           {state.job.status === 'CANCELLED' ? <Notice>{i.cancelled}</Notice> : null}
           {state.job.summary && (state.job.status === 'VALIDATED' || state.job.status === 'DONE') ? (
-            <DryRun summary={state.job.summary} i={i} t={t} />
+            <ImportReport summary={state.job.summary} done={state.job.status === 'DONE'} i={i} t={t} />
           ) : null}
           {state.job.status === 'VALIDATED' ? (
             <label className="prices-import__licence">
@@ -221,6 +211,91 @@ export function ImportTab({ t }: { t: PricesMessages }) {
           </div>
         </div>
       ) : null}
+
+      <ImportHistory
+        organizationId={organization.id}
+        refreshKey={historyKey}
+        onOpen={(job) => dispatch({ type: 'jobLoaded', job })}
+        i={i}
+      />
+    </section>
+  )
+}
+
+type HistoryProps = { organizationId: string; refreshKey: string; onOpen: (job: CatalogImport) => void; i: ImportMessages }
+
+/** Past imports newest first: file, who, when, status and the Resource counts; a row reopens its report. */
+function ImportHistory({ organizationId, refreshKey, onOpen, i }: HistoryProps) {
+  const { locale } = useLocale()
+  const [page, setPage] = useState(0)
+  const history = useRemoteData(`${organizationId}:catalog-imports:${page}:${refreshKey}`, () => listImports(organizationId, page), {
+    remember: false,
+  })
+  const date = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
+  const data = history.data
+  const range = data ? pageRange(data) : null
+  const h = i.history
+  return (
+    <section className="prices-import__history" aria-label={h.title}>
+      <h3>{h.title}</h3>
+      {history.status === 'error' && !data ? (
+        <Notice tone="error" action={{ label: h.retry, onClick: history.reload }}>
+          {h.error}
+        </Notice>
+      ) : !data ? null : data.totalElements === 0 ? (
+        <p className="prices-import__hint">{h.empty}</p>
+      ) : (
+        <>
+          <div className="table-scroll">
+            <table className="data-table prices-table">
+              <thead>
+                <tr>
+                  <th scope="col">{h.file}</th>
+                  <th scope="col">{h.by}</th>
+                  <th scope="col">{h.when}</th>
+                  <th scope="col">{h.status}</th>
+                  <th scope="col" className="prices-table__number">{i.outcome.new}</th>
+                  <th scope="col" className="prices-table__number">{i.outcome.costChanged}</th>
+                  <th scope="col" className="prices-table__number">{i.outcome.missingFromFile}</th>
+                  <th scope="col"><span className="visually-hidden">{h.open}</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.content.map((job) => {
+                  const totals = resourceTotals(job)
+                  return (
+                    <tr key={job.id}>
+                      <td>{job.file.name}</td>
+                      <td>{job.uploadedBy?.fullName ?? '—'}</td>
+                      <td className="data-mono">{date.format(new Date(job.createdAt))}</td>
+                      <td>{i.status[job.status]}</td>
+                      <td className="data-mono prices-table__number">{totals?.new ?? '—'}</td>
+                      <td className="data-mono prices-table__number">{totals?.costChanged ?? '—'}</td>
+                      <td className="data-mono prices-table__number">{totals?.missingFromFile ?? '—'}</td>
+                      <td>
+                        <button type="button" className="button button--small" onClick={() => onOpen(job)}>
+                          {h.open}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          {range && (range.hasPrevious || range.hasNext) ? (
+            <nav className="prices-pager" aria-label={h.title}>
+              <span>{formatMessage(h.range, { from: range.from, to: range.to, total: range.total })}</span>
+              <button type="button" className="button button--small" disabled={!range.hasPrevious} onClick={() => setPage(page - 1)}>
+                {h.previous}
+              </button>
+              <button type="button" className="button button--small" disabled={!range.hasNext} onClick={() => setPage(page + 1)}>
+                {h.next}
+              </button>
+            </nav>
+          ) : null}
+        </>
+      )}
     </section>
   )
 }
@@ -242,11 +317,15 @@ function FailurePanel({ failure, i }: { failure: NonNullable<CatalogImport['fail
   )
 }
 
-function DryRun({ summary, i, t }: { summary: ImportSummary; i: ImportMessages; t: PricesMessages }) {
+type ReportProps = { summary: ImportSummary; done: boolean; i: ImportMessages; t: PricesMessages }
+
+/** The dry-run report, or what the finished import did: counts, FASAR, warnings by code and samples. */
+function ImportReport({ summary, done, i, t }: ReportProps) {
   const types = Object.keys(typeTabs) as ResourceType[]
+  const r = i.report
   return (
     <div className="prices-import__summary">
-      <h3>{i.dryRun}</h3>
+      <h3>{done ? r.doneTitle : i.dryRun}</h3>
       <div className="table-scroll">
         <table className="data-table prices-table">
           <caption>{i.resourcesCaption}</caption>
@@ -290,16 +369,167 @@ function DryRun({ summary, i, t }: { summary: ImportSummary; i: ImportMessages; 
           .map(([sheet, count]) => `${sheet} ${count}`)
           .join(' · ')}
       </p>
-      <p>
-        {summary.fasar.provided
-          ? formatMessage(i.fasarProvided, {
-              year: summary.fasar.year ?? '-',
-              categories: summary.fasar.laborCategories,
-              mismatches: summary.fasar.fsrMismatches + summary.fasar.realWageMismatches,
-            })
-          : i.fasarNone}
-      </p>
-      <p>{formatMessage(i.warnings, { count: summary.warnings.total })}</p>
+      <FasarReport fasar={summary.fasar} i={i} />
+      <WarningsReport summary={summary} i={i} />
+      <ChangesReport summary={summary} i={i} t={t} />
+      <MissingReport summary={summary} i={i} t={t} />
     </div>
   )
+}
+
+function FasarReport({ fasar, i }: { fasar: ImportSummary['fasar']; i: ImportMessages }) {
+  const r = i.report
+  return (
+    <section className="prices-import__block" aria-label={r.fasarTitle}>
+      <h4>{r.fasarTitle}</h4>
+      <p>{fasar.provided ? r.fasarProvided : i.fasarNone}</p>
+      <dl className="prices-import__facts">
+        <dt>{r.year}</dt>
+        <dd>{fasar.year ?? '—'}</dd>
+        <dt>{r.uma}</dt>
+        <dd className="data-mono">{fasar.uma ?? '—'}</dd>
+        <dt>{r.minimumWage}</dt>
+        <dd className="data-mono">{fasar.minimumWage ?? '—'}</dd>
+        <dt>{r.laborCategories}</dt>
+        <dd>{fasar.laborCategories}</dd>
+        <dt>{r.fsrMismatches}</dt>
+        <dd>{fasar.fsrMismatches}</dd>
+        <dt>{r.realWageMismatches}</dt>
+        <dd>{fasar.realWageMismatches}</dd>
+      </dl>
+    </section>
+  )
+}
+
+function WarningsReport({ summary, i }: { summary: ImportSummary; i: ImportMessages }) {
+  const r = i.report
+  const groups = warningGroups(summary.warnings)
+  return (
+    <section className="prices-import__block" aria-label={r.warningsTitle}>
+      <h4>{formatMessage(i.warnings, { count: summary.warnings.total })}</h4>
+      {groups.length === 0 ? <p className="prices-import__hint">{r.noWarnings}</p> : null}
+      {groups.map((group) => (
+        <details key={group.code} className="prices-import__warning">
+          <summary>
+            <strong>{group.code in r.warning ? r.warning[group.code as keyof ImportMessages['report']['warning']] : group.code}</strong>
+            {' · '}
+            {group.count}
+          </summary>
+          {group.samples.length === 0 ? (
+            <p className="prices-import__hint">{r.noSamples}</p>
+          ) : (
+            <div className="table-scroll">
+              <table className="data-table prices-table">
+                <thead>
+                  <tr>
+                    <th scope="col">{r.sheet}</th>
+                    <th scope="col" className="prices-table__number">{r.row}</th>
+                    <th scope="col">{r.resourceCode}</th>
+                    <th scope="col">{r.detail}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.samples.map((sample, index) => (
+                    <tr key={`${sample.sheet}:${sample.row}:${index}`}>
+                      <td>{sample.sheet ?? '—'}</td>
+                      <td className="data-mono prices-table__number">{sample.row ?? '—'}</td>
+                      <td className="data-mono">{sample.resourceCode ?? '—'}</td>
+                      <td className="data-mono">{formatDetail(sample.detail) || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {group.samples.length < group.count ? (
+            <p className="prices-import__hint">{formatMessage(r.sampleOf, { shown: group.samples.length, total: group.count })}</p>
+          ) : null}
+        </details>
+      ))}
+    </section>
+  )
+}
+
+function ChangesReport({ summary, i, t }: { summary: ImportSummary; i: ImportMessages; t: PricesMessages }) {
+  const { money } = useCurrency()
+  const r = i.report
+  const sample = summary.changes.sample
+  const total = resourceTotal(summary, 'costChanged')
+  return (
+    <section className="prices-import__block" aria-label={r.changesTitle}>
+      <h4>{formatMessage(r.changesTitle, { count: total })}</h4>
+      {sample.length === 0 ? (
+        <p className="prices-import__hint">{r.noChanges}</p>
+      ) : (
+        <div className="table-scroll">
+          <table className="data-table prices-table">
+            <thead>
+              <tr>
+                <th scope="col">{t.column.code}</th>
+                <th scope="col">{t.column.name}</th>
+                <th scope="col">{i.type}</th>
+                <th scope="col" className="prices-table__number">{r.from}</th>
+                <th scope="col" className="prices-table__number">{r.to}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sample.map((change) => (
+                <tr key={change.resourceCode}>
+                  <td className="data-mono">{change.resourceCode}</td>
+                  <td>{change.name}</td>
+                  <td>{t.tab[typeTabs[change.type]]}</td>
+                  <td className="data-mono prices-table__number">{change.from === null ? '—' : money(change.from)}</td>
+                  <td className="data-mono prices-table__number">{change.to === null ? '—' : money(change.to)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {sample.length < total ? <p className="prices-import__hint">{formatMessage(r.sampleOf, { shown: sample.length, total })}</p> : null}
+    </section>
+  )
+}
+
+function MissingReport({ summary, i, t }: { summary: ImportSummary; i: ImportMessages; t: PricesMessages }) {
+  const r = i.report
+  const sample = summary.missingFromFile.sample
+  const total = resourceTotal(summary, 'missingFromFile')
+  return (
+    <section className="prices-import__block" aria-label={r.missingTitle}>
+      <h4>{formatMessage(r.missingTitle, { count: total })}</h4>
+      {sample.length === 0 ? (
+        <p className="prices-import__hint">{r.noMissing}</p>
+      ) : (
+        <>
+          <p className="prices-import__hint">{r.missingHint}</p>
+          <div className="table-scroll">
+            <table className="data-table prices-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t.column.code}</th>
+                  <th scope="col">{t.column.name}</th>
+                  <th scope="col">{i.type}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sample.map((missing) => (
+                  <tr key={missing.resourceCode}>
+                    <td className="data-mono">{missing.resourceCode}</td>
+                    <td>{missing.name}</td>
+                    <td>{t.tab[typeTabs[missing.type]]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {sample.length < total ? <p className="prices-import__hint">{formatMessage(r.sampleOf, { shown: sample.length, total })}</p> : null}
+    </section>
+  )
+}
+
+function resourceTotal(summary: ImportSummary, outcome: (typeof outcomes)[number]): number {
+  return Object.values(summary.resources).reduce((sum, counts) => sum + counts[outcome], 0)
 }

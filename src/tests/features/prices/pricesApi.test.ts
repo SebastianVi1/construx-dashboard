@@ -136,17 +136,20 @@ describe('resourceSearch', () => {
         supplierId: 's-1',
         includeArchived: true,
         discontinued: false,
+        missingFromImport: true,
         sort: { field: 'currentCost', direction: 'desc' },
         page: 2,
         size: 25,
       }),
     ).toBe(
-      'type=MATERIAL&type=EQUIPMENT&query=arena&familyId=f-1&unitId=u-1&supplierId=s-1&includeArchived=true&discontinued=false&sort=currentCost%2Cdesc&page=2&size=25',
+      'type=MATERIAL&type=EQUIPMENT&query=arena&familyId=f-1&unitId=u-1&supplierId=s-1&includeArchived=true&discontinued=false&missingFromImport=true&sort=currentCost%2Cdesc&page=2&size=25',
     )
   })
 
   it('leaves out a blank query, archived off and discontinued unset', () => {
-    expect(resourceSearch({ query: '   ', includeArchived: false, discontinued: null, page: 0, size: 50 })).toBe('page=0&size=50')
+    expect(
+      resourceSearch({ query: '   ', includeArchived: false, discontinued: null, missingFromImport: false, page: 0, size: 50 }),
+    ).toBe('page=0&size=50')
   })
 })
 
@@ -252,6 +255,23 @@ describe('prices API', () => {
 
     expect(await getCatalog('org-1')).toEqual(empty)
     expect(get.mock.calls[0][0]).toBe(`${base}/catalog`)
+  })
+
+  it('getCatalog: reads the last import and the active job', async () => {
+    const summary = {
+      exists: true,
+      currency: 'MXN',
+      counts: { MATERIAL: 4, LABOR: 3, EQUIPMENT: 1, WORK_ITEM: 1, suppliers: 1, units: 6, families: 2 },
+      missingFromImport: 1,
+      lastImport: { id: 'imp-1', status: 'DONE', finishedAt: '2026-11-15T18:02:11Z', fileName: 'P.xlsx' },
+      fasar: null,
+      activeImport: { id: 'imp-2', status: 'VALIDATED', createdAt: '2026-11-16T10:00:00Z', file: { name: 'Q.xlsx' } },
+    }
+    stubApi(() => ({ status: 200, data: summary }))
+
+    const catalog = await getCatalog('org-1')
+    expect(catalog.lastImport).toEqual(summary.lastImport)
+    expect(catalog.activeImport).toEqual({ id: 'imp-2', status: 'VALIDATED', createdAt: '2026-11-16T10:00:00Z' })
   })
 
   it('listUnits, listFamilies and listSuppliers read the pickers', async () => {

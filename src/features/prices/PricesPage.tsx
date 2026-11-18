@@ -6,6 +6,7 @@ import { useCurrency } from '../../currency'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
+import { importStatuses, type ImportStatus } from './catalogImportApi'
 import { ImportTab } from './ImportTab'
 import { FasarStatusBadge, ResourceBadges } from './ResourceBadges'
 import { ResourceDrawer } from './ResourceDrawer'
@@ -86,6 +87,8 @@ function PricesHeader({ t }: { t: PricesMessages }) {
   const organization = useCurrentOrganization()
   const catalog = useRemoteData(`${organization.id}:catalog`, () => getCatalog(organization.id), { remember: false })
   const fasarStatus = catalog.data?.fasar?.status ?? 'NONE'
+  const { locale } = useLocale()
+  const date = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
   return (
     <header className="page-header">
       <div className="page-header__text">
@@ -94,6 +97,26 @@ function PricesHeader({ t }: { t: PricesMessages }) {
         {catalog.data ? (
           <p className="prices-badges">
             <FasarStatusBadge status={fasarStatus} t={t.fasar} />
+            {catalog.data.activeImport ? (
+              <span className="badge" data-tone="warning">
+                {formatMessage(t.header.activeImport, { status: importStatusLabel(catalog.data.activeImport.status, t) })}
+              </span>
+            ) : null}
+            {catalog.data.missingFromImport > 0 ? (
+              <span className="badge" data-tone="danger">
+                {formatMessage(t.header.missing, { count: catalog.data.missingFromImport })}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
+        {catalog.data ? (
+          <p className="prices-header__import">
+            {catalog.data.lastImport
+              ? formatMessage(t.header.lastImport, {
+                  file: catalog.data.lastImport.fileName,
+                  when: catalog.data.lastImport.finishedAt ? date.format(new Date(catalog.data.lastImport.finishedAt)) : '—',
+                })
+              : t.header.noImport}
           </p>
         ) : null}
       </div>
@@ -109,7 +132,11 @@ function PricesHeader({ t }: { t: PricesMessages }) {
   )
 }
 
-type ResourceCatalogProps = { tab: PriceTabKey; type: ResourceType; canManage: boolean; t: PricesMessages }
+function importStatusLabel(status: string, t: PricesMessages): string {
+  return importStatuses.includes(status as ImportStatus) ? t.importTab.status[status as ImportStatus] : status
+}
+
+type ResourceCatalogProps ={ tab: PriceTabKey; type: ResourceType; canManage: boolean; t: PricesMessages }
 
 function ResourceCatalog({ tab, type, canManage, t }: ResourceCatalogProps) {
   const { locale } = useLocale()
@@ -229,6 +256,14 @@ function ResourceCatalog({ tab, type, canManage, t }: ResourceCatalogProps) {
         <label className="prices-filters__check">
           <input type="checkbox" checked={filters.includeArchived} onChange={(event) => change({ includeArchived: event.target.checked })} />
           <span>{t.filters.archived}</span>
+        </label>
+        <label className="prices-filters__check">
+          <input
+            type="checkbox"
+            checked={filters.missingFromImport}
+            onChange={(event) => change({ missingFromImport: event.target.checked })}
+          />
+          <span>{t.filters.missingFromImport}</span>
         </label>
         {filtered || search ? (
           <button type="button" className="button button--small" onClick={clear}>

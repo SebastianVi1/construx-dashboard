@@ -7,6 +7,7 @@ import {
   confirmImport,
   getImport,
   importErrorKind,
+  listImports,
   requestImportUpload,
   startImport,
   type CatalogImport,
@@ -163,6 +164,33 @@ describe('catalog import API', () => {
     expect((await confirmImport('org-1', 'imp-1')).status).toBe('IMPORTING')
     expect(post.mock.calls[2]?.[1]).toEqual({ licenceAccepted: true, statement: 'LICENCE_V1' })
     expect((await cancelImport('org-1', 'imp-1')).status).toBe('CANCELLED')
+  })
+
+  it('lists past imports newest first, a page at a time', async () => {
+    const page = { content: [job('DONE', 'imp-2'), job('FAILED', 'imp-1')], page: 1, size: 20, totalElements: 22, totalPages: 2 }
+    const { get } = stubApi(() => page)
+    const listed = await listImports('org-1', 1)
+    expect(listed.content.map((row) => row.id)).toEqual(['imp-2', 'imp-1'])
+    expect(get.mock.calls.some((call) => call[0] === `${base}?page=1&size=20`)).toBe(true)
+  })
+
+  it('reads the report samples of the summary', async () => {
+    const validated = job('VALIDATED')
+    const summary = {
+      ...validated.summary!,
+      warnings: {
+        total: 1,
+        byCode: { WORK_ITEM_COST_MISMATCH: 1 },
+        sample: [{ code: 'WORK_ITEM_COST_MISMATCH', sheet: 'CatalogoGeneral', row: 1200, resourceCode: '10301-001', detail: { imported: '1006.42', derived: '1006.90' } }],
+      },
+      changes: { sample: [{ resourceCode: 'MO011', type: 'LABOR', name: 'PEON', from: '592.70', to: '610.00' }] },
+      missingFromFile: { sample: [{ resourceCode: 'EQ001', type: 'EQUIPMENT', name: 'Revolvedora' }] },
+    }
+    stubApi(() => ({ ...validated, summary }))
+    const read = await getImport('org-1', 'imp-1')
+    expect(read.summary?.warnings.sample[0]?.detail).toEqual({ imported: '1006.42', derived: '1006.90' })
+    expect(read.summary?.changes.sample[0]?.to).toBe('610.00')
+    expect(read.summary?.missingFromFile.sample[0]?.type).toBe('EQUIPMENT')
   })
 
   it('maps the import error codes', () => {
