@@ -97,6 +97,8 @@ export const financeMessages = defineMessages({
       amountPending: 'Enter a quantity to see the amount.',
       descriptionHint: 'Leave it empty to use the resource name.',
       locked: 'From the catalog: {quantity} {unit} × {unitCost}. Only the date and the concept can change.',
+      lockedWithoutCost: 'From the catalog: {quantity} {unit}. Only the date and the concept can change.',
+      amountOnSave: 'Computed from the current catalog cost when you save.',
       rowResource: '{code} · {quantity} {unit}',
     },
     deleteDialog: {
@@ -237,6 +239,8 @@ export const financeMessages = defineMessages({
       amountPending: 'Ingresa una cantidad para ver el monto.',
       descriptionHint: 'Déjalo vacío para usar el nombre del insumo.',
       locked: 'Desde catálogo: {quantity} {unit} × {unitCost}. Solo puedes cambiar la fecha y el concepto.',
+      lockedWithoutCost: 'Desde catálogo: {quantity} {unit}. Solo puedes cambiar la fecha y el concepto.',
+      amountOnSave: 'Se calcula con el costo actual del catálogo al guardar.',
       rowResource: '{code} · {quantity} {unit}',
     },
     deleteDialog: {

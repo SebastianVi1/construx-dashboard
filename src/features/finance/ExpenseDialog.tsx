@@ -5,14 +5,14 @@ import { Notice } from '../../components/page'
 import { useCurrency, type Currency } from '../../currency'
 import { formatMessage, useLocale, type Messages } from '../../i18n'
 import { localToday } from '../../lib/localDate'
-import { ResourcePicker } from '../prices/ResourcePicker'
-import type { Resource } from '../prices/pricesApi'
+import { getResource } from '../prices/pricesApi'
+import type { CatalogLookupItem } from '../sites/catalogLookup'
+import { CatalogLookupPicker } from './CatalogLookupPicker'
 import {
   buildCatalogExpenseDraft,
   buildCatalogExpensePatch,
-  catalogAmount,
   catalogExpenseToValues,
-  expensableTypes,
+  catalogPreview,
   expenseErrorKind,
   isFromCatalog,
   makeCatalogExpenseSchema,
@@ -20,15 +20,16 @@ import {
 } from './catalogExpense'
 import { buildExpenseDraft, buildExpensePatch, expenseToValues, makeExpenseSchema } from './expenseForm'
 import { createExpense, expenseCategories, updateExpense, type Expense, type NewExpense } from './financeApi'
-import '../prices/resource-picker.css'
 
 type ExpenseDialogProps = {
   organizationId: string
   siteId: string
   /** Edit this expense; without it the dialog adds a new one. */
   expense?: Expense
-  /** The caller holds VIEW_PRICES; without it a new expense can only be typed (docs/pricing.md §6.5). */
+  /** The caller may record this expense, so may also charge it from the Catalog (docs/pricing.md §6.5). */
   canUseCatalog: boolean
+  /** The caller holds VIEW_PRICES: show unit costs and preview the amount. */
+  seePrices: boolean
   create?: (draft: NewExpense) => Promise<Expense>
   onSaved: () => void
   onClose: () => void
@@ -173,11 +174,13 @@ function TypedExpenseForm({ organizationId, siteId, expense, create, onSaved, on
   )
 }
 
-function CatalogExpenseForm({ organizationId, siteId, expense, create, onSaved, onClose }: ExpenseDialogProps) {
+function CatalogExpenseForm({ organizationId, siteId, expense, seePrices, create, onSaved, onClose }: ExpenseDialogProps) {
   const { messages: m } = useLocale()
   const t = m.finance
   const { money } = useCurrency()
-  const [resource, setResource] = useState<Resource | null>(null)
+  const [resource, setResource] = useState<CatalogLookupItem | null>(null)
+  /** The picked Resource's current cost, read from the Catalog only for callers who see prices. */
+  const [pickedCost, setPickedCost] = useState<{ id: string; cost: string | null } | null>(null)
   const [errorKind, setErrorKind] = useState<ExpenseErrorKind>('generic')
   const [unchanged, setUnchanged] = useState(false)
 
@@ -216,9 +219,19 @@ function CatalogExpenseForm({ organizationId, siteId, expense, create, onSaved, 
     form.onChange(name, value)
   }
 
-  const unit = expense?.resource?.unitCode ?? resource?.unit.code ?? ''
-  const unitCost = expense ? expense.unitCost : resource?.currentCost
-  const amount = expense ? null : catalogAmount(form.values.quantity, unitCost)
+  function pick(picked: CatalogLookupItem | null) {
+    setResource(picked)
+    setPickedCost(null)
+    change('resourceId', picked?.id ?? '')
+    if (!picked || !seePrices) return
+    getResource(organizationId, picked.id)
+      .then((detail) => setPickedCost({ id: picked.id, cost: detail.currentCost }))
+      .catch(() => setPickedCost(null))
+  }
+
+  const unit = expense?.resource?.unitCode ?? resource?.unitCode ?? ''
+  const unitCost = pickedCost && pickedCost.id === resource?.id ? pickedCost.cost : null
+  const preview = catalogPreview(form.values.quantity, unitCost, seePrices)
   const fields: FieldConfig[] = [
     ...(expense
       ? []
@@ -247,24 +260,23 @@ function CatalogExpenseForm({ organizationId, siteId, expense, create, onSaved, 
     <>
       {expense ? (
         <Notice>
-          {formatMessage(t.catalog.locked, {
-            quantity: expense.quantity ?? '',
-            unit,
-            unitCost: money(Number(expense.unitCost ?? 0)),
-          })}
+          {expense.unitCost != null
+            ? formatMessage(t.catalog.locked, {
+                quantity: expense.quantity ?? '',
+                unit,
+                unitCost: money(Number(expense.unitCost)),
+              })
+            : formatMessage(t.catalog.lockedWithoutCost, { quantity: expense.quantity ?? '', unit })}
         </Notice>
       ) : (
-        <ResourcePicker
+        <CatalogLookupPicker
           organizationId={organizationId}
-          types={expensableTypes}
+          siteId={siteId}
           typeLabels={{ MATERIAL: t.category.MATERIALS, EQUIPMENT: t.category.EQUIPMENT, LABOR: t.category.LABOR }}
           value={resource}
           label={t.catalog.resource}
           error={form.errors.resourceId}
-          onChange={(picked) => {
-            setResource(picked)
-            change('resourceId', picked?.id ?? '')
-          }}
+          onChange={pick}
         />
       )}
       <Form
@@ -276,13 +288,15 @@ function CatalogExpenseForm({ organizationId, siteId, expense, create, onSaved, 
         {expense ? null : (
           <p className="form-field__hint" aria-live="polite">
             {t.catalog.amount}:{' '}
-            {amount === null || unitCost == null
-              ? t.catalog.amountPending
-              : formatMessage(t.catalog.amountPreview, {
-                  quantity: form.values.quantity.trim(),
-                  unitCost: money(Number(unitCost)),
-                  amount: money(amount),
-                })}
+            {preview.kind === 'onSave'
+              ? t.catalog.amountOnSave
+              : preview.kind === 'pending' || unitCost == null
+                ? t.catalog.amountPending
+                : formatMessage(t.catalog.amountPreview, {
+                    quantity: form.values.quantity.trim(),
+                    unitCost: money(Number(unitCost)),
+                    amount: money(preview.amount),
+                  })}
           </p>
         )}
         <SubmitFeedback failed={form.submitError} errorKind={errorKind} unchanged={unchanged} />

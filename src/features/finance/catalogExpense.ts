@@ -81,6 +81,18 @@ export function catalogAmount(quantity: string, unitCost: string | null | undefi
   return Number(cents) / 100
 }
 
+export type CatalogPreview = { kind: 'amount'; amount: number } | { kind: 'pending' } | { kind: 'onSave' }
+
+/**
+ * What the dialog says about the amount: the computed amount for a caller who sees prices, "enter a quantity" while
+ * it cannot be computed, and for everyone else that the server computes it from the current catalog cost on save.
+ */
+export function catalogPreview(quantity: string, unitCost: string | null | undefined, seePrices: boolean): CatalogPreview {
+  if (!seePrices) return { kind: 'onSave' }
+  const amount = catalogAmount(quantity, unitCost)
+  return amount === null ? { kind: 'pending' } : { kind: 'amount', amount }
+}
+
 /** Why a Resource cannot be charged, or null when it can. */
 export function unpickableReason(resource: Resource): 'notExpensable' | 'archived' | 'noCost' | null {
   if (!(expensableTypes as readonly string[]).includes(resource.type)) return 'notExpensable'

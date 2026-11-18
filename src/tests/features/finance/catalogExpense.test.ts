@@ -5,6 +5,7 @@ import {
   buildCatalogExpensePatch,
   catalogAmount,
   catalogExpenseToValues,
+  catalogPreview,
   expenseErrorKind,
   categoryOfResource,
   isFromCatalog,
@@ -121,6 +122,14 @@ describe('expense from the catalog', () => {
     expect(expenseErrorKind(new ApiError(400, undefined, 'RESOURCE_WITHOUT_COST'))).toBe('noCost')
     expect(expenseErrorKind(new ApiError(403))).toBe('forbidden')
     expect(expenseErrorKind(new Error('boom'))).toBe('generic')
+  })
+
+  it('previews the amount only to callers who see prices; others learn it is computed on save', () => {
+    expect(catalogPreview('12.5', '245.50', true)).toEqual({ kind: 'amount', amount: 3068.75 })
+    expect(catalogPreview('', '245.50', true)).toEqual({ kind: 'pending' })
+    expect(catalogPreview('12.5', null, true)).toEqual({ kind: 'pending' })
+    expect(catalogPreview('12.5', '245.50', false)).toEqual({ kind: 'onSave' })
+    expect(catalogPreview('', null, false)).toEqual({ kind: 'onSave' })
   })
 
   it('searches one resource type by text', () => {

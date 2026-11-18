@@ -109,7 +109,8 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
           organizationId={organizationId}
           siteId={site.id}
           expense={dialog.expense}
-          canUseCatalog={can('VIEW_PRICES')}
+          canUseCatalog={canManage}
+          seePrices={can('VIEW_PRICES')}
           onClose={() => setDialog(null)}
           onSaved={() => changed(t.saved)}
         />

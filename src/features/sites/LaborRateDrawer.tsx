@@ -4,8 +4,7 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice, SkeletonRows } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { formatDateTime, formatMessage, useLocale } from '../../i18n'
-import { ApiError } from '../../lib/http'
-import { listResources } from '../prices/pricesApi'
+import { laborCategoryFromLookup, lookupCatalog } from './catalogLookup'
 import '../prices/prices.css'
 import {
   getLaborRate,
@@ -239,6 +238,7 @@ function RateEditor({ organizationId, siteId, accessId, view, onSaved }: RateEdi
         {draft.kind === 'CATALOG' ? (
           <CategoryPicker
             organizationId={organizationId}
+            siteId={siteId}
             chosen={draft.category}
             disabled={busy}
             onChoose={(category) => setDraft({ ...draft, category })}
@@ -272,22 +272,25 @@ function RateEditor({ organizationId, siteId, accessId, view, onSaved }: RateEdi
 
 type CategoryPickerProps = {
   organizationId: string
+  siteId: string
   chosen: LaborRateDraft['category']
   disabled: boolean
   onChoose: (category: NonNullable<LaborRateDraft['category']>) => void
 }
 
-/** Simple, active Labor categories of the catalog (needs VIEW_PRICES), searched by code or name. */
-function CategoryPicker({ organizationId, chosen, disabled, onChoose }: CategoryPickerProps) {
+/**
+ * Simple, active Labor categories, searched by code or name through the site's catalog lookup (docs/pricing.md
+ * §6.7), so a Site manager without VIEW_PRICES can pick one. The lookup shows no wages.
+ */
+function CategoryPicker({ organizationId, siteId, chosen, disabled, onChoose }: CategoryPickerProps) {
   const { messages: m } = useLocale()
-  const { money } = useCurrency()
   const t = m.sites.people.rate
   const searchId = useId()
   const [query, setQuery] = useState('')
   const text = query.trim()
   const results = useRemoteData(
-    `${organizationId}:labor-categories:${text}`,
-    () => listResources(organizationId, { types: ['LABOR'], composite: false, query: text, page: 0, size: 20 }),
+    `${organizationId}:${siteId}:labor-categories:${text}`,
+    () => lookupCatalog(organizationId, siteId, 'LABOR_RATE', text),
     { immediate: true },
   )
 
@@ -316,22 +319,18 @@ function CategoryPicker({ organizationId, chosen, disabled, onChoose }: Category
                   className="labor-rate-picker__option"
                   aria-pressed={chosen?.id === resource.id}
                   disabled={disabled}
-                  onClick={() =>
-                    onChoose({ id: resource.id, code: resource.code, name: resource.name, realWage: resource.currentCost })
-                  }
+                  onClick={() => onChoose(laborCategoryFromLookup(resource))}
                 >
                   <span className="data-mono">{resource.code}</span>
                   <span>{resource.name}</span>
-                  <span className="data-mono">{resource.currentCost === null ? t.noCost : money(Number(resource.currentCost))}</span>
+                  <span className="data-mono">{resource.unitCode}</span>
                 </button>
               </li>
             ))}
           </ul>
         )
       ) : results.status === 'error' ? (
-        <Notice>
-          {results.error instanceof ApiError && results.error.status === 403 ? t.searchForbidden : t.searchError}
-        </Notice>
+        <Notice>{t.searchError}</Notice>
       ) : (
         <SkeletonRows rows={3} />
       )}
