@@ -433,19 +433,34 @@
   margin: 0;
 }
 
-.prices-import__facts {
+.prices-import__block {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 8px 16px;
-  margin: 0;
+  gap: 0.5rem;
 }
 
-.prices-import__facts dt {
-  color: var(--cx-muted);
-  font-size: 0.875rem;
+.prices-import__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
 }
 
 .prices-import__facts dd {
   margin: 0;
-  font-variant-numeric: tabular-nums;
+}
+
+.prices-import__warning summary {
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.prices-import__history {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.prices-header__import {
+  color: var(--cx-muted);
+  margin: 0;
 }
