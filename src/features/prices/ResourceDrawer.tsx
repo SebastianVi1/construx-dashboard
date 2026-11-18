@@ -4,7 +4,7 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { ConfirmDialog } from '../../components/modal'
 import { Notice, SkeletonRows } from '../../components/page'
 import { useCurrency } from '../../currency'
-import { formatMessage, intlLocales, useLocale } from '../../i18n'
+import { formatDateTime, formatMessage, intlLocales, useLocale } from '../../i18n'
 import { LaborWageDialog } from './LaborWageDialog'
 import { ResourceBadges } from './ResourceBadges'
 import { ResourceComposition } from './ResourceComposition'
@@ -196,7 +196,6 @@ function ResourceDetailBody({ organizationId, detail, onOpen }: DetailBodyProps)
   const { money } = useCurrency()
   const t = m.prices
   const d = t.detail
-  const dateTime = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
   const day = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeZone: 'UTC' })
   const none = <span className="cell-muted">{d.none}</span>
 
@@ -216,8 +215,8 @@ function ResourceDetailBody({ organizationId, detail, onOpen }: DetailBodyProps)
     [d.importedCost, detail.importedCost ? money(detail.importedCost) : none],
     [d.importedCostOn, detail.importedCostOn ? day.format(new Date(detail.importedCostOn)) : none],
     [d.source, t.source[detail.source]],
-    [d.createdAt, dateTime.format(new Date(detail.createdAt))],
-    [d.updatedAt, dateTime.format(new Date(detail.updatedAt))],
+    [d.createdAt, formatDateTime(detail.createdAt, locale)],
+    [d.updatedAt, formatDateTime(detail.updatedAt, locale)],
   ]
 
   return (
@@ -226,7 +225,7 @@ function ResourceDetailBody({ organizationId, detail, onOpen }: DetailBodyProps)
         <span className="prices-drawer__label">{d.currentCost}</span>
         <strong className="data-mono">{detail.currentCost === null ? t.noCost : money(detail.currentCost)}</strong>
         {detail.costUpdatedAt ? (
-          <span className="cell-muted">{formatMessage(d.costSince, { date: dateTime.format(new Date(detail.costUpdatedAt)) })}</span>
+          <span className="cell-muted">{formatMessage(d.costSince, { date: formatDateTime(detail.costUpdatedAt, locale) })}</span>
         ) : null}
       </section>
 
@@ -270,7 +269,7 @@ function ResourceDetailBody({ organizationId, detail, onOpen }: DetailBodyProps)
                   {detail.history.map((cost) => (
                     <tr key={cost.id}>
                       <td className="data-mono">{money(cost.amount)}</td>
-                      <td className="data-mono">{dateTime.format(new Date(cost.effectiveFrom))}</td>
+                      <td className="data-mono">{formatDateTime(cost.effectiveFrom, locale)}</td>
                       <td>{t.source[cost.source]}</td>
                       <td>{costAuthor(cost, { import: d.importAuthor, unknown: d.none })}</td>
                       <td>{cost.supplier?.name ?? none}</td>

@@ -228,6 +228,11 @@ export function pageSchema<T extends z.ZodType>(item: T) {
 
 export type Page<T> = { content: T[]; page: number; size: number; totalElements: number; totalPages: number }
 
+/** The states of a Catalog import job (backend `docs/pricing.md` §1.11). */
+export const importStatuses = ['PENDING', 'VALIDATING', 'VALIDATED', 'IMPORTING', 'DONE', 'FAILED', 'CANCELLED'] as const
+
+export type ImportStatus = (typeof importStatuses)[number]
+
 export const catalogSchema = z.object({
   exists: z.boolean(),
   currency: z.string(),
@@ -242,7 +247,12 @@ export const catalogSchema = z.object({
   }),
   missingFromImport: z.number().int(),
   lastImport: z
-    .object({ id: z.string().min(1), status: z.string(), finishedAt: z.string().nullable(), fileName: z.string() })
+    .object({
+      id: z.string().min(1),
+      status: z.enum(importStatuses),
+      finishedAt: z.string().nullable(),
+      fileName: z.string(),
+    })
     .nullable(),
   fasar: z
     .object({
@@ -254,7 +264,7 @@ export const catalogSchema = z.object({
     })
     .nullable(),
   /** The running job, only for members who manage prices; the Importar tab reads the whole job. */
-  activeImport: z.object({ id: z.string().min(1), status: z.string(), createdAt: z.string() }).nullable(),
+  activeImport: z.object({ id: z.string().min(1), status: z.enum(importStatuses), createdAt: z.string() }).nullable(),
 })
 
 export type CatalogSummary = z.infer<typeof catalogSchema>

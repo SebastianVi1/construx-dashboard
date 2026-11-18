@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useParams } from 'react-router'
 import { FolderIcon, SpreadsheetIcon } from '../../components/icons'
 import { ConfirmDialog } from '../../components/modal'
 import { BackLink, SkeletonList, Notice } from '../../components/page'
-import { formatMessage, intlLocales, useLocale } from '../../i18n'
+import { formatDateTime, formatMessage, useLocale } from '../../i18n'
 import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { DragItem } from './excelDrag'
 import { dragKind, dropIssue, ITEM_DRAG_TYPE } from './excelDrag'
@@ -65,7 +65,6 @@ export function ExcelLibraryPage() {
   const [dragged, setDragged] = useState<DragItem | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null | undefined>(undefined)
 
-  const dateFormat = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
 
   /** Runs a folder change; returns the message to show in its dialog, or null once it is done. */
   async function change(action: () => Promise<unknown>): Promise<string | null> {
@@ -244,7 +243,7 @@ export function ExcelLibraryPage() {
               {item.name}
             </Link>
             <span className="excel-list__detail">
-              {formatMessage(t.lastEdit, { date: dateFormat.format(item.updatedAt) })} ·{' '}
+              {formatMessage(t.lastEdit, { date: formatDateTime(item.updatedAt, locale) })} ·{' '}
               {item.sheetCount === 1 ? t.oneSheet : formatMessage(t.sheets, { count: item.sheetCount })}
               {item.dirty ? <span className="badge" data-tone="warning">{t.unexported}</span> : null}
             </span>

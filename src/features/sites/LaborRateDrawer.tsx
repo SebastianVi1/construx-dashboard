@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice, SkeletonRows } from '../../components/page'
 import { useCurrency } from '../../currency'
-import { formatMessage, intlLocales, useLocale } from '../../i18n'
+import { formatDateTime, formatMessage, useLocale } from '../../i18n'
 import { ApiError } from '../../lib/http'
 import { listResources } from '../prices/pricesApi'
 import '../prices/prices.css'
@@ -127,13 +127,12 @@ export function LaborRateDrawer({ organizationId, siteId, person, canManage, onS
 function RateLine({ rate }: { rate: LaborRate }) {
   const { messages: m, locale } = useLocale()
   const t = m.sites.people.rate
-  const dateTime = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
   return (
     <div className="labor-rate-line">
       <strong>{rateSummary(rate, t)}</strong>
       <RateAmount rate={rate} />
       <span className="cell-muted">
-        {formatMessage(t.since, { date: dateTime.format(new Date(rate.effectiveFrom)), name: rate.setBy.fullName || t.someone })}
+        {formatMessage(t.since, { date: formatDateTime(rate.effectiveFrom, locale), name: rate.setBy.fullName || t.someone })}
       </span>
     </div>
   )

@@ -2,13 +2,11 @@ import { z } from 'zod'
 import { ApiError, getJson, sendJson } from '../../lib/http'
 import { organizationPath } from '../../lib/apiPaths'
 import { StorageUploadError } from '../plans/plansApi'
-import { pageSchema, pricesErrorKind, type Page, type PricesErrorKind } from './pricesApi'
+import { importStatuses, pageSchema, pricesErrorKind, type Page, type PricesErrorKind } from './pricesApi'
 
 /** Catalog import from the PU Win+ Presupuesto workbook (backend `docs/pricing.md` §4). */
 
-export const importStatuses = ['PENDING', 'VALIDATING', 'VALIDATED', 'IMPORTING', 'DONE', 'FAILED', 'CANCELLED'] as const
-
-export type ImportStatus = (typeof importStatuses)[number]
+export { importStatuses, type ImportStatus } from './pricesApi'
 
 /** The key of the licence statement shown with the confirm checkbox (§4.4). */
 export const LICENCE_STATEMENT = 'LICENCE_V1'

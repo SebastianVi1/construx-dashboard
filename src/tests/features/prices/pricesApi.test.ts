@@ -263,7 +263,7 @@ describe('prices API', () => {
       currency: 'MXN',
       counts: { MATERIAL: 4, LABOR: 3, EQUIPMENT: 1, WORK_ITEM: 1, suppliers: 1, units: 6, families: 2 },
       missingFromImport: 1,
-      lastImport: { id: 'imp-1', status: 'DONE', finishedAt: '2026-11-15T18:02:11Z', fileName: 'P.xlsx' },
+      lastImport: { id: 'imp-1', status: 'DONE' as const, finishedAt: '2026-11-15T18:02:11Z', fileName: 'P.xlsx' },
       fasar: null,
       activeImport: { id: 'imp-2', status: 'VALIDATED', createdAt: '2026-11-16T10:00:00Z', file: { name: 'Q.xlsx' } },
     }
@@ -272,6 +272,23 @@ describe('prices API', () => {
     const catalog = await getCatalog('org-1')
     expect(catalog.lastImport).toEqual(summary.lastImport)
     expect(catalog.activeImport).toEqual({ id: 'imp-2', status: 'VALIDATED', createdAt: '2026-11-16T10:00:00Z' })
+  })
+
+  it('getCatalog: refuses an import status outside the contract', async () => {
+    stubApi(() => ({
+      status: 200,
+      data: {
+        exists: true,
+        currency: 'MXN',
+        counts: { MATERIAL: 0, LABOR: 0, EQUIPMENT: 0, WORK_ITEM: 0, suppliers: 0, units: 0, families: 0 },
+        missingFromImport: 0,
+        lastImport: { id: 'imp-1', status: 'EXPLODED', finishedAt: null, fileName: 'P.xlsx' },
+        fasar: null,
+        activeImport: null,
+      },
+    }))
+
+    await expect(getCatalog('org-1')).rejects.toThrow()
   })
 
   it('listUnits, listFamilies and listSuppliers read the pickers', async () => {

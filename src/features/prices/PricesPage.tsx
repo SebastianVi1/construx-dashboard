@@ -3,10 +3,10 @@ import { Link } from 'react-router'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
 import { Notice, SkeletonTable } from '../../components/page'
 import { useCurrency } from '../../currency'
-import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
+import { formatDateTime, formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
-import { importStatuses, type ImportStatus } from './catalogImportApi'
+import type { ImportStatus } from './catalogImportApi'
 import { ImportTab } from './ImportTab'
 import { FasarStatusBadge, ResourceBadges } from './ResourceBadges'
 import { ResourceDrawer } from './ResourceDrawer'
@@ -91,7 +91,6 @@ function PricesHeader({ t, catalog }: { t: PricesMessages; catalog: RemoteData<C
   const { currency } = useCurrency()
   const fasarStatus = catalog.data?.fasar?.status ?? 'NONE'
   const { locale } = useLocale()
-  const date = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
   return (
     <header className="page-header">
       <div className="page-header__text">
@@ -117,7 +116,7 @@ function PricesHeader({ t, catalog }: { t: PricesMessages; catalog: RemoteData<C
             {catalog.data.lastImport
               ? formatMessage(t.header.lastImport, {
                   file: catalog.data.lastImport.fileName,
-                  when: catalog.data.lastImport.finishedAt ? date.format(new Date(catalog.data.lastImport.finishedAt)) : '—',
+                  when: catalog.data.lastImport.finishedAt ? formatDateTime(catalog.data.lastImport.finishedAt, locale) : '—',
                 })
               : t.header.noImport}
           </p>
@@ -135,8 +134,8 @@ function PricesHeader({ t, catalog }: { t: PricesMessages; catalog: RemoteData<C
   )
 }
 
-function importStatusLabel(status: string, t: PricesMessages): string {
-  return importStatuses.includes(status as ImportStatus) ? t.importTab.status[status as ImportStatus] : status
+function importStatusLabel(status: ImportStatus, t: PricesMessages): string {
+  return t.importTab.status[status]
 }
 
 type ResourceCatalogProps ={ tab: PriceTabKey; type: ResourceType; canManage: boolean; t: PricesMessages }
