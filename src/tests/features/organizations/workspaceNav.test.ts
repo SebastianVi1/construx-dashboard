@@ -15,19 +15,19 @@ describe('workspaceNavItems', () => {
     ).toEqual(['sites', 'documents', 'members'])
   })
 
-  it('places materials after my tasks and before team when the role sees prices', () => {
+  it('places prices after my tasks and before team when the role sees prices', () => {
     expect(
       workspaceNavItems({ seesOwnTasks: true, seesPrices: true, seesBudget: false, managesMembers: true }).map((item) => item.to),
-    ).toEqual(['/sites', '/tasks', '/materials', '/documents', '/members'])
+    ).toEqual(['/sites', '/tasks', '/prices', '/documents', '/members'])
     expect(
       workspaceNavItems({ seesOwnTasks: false, seesPrices: true, seesBudget: false, managesMembers: false }).map((item) => item.key),
-    ).toEqual(['sites', 'materials', 'documents'])
+    ).toEqual(['sites', 'prices', 'documents'])
   })
 
-  it('places excel after materials and before team when the role sees the budget', () => {
+  it('places excel after prices and before team when the role sees the budget', () => {
     expect(
       workspaceNavItems({ seesOwnTasks: true, seesPrices: true, seesBudget: true, managesMembers: true }).map((item) => item.to),
-    ).toEqual(['/sites', '/tasks', '/materials', '/excel', '/documents', '/members'])
+    ).toEqual(['/sites', '/tasks', '/prices', '/excel', '/documents', '/members'])
     expect(
       workspaceNavItems({ seesOwnTasks: false, seesPrices: false, seesBudget: true, managesMembers: false }).map((item) => item.key),
     ).toEqual(['sites', 'excel', 'documents'])
@@ -39,7 +39,7 @@ describe('sectionForPath', () => {
     expect(sectionForPath('/sites')).toEqual({ key: 'sites', to: '/sites', isRoot: true })
     expect(sectionForPath('/tasks')).toEqual({ key: 'myTasks', to: '/tasks', isRoot: true })
     expect(sectionForPath('/members/')).toEqual({ key: 'members', to: '/members', isRoot: true })
-    expect(sectionForPath('/materials')).toEqual({ key: 'materials', to: '/materials', isRoot: true })
+    expect(sectionForPath('/prices')).toEqual({ key: 'prices', to: '/prices', isRoot: true })
     expect(sectionForPath('/account')).toEqual({ key: 'account', to: '/account', isRoot: true })
   })
 

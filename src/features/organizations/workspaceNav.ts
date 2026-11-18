@@ -1,5 +1,5 @@
 /** A destination of the workspace navigation; `key` names its label in `messages.workspace`. */
-export type WorkspaceNavItem = { key: 'finance' | 'sites' | 'myTasks' | 'materials' | 'excel' | 'members' | 'documents'; to: string }
+export type WorkspaceNavItem = { key: 'finance' | 'sites' | 'myTasks' | 'prices' | 'excel' | 'members' | 'documents'; to: string }
 
 export type WorkspaceSection = { key: WorkspaceNavItem['key'] | 'account'; to: string; isRoot: boolean }
 
@@ -22,7 +22,7 @@ export function workspaceNavItems({
   if (seesFinance) items.push({ key: 'finance', to: '/finance' })
   items.push({ key: 'sites', to: '/sites' })
   if (seesOwnTasks) items.push({ key: 'myTasks', to: '/tasks' })
-  if (seesPrices) items.push({ key: 'materials', to: '/materials' })
+  if (seesPrices) items.push({ key: 'prices', to: '/prices' })
   if (seesBudget) items.push({ key: 'excel', to: '/excel' })
   items.push({ key: 'documents', to: '/documents' })
   if (managesMembers) items.push({ key: 'members', to: '/members' })
@@ -33,7 +33,7 @@ const sections: Omit<WorkspaceSection, 'isRoot'>[] = [
   { key: 'finance', to: '/finance' },
   { key: 'sites', to: '/sites' },
   { key: 'myTasks', to: '/tasks' },
-  { key: 'materials', to: '/materials' },
+  { key: 'prices', to: '/prices' },
   { key: 'excel', to: '/excel' },
   { key: 'documents', to: '/documents' },
   { key: 'members', to: '/members' },

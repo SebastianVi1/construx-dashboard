@@ -19,7 +19,7 @@ const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
   finance: FinanceIcon,
   sites: SitesIcon,
   myTasks: TasksIcon,
-  materials: MaterialsIcon,
+  prices: MaterialsIcon,
   excel: SpreadsheetIcon,
   documents: DocumentIcon,
   members: TeamIcon,

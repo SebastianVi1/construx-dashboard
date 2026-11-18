@@ -7,7 +7,7 @@ const MAIN_SCREENS = new Set([
   '/finance',
   '/sites',
   '/tasks',
-  '/materials',
+  '/prices',
   '/excel',
   '/documents',
   '/crews',
