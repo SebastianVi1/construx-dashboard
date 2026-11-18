@@ -1,4 +1,11 @@
-import { MAX_IMPORT_BYTES, type CatalogImport, type ImportErrorKind, type ImportStatus } from './catalogImportApi'
+import {
+  MAX_IMPORT_BYTES,
+  type CatalogImport,
+  type ImportErrorKind,
+  type ImportKind,
+  type ImportStatus,
+  type ImportSummary,
+} from './catalogImportApi'
 
 /**
  * The Importar tab as a state machine: pick a file, upload it with progress, then follow the job the server
@@ -71,11 +78,56 @@ export function canStartOver(state: WizardState): boolean {
   return state.step === 'job' && ['DONE', 'FAILED', 'CANCELLED'].includes(state.job.status)
 }
 
-/** Checked before asking for an upload slot: an `.xlsx` up to 50 MB, as the server requires. */
-export function checkImportFile(file: { name: string; size: number }): ImportErrorKind | null {
-  if (!file.name.toLowerCase().endsWith('.xlsx')) return 'fileType'
+/**
+ * Checked before asking for an upload slot, as the server requires: an `.xlsx` Presupuesto, an `.xls` or `.xlsx`
+ * FASAR workbook, each up to 50 MB.
+ */
+export function checkImportFile(file: { name: string; size: number }, kind: ImportKind = 'PRESUPUESTO'): ImportErrorKind | null {
+  const name = file.name.toLowerCase()
+  if (kind === 'FASAR' && !name.endsWith('.xls') && !name.endsWith('.xlsx')) return 'fasarFileType'
+  if (kind === 'PRESUPUESTO' && !name.endsWith('.xlsx')) return 'fileType'
   if (file.size < 1 || file.size > MAX_IMPORT_BYTES) return 'tooLarge'
   return null
+}
+
+/** Progress of uploading the files one after the other, as one fraction weighted by their sizes. */
+export function combinedProgress(sizes: number[], index: number, fraction: number): number {
+  const total = sizes.reduce((sum, size) => sum + size, 0)
+  if (total <= 0) return Math.min(1, (index + fraction) / sizes.length)
+  const before = sizes.slice(0, index).reduce((sum, size) => sum + size, 0)
+  return Math.min(1, (before + fraction * (sizes[index] ?? 0)) / total)
+}
+
+/** Warnings that belong to the FASAR workbook rather than to a mismatch count, in the order they are shown. */
+const fasarWarningCodes = ['FASAR_YEAR_OLD', 'FASAR_CATEGORY_NOT_IN_CATALOG', 'FASAR_UNKNOWN_CODE'] as const
+
+export type FasarWarningCode = (typeof fasarWarningCodes)[number]
+
+export type FasarReport = {
+  year: number | null
+  uma: string | null
+  minimumWage: string | null
+  categories: number
+  fsrMismatches: number
+  realWageMismatches: number
+  warnings: { code: FasarWarningCode; count: number }[]
+}
+
+/** The FASAR section of a dry run (§4.5), or null when the import has no FASAR workbook. */
+export function fasarReport(summary: ImportSummary): FasarReport | null {
+  const fasar = summary.fasar
+  if (!fasar.provided) return null
+  return {
+    year: fasar.year,
+    uma: fasar.uma,
+    minimumWage: fasar.minimumWage,
+    categories: fasar.laborCategories,
+    fsrMismatches: fasar.fsrMismatches,
+    realWageMismatches: fasar.realWageMismatches,
+    warnings: fasarWarningCodes
+      .map((code) => ({ code, count: summary.warnings.byCode[code] ?? 0 }))
+      .filter((warning) => warning.count > 0),
+  }
 }
 
 /** Total Resources per merge outcome across the four types of a dry run. */

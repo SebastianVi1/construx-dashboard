@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { useRemoteData } from '../../components/data/useRemoteData'
+import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
 import { Notice, SkeletonTable } from '../../components/page'
 import { useCurrency } from '../../currency'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
@@ -13,6 +13,7 @@ import { ResourceFormDialog } from './ResourceFormDialog'
 import { SuppliersTab } from './SuppliersTab'
 import {
   getCatalog,
+  type CatalogSummary,
   listFamilies,
   listResources,
   listSuppliers,
@@ -38,6 +39,10 @@ export function PricesPage() {
   const { can } = usePermissions()
   const canView = can('VIEW_PRICES')
   const [tab, setTab] = useState<PriceTabKey>('materials')
+  const organization = useCurrentOrganization()
+  const catalog = useRemoteData(canView ? `${organization.id}:catalog` : null, () => getCatalog(organization.id), {
+    remember: false,
+  })
 
   useEffect(() => {
     document.title = `${t.title} | Construx`
@@ -54,7 +59,7 @@ export function PricesPage() {
   const active = priceTabs.find((candidate) => candidate.key === tab)
   return (
     <div className="page">
-      <PricesHeader t={t} />
+      <PricesHeader t={t} catalog={catalog} />
       <div className="prices-tabs" role="tablist" aria-label={t.tabsLabel}>
         {priceTabs.map((candidate) => (
           <button
@@ -76,15 +81,13 @@ export function PricesPage() {
         <ResourceCatalog key={active.key} tab={active.key} type={active.type} canManage={can('MANAGE_PRICES')} t={t} />
       ) : null}
       {active?.key === 'suppliers' ? <SuppliersTab t={t} /> : null}
-      {active?.key === 'import' ? <ImportTab t={t} /> : null}
+      {active?.key === 'import' ? <ImportTab t={t} onDone={catalog.reload} /> : null}
     </div>
   )
 }
 
-function PricesHeader({ t }: { t: PricesMessages }) {
+function PricesHeader({ t, catalog }: { t: PricesMessages; catalog: RemoteData<CatalogSummary> }) {
   const { currency } = useCurrency()
-  const organization = useCurrentOrganization()
-  const catalog = useRemoteData(`${organization.id}:catalog`, () => getCatalog(organization.id), { remember: false })
   const fasarStatus = catalog.data?.fasar?.status ?? 'NONE'
   return (
     <header className="page-header">

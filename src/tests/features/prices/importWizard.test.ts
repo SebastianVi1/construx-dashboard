@@ -17,6 +17,8 @@ import {
   canConfirm,
   canStartOver,
   checkImportFile,
+  combinedProgress,
+  fasarReport,
   formatFileSize,
   initialWizard,
   pollDelay,
@@ -118,6 +120,47 @@ describe('import wizard', () => {
     expect(checkImportFile({ name: 'p.xlsx', size: 0 })).toBe('tooLarge')
   })
 
+  it('accepts an .xls or .xlsx FASAR workbook beside the .xlsx Presupuesto', () => {
+    expect(checkImportFile({ name: 'FasarEstandar.XLS', size: 10 }, 'FASAR')).toBeNull()
+    expect(checkImportFile({ name: 'FasarEstandar.xlsx', size: 10 }, 'FASAR')).toBeNull()
+    expect(checkImportFile({ name: 'fasar.csv', size: 10 }, 'FASAR')).toBe('fasarFileType')
+    expect(checkImportFile({ name: 'fasar.xls', size: 52_428_801 }, 'FASAR')).toBe('tooLarge')
+  })
+
+  it('reports the progress of both uploads as one, weighted by size', () => {
+    expect(combinedProgress([300, 100], 0, 0.5)).toBe(0.375)
+    expect(combinedProgress([300, 100], 1, 0.5)).toBe(0.875)
+    expect(combinedProgress([300, 100], 1, 1)).toBe(1)
+    expect(combinedProgress([300], 0, 0.25)).toBe(0.25)
+    expect(combinedProgress([0, 0], 0, 1)).toBe(0.5)
+  })
+
+  it('builds the FASAR section of the report with its warnings', () => {
+    const validated = job('VALIDATED')
+    expect(fasarReport(validated.summary!)).toBeNull()
+    const summary = {
+      ...validated.summary!,
+      fasar: { provided: true, year: 2019, uma: '86.8800', minimumWage: '123.22', laborCategories: 41, fsrMismatches: 2, realWageMismatches: 1 },
+      warnings: {
+        total: 7,
+        byCode: { FASAR_YEAR_OLD: 1, FASAR_CATEGORY_NOT_IN_CATALOG: 3, FSR_MISMATCH: 2, REAL_WAGE_MISMATCH: 1, UNIT_NOT_LISTED: 1 },
+        sample: [],
+      },
+    }
+    expect(fasarReport(summary)).toEqual({
+      year: 2019,
+      uma: '86.8800',
+      minimumWage: '123.22',
+      categories: 41,
+      fsrMismatches: 2,
+      realWageMismatches: 1,
+      warnings: [
+        { code: 'FASAR_YEAR_OLD', count: 1 },
+        { code: 'FASAR_CATEGORY_NOT_IN_CATALOG', count: 3 },
+      ],
+    })
+  })
+
   it('adds the dry-run counts of the four types', () => {
     expect(resourceTotals(job('VALIDATED'))).toEqual({ new: 9, costChanged: 4, unchanged: 8, missingFromFile: 0 })
     expect(resourceTotals(job('PENDING'))).toBeNull()
@@ -163,6 +206,23 @@ describe('catalog import API', () => {
     expect((await confirmImport('org-1', 'imp-1')).status).toBe('IMPORTING')
     expect(post.mock.calls[2]?.[1]).toEqual({ licenceAccepted: true, statement: 'LICENCE_V1' })
     expect((await cancelImport('org-1', 'imp-1')).status).toBe('CANCELLED')
+  })
+
+  it('asks for a FASAR slot with the Excel type of its extension and starts with both uploads', async () => {
+    const { post } = stubApi((url) => {
+      if (url.endsWith('/uploads')) {
+        return { status: 201, data: { uploadId: 'up-2', uploadUrl: 'https://s3/put', headers: {}, expiresAt: '2026-11-17T10:10:00Z' } }
+      }
+      return { status: 202, data: { ...job('PENDING'), fasarFile: { name: 'f.xls', sizeBytes: 10, sha256: 'b'.repeat(64) } } }
+    })
+    await requestImportUpload('org-1', { name: 'f.xls', size: 10 }, 'FASAR')
+    expect(post.mock.calls[0]?.[1]).toEqual({ kind: 'FASAR', fileName: 'f.xls', contentType: 'application/vnd.ms-excel', sizeBytes: 10 })
+    await requestImportUpload('org-1', { name: 'f.xlsx', size: 10 }, 'FASAR')
+    expect((post.mock.calls[1]?.[1] as { contentType: string }).contentType).toBe(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    expect((await startImport('org-1', 'up-1', 'up-2')).fasarFile?.name).toBe('f.xls')
+    expect(post.mock.calls[2]?.[1]).toEqual({ presupuestoUploadId: 'up-1', fasarUploadId: 'up-2' })
   })
 
   it('maps the import error codes', () => {

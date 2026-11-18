@@ -413,3 +413,39 @@
 .prices-import__licence input {
   margin-top: 3px;
 }
+
+.prices-import__file {
+  display: grid;
+  gap: 4px;
+}
+
+.prices-import__file-label {
+  margin: 0;
+}
+
+.prices-import__fasar {
+  display: grid;
+  gap: 8px;
+}
+
+.prices-import__fasar h4,
+.prices-import__fasar p {
+  margin: 0;
+}
+
+.prices-import__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.prices-import__facts dt {
+  color: var(--cx-muted);
+  font-size: 0.875rem;
+}
+
+.prices-import__facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}

@@ -15,6 +15,16 @@ export const LICENCE_STATEMENT = 'LICENCE_V1'
 
 export const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
+export const XLS_TYPE = 'application/vnd.ms-excel'
+
+/** The Presupuesto workbook, or the optional FASAR workbook beside it (§4.1). */
+export type ImportKind = 'PRESUPUESTO' | 'FASAR'
+
+/** The Excel type the server expects for a file name: `.xls` (FASAR only) or `.xlsx`. */
+export function importContentType(fileName: string): string {
+  return fileName.toLowerCase().endsWith('.xls') ? XLS_TYPE : XLSX_TYPE
+}
+
 /** 50 MB, the server's limit for an import workbook. */
 export const MAX_IMPORT_BYTES = 52_428_800
 
@@ -95,20 +105,24 @@ function importPath(organizationId: string, importId: string): string {
   return `${importsPath(organizationId)}/${encodeURIComponent(importId)}`
 }
 
-/** Step 1: a presigned upload slot for the Presupuesto workbook. */
-export function requestImportUpload(organizationId: string, file: { name: string; size: number }): Promise<ImportUpload> {
+/** Step 1: a presigned upload slot for the Presupuesto workbook, or for the FASAR workbook. */
+export function requestImportUpload(
+  organizationId: string,
+  file: { name: string; size: number },
+  kind: ImportKind = 'PRESUPUESTO',
+): Promise<ImportUpload> {
   return sendJson(
     'post',
     `${importsPath(organizationId)}/uploads`,
-    { kind: 'PRESUPUESTO', fileName: file.name, contentType: XLSX_TYPE, sizeBytes: file.size },
+    { kind, fileName: file.name, contentType: kind === 'FASAR' ? importContentType(file.name) : XLSX_TYPE, sizeBytes: file.size },
     201,
     importUploadSchema,
   )
 }
 
 /** Step 3, after the bytes are in storage: start the job; validation runs in the background. */
-export function startImport(organizationId: string, uploadId: string): Promise<CatalogImport> {
-  return sendJson('post', importsPath(organizationId), { presupuestoUploadId: uploadId, fasarUploadId: null }, 202, catalogImportSchema)
+export function startImport(organizationId: string, uploadId: string, fasarUploadId: string | null = null): Promise<CatalogImport> {
+  return sendJson('post', importsPath(organizationId), { presupuestoUploadId: uploadId, fasarUploadId }, 202, catalogImportSchema)
 }
 
 export function getImport(organizationId: string, importId: string): Promise<CatalogImport> {
@@ -131,6 +145,7 @@ export function cancelImport(organizationId: string, importId: string): Promise<
 
 export type ImportErrorKind =
   | 'fileType'
+  | 'fasarFileType'
   | 'tooLarge'
   | 'uploadMissing'
   | 'inProgress'
