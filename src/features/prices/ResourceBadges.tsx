@@ -1,31 +1,32 @@
-import { useLocale } from '../../i18n'
-import type { Resource } from './pricesApi'
+import type { Messages } from '../../i18n'
+import type { FasarStatus, Resource } from './pricesApi'
 
-type BadgeFields = Pick<Resource, 'archivedAt' | 'discontinued' | 'missingFromImportAt'>
-
-/** States that change how far a Resource can be trusted or used; nothing when it is a plain active entry. */
-export function ResourceBadges({ resource }: { resource: BadgeFields }) {
-  const { messages: m } = useLocale()
-  const t = m.prices.badge
+/** Archived, discontinued and "not in the last import" markers of a Resource; nothing when none applies. */
+export function ResourceBadges({ resource, t }: { resource: Resource; t: Messages['prices'] }) {
   if (!resource.archivedAt && !resource.discontinued && !resource.missingFromImportAt) return null
-
   return (
     <span className="prices-badges">
-      {resource.missingFromImportAt ? (
-        <span className="badge" data-tone="danger">
-          {t.missing}
-        </span>
-      ) : null}
+      {resource.archivedAt ? <span className="badge">{t.archived}</span> : null}
       {resource.discontinued ? (
         <span className="badge" data-tone="warning">
-          {t.discontinued}
+          {t.discontinuedBadge}
         </span>
       ) : null}
-      {resource.archivedAt ? (
-        <span className="badge" data-tone="muted">
-          {t.archived}
+      {resource.missingFromImportAt ? (
+        <span className="badge" data-tone="danger">
+          {t.missingBadge}
         </span>
       ) : null}
+    </span>
+  )
+}
+
+/** The FASAR status, on the FASAR screen and the catalog header. */
+export function FasarStatusBadge({ status, t }: { status: FasarStatus; t: Messages['prices']['fasar'] }) {
+  const tone = status === 'COMPLETE' ? 'success' : status === 'PARTIAL' ? 'warning' : undefined
+  return (
+    <span className="badge" data-tone={tone} title={t.statusHint[status]}>
+      {t.status[status]}
     </span>
   )
 }

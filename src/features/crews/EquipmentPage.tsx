@@ -15,8 +15,12 @@ import {
   type Equipment,
   type CreateEquipmentRequest,
 } from './crewsApi'
-import { dailyCostCents, makeEquipmentSchema } from './equipmentForm'
+import { dailyCostCents, makeEquipmentSchema, prefilledDailyCost } from './equipmentForm'
+import { ResourcePicker } from '../prices/ResourcePicker'
+import type { Resource } from '../prices/pricesApi'
 import './crews.css'
+
+const EQUIPMENT_RATES = ['EQUIPMENT'] as const
 
 export function EquipmentPage() {
   const { messages: m } = useLocale()
@@ -37,10 +41,10 @@ export function EquipmentPage() {
     )
   }
 
-  return <EquipmentContent orgId={orgId} canManage={can('MANAGE_PLAN')} />
+  return <EquipmentContent orgId={orgId} canManage={can('MANAGE_PLAN')} canPickRate={can('VIEW_PRICES')} />
 }
 
-function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: boolean }) {
+function EquipmentContent({ orgId, canManage, canPickRate }: { orgId: string; canManage: boolean; canPickRate: boolean }) {
   const { messages: m } = useLocale()
   const { money } = useCurrency()
   const t = m.equipment
@@ -78,6 +82,23 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
     }
   }
 
+  /** Sends the linked rate again without a daily cost, so the backend recomputes 8 hours of its current cost. */
+  async function handleRefreshFromRate(item: Equipment) {
+    if (toggling.current || !item.equipmentRate) return
+    toggling.current = true
+    setTogglingId(item.id)
+    try {
+      const updated = await updateEquipment(orgId, item.id, { equipmentRateResourceId: item.equipmentRate.id })
+      equipment.update((prev) => prev?.map((e) => (e.id === item.id ? updated : e)) ?? [])
+      setNotice(t.refreshed)
+    } catch {
+      setNotice(t.error.generic)
+    } finally {
+      toggling.current = false
+      setTogglingId(null)
+    }
+  }
+
   async function handleDelete(item: Equipment) {
     try {
       await deleteEquipment(orgId, item.id)
@@ -106,7 +127,14 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
 
       {notice && <Notice tone="success">{notice}</Notice>}
 
-      {showCreate && <CreateEquipmentDialog onSubmit={handleCreate} onCancel={() => setShowCreate(false)} />}
+      {showCreate && (
+        <CreateEquipmentDialog
+          orgId={orgId}
+          canPickRate={canPickRate}
+          onSubmit={handleCreate}
+          onCancel={() => setShowCreate(false)}
+        />
+      )}
 
       {deleting && (
         <ConfirmDialog
@@ -124,9 +152,9 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
       {equipment.status === 'error' ? <Notice>{t.loadError}</Notice> : !equipment.data ? (
         <SkeletonRegion className="skeleton-screen">
           <table className="equipment-table" aria-hidden="true">
-            <thead><tr>{[t.type, t.identifier, t.dailyCost, t.active, ...(canManage ? [''] : [])].map((label, i) => <th key={i}>{label}</th>)}</tr></thead>
+            <thead><tr>{[t.type, t.identifier, t.dailyCost, t.rate, t.active, ...(canManage ? [''] : [])].map((label, i) => <th key={i}>{label}</th>)}</tr></thead>
             <tbody>{Array.from({ length: 8 }, (_, row) => <tr key={row}>
-              {Array.from({ length: canManage ? 5 : 4 }, (_, column) => <td key={column}><SkeletonBlock height={36} width="75%" /></td>)}
+              {Array.from({ length: canManage ? 6 : 5 }, (_, column) => <td key={column}><SkeletonBlock height={36} width="75%" /></td>)}
             </tr>)}</tbody>
           </table>
         </SkeletonRegion>
@@ -139,6 +167,7 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
               <th>{t.type}</th>
               <th>{t.identifier}</th>
               <th>{t.dailyCost}</th>
+              <th>{t.rate}</th>
               <th>{t.active}</th>
               {canManage && <th />}
             </tr>
@@ -150,12 +179,33 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
                 <td>{item.identifier}</td>
                 <td className="data-mono">{item.dailyCostCents != null ? money(item.dailyCostCents / 100) : '—'}</td>
                 <td>
+                  {item.equipmentRate ? (
+                    <span title={item.equipmentRate.name}>
+                      {formatMessage(t.rateValue, {
+                        code: item.equipmentRate.code,
+                        hourlyCost: item.equipmentRate.hourlyCost != null ? money(Number(item.equipmentRate.hourlyCost)) : '—',
+                      })}
+                    </span>
+                  ) : '—'}
+                </td>
+                <td>
                   <span className={`equipment-badge ${item.active ? 'equipment-badge--active' : 'equipment-badge--inactive'}`}>
                     {item.active ? t.active : t.inactive}
                   </span>
                 </td>
                 {canManage && (
                   <td className="equipment-actions">
+                    {item.equipmentRate?.hourlyCost != null ? (
+                      <button
+                        type="button"
+                        className="button button--sm"
+                        disabled={togglingId !== null}
+                        aria-label={formatMessage(t.refreshFromRateLabel, { identifier: item.identifier })}
+                        onClick={() => void handleRefreshFromRate(item)}
+                      >
+                        {t.refreshFromRate}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       className="button button--sm"
@@ -190,29 +240,61 @@ function EquipmentContent({ orgId, canManage }: { orgId: string; canManage: bool
 function CreateEquipmentDialog({
   onSubmit,
   onCancel,
+  orgId,
+  canPickRate,
 }: {
   /** Rejects to keep the dialog open with an error. */
   onSubmit: (input: CreateEquipmentRequest) => Promise<void>
   onCancel: () => void
+  orgId: string
+  /** Searching the Catalog needs VIEW_PRICES; without it the rate link is not offered. */
+  canPickRate: boolean
 }) {
   const { messages: m } = useLocale()
   const money = useCurrency()
   const t = m.equipment
+  const [rate, setRate] = useState<Resource | null>(null)
+  // The daily cost the rate filled in; left untouched, the backend computes it exactly from the rate.
+  const [prefilled, setPrefilled] = useState<string | null>(null)
 
   const form = useForm({
     initialValues: { type: '', identifier: '', dailyCost: '' },
     schema: makeEquipmentSchema(t.validation, money),
     onSubmit: async (values) => {
+      const fromRate = rate !== null && prefilled !== null && values.dailyCost === prefilled
       await onSubmit({
         type: values.type.trim(),
         identifier: values.identifier.trim(),
-        dailyCostCents: dailyCostCents(values.dailyCost, money),
+        ...(fromRate ? {} : { dailyCostCents: dailyCostCents(values.dailyCost, money) }),
+        equipmentRateResourceId: rate?.id ?? null,
       })
     },
   })
 
+  function pickRate(picked: Resource | null) {
+    setRate(picked)
+    if (!picked) return
+    const filled = prefilledDailyCost(form.values.dailyCost, picked.currentCost, money)
+    if (filled !== form.values.dailyCost) {
+      form.onChange('dailyCost', filled)
+      setPrefilled(filled)
+    }
+  }
+
   return (
     <Modal title={t.add} onClose={onCancel}>
+      {canPickRate ? (
+        <div className="equipment-rate-picker">
+          <ResourcePicker
+            organizationId={orgId}
+            types={EQUIPMENT_RATES}
+            value={rate}
+            label={t.rateLabel}
+            onChange={pickRate}
+          />
+          <p className="form-field__hint">{t.rateHint}</p>
+        </div>
+      ) : null}
       <Form
         controller={form}
         fields={[

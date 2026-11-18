@@ -7,6 +7,7 @@ import { roleLabel } from '../permissions'
 import { ApiError } from '../../lib/http'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
+import { LaborRateDrawer, RateCell } from './LaborRateDrawer'
 import { assignableMembers } from './siteHelpers'
 import { accessErrorKind, assignToSite, removeFromSite, type AccessErrorKind, type SiteAccess } from './sitesApi'
 
@@ -15,11 +16,13 @@ type SitePeopleProps = {
   siteId: string
   people: RemoteData<SiteAccess[]>
   canManage: boolean
+  /** VIEW_BUDGET or MANAGE_PROJECT on the site: show the Labor rate column and drawer. */
+  canSeeRates: boolean
   myMembershipId: string | null
 }
 
 /** People on a site: list for everyone who can view it; add and remove with MANAGE_PROJECT. */
-export function SitePeople({ organizationId, siteId, people, canManage, myMembershipId }: SitePeopleProps) {
+export function SitePeople({ organizationId, siteId, people, canManage, canSeeRates, myMembershipId }: SitePeopleProps) {
   const { messages: m } = useLocale()
   const t = m.sites.people
   const headingId = useId()
@@ -27,6 +30,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
   const [errorKind, setErrorKind] = useState<AccessErrorKind | null>(null)
   const [done, setDone] = useState<string | null>(null)
   const [filterRole, setFilterRole] = useState('')
+  const [rateOf, setRateOf] = useState<SiteAccess | null>(null)
 
   const nameOf = (person: { fullName: string | null }) => person.fullName || t.unnamed
 
@@ -89,6 +93,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
                 <tr>
                   <th scope="col">{t.column.name}</th>
                   <th scope="col">{t.column.role}</th>
+                  {canSeeRates ? <th scope="col">{t.rate.column}</th> : null}
                   {canManage ? (
                     <th scope="col" className="cell-actions">
                       {t.column.actions}
@@ -107,6 +112,18 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
                       </span>
                     </td>
                     <td>{roleLabel(person.role, m.roles)}</td>
+                    {canSeeRates ? (
+                      <td>
+                        <button
+                          type="button"
+                          className="table-link"
+                          aria-label={formatMessage(t.rate.open, { name: nameOf(person) })}
+                          onClick={() => setRateOf(person)}
+                        >
+                          <RateCell rate={person.laborRate} />
+                        </button>
+                      </td>
+                    ) : null}
                     {canManage ? (
                       <td className="cell-actions">
                         <button
@@ -137,8 +154,19 @@ export function SitePeople({ organizationId, siteId, people, canManage, myMember
           {t.loadError}
         </Notice>
       ) : (
-        <SkeletonTable columns={canManage ? 3 : 2} compact />
+        <SkeletonTable columns={2 + (canManage ? 1 : 0) + (canSeeRates ? 1 : 0)} compact />
       )}
+
+      {rateOf ? (
+        <LaborRateDrawer
+          organizationId={organizationId}
+          siteId={siteId}
+          person={rateOf}
+          canManage={canManage}
+          onSaved={(next) => people.update((list) => list.map((item) => (item.accessId === next.accessId ? next : item)))}
+          onClose={() => setRateOf(null)}
+        />
+      ) : null}
 
       {canManage ? (
         <AssignPerson

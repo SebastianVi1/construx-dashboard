@@ -2,6 +2,7 @@ import { formatMessage, useLocale } from '../../i18n'
 import { dateText } from '../sites/siteDisplay'
 import type { Expense } from './financeApi'
 import { useCurrency } from '../../currency'
+import '../prices/resource-picker.css'
 
 type ExpenseTableProps = {
   expenses: Expense[]
@@ -39,7 +40,19 @@ export function ExpenseTable({ expenses, canManage, canManageExpense, onEdit, on
           {expenses.map((expense) => (
             <tr key={expense.id}>
               <td className="data-mono cell-muted">{dateText(expense.spentOn, locale)}</td>
-              <td>{expense.description}</td>
+              <td>
+                {expense.description}
+                {expense.resource ? (
+                  <span className="expense-resource">
+                    {formatMessage(t.catalog.rowResource, {
+                      code: expense.resource.code,
+                      quantity: expense.quantity ?? '',
+                      unit: expense.resource.unitCode,
+                    })}
+                    {expense.unitCost != null ? ` × ${money(Number(expense.unitCost))}` : ''}
+                  </span>
+                ) : null}
+              </td>
               <td>
                 <span className="expense-category">
                   <span className="budget-chart__swatch" data-category={expense.category} aria-hidden="true" />

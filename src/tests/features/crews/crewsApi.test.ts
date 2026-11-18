@@ -59,4 +59,12 @@ describe('equipmentSchema', () => {
   it('rejects missing type', () => {
     expect(() => equipmentSchema.parse({ ...valid, type: '' })).toThrow()
   })
+
+  it('reads the linked equipment rate, or none', () => {
+    const rate = { id: 'r-1', code: 'EQ-MIX', name: 'Revolvedora', hourlyCost: '85.33' }
+    expect(equipmentSchema.parse({ ...valid, equipmentRate: rate }).equipmentRate).toEqual(rate)
+    expect(equipmentSchema.parse({ ...valid, equipmentRate: { ...rate, hourlyCost: null } }).equipmentRate?.hourlyCost)
+      .toBeNull()
+    expect(equipmentSchema.parse({ ...valid, equipmentRate: null }).equipmentRate).toBeNull()
+  })
 })

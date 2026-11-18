@@ -8,12 +8,14 @@ import { budgetChart } from '../finance/budgetLayout'
 import { DeleteExpenseDialog } from '../finance/DeleteExpenseDialog'
 import { ExpenseDialog } from '../finance/ExpenseDialog'
 import { ExpenseTable } from '../finance/ExpenseTable'
+import { LaborCostSection } from '../finance/LaborCostSection'
 import { getBudgetSummary, listExpenses, type BudgetSummary, type Expense } from '../finance/financeApi'
 import '../finance/finance.css'
 import { BudgetOverviewSkeleton } from './SiteSkeletons'
 import { allocationIssue } from './budgetRules'
 import { setSiteBudget, siteErrorKind, type Site } from './sitesApi'
 import { useCurrency } from '../../currency'
+import { usePermissions } from '../permissions'
 
 type SiteBudgetProps = {
   organizationId: string
@@ -30,6 +32,7 @@ type Dialog = { kind: 'budget' } | { kind: 'expense'; expense?: Expense } | { ki
 export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice }: SiteBudgetProps) {
   const { messages: m } = useLocale()
   const { currency } = useCurrency()
+  const { can } = usePermissions()
   const t = m.finance
   const key = `${organizationId}:${site.id}`
   const summary = useRemoteData(`${key}:budget`, () => getBudgetSummary(organizationId, site.id))
@@ -68,6 +71,8 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
         <Notice tone="error" action={{ label: t.retry, onClick: summary.reload }}>{t.loadError}</Notice>
       ) : summary.data ? <BudgetOverview summary={summary.data} /> : <BudgetOverviewSkeleton />}
 
+      <LaborCostSection organizationId={organizationId} siteId={site.id} />
+
       <div className="site-budget__expenses">
         <h3>{t.expenses}</h3>
         {expenses.status === 'error' ? (
@@ -104,6 +109,8 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
           organizationId={organizationId}
           siteId={site.id}
           expense={dialog.expense}
+          canUseCatalog={canManage}
+          seePrices={can('VIEW_PRICES')}
           onClose={() => setDialog(null)}
           onSaved={() => changed(t.saved)}
         />
@@ -139,6 +146,14 @@ export function BudgetOverview({ summary }: { summary: BudgetSummary }) {
             <dd className="budget-figures__value">
               {summary.allocatedBudget === null ? t.noBudget : money(summary.allocatedBudget)}
             </dd>
+          </div>
+          <div>
+            <dt>{t.recordedExpenses}</dt>
+            <dd className="budget-figures__value">{money(summary.recordedExpenses)}</dd>
+          </div>
+          <div>
+            <dt>{t.laborAccrued}</dt>
+            <dd className="budget-figures__value">{money(summary.laborAccrued)}</dd>
           </div>
           <div>
             <dt>{t.spent}</dt>

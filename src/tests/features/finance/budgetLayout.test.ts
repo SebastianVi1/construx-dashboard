@@ -6,6 +6,8 @@ function summary(allocatedBudget: number | null, amounts: [number, number, numbe
   const spent = amounts.reduce((sum, amount) => sum + amount, 0)
   return {
     allocatedBudget,
+    recordedExpenses: spent,
+    laborAccrued: 0,
     spent,
     remaining: allocatedBudget === null ? null : allocatedBudget - spent,
     allocatedToPhases: 0,

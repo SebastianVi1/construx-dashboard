@@ -7,7 +7,19 @@ export const expenseCategories = ['MATERIALS', 'LABOR', 'EQUIPMENT', 'OTHER'] as
 
 export type ExpenseCategory = (typeof expenseCategories)[number]
 
-/** `ExpenseData`: money spent on a site, in USD. */
+/** The Catalog Resource an expense was charged from (docs/pricing.md §6.5). */
+export const expenseResourceSchema = z.object({
+  id: z.string().min(1),
+  code: z.string(),
+  name: z.string(),
+  type: z.enum(['MATERIAL', 'LABOR', 'EQUIPMENT', 'WORK_ITEM']),
+  unitCode: z.string(),
+})
+
+/**
+ * `ExpenseData`: money spent on a site, in pesos. An expense from the Catalog also carries its Resource, the
+ * quantity and the unit cost frozen when it was recorded (decimal strings); a typed one has them null.
+ */
 export const expenseSchema = z.object({
   id: z.string().min(1),
   projectId: z.string().min(1),
@@ -15,22 +27,36 @@ export const expenseSchema = z.object({
   spentOn: z.string(),
   description: z.string(),
   category: z.enum(expenseCategories),
+  resource: expenseResourceSchema.nullish(),
+  quantity: z.string().nullish(),
+  unitCost: z.string().nullish(),
 })
 
 export type Expense = z.infer<typeof expenseSchema>
 
-/** `BudgetSummary`: `remaining` is null without a budget and negative on an overrun. */
-export const budgetSummarySchema = z.object({
-  allocatedBudget: z.number().nullable(),
-  spent: z.number(),
-  remaining: z.number().nullable(),
-  /** Sum of the phase budgets, and what the site has left to give phases (null without a budget). */
-  allocatedToPhases: z.number().default(0),
-  unallocated: z.number().nullable().default(null),
-  byCategory: z.array(z.object({ category: z.enum(expenseCategories), amount: z.number() })),
-})
+/**
+ * `BudgetSummary`: `spent` is `recordedExpenses` plus `laborAccrued`, the site's Accrued labor cost to date,
+ * which `byCategory` counts under LABOR (docs/pricing.md §6.4). `remaining` is null without a budget and
+ * negative on an overrun. A summary without the accrual reads as all spending recorded.
+ */
+export const budgetSummarySchema = z
+  .object({
+    allocatedBudget: z.number().nullable(),
+    recordedExpenses: z.number().nullish(),
+    laborAccrued: z.number().default(0),
+    spent: z.number(),
+    remaining: z.number().nullable(),
+    /** Sum of the phase budgets, and what the site has left to give phases (null without a budget). */
+    allocatedToPhases: z.number().default(0),
+    unallocated: z.number().nullable().default(null),
+    byCategory: z.array(z.object({ category: z.enum(expenseCategories), amount: z.number() })),
+  })
+  .transform((summary) => ({
+    ...summary,
+    recordedExpenses: summary.recordedExpenses ?? summary.spent - summary.laborAccrued,
+  }))
 
-export type BudgetSummary = z.infer<typeof budgetSummarySchema>
+export type BudgetSummary = z.output<typeof budgetSummarySchema>
 
 export type ExpenseDraft = {
   amount: number
@@ -38,6 +64,16 @@ export type ExpenseDraft = {
   description: string
   category: ExpenseCategory
 }
+
+/** An expense from the Catalog: the backend computes amount and category; no concept means the Resource name. */
+export type CatalogExpenseDraft = {
+  resourceId: string
+  quantity: string
+  spentOn: string
+  description?: string
+}
+
+export type NewExpense = ExpenseDraft | CatalogExpenseDraft
 
 export type ExpensePatch = Partial<ExpenseDraft>
 
@@ -51,7 +87,7 @@ export function listExpenses(organizationId: string, siteId: string): Promise<Ex
   return getJson(`${sitePath(organizationId, siteId)}/expenses`, z.array(expenseSchema))
 }
 
-export function createExpense(organizationId: string, siteId: string, draft: ExpenseDraft): Promise<Expense> {
+export function createExpense(organizationId: string, siteId: string, draft: NewExpense): Promise<Expense> {
   return sendJson('post', `${sitePath(organizationId, siteId)}/expenses`, draft, 201, expenseSchema)
 }
 

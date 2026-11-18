@@ -14,6 +14,8 @@ const expense: Expense = {
 }
 const summary = {
   allocatedBudget: 10000,
+  recordedExpenses: 1200.5,
+  laborAccrued: 0,
   spent: 1200.5,
   remaining: 8799.5,
   allocatedToPhases: 6000,
@@ -57,6 +59,37 @@ describe('finance API', () => {
     expect(read.unallocated).toBeNull()
   })
 
+  it('getBudgetSummary: reads the accrued labor beside recorded expenses', async () => {
+    const withLabor = {
+      ...summary,
+      recordedExpenses: 1200.5,
+      laborAccrued: 1250,
+      spent: 2450.5,
+      remaining: 7549.5,
+      byCategory: [
+        { category: 'MATERIALS', amount: 1200.5 },
+        { category: 'LABOR', amount: 1250 },
+        { category: 'EQUIPMENT', amount: 0 },
+        { category: 'OTHER', amount: 0 },
+      ],
+    }
+    stubApi({ get: () => ({ status: 200, data: withLabor }) })
+    const read = await getBudgetSummary('org-1', 'p-1')
+    expect(read.laborAccrued).toBe(1250)
+    expect(read.recordedExpenses).toBe(1200.5)
+    expect(read.spent).toBe(2450.5)
+  })
+
+  it('getBudgetSummary: reads a summary without the accrual as all spending recorded', async () => {
+    const older: Partial<typeof summary> = { ...summary }
+    delete older.recordedExpenses
+    delete older.laborAccrued
+    stubApi({ get: () => ({ status: 200, data: older }) })
+    const read = await getBudgetSummary('org-1', 'p-1')
+    expect(read.laborAccrued).toBe(0)
+    expect(read.recordedExpenses).toBe(1200.5)
+  })
+
   it('listExpenses: gets the site expenses', async () => {
     const { get } = stubApi({ get: () => ({ status: 200, data: [expense] }) })
     expect(await listExpenses('org-1', 'p-1')).toEqual([expense])
@@ -66,6 +99,23 @@ describe('finance API', () => {
   it('listExpenses: rejects an unknown category', async () => {
     stubApi({ get: () => ({ status: 200, data: [{ ...expense, category: 'FOOD' }] }) })
     expect(await listExpenses('org-1', 'p-1').catch((error: unknown) => error)).toBeInstanceOf(ApiError)
+  })
+
+  it('createExpense: sends a catalog expense and reads back its resource, quantity and frozen unit cost', async () => {
+    const recorded = {
+      ...expense,
+      amount: 3068.75,
+      resource: { id: 'r-1', code: 'MAN-CEM-001', name: 'Cemento', type: 'MATERIAL', unitCode: 'SACO' },
+      quantity: '12.5',
+      unitCost: '245.50',
+    }
+    const { send } = stubApi({ send: () => ({ status: 201, data: recorded }) })
+    const draft = { resourceId: 'r-1', quantity: '12.5', spentOn: '2026-10-01' }
+    expect(await createExpense('org-1', 'p-1', draft)).toEqual(recorded as never)
+    expect(send.mock.calls[0] as unknown).toEqual([`${site}/expenses`, draft, expect.anything()])
+
+    stubApi({ get: () => ({ status: 200, data: [{ ...expense, resource: null, quantity: null, unitCost: null }] }) })
+    expect((await listExpenses('org-1', 'p-1'))[0].resource).toBeNull()
   })
 
   it('createExpense, updateExpense and deleteExpense hit the expense paths', async () => {
