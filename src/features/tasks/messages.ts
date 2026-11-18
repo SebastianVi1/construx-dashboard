@@ -52,6 +52,7 @@ export const tasksMessages = defineMessages({
     },
     team: {
       title: 'Team',
+      description: 'The people working on this task, lead first.',
       add: 'Add a person',
       addPlaceholder: 'Choose a person on this site',
       roleLabel: 'Task role of {name}',
@@ -62,6 +63,8 @@ export const tasksMessages = defineMessages({
     },
     detail: {
       back: 'Back to phases',
+      context: 'Task location',
+      trackLabel: 'Task progress',
       phase: 'Phase',
       site: 'Site',
       startAt: 'Starts',
@@ -83,6 +86,7 @@ export const tasksMessages = defineMessages({
       spent: 'Spent',
       remaining: 'Remaining',
       overrun: 'Overrun',
+      used: '{percent}% of the task budget used',
       noBudget: 'No budget set',
       record: 'Record expense',
       empty: 'No expenses on this task yet.',
@@ -216,6 +220,7 @@ export const tasksMessages = defineMessages({
     },
     team: {
       title: 'Equipo',
+      description: 'Las personas que trabajan en esta tarea, con el líder primero.',
       add: 'Agregar una persona',
       addPlaceholder: 'Elige a una persona de esta obra',
       roleLabel: 'Rol en la tarea de {name}',
@@ -226,6 +231,8 @@ export const tasksMessages = defineMessages({
     },
     detail: {
       back: 'Volver a las fases',
+      context: 'Ubicación de la tarea',
+      trackLabel: 'Progreso de la tarea',
       phase: 'Fase',
       site: 'Obra',
       startAt: 'Empieza',
@@ -247,6 +254,7 @@ export const tasksMessages = defineMessages({
       spent: 'Gastado',
       remaining: 'Restante',
       overrun: 'Sobregiro',
+      used: '{percent}% del presupuesto de la tarea utilizado',
       noBudget: 'Sin presupuesto',
       record: 'Registrar gasto',
       empty: 'Esta tarea todavía no tiene gastos.',

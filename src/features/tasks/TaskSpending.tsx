@@ -2,7 +2,7 @@ import { TaskSpendingSkeleton } from './TaskSkeletons'
 import { useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice } from '../../components/page'
-import { useLocale } from '../../i18n'
+import { formatMessage, useLocale } from '../../i18n'
 import { DeleteExpenseDialog } from '../finance/DeleteExpenseDialog'
 import { ExpenseDialog } from '../finance/ExpenseDialog'
 import { ExpenseTable } from '../finance/ExpenseTable'
@@ -39,9 +39,13 @@ export function TaskSpending({ at, task, access }: { at: PhaseRef; task: Task; a
   }
   const budget = money.data?.budget
   const overrun = budget && (budget.remaining !== null ? budget.remaining < 0 : budget.spent > 0)
+  const allocated = budget?.allocatedBudget ?? null
+  const used = budget !== undefined && allocated !== null && allocated > 0
+    ? Math.round((budget.spent / allocated) * 100)
+    : null
 
   return (
-    <section className="page-section site-budget" aria-labelledby="task-spending-title">
+    <section className="page-section site-budget task-spending" aria-labelledby="task-spending-title">
       <div className="page-section__header">
         <div><h2 id="task-spending-title">{t.title}</h2><p>{t.description}</p></div>
         {actions.record ? <button className="button button--primary" type="button" onClick={() => setDialog({ kind: 'edit' })}>{t.record}</button> : null}
@@ -52,12 +56,27 @@ export function TaskSpending({ at, task, access }: { at: PhaseRef; task: Task; a
         <Notice tone="error" action={{ label: m.tasks.retry, onClick: money.reload }}>{t.loadError}</Notice>
       ) : !money.data || !budget ? <TaskSpendingSkeleton canManage={actions.record} /> : (
         <>
-          <dl className="task-detail__facts">
-            <div><dt>{t.allocated}</dt><dd>{budget.allocatedBudget === null ? t.noBudget : moneyText(budget.allocatedBudget)}</dd></div>
-            <div><dt>{t.spent}</dt><dd>{moneyText(budget.spent)}</dd></div>
-            <div><dt>{overrun ? t.overrun : t.remaining}</dt><dd>{overrun ? moneyText(Math.abs(budget.remaining ?? budget.spent)) : budget.remaining === null ? '—' : moneyText(budget.remaining)}</dd></div>
+          <dl className="task-money">
+            <div className="task-money__figure">
+              <dt>{t.allocated}</dt>
+              <dd className="data-mono">{allocated === null ? <span className="task-money__missing">{t.noBudget}</span> : moneyText(allocated)}</dd>
+            </div>
+            <div className="task-money__figure">
+              <dt>{t.spent}</dt>
+              <dd className="data-mono">{moneyText(budget.spent)}</dd>
+            </div>
+            <div className="task-money__figure" data-tone={overrun ? 'danger' : undefined}>
+              <dt>{overrun ? t.overrun : t.remaining}</dt>
+              <dd className="data-mono">{overrun ? moneyText(Math.abs(budget.remaining ?? budget.spent)) : budget.remaining === null ? '—' : moneyText(budget.remaining)}</dd>
+            </div>
           </dl>
-          {money.data.expenses.length === 0 ? <p>{t.empty}</p> : <ExpenseTable
+          {used !== null ? <div className="task-money__meter" data-over={overrun || undefined}>
+            <div className="task-money__track" aria-hidden="true">
+              <span className="task-money__fill" style={{ width: `${Math.min(used, 100)}%` }} />
+            </div>
+            <p className="task-money__caption">{formatMessage(t.used, { percent: used })}</p>
+          </div> : null}
+          {money.data.expenses.length === 0 ? <p className="task-money__empty">{t.empty}</p> : <ExpenseTable
             expenses={money.data.expenses}
             canManage={money.data.expenses.some(canManage)}
             canManageExpense={canManage}

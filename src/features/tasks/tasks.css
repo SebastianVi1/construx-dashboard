@@ -467,14 +467,426 @@
   }
 }
 
-/* Task details keep metadata compact and team roles easy to scan. */
-.task-detail__facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 208px), 1fr));
-  gap: 24px;
-  margin: 0;
+/* The task reads as a short work order: one sheet with the status sequence,
+   its dates and the bar colour, then spending beside the crew roster. */
+.task-sheet {
+  gap: 18px;
 }
-.task-detail__facts dt { font-size: 14px; }
-.task-detail__facts dd { margin: 8px 0 0; overflow-wrap: anywhere; }
-.task-detail__team { list-style: none; padding: 0; margin: 0; }
-.task-detail__team li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; }
+
+.task-sheet__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+.task-sheet__crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.task-sheet__crumbs a {
+  color: var(--cx-ink);
+  font-weight: 500;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.task-sheet__crumbs a:hover {
+  color: var(--cx-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.task-sheet__crumbs span {
+  color: var(--cx-border-strong);
+}
+
+.task-sheet__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.task-sheet__heading h1 {
+  font-size: 30px;
+  line-height: 38px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.task-sheet__actions {
+  margin-left: auto;
+}
+
+.task-sheet__brief {
+  max-width: 72ch;
+  color: var(--cx-muted);
+  font-size: 15px;
+  line-height: 23px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* Task status is a real sequence, so it gets a track rather than another badge. */
+.task-track {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-track__step {
+  position: relative;
+  padding-top: 20px;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.task-track__step::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--cx-border);
+}
+
+.task-track__step::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--cx-border-strong);
+  border-radius: 2px;
+  background: var(--cx-surface);
+}
+
+.task-track__step[data-state='done'] {
+  color: var(--cx-ink);
+}
+
+.task-track__step[data-state='done']::before {
+  background: color-mix(in srgb, var(--cx-success) 55%, var(--cx-border));
+}
+
+.task-track__step[data-state='done']::after {
+  border-color: var(--cx-success);
+  background: var(--cx-success);
+}
+
+.task-track__step[data-state='current'] {
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+.task-track__step[data-state='current']::after {
+  border-color: var(--cx-accent);
+  background: var(--cx-accent);
+  box-shadow: 0 0 0 3px var(--cx-accent-subtle);
+}
+
+.task-track__step[data-status='DONE'][data-state='current']::after {
+  border-color: var(--cx-success);
+  background: var(--cx-success);
+  box-shadow: 0 0 0 3px var(--cx-success-subtle);
+}
+
+.task-sheet__facts {
+  padding-top: 16px;
+}
+
+.task-sheet__facts dd[data-late] {
+  color: var(--cx-danger);
+  font-weight: 600;
+}
+
+.task-sheet__color {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-sheet__swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: 3px;
+}
+
+/* Spending and the crew share the width; the crew comes first on narrow screens. */
+.task-detail__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(264px, 320px);
+  gap: var(--cx-section-gap);
+  align-items: start;
+}
+
+.task-detail__body--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.task-detail__main,
+.task-detail__aside {
+  display: grid;
+  gap: var(--cx-section-gap);
+  min-width: 0;
+}
+
+.task-detail__main {
+  container: task-main / inline-size;
+}
+
+.task-crew__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--cx-border);
+  list-style: none;
+}
+
+.task-detail__body--single .task-crew__list {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  column-gap: 24px;
+}
+
+.task-crew__person {
+  --avatar-shadow: none;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.task-crew__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.task-crew__name .person-you {
+  margin-left: 8px;
+}
+
+/* Money leads with three figures, then one measured bar; never a fabricated zero. */
+.task-money {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--cx-border);
+}
+
+.task-money__figure dt {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.task-money__figure dd {
+  margin: 6px 0 0;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.task-money__figure dd.data-mono {
+  font-size: 20px;
+}
+
+.task-money__figure[data-tone='danger'] dd {
+  color: var(--cx-danger);
+}
+
+.task-money__missing {
+  color: var(--cx-muted);
+  font: 500 15px/22px var(--cx-font-sans);
+}
+
+.task-money__meter {
+  display: grid;
+  gap: 8px;
+  max-width: 480px;
+}
+
+.task-money__track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--cx-border);
+  overflow: hidden;
+}
+
+.task-money__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cx-accent);
+}
+
+.task-money__meter[data-over] .task-money__fill {
+  background: var(--cx-danger);
+}
+
+.task-money__caption {
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.task-money__empty {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* When the spending column is narrow, the expense table becomes a stack of rows
+   instead of a table that scrolls sideways. It follows the column, not the viewport. */
+@container task-main (max-width: 640px) {
+  .task-spending .table-scroll {
+    overflow: visible;
+    border: 0;
+    background: none;
+  }
+
+  .task-spending .expense-table {
+    display: block;
+    min-width: 0;
+  }
+
+  .task-spending .expense-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .task-spending .expense-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .task-spending .expense-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--cx-border);
+    border-radius: var(--cx-radius-md);
+    background: var(--cx-surface);
+  }
+
+  .task-spending .expense-table td {
+    display: block;
+    height: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .task-spending .expense-table td:nth-child(1) {
+    order: 2;
+    color: var(--cx-muted);
+  }
+
+  .task-spending .expense-table td:nth-child(2) {
+    order: 1;
+    flex: 1 0 100%;
+    font-weight: 600;
+  }
+
+  .task-spending .expense-table td:nth-child(3) {
+    order: 3;
+  }
+
+  .task-spending .expense-table td:nth-child(4) {
+    order: 4;
+    margin-left: auto;
+    font-weight: 600;
+  }
+
+  .task-spending .expense-table td:nth-child(5) {
+    order: 5;
+    flex: 1 0 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid var(--cx-border);
+  }
+}
+
+@media (max-width: 900px) {
+  .task-detail__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .task-detail__aside {
+    order: -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .task-sheet {
+    padding: 18px;
+  }
+
+  .task-sheet__heading h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .task-sheet__actions {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  .task-track__step {
+    font-size: 12px;
+    line-height: 17px;
+  }
+
+  .task-money {
+    gap: 14px 20px;
+  }
+
+  .task-money__figure dd,
+  .task-money__figure dd.data-mono {
+    font-size: 18px;
+    line-height: 26px;
+  }
+}
