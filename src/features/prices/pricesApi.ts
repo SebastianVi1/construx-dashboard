@@ -200,17 +200,24 @@ export function listResourceCosts(organizationId: string, resourceId: string, pa
   return getJson(path, pageSchema(costEntrySchema))
 }
 
-/** Active Units ordered by code. */
-export function listUnits(organizationId: string): Promise<Unit[]> {
-  return getJson(`${organizationPath(organizationId)}/units`, z.array(unitSchema))
+export type ListOptions = { includeArchived?: boolean }
+
+/** `?includeArchived=true` when asked; the server lists active rows only by default. */
+function archivedQuery({ includeArchived = false }: ListOptions): string {
+  return includeArchived ? '?includeArchived=true' : ''
 }
 
-/** Active Families ordered by code. */
-export function listFamilies(organizationId: string): Promise<Family[]> {
-  return getJson(`${organizationPath(organizationId)}/families`, z.array(familySchema))
+/** Units ordered by code; archived ones only when asked. */
+export function listUnits(organizationId: string, options: ListOptions = {}): Promise<Unit[]> {
+  return getJson(`${organizationPath(organizationId)}/units${archivedQuery(options)}`, z.array(unitSchema))
 }
 
-/** Active Suppliers. */
-export function listSuppliers(organizationId: string): Promise<Supplier[]> {
-  return getJson(`${organizationPath(organizationId)}/suppliers`, z.array(supplierSchema))
+/** Families ordered by code; archived ones only when asked. */
+export function listFamilies(organizationId: string, options: ListOptions = {}): Promise<Family[]> {
+  return getJson(`${organizationPath(organizationId)}/families${archivedQuery(options)}`, z.array(familySchema))
+}
+
+/** Suppliers; archived ones only when asked. */
+export function listSuppliers(organizationId: string, options: ListOptions = {}): Promise<Supplier[]> {
+  return getJson(`${organizationPath(organizationId)}/suppliers${archivedQuery(options)}`, z.array(supplierSchema))
 }

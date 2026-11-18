@@ -34,6 +34,7 @@ export const pricesMessages = defineMessages({
       discontinuedChoice: { all: 'Show all', only: 'Only discontinued', none: 'Hide discontinued' },
       archived: 'Archived',
       includeArchived: 'Include archived',
+      archivedOption: { unit: 'archived', family: 'archived', supplier: 'archived' },
       clear: 'Clear filters',
     },
     column: {
@@ -158,6 +159,7 @@ export const pricesMessages = defineMessages({
       discontinuedChoice: { all: 'Mostrar todos', only: 'Solo descontinuados', none: 'Ocultar descontinuados' },
       archived: 'Archivados',
       includeArchived: 'Incluir archivados',
+      archivedOption: { unit: 'archivada', family: 'archivada', supplier: 'archivado' },
       clear: 'Quitar filtros',
     },
     column: {

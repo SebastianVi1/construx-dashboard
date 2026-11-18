@@ -4,7 +4,7 @@ import { useCurrency } from '../../currency'
 import { formatMessage, useLocale } from '../../i18n'
 import type { Resource } from './pricesApi'
 import { ResourceBadges } from './ResourceBadges'
-import { formatInstant } from './resourceDisplay'
+import { formatInstant, moneyText } from './resourceDisplay'
 import type { ResourceSort, SortField } from './resourceQuery'
 
 type ResourcesTableProps = {
@@ -66,7 +66,7 @@ export function ResourcesTable({ resources, sort, onSort, linkTo, onOpen, busy }
                 {resource.currentCost === null ? (
                   <span className="cell-muted">{t.noCost}</span>
                 ) : (
-                  <span className="data-mono">{money(Number(resource.currentCost))}</span>
+                  <span className="data-mono">{moneyText(money, resource.currentCost)}</span>
                 )}
               </td>
               <td className={resource.costUpdatedAt ? 'prices-table__date' : 'prices-table__date cell-muted'}>

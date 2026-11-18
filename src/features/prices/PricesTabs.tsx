@@ -1,7 +1,7 @@
 import type { KeyboardEvent } from 'react'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import type { CatalogSummary } from './pricesApi'
-import { isTabActive, pricesTabs, tabResourceType, type PricesTab } from './resourceQuery'
+import { isTabActive, panelId, pricesTabs, tabId, tabResourceType, type PricesTab } from './resourceQuery'
 
 type PricesTabsProps = {
   value: PricesTab
@@ -31,7 +31,7 @@ export function PricesTabs({ value, counts, onChange }: PricesTabsProps) {
     const step = event.key === 'ArrowRight' ? 1 : -1
     const next = openTabs[(openTabs.indexOf(value) + step + openTabs.length) % openTabs.length]
     onChange(next)
-    document.getElementById(`prices-tab-${next}`)?.focus()
+    document.getElementById(tabId(next))?.focus()
   }
 
   return (
@@ -43,12 +43,12 @@ export function PricesTabs({ value, counts, onChange }: PricesTabsProps) {
         return (
           <button
             key={tab}
-            id={`prices-tab-${tab}`}
+            id={tabId(tab)}
             type="button"
             role="tab"
             className="prices-tabs__tab"
             aria-selected={selected}
-            aria-controls={selected ? `prices-panel-${tab}` : undefined}
+            aria-controls={selected ? panelId(tab) : undefined}
             aria-disabled={active ? undefined : true}
             tabIndex={selected ? 0 : -1}
             title={active ? undefined : formatMessage(t.comingSoonHint, { tab: t.tab[tab] })}

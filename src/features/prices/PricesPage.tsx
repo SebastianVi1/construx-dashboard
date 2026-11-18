@@ -11,7 +11,7 @@ import { PricesTabs } from './PricesTabs'
 import { getCatalog } from './pricesApi'
 import { ResourceDrawer } from './ResourceDrawer'
 import { ResourcesPanel } from './ResourcesPanel'
-import { parsePricesSearch, pricesSearchString, type PricesView } from './resourceQuery'
+import { panelId, parsePricesSearch, pricesSearchString, resourceRoute, tabId, type PricesView } from './resourceQuery'
 import './prices.css'
 
 /**
@@ -48,7 +48,7 @@ export function PricesPage() {
 
   // Typing in the search replaces the entry; tabs, pages and filters can be stepped back through.
   function changeView(next: PricesView, { replace = false } = {}) {
-    navigate({ pathname: resourceId ? `/prices/${encodeURIComponent(resourceId)}` : '/prices', search: pricesSearchString(next) }, { replace })
+    navigate({ pathname: resourceId ? resourceRoute(resourceId) : '/prices', search: pricesSearchString(next) }, { replace })
   }
 
   return (
@@ -67,7 +67,7 @@ export function PricesPage() {
         onChange={(tab) => changeView({ ...view, tab, page: 0 })}
       />
 
-      <div role="tabpanel" id={`prices-panel-${view.tab}`} aria-labelledby={`prices-tab-${view.tab}`} className="prices-panel">
+      <div role="tabpanel" id={panelId(view.tab)} aria-labelledby={tabId(view.tab)} className="prices-panel">
         {catalog.data && !catalog.data.exists ? (
           <div className="empty-state">
             <h2>{t.summary.noCatalogTitle}</h2>
@@ -78,7 +78,7 @@ export function PricesPage() {
             organizationId={organization.id}
             view={view}
             onChange={changeView}
-            onOpen={(id) => navigate({ pathname: `/prices/${encodeURIComponent(id)}`, search })}
+            onOpen={(id) => navigate({ pathname: resourceRoute(id), search })}
           />
         )}
       </div>

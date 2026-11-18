@@ -2,8 +2,9 @@ import { useEffect, useEffectEvent, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Field, selectedOptionValues, type FieldOption } from '../../components/form'
 import { useLocale } from '../../i18n'
+import { archivedLast, familyLabel, supplierLabel, unitLabel } from './filterOptions'
 import { listFamilies, listSuppliers, listUnits } from './pricesApi'
-import { discontinuedChoices, hasFilters, noFilters, type DiscontinuedChoice, type ResourceFilters } from './resourceQuery'
+import { discontinuedChoices, hasFilters, isDiscontinuedChoice, noFilters, type ResourceFilters } from './resourceQuery'
 
 /** Wait after the last keystroke before searching, so typing a code is one request. */
 const SEARCH_DELAY_MS = 300
@@ -21,9 +22,11 @@ type ResourceFiltersBarProps = {
 export function ResourceFiltersBar({ organizationId, filters, onChange }: ResourceFiltersBarProps) {
   const { messages: m } = useLocale()
   const t = m.prices.filters
-  const units = useRemoteData(`${organizationId}:units`, () => listUnits(organizationId), { immediate: true })
-  const families = useRemoteData(`${organizationId}:families`, () => listFamilies(organizationId), { immediate: true })
-  const suppliers = useRemoteData(`${organizationId}:suppliers`, () => listSuppliers(organizationId), { immediate: true })
+  // Archived ones too: a Resource keeps its archived Unit or Family, and "Include archived" must reach it.
+  const all = { includeArchived: true }
+  const units = useRemoteData(`${organizationId}:units:all`, () => listUnits(organizationId, all), { immediate: true })
+  const families = useRemoteData(`${organizationId}:families:all`, () => listFamilies(organizationId, all), { immediate: true })
+  const suppliers = useRemoteData(`${organizationId}:suppliers:all`, () => listSuppliers(organizationId, all), { immediate: true })
   const [draft, setDraft] = useState(filters.query)
   const [committed, setCommitted] = useState(filters.query)
 
@@ -43,15 +46,9 @@ export function ResourceFiltersBar({ organizationId, filters, onChange }: Resour
   }, [draft, committed])
 
   const any: FieldOption = { value: '', label: t.any }
-  const familyOptions = [any, ...(families.data ?? []).map((family) => ({ value: family.id, label: `${family.name} (${family.code})` }))]
-  const unitOptions = [
-    any,
-    ...(units.data ?? []).map((unit) => ({ value: unit.id, label: unit.description ? `${unit.code} (${unit.description})` : unit.code })),
-  ]
-  const supplierOptions = [
-    any,
-    ...(suppliers.data ?? []).map((supplier) => ({ value: supplier.id, label: supplier.branch ? `${supplier.name} (${supplier.branch})` : supplier.name })),
-  ]
+  const familyOptions = [any, ...archivedLast(families.data ?? [], familyLabel, t.archivedOption.family)]
+  const unitOptions = [any, ...archivedLast(units.data ?? [], unitLabel, t.archivedOption.unit)]
+  const supplierOptions = [any, ...archivedLast(suppliers.data ?? [], supplierLabel, t.archivedOption.supplier)]
   const discontinuedOptions = discontinuedChoices.map((value) => ({ value, label: t.discontinuedChoice[value] }))
 
   return (
@@ -92,7 +89,9 @@ export function ResourceFiltersBar({ organizationId, filters, onChange }: Resour
       <Field
         config={{ name: 'prices-discontinued', label: t.discontinued, type: 'select', options: discontinuedOptions }}
         value={filters.discontinued}
-        onChange={(value) => onChange({ discontinued: value as DiscontinuedChoice })}
+        onChange={(value) => {
+          if (isDiscontinuedChoice(value)) onChange({ discontinued: value })
+        }}
       />
       <div className="prices-filters__end">
         <Field

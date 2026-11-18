@@ -10,6 +10,7 @@ import { ResourcesTable } from './ResourcesTable'
 import {
   hasFilters,
   pricesSearchString,
+  resourceRoute,
   resourcesQueryString,
   tabResourceType,
   toggleSort,
@@ -71,7 +72,7 @@ export function ResourcesPanel({ organizationId, view, onChange, onOpen }: Resou
           sort={view.sort}
           busy={busy}
           onSort={(field) => onChange({ ...view, sort: toggleSort(view.sort, field), page: 0 })}
-          linkTo={(id) => `/prices/${encodeURIComponent(id)}${search}`}
+          linkTo={(id) => `${resourceRoute(id)}${search}`}
           onOpen={onOpen}
         />
         <ResourcesPager

@@ -166,6 +166,18 @@ describe('prices API', () => {
     expect(get.mock.calls[0][0]).toBe(`${base}/resources/r-1/costs?page=2&size=200`)
   })
 
+  it('asks for archived units, families and suppliers too when the filters need them', async () => {
+    const get = stubGet(() => [])
+    await listUnits('org-1', { includeArchived: true })
+    await listFamilies('org-1', { includeArchived: true })
+    await listSuppliers('org-1', { includeArchived: true })
+    expect(get.mock.calls.map((call) => call[0])).toEqual([
+      `${base}/units?includeArchived=true`,
+      `${base}/families?includeArchived=true`,
+      `${base}/suppliers?includeArchived=true`,
+    ])
+  })
+
   it('lists units, families and suppliers for the filters', async () => {
     const get = stubGet((url) => {
       if (url.endsWith('/units')) return [{ id: 'u-1', code: 'M3', description: 'Metro cúbico', source: 'SEED', archivedAt: null, resourceCount: 3 }]

@@ -13,6 +13,11 @@ import {
   tabResourceType,
   toggleSort,
   withFilters,
+  discontinuedChoices,
+  isDiscontinuedChoice,
+  panelId,
+  resourceRoute,
+  tabId,
 } from '../../../features/prices/resourceQuery'
 
 describe('prices tabs', () => {
@@ -164,5 +169,23 @@ describe('prices URL validation', () => {
       sort: { field: 'currentCost' as const, dir: 'desc' as const },
     }
     expect(parsePricesSearch(new URLSearchParams(pricesSearchString(view)))).toEqual(view)
+  })
+})
+
+describe('prices routes and ids', () => {
+  it('builds the drawer route of a resource with its id encoded', () => {
+    expect(resourceRoute('r-1')).toBe('/prices/r-1')
+    expect(resourceRoute('r/1 ?')).toBe('/prices/r%2F1%20%3F')
+  })
+
+  it('pairs each tab with its panel for the ARIA wiring', () => {
+    expect(tabId('equipment')).toBe('prices-tab-equipment')
+    expect(panelId('equipment')).toBe('prices-panel-equipment')
+  })
+
+  it('accepts only the known discontinued choices', () => {
+    expect(discontinuedChoices.filter(isDiscontinuedChoice)).toEqual(['all', 'only', 'none'])
+    expect(isDiscontinuedChoice('maybe')).toBe(false)
+    expect(isDiscontinuedChoice('')).toBe(false)
   })
 })
