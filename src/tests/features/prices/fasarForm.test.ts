@@ -4,6 +4,7 @@ import { ApiError, configureHttp } from '../../../lib/http'
 import {
   emptyFasarValues,
   fasarBody,
+  fasarYearIsStale,
   fasarValuesFrom,
   fsrIsComputed,
   laborFsrBadge,
@@ -183,5 +184,22 @@ describe('FASAR API', () => {
     expect(fasarWriteErrorKind(new ApiError(409, undefined, 'IMPORT_IN_PROGRESS'))).toBe('importInProgress')
     expect(fasarWriteErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalid')
     expect(fasarWriteErrorKind(new ApiError(403, undefined, 'FORBIDDEN'))).toBe('forbidden')
+  })
+})
+
+describe('fasarYearIsStale', () => {
+  it('flags a parameter year older than last year', () => {
+    expect(fasarYearIsStale(2024, 2026)).toBe(true)
+    expect(fasarYearIsStale(2019, 2026)).toBe(true)
+  })
+
+  it('accepts last year, this year and a later year', () => {
+    expect(fasarYearIsStale(2025, 2026)).toBe(false)
+    expect(fasarYearIsStale(2026, 2026)).toBe(false)
+    expect(fasarYearIsStale(2027, 2026)).toBe(false)
+  })
+
+  it('says nothing without a year', () => {
+    expect(fasarYearIsStale(null, 2026)).toBe(false)
   })
 })

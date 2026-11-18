@@ -1,10 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { BackLink, Notice, SkeletonTable } from '../../components/page'
-import { formatMessage, intlLocales, useLocale, type Messages } from '../../i18n'
+import { formatDateTime, formatMessage, useLocale, type Messages } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
-import { fasarBody, fasarValuesFrom, validateFasar, type FasarErrors, type FasarValues } from './fasarForm'
+import { fasarBody, fasarValuesFrom, fasarYearIsStale, validateFasar, type FasarErrors, type FasarValues } from './fasarForm'
 import {
   fasarConcepts,
   fasarDayFields,
@@ -114,7 +114,6 @@ function FasarForm({ stored, canManage, t }: { stored: Fasar; canManage: boolean
   }
 
   const disabled = !canManage || saving
-  const dateTime = new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeStyle: 'short' })
 
   function input(key: string, label: string, value: string, onChange: (value: string) => void, hint?: string): ReactNode {
     const error = errors[key]
@@ -157,8 +156,11 @@ function FasarForm({ stored, canManage, t }: { stored: Fasar; canManage: boolean
         <p className="cell-muted">{t.statusHint[current.status]}</p>
         {current.updatedAt ? (
           <p className="cell-muted">
-            {formatMessage(t.updated, { date: dateTime.format(new Date(current.updatedAt)), name: current.updatedBy?.fullName ?? '—' })}
+            {formatMessage(t.updated, { date: formatDateTime(current.updatedAt, locale), name: current.updatedBy?.fullName ?? '—' })}
           </p>
+        ) : null}
+        {fasarYearIsStale(current.year, new Date().getFullYear()) ? (
+          <Notice>{formatMessage(t.staleYear, { year: current.year ?? '' })}</Notice>
         ) : null}
         {current.laborCategories ? <p>{formatMessage(t.laborCategories, current.laborCategories)}</p> : null}
         {canManage ? null : <Notice>{t.readOnly}</Notice>}

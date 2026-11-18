@@ -161,6 +161,14 @@ export function fasarBody(values: FasarValues): FasarBody {
   }
 }
 
+/**
+ * Whether the stored parameters are for a year before last year, so wages computed from them are likely out of
+ * date (UMA, minimum wage and contribution rates change every year). No year, no warning.
+ */
+export function fasarYearIsStale(year: number | null, currentYear: number): boolean {
+  return year !== null && year < currentYear - 1
+}
+
 /** Whether a new or edited Labor category's FSR comes from the parameters (only with a complete set). */
 export function fsrIsComputed(status: FasarStatus | null | undefined): boolean {
   return status === 'COMPLETE'

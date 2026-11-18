@@ -328,6 +328,7 @@ export const pricesMessages = defineMessages({
       },
       version: 'Version {version}',
       updated: 'Updated {date} by {name}',
+      staleYear: 'These parameters are for {year}. Update the UMA, minimum wage and contribution rates so real wages use current values.',
       general: 'General',
       year: 'Year',
       uma: 'UMA (daily, pesos)',
@@ -620,6 +621,7 @@ export const pricesMessages = defineMessages({
       location: 'Sheet {sheet}, row {row}, column {column}',
       failure: {
         WORKBOOK_UNREADABLE: 'The file is not a readable Excel workbook.',
+        INTERRUPTED: 'The server restarted while the import was running. Nothing was imported; upload the file again.',
         MISSING_SHEET: 'A required sheet is missing.',
         MISSING_COLUMN: 'A required column is missing.',
         DUPLICATE_CODE: 'A code appears twice in CatalogoGeneral.',
@@ -985,6 +987,7 @@ export const pricesMessages = defineMessages({
       },
       version: 'Versión {version}',
       updated: 'Actualizado {date} por {name}',
+      staleYear: 'Estos parámetros son de {year}. Actualiza la UMA, el salario mínimo y las cuotas para que los salarios reales usen valores vigentes.',
       general: 'Generales',
       year: 'Año',
       uma: 'UMA (diaria, pesos)',
@@ -1277,6 +1280,7 @@ export const pricesMessages = defineMessages({
       location: 'Hoja {sheet}, fila {row}, columna {column}',
       failure: {
         WORKBOOK_UNREADABLE: 'El archivo no es un libro de Excel legible.',
+        INTERRUPTED: 'El servidor se reinició mientras corría la importación. No se importó nada; vuelve a subir el archivo.',
         MISSING_SHEET: 'Falta una hoja requerida.',
         MISSING_COLUMN: 'Falta una columna requerida.',
         DUPLICATE_CODE: 'Un código aparece dos veces en CatalogoGeneral.',
