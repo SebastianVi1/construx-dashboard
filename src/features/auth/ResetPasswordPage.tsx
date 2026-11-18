@@ -96,7 +96,7 @@ export function ResetPasswordPage() {
       type: 'password',
       autoComplete: 'new-password',
       revealLabels: { show: m.auth.field.showPassword, hide: m.auth.field.hidePassword },
-      hint: m.auth.field.passwordHint,
+      hint: m.auth.field.newPasswordHint,
     },
     {
       name: 'confirmPassword',

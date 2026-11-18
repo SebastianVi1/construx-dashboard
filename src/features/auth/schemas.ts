@@ -9,8 +9,13 @@ export type ValidationMessages = {
   passwordRequired: string
   passwordMin: string
   passwordMax: string
+  passwordUppercase: string
+  passwordNumber: string
   passwordMismatch: string
 }
+
+const uppercase = /[A-Z]/
+const number = /[0-9]/
 
 export type LoginInput = { email: string; password: string }
 export type RegistrationInput = { name: string; email: string; password: string }
@@ -18,7 +23,9 @@ export type RegistrationInput = { name: string; email: string; password: string 
 export function makeLoginSchema(messages: ValidationMessages) {
   return z.object({
     email: z.string().trim().min(1, messages.emailRequired).max(TEXT_LIMITS.email, messages.emailInvalid).email(messages.emailInvalid),
-    password: z.string().min(1, messages.passwordRequired),
+    password: z.string().min(1, messages.passwordRequired)
+      .regex(uppercase, messages.passwordUppercase)
+      .regex(number, messages.passwordNumber),
   })
 }
 
@@ -27,7 +34,9 @@ export function makeRegistrationSchema(messages: ValidationMessages) {
     .object({
       name: z.string().trim().min(1, messages.nameRequired).max(TEXT_LIMITS.personName, messages.nameMax),
       email: z.string().trim().min(1, messages.emailRequired).max(TEXT_LIMITS.email, messages.emailInvalid).email(messages.emailInvalid),
-      password: z.string().min(12, messages.passwordMin).max(72, messages.passwordMax),
+      password: z.string().min(12, messages.passwordMin).max(72, messages.passwordMax)
+        .regex(uppercase, messages.passwordUppercase)
+        .regex(number, messages.passwordNumber),
       confirmPassword: z.string(),
     })
     .refine((values) => values.confirmPassword === values.password, {
@@ -45,7 +54,9 @@ export function makeForgotPasswordSchema(messages: ValidationMessages) {
 export function makeResetPasswordSchema(messages: ValidationMessages) {
   return z
     .object({
-      newPassword: z.string().min(12, messages.passwordMin).max(72, messages.passwordMax),
+      newPassword: z.string().min(12, messages.passwordMin).max(72, messages.passwordMax)
+        .regex(uppercase, messages.passwordUppercase)
+        .regex(number, messages.passwordNumber),
       confirmPassword: z.string(),
     })
     .refine((values) => values.confirmPassword === values.newPassword, {
