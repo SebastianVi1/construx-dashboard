@@ -1,4 +1,21 @@
 /* Prices: catalog tabs, filters, table and detail drawer. Tokens only (design.md). */
+.prices-page {
+  gap: 20px;
+}
+
+.prices-table {
+  min-width: 960px;
+}
+
+.prices-table__numeric {
+  text-align: right;
+}
+
+.prices-table__placeholder {
+  padding: 36px 16px;
+  color: var(--cx-muted);
+  text-align: center;
+}
 
 .prices-tabs {
   display: flex;

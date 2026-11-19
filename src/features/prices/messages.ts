@@ -4,6 +4,7 @@ export const pricesMessages = defineMessages({
   en: {
     title: 'Prices',
     description: "Your company's cost catalog: materials, labor, equipment and work items, costs in {currency}.",
+    placeholder: 'This catalog is not available yet.',
     tabsLabel: 'Catalog sections',
     tab: {
       materials: 'Materials',
@@ -25,7 +26,9 @@ export const pricesMessages = defineMessages({
       discontinued: 'Discontinued',
       discontinuedYes: 'Discontinued only',
       discontinuedNo: 'Current only',
+      showAll: 'Show all',
       archived: 'Show archived',
+      includeArchived: 'Include archived',
       missingFromImport: 'Only not in last import',
       composite: 'Kind',
       compositeYes: 'Gangs',
@@ -663,6 +666,7 @@ export const pricesMessages = defineMessages({
   es: {
     title: 'Precios',
     description: 'El catálogo de costos de tu empresa: insumos, mano de obra, maquinaria y conceptos, costos en {currency}.',
+    placeholder: 'Este catálogo aún no está disponible.',
     tabsLabel: 'Secciones del catálogo',
     tab: {
       materials: 'Insumos',
@@ -684,7 +688,9 @@ export const pricesMessages = defineMessages({
       discontinued: 'Descontinuados',
       discontinuedYes: 'Solo descontinuados',
       discontinuedNo: 'Solo vigentes',
+      showAll: 'Mostrar todos',
       archived: 'Mostrar archivados',
+      includeArchived: 'Incluir archivados',
       missingFromImport: 'Solo los que no vinieron en la última importación',
       composite: 'Clase',
       compositeYes: 'Cuadrillas',
