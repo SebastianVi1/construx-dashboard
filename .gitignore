@@ -30,3 +30,4 @@ dist-ssr
 .specify/*
 specs/
 .claude/settings.local.json
+.playwright-mcp/
