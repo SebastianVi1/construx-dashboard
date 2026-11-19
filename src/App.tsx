@@ -87,8 +87,7 @@ function App() {
         <Route path="/sites/:siteId/phases" element={<PhasesPage />} />
         <Route path="/sites/:siteId/phases/:goalId/tasks/:taskId" element={<TaskDetailPage />} />
         <Route path="/tasks" element={<MyTasksPage />} />
-        {/* One route, so the list stays mounted while `/prices/:resourceId` opens its drawer. */}
-        <Route path="/prices/:resourceId?" element={<PricesPage />} />
+        <Route path="/prices" element={<PricesPage />} />
         <Route path="/excel" element={<RequireWorkbooks><ExcelLibraryPage /></RequireWorkbooks>} />
         <Route path="/excel/folders/:folderId" element={<RequireWorkbooks><ExcelLibraryPage /></RequireWorkbooks>} />
         <Route path="/excel/:fileId" element={<RequireWorkbooks><ExcelEditorPage /></RequireWorkbooks>} />

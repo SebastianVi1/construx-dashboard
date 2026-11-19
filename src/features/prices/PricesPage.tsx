@@ -1,54 +1,24 @@
 import { useEffect } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router'
-import { useRemoteData } from '../../components/data/useRemoteData'
+import { Field } from '../../components/form'
 import { Notice } from '../../components/page'
-import { useCurrency } from '../../currency'
-import { formatMessage, useLocale } from '../../i18n'
-import { useCurrentOrganization } from '../organizations/organizations-context'
+import { useLocale } from '../../i18n'
 import { usePermissions } from '../permissions'
-import { CatalogSummaryLine } from './CatalogSummaryLine'
-import { PricesTabs } from './PricesTabs'
-import { getCatalog } from './pricesApi'
-import { ResourceDrawer } from './ResourceDrawer'
-import { ResourcesPanel } from './ResourcesPanel'
-import { panelId, parsePricesSearch, pricesSearchString, resourceRoute, tabId, type PricesView } from './resourceQuery'
 import './prices.css'
 
-/**
- * The company's cost catalog. The tab, filters, sort and page live in the URL
- * (`/prices?tab=equipment&q=…`), and `/prices/:resourceId` opens a Resource's
- * detail in a drawer over the same list.
- */
+const tabs = ['materials', 'labor', 'equipment', 'workItems', 'suppliers', 'import'] as const
+const noChange = () => {}
+
 export function PricesPage() {
   const { messages: m } = useLocale()
   const t = m.prices
-  const { currency } = useCurrency()
-  const organization = useCurrentOrganization()
   const { can } = usePermissions()
-  const canView = can('VIEW_PRICES')
-  const { resourceId } = useParams()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const view = parsePricesSearch(new URLSearchParams(location.search))
-  const catalog = useRemoteData(canView ? `${organization.id}:catalog` : null, () => getCatalog(organization.id))
 
   useEffect(() => {
     document.title = `${t.title} | Construx`
   }, [t.title])
 
-  if (!canView) {
-    return (
-      <div className="page">
-        <Notice>{m.workspace.forbidden}</Notice>
-      </div>
-    )
-  }
-
-  const search = pricesSearchString(view)
-
-  // Typing in the search replaces the entry; tabs, pages and filters can be stepped back through.
-  function changeView(next: PricesView, { replace = false } = {}) {
-    navigate({ pathname: resourceId ? resourceRoute(resourceId) : '/prices', search: pricesSearchString(next) }, { replace })
+  if (!can('VIEW_PRICES')) {
+    return <div className="page"><Notice>{m.workspace.forbidden}</Notice></div>
   }
 
   return (
@@ -56,40 +26,64 @@ export function PricesPage() {
       <header className="page-header">
         <div className="page-header__text">
           <h1>{t.title}</h1>
-          <p>{formatMessage(t.description, { currency })}</p>
+          <p>{t.description}</p>
         </div>
-        {catalog.data?.exists ? <CatalogSummaryLine catalog={catalog.data} /> : null}
       </header>
 
-      <PricesTabs
-        value={view.tab}
-        counts={catalog.data?.counts}
-        onChange={(tab) => changeView({ ...view, tab, page: 0 })}
-      />
-
-      <div role="tabpanel" id={panelId(view.tab)} aria-labelledby={tabId(view.tab)} className="prices-panel">
-        {catalog.data && !catalog.data.exists ? (
-          <div className="empty-state">
-            <h2>{t.summary.noCatalogTitle}</h2>
-            <p>{t.summary.noCatalog}</p>
-          </div>
-        ) : (
-          <ResourcesPanel
-            organizationId={organization.id}
-            view={view}
-            onChange={changeView}
-            onOpen={(id) => navigate({ pathname: resourceRoute(id), search })}
-          />
-        )}
+      <div className="prices-tabs" role="tablist" aria-label={t.tabsLabel}>
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            id={`prices-tab-${tab}`}
+            type="button"
+            role="tab"
+            className="prices-tabs__tab"
+            aria-selected={tab === 'materials'}
+            aria-controls={tab === 'materials' ? 'prices-panel-materials' : undefined}
+            aria-disabled="true"
+            disabled
+          >
+            <span className="prices-tabs__label">{t.tab[tab]}</span>
+          </button>
+        ))}
       </div>
 
-      {resourceId ? (
-        <ResourceDrawer
-          organizationId={organization.id}
-          resourceId={resourceId}
-          onClose={() => navigate({ pathname: '/prices', search })}
-        />
-      ) : null}
+      <div role="tabpanel" id="prices-panel-materials" aria-labelledby="prices-tab-materials" className="prices-panel">
+        <section className="page-section prices-resources" aria-label={t.tab.materials}>
+          <div className="prices-filters" role="search" aria-label={t.filters.label}>
+            <div className="prices-filters__search">
+              <Field config={{ name: 'prices-search', label: t.filters.search, type: 'search', placeholder: t.filters.searchPlaceholder }} value="" disabled onChange={noChange} />
+            </div>
+            <Field config={{ name: 'prices-family', label: t.filters.family, type: 'select', options: [{ value: '', label: t.filters.any }] }} value="" disabled onChange={noChange} />
+            <Field config={{ name: 'prices-unit', label: t.filters.unit, type: 'select', options: [{ value: '', label: t.filters.any }] }} value="" disabled onChange={noChange} />
+            <Field config={{ name: 'prices-supplier', label: t.filters.supplier, type: 'select', options: [{ value: '', label: t.filters.any }] }} value="" disabled onChange={noChange} />
+            <Field config={{ name: 'prices-discontinued', label: t.filters.discontinued, type: 'select', options: [{ value: 'all', label: t.filters.showAll }] }} value="all" disabled onChange={noChange} />
+            <div className="prices-filters__end">
+              <Field config={{ name: 'prices-archived', label: t.filters.archived, type: 'checkboxes', options: [{ value: 'archived', label: t.filters.includeArchived }], groupClassName: 'prices-filters__check', groupLabelClassName: 'visually-hidden', optionClassName: 'prices-filters__check-option' }} value="[]" disabled onChange={noChange} />
+              <button type="button" className="button button--small prices-filters__clear" disabled>{t.filters.clear}</button>
+            </div>
+          </div>
+
+          <div className="table-scroll prices-table-wrap">
+            <table className="data-table prices-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t.column.code}</th>
+                  <th scope="col">{t.column.name}</th>
+                  <th scope="col">{t.column.unit}</th>
+                  <th scope="col">{t.column.family}</th>
+                  <th scope="col">{t.column.supplier}</th>
+                  <th scope="col" className="prices-table__numeric">{t.column.currentCost}</th>
+                  <th scope="col">{t.column.costUpdatedAt}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colSpan={7} className="prices-table__placeholder">{t.placeholder}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </div>
   )
 }
