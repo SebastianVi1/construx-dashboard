@@ -529,3 +529,102 @@
   outline: 2px solid var(--cx-focus);
   outline-offset: 2px;
 }
+
+/* Labor rate on a site: people column and drawer */
+.labor-rate-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+.labor-rate-line {
+  display: grid;
+  gap: 2px;
+}
+
+.labor-rate-history {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.labor-rate-history li + li {
+  padding-top: 12px;
+  border-top: 1px solid var(--cx-border);
+}
+
+.labor-rate-editor {
+  display: grid;
+  gap: 14px;
+}
+
+.labor-rate-kinds {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.labor-rate-kinds legend {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.labor-rate-kind {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.labor-rate-kind > span {
+  display: grid;
+  gap: 2px;
+}
+
+.labor-rate-picker,
+.labor-rate-amount {
+  display: grid;
+  gap: 6px;
+}
+
+.labor-rate-picker__chosen {
+  margin: 0;
+  font-weight: 600;
+}
+
+.labor-rate-picker__list {
+  display: grid;
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  border: 1px solid var(--cx-border);
+  border-radius: 8px;
+}
+
+.labor-rate-picker__option {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--cx-border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.labor-rate-picker__option:hover,
+.labor-rate-picker__option[aria-pressed='true'] {
+  background: var(--cx-surface-raised);
+}
