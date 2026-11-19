@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { SkeletonTable, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
@@ -7,6 +7,7 @@ import { formatDate } from '../home/format'
 import { getDownloadUrl, listReports, type SiteReport } from './reportApi'
 import { cacheReports, getPdfBlob, savePdfBlob } from './reportStorage'
 import { GenerateReportDialog } from './GenerateReportDialog'
+import '../documents/documents.css'
 
 type Props = {
   organizationId: string
@@ -27,10 +28,49 @@ export function SiteReportsSection({ organizationId, siteId, canGenerate }: Prop
   const [dialogOpen, setDialogOpen] = useState(false)
   const [downloading, setDownloading] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [opening, setOpening] = useState<string | null>(null)
+  const [preview, setPreview] = useState<{ title: string; url: string } | null>(null)
+
+  useEffect(() => {
+    if (!preview) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setPreview(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      URL.revokeObjectURL(preview.url)
+    }
+  }, [preview])
 
   function onGenerated(report: SiteReport) {
     remote.update((current) => [report, ...(current ?? [])])
     setDialogOpen(false)
+  }
+
+  async function loadPdf(report: SiteReport): Promise<Blob> {
+    // Try cached blob first
+    const cached = await getPdfBlob(report.id)
+    if (cached) return cached
+    const url = await getDownloadUrl(organizationId, siteId, report.id)
+    const blob = await downloadPresigned(url)
+    savePdfBlob(report.id, blob)
+    return blob
+  }
+
+  async function openPreview(report: SiteReport) {
+    if (opening) return
+    setDownloadError(null)
+    setOpening(report.id)
+    try {
+      const blob = await loadPdf(report)
+      const pdf = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' })
+      setPreview({ title: report.title, url: URL.createObjectURL(pdf) })
+    } catch {
+      setDownloadError(t.error.preview)
+    } finally {
+      setOpening(null)
+    }
   }
 
   async function download(report: SiteReport) {
@@ -38,13 +78,7 @@ export function SiteReportsSection({ organizationId, siteId, canGenerate }: Prop
     setDownloadError(null)
     setDownloading(report.id)
     try {
-      // Try cached blob first
-      let blob = await getPdfBlob(report.id)
-      if (!blob) {
-        const url = await getDownloadUrl(organizationId, siteId, report.id)
-        blob = await downloadPresigned(url)
-        savePdfBlob(report.id, blob)
-      }
+      const blob = await loadPdf(report)
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
       link.download = `${report.title}.pdf`
@@ -95,15 +129,26 @@ export function SiteReportsSection({ organizationId, siteId, canGenerate }: Prop
                   <td>{report.generatedByName ?? '—'}</td>
                   <td>
                     {report.status === 'READY' ? (
-                      <button
-                        type="button"
-                        className="button button--ghost button--sm"
-                        onClick={() => download(report)}
-                        disabled={downloading === report.id}
-                        aria-busy={downloading === report.id}
-                      >
-                        {downloading === report.id ? t.downloading : t.download}
-                      </button>
+                      <div className="button-row">
+                        <button
+                          type="button"
+                          className="button button--ghost button--sm"
+                          onClick={() => openPreview(report)}
+                          disabled={opening === report.id}
+                          aria-busy={opening === report.id}
+                        >
+                          {opening === report.id ? t.opening : t.preview}
+                        </button>
+                        <button
+                          type="button"
+                          className="button button--ghost button--sm"
+                          onClick={() => download(report)}
+                          disabled={downloading === report.id}
+                          aria-busy={downloading === report.id}
+                        >
+                          {downloading === report.id ? t.downloading : t.download}
+                        </button>
+                      </div>
                     ) : report.status === 'FAILED' ? (
                       <span className="text-muted">{t.status.FAILED}</span>
                     ) : (
@@ -118,6 +163,31 @@ export function SiteReportsSection({ organizationId, siteId, canGenerate }: Prop
       ) : (
         <p className="empty-state">{t.empty}</p>
       )}
+
+      {preview ? (
+        <div
+          className="document-preview-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={preview.title}
+          onClick={() => setPreview(null)}
+        >
+          <button
+            className="document-preview-overlay__close button button--ghost"
+            type="button"
+            aria-label={t.closePreview}
+            onClick={() => setPreview(null)}
+          >
+            ✕
+          </button>
+          <iframe
+            className="document-preview-overlay__pdf"
+            src={preview.url}
+            title={preview.title}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      ) : null}
 
       {dialogOpen ? (
         <GenerateReportDialog
