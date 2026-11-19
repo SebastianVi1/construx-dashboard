@@ -9,6 +9,8 @@ export const validationMessages = defineMessages({
     passwordRequired: 'Enter your password',
     passwordMin: 'Use at least 12 characters',
     passwordMax: 'Use at most 72 characters',
+    passwordUppercase: 'Use at least one uppercase letter',
+    passwordNumber: 'Use at least one number',
     passwordMismatch: 'The passwords do not match',
   },
   es: {
@@ -19,6 +21,8 @@ export const validationMessages = defineMessages({
     passwordRequired: 'Ingresa tu contraseña',
     passwordMin: 'Usa al menos 12 caracteres',
     passwordMax: 'Usa como máximo 72 caracteres',
+    passwordUppercase: 'Usa al menos una letra mayúscula',
+    passwordNumber: 'Usa al menos un número',
     passwordMismatch: 'Las contraseñas no coinciden',
   },
 })

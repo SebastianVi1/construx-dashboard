@@ -42,11 +42,20 @@ describe('auth input validation', () => {
   const registrationSchema = makeRegistrationSchema(messages.en.validation)
 
   it('trims a valid email and requires a login password', () => {
-    expect(loginSchema.parse({ email: ' person@example.com ', password: 'secret' })).toEqual({
+    expect(loginSchema.parse({ email: ' person@example.com ', password: 'Secret1' })).toEqual({
       email: 'person@example.com',
-      password: 'secret',
+      password: 'Secret1',
     })
     expect(loginSchema.safeParse({ email: 'bad', password: '' }).success).toBe(false)
+  })
+
+  it('requires an uppercase letter and a number on login', () => {
+    const passwordError = (password: string) =>
+      loginSchema.safeParse({ email: 'person@example.com', password }).error?.issues[0]?.message
+
+    expect(passwordError('password1')).toBe('Use at least one uppercase letter')
+    expect(passwordError('Password')).toBe('Use at least one number')
+    expect(passwordError('Password1')).toBeUndefined()
   })
 
   const registration = (password: string, extra: Record<string, string> = {}) => ({
@@ -59,21 +68,30 @@ describe('auth input validation', () => {
 
   it('requires a registration password of at least 12 characters', () => {
     expect(registrationSchema.safeParse(registration('12345678901')).success).toBe(false)
-    expect(registrationSchema.safeParse(registration('123456789012')).success).toBe(true)
+    expect(registrationSchema.safeParse(registration('Password1234')).success).toBe(true)
+  })
+
+  it('requires an uppercase letter and a number on registration', () => {
+    const passwordError = (password: string) =>
+      registrationSchema.safeParse(registration(password)).error?.issues[0]?.message
+
+    expect(passwordError('password1234')).toBe('Use at least one uppercase letter')
+    expect(passwordError('Passwordonly')).toBe('Use at least one number')
+    expect(passwordError('Password1234')).toBeUndefined()
   })
 
   it('rejects a registration password longer than 72 characters', () => {
-    expect(registrationSchema.safeParse(registration('a'.repeat(72))).success).toBe(true)
+    expect(registrationSchema.safeParse(registration('A1' + 'a'.repeat(70))).success).toBe(true)
     expect(registrationSchema.safeParse(registration('a'.repeat(73))).success).toBe(false)
   })
 
   it('requires a registration name and trims it', () => {
     expect(registrationSchema.safeParse(registration('123456789012', { name: '  ' })).success).toBe(false)
-    expect(registrationSchema.parse(registration('123456789012', { name: ' Person ' })).name).toBe('Person')
+    expect(registrationSchema.parse(registration('Password1234', { name: ' Person ' })).name).toBe('Person')
   })
 
   it('requires the registration confirmation to match the password', () => {
-    const result = registrationSchema.safeParse(registration('123456789012', { confirmPassword: 'different-pass' }))
+    const result = registrationSchema.safeParse(registration('Password1234', { confirmPassword: 'different-pass' }))
     expect(result.success).toBe(false)
     expect(result.error?.issues[0]?.message).toBe(messages.en.validation.passwordMismatch)
   })
@@ -93,13 +111,18 @@ describe('password recovery validation', () => {
 
   it('accepts a new password of 12 to 72 characters', () => {
     expect(reset('a'.repeat(11)).success).toBe(false)
-    expect(reset('a'.repeat(12)).success).toBe(true)
-    expect(reset('a'.repeat(72)).success).toBe(true)
+    expect(reset('A1' + 'a'.repeat(10)).success).toBe(true)
+    expect(reset('A1' + 'a'.repeat(70)).success).toBe(true)
     expect(reset('a'.repeat(73)).success).toBe(false)
   })
 
+  it('requires an uppercase letter and a number on password reset', () => {
+    expect(reset('password1234').error?.issues[0]?.message).toBe('Use at least one uppercase letter')
+    expect(reset('Passwordonly').error?.issues[0]?.message).toBe('Use at least one number')
+  })
+
   it('rejects a confirmation that does not match, on the confirm field', () => {
-    const result = reset('a'.repeat(12), 'b'.repeat(12))
+    const result = reset('Password1234', 'Different1234')
     expect(result.success).toBe(false)
     expect(result.error?.issues[0]?.path).toEqual(['confirmPassword'])
     expect(result.error?.issues[0]?.message).toBe(messages.en.validation.passwordMismatch)

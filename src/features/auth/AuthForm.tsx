@@ -109,7 +109,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       type: 'password',
       autoComplete: isRegistration ? 'new-password' : 'current-password',
       revealLabels: { show: m.auth.field.showPassword, hide: m.auth.field.hidePassword },
-      hint: isRegistration ? m.auth.field.passwordHint : undefined,
+      hint: isRegistration ? m.auth.field.newPasswordHint : m.auth.field.loginPasswordHint,
     },
     ...(isRegistration
       ? [
