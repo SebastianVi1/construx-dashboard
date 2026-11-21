@@ -19,7 +19,7 @@ export function OrgFinanceKPIRow({ summary }: OrgFinanceKPIRowProps) {
   const overrun = summary.totalRemaining < 0
 
   return (
-    <dl className="org-kpis" aria-label={t.label}>
+    <dl className="org-kpis" aria-label={t.label} data-tour="finance-totals">
       <div className="org-kpis__item">
         <dt>{t.budget}</dt>
         <dd className="org-kpis__value data-mono">{hasBudget ? money(summary.totalBudget) : m.orgFinance.noValue}</dd>

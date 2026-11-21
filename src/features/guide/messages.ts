@@ -31,11 +31,24 @@ export const guideMessages = defineMessages({
     },
     sections: {
       runCompany: 'Run your company',
+      finance: 'Finance',
     },
     steps: {
       createSite: {
         title: 'Create your first site',
         body: 'A site holds its team, phases, tasks and budget. Everything else starts here.',
+      },
+      siteBudget: {
+        title: 'Set a site budget',
+        body: 'Give a site the amount it can spend, so Construx can show what is used and what is left.',
+      },
+      recordExpense: {
+        title: 'Record an expense',
+        body: "Add a purchase or payment to a site. It counts against the site's budget right away.",
+      },
+      viewFinance: {
+        title: 'Review company finance',
+        body: 'See the budget, spending and balance of every site in one place.',
       },
     },
     showMe: 'Show me',
@@ -56,6 +69,22 @@ export const guideMessages = defineMessages({
       'site-create': {
         title: 'Add your site here',
         body: 'Give it a name and save. The address, dates and status can wait.',
+      },
+      'site-budget-set': {
+        title: 'Set the budget here',
+        body: 'Type the amount and save. You can change or remove it later.',
+      },
+      'expense-add': {
+        title: 'Add an expense here',
+        body: 'Fill in the concept, amount, date and category, then save.',
+      },
+      'finance-totals': {
+        title: 'Company totals',
+        body: 'Budget, spending and balance across all your sites.',
+      },
+      'finance-sites': {
+        title: 'Every site at a glance',
+        body: 'Each site with its budget, what it spent and whether it is over budget.',
       },
     },
   },
@@ -84,11 +113,24 @@ export const guideMessages = defineMessages({
     },
     sections: {
       runCompany: 'Dirige tu empresa',
+      finance: 'Finanzas',
     },
     steps: {
       createSite: {
         title: 'Crea tu primera obra',
         body: 'Una obra reúne su equipo, fases, tareas y presupuesto. Todo lo demás empieza aquí.',
+      },
+      siteBudget: {
+        title: 'Asigna el presupuesto de una obra',
+        body: 'Indica cuánto puede gastar la obra para que Construx muestre lo usado y lo que queda.',
+      },
+      recordExpense: {
+        title: 'Registra un gasto',
+        body: 'Agrega una compra o un pago a una obra. Se descuenta de su presupuesto al momento.',
+      },
+      viewFinance: {
+        title: 'Revisa las finanzas de la empresa',
+        body: 'Consulta el presupuesto, el gasto y el saldo de cada obra en un solo lugar.',
       },
     },
     showMe: 'Muéstrame',
@@ -108,6 +150,22 @@ export const guideMessages = defineMessages({
       'site-create': {
         title: 'Agrega tu obra aquí',
         body: 'Ponle nombre y guarda. La dirección, las fechas y el estado pueden esperar.',
+      },
+      'site-budget-set': {
+        title: 'Asigna el presupuesto aquí',
+        body: 'Escribe el monto y guarda. Puedes cambiarlo o quitarlo después.',
+      },
+      'expense-add': {
+        title: 'Agrega un gasto aquí',
+        body: 'Llena el concepto, el monto, la fecha y la categoría, y guarda.',
+      },
+      'finance-totals': {
+        title: 'Totales de la empresa',
+        body: 'Presupuesto, gasto y saldo de todas tus obras.',
+      },
+      'finance-sites': {
+        title: 'Cada obra de un vistazo',
+        body: 'Cada obra con su presupuesto, lo que gastó y si se pasó del presupuesto.',
       },
     },
   },

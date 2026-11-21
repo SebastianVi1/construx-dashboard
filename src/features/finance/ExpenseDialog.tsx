@@ -20,6 +20,7 @@ import {
 } from './catalogExpense'
 import { buildExpenseDraft, buildExpensePatch, expenseToValues, makeExpenseSchema } from './expenseForm'
 import { createExpense, expenseCategories, updateExpense, type Expense, type NewExpense } from './financeApi'
+import { saveExpense } from './saveExpense'
 
 type ExpenseDialogProps = {
   organizationId: string
@@ -130,16 +131,17 @@ function TypedExpenseForm({ organizationId, siteId, expense, create, onSaved, on
     schema: makeExpenseSchema(t.validation, money),
     onSubmit: async (values) => {
       try {
-        if (expense) {
-          const patch = buildExpensePatch(expense, values, money)
-          if (Object.keys(patch).length === 0) {
-            setUnchanged(true)
-            return
-          }
-          await updateExpense(organizationId, siteId, expense.id, patch)
-        } else {
-          const draft = buildExpenseDraft(values, money)
-          await (create ? create(draft) : createExpense(organizationId, siteId, draft))
+        const result = await saveExpense({
+          organizationId,
+          expense,
+          patch: (current) => buildExpensePatch(current, values, money),
+          draft: () => buildExpenseDraft(values, money),
+          create: create ?? ((draft) => createExpense(organizationId, siteId, draft)),
+          update: (expenseId, patch) => updateExpense(organizationId, siteId, expenseId, patch),
+        })
+        if (result === 'unchanged') {
+          setUnchanged(true)
+          return
         }
         onSaved()
       } catch (error) {
@@ -191,16 +193,17 @@ function CatalogExpenseForm({ organizationId, siteId, expense, seePrices, create
     schema: makeCatalogExpenseSchema(t.validation),
     onSubmit: async (values) => {
       try {
-        if (expense) {
-          const patch = buildCatalogExpensePatch(expense, values)
-          if (Object.keys(patch).length === 0) {
-            setUnchanged(true)
-            return
-          }
-          await updateExpense(organizationId, siteId, expense.id, patch)
-        } else {
-          const draft = buildCatalogExpenseDraft(values)
-          await (create ? create(draft) : createExpense(organizationId, siteId, draft))
+        const result = await saveExpense({
+          organizationId,
+          expense,
+          patch: (current) => buildCatalogExpensePatch(current, values),
+          draft: () => buildCatalogExpenseDraft(values),
+          create: create ?? ((draft) => createExpense(organizationId, siteId, draft)),
+          update: (expenseId, patch) => updateExpense(organizationId, siteId, expenseId, patch),
+        })
+        if (result === 'unchanged') {
+          setUnchanged(true)
+          return
         }
         onSaved()
       } catch (error) {
