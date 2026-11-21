@@ -46,3 +46,26 @@ export function getOAuth2AuthorizationUrl(
   }
   return ''
 }
+
+/**
+ * Base URL of the marketing landing page (`VITE_LANDING_URL`), whose guide the
+ * dashboard links to, without a trailing slash. Unset, blank or malformed
+ * returns null, which hides the links instead of crashing the app.
+ */
+export function getLandingUrl(value = import.meta.env.VITE_LANDING_URL ?? ''): string | null {
+  const url = value.trim()
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    if (
+      ['http:', 'https:'].includes(parsed.protocol) &&
+      !parsed.username && !parsed.password && !parsed.search && !parsed.hash &&
+      !url.includes('?') && !url.includes('#')
+    ) {
+      return url.replace(/\/+$/, '')
+    }
+  } catch {
+    // Invalid configuration is treated as unset.
+  }
+  return null
+}
