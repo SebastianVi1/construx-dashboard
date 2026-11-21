@@ -1,9 +1,12 @@
 import { useId } from 'react'
 import { CheckIcon } from '../../components/icons'
 import { Modal } from '../../components/modal'
+import { getLandingUrl } from '../../config/env'
 import { formatMessage, useLocale } from '../../i18n'
 import type { GuideStepEntry } from './catalog'
 import { useGuide } from './guide-context'
+import { NewTabIcon } from './GuideIcon'
+import { landingGuideHref } from './landing'
 import { stepStatus, type GuideSection } from './selection'
 import './guide.css'
 
@@ -78,10 +81,11 @@ function GuideSectionList({ section, nextId }: { section: GuideSection; nextId: 
 
 function GuideStepRow({ step, isNext }: { step: GuideStepEntry; isNext: boolean }) {
   const { progress, skip } = useGuide()
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.guide
   const text = t.steps[step.textKey]
   const status = stepStatus(progress, step.id)
+  const learnMoreHref = landingGuideHref(getLandingUrl(), locale, step.chapter)
 
   return (
     <li className="guide-step" data-status={status?.toLowerCase() ?? 'open'} data-next={isNext || undefined}>
@@ -95,6 +99,13 @@ function GuideStepRow({ step, isNext }: { step: GuideStepEntry; isNext: boolean 
         ) : (
           <p className="guide-step__state">{status === 'COMPLETED' ? t.done : t.skipped}</p>
         )}
+        {learnMoreHref ? (
+          <a className="guide-step__more" href={learnMoreHref} target="_blank" rel="noopener noreferrer">
+            {t.learnMore}
+            <span className="visually-hidden"> {formatMessage(t.learnMoreLabel, { step: text.title })}</span>
+            <NewTabIcon className="guide-step__more-icon" />
+          </a>
+        ) : null}
       </div>
       {status === null ? (
         <button

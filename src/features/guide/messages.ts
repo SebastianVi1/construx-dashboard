@@ -20,11 +20,14 @@ export const guideMessages = defineMessages({
     done: 'Done',
     skipped: 'Skipped',
     hide: 'Hide guide',
-    hideHint: 'Open it again from Guide in the sidebar.',
+    hideHint: 'Open it again any time from Guide.',
     show: 'Show the guide button',
+    learnMore: 'Learn more',
+    learnMoreLabel: 'about “{step}” (opens in a new tab)',
+    landingEntryLabel: '(opens the Construx guide in a new tab)',
     complete: {
       title: "You're set up",
-      body: 'Every step is done. Guide in the sidebar keeps this list.',
+      body: 'Every step is done. Guide keeps this list for later.',
     },
     sections: {
       runCompany: 'Run your company',
@@ -50,11 +53,14 @@ export const guideMessages = defineMessages({
     done: 'Hecho',
     skipped: 'Omitido',
     hide: 'Ocultar guía',
-    hideHint: 'Vuelve a abrirla desde Guía en el menú lateral.',
+    hideHint: 'Vuelve a abrirla cuando quieras desde Guía.',
     show: 'Mostrar el botón de la guía',
+    learnMore: 'Más información',
+    learnMoreLabel: 'sobre «{step}» (se abre en una pestaña nueva)',
+    landingEntryLabel: '(abre la guía de Construx en una pestaña nueva)',
     complete: {
       title: 'Todo listo',
-      body: 'Terminaste todos los pasos. Guía, en el menú lateral, conserva esta lista.',
+      body: 'Terminaste todos los pasos. Guía conserva esta lista para después.',
     },
     sections: {
       runCompany: 'Dirige tu empresa',

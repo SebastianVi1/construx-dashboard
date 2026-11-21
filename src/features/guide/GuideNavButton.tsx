@@ -1,18 +1,34 @@
 import { formatMessage, useLocale } from '../../i18n'
 import { useGuide } from './guide-context'
-import { GuideIcon } from './GuideIcon'
+import { GuideIcon, NewTabIcon } from './GuideIcon'
+import { useGuideEntry } from './useGuideEntry'
 import './guide.css'
 
 /**
  * "Guide" entry of the workspace sidebar. Opens the checklist even when the
- * guide is hidden; absent for members with no steps.
+ * guide is hidden. A member with no steps (a Worker) gets a link to the
+ * landing guide instead, or no entry when no landing URL is configured.
  */
 export function GuideNavButton() {
-  const { sections, count, isOpen, open } = useGuide()
+  const { count, isOpen, open } = useGuide()
+  const entry = useGuideEntry()
   const { messages: m } = useLocale()
   const t = m.guide
 
-  if (sections.length === 0) return null
+  if (entry === null) return null
+
+  if (entry.kind === 'landing') {
+    return (
+      <a className="workspace-nav__link guide-nav-button" href={entry.href} target="_blank" rel="noopener noreferrer">
+        <GuideIcon className="workspace-nav__icon" />
+        <span className="workspace-nav__label">
+          {t.navEntry}
+          <span className="visually-hidden"> {t.landingEntryLabel}</span>
+        </span>
+        <NewTabIcon className="guide-nav-button__new-tab" />
+      </a>
+    )
+  }
 
   return (
     <button

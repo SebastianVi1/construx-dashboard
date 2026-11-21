@@ -7,8 +7,12 @@ import { AccountMenu } from '../profile'
 import { CompanySwitcher } from './CompanySwitcher'
 import { sectionForPath } from './workspaceNav'
 
-/** Top bar of the workspace: brand, company switcher, where you are, and the account menu. */
-export function WorkspaceHeader() {
+/**
+ * Top bar of the workspace: brand, company switcher, where you are, and the account menu.
+ * `guideSlotRef` receives the element the phone Guide entry is portalled into: the
+ * header stays mounted across a company switch, the guide lives below it per Company.
+ */
+export function WorkspaceHeader({ guideSlotRef }: { guideSlotRef?: (element: HTMLDivElement | null) => void }) {
   const { messages: m } = useLocale()
   const { theme } = useTheme()
   const t = m.workspace
@@ -36,6 +40,7 @@ export function WorkspaceHeader() {
         </nav>
       ) : null}
       <div className="workspace-header__end">
+        <div ref={guideSlotRef} className="workspace-header__guide" />
         <AccountMenu />
       </div>
     </header>
