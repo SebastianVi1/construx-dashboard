@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router'
 import { DocumentIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { SkeletonList, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
+import { GuideNavButton, GuideProvider } from '../guide'
 import { PermissionsProvider, usePermissions } from '../permissions'
 import { seesWorkbooks } from '../excel/excelAccess'
 import { FinanceIcon } from '../org-finance/FinanceIcon'
@@ -47,7 +48,10 @@ export function WorkspaceLayout() {
       </a>
       <WorkspaceHeader />
       <PermissionsProvider key={organization.id} organizationId={organization.id}>
-        <WorkspaceBody />
+        {/* Inside the per-Company boundary: a switch remounts the guide for the new Company. */}
+        <GuideProvider organizationId={organization.id}>
+          <WorkspaceBody />
+        </GuideProvider>
       </PermissionsProvider>
     </div>
   )
@@ -93,6 +97,9 @@ function WorkspaceBody() {
     <>
       <nav className="workspace-nav" aria-label={t.navLabel}>
         <ul className="workspace-nav__list">{links('workspace-nav')}</ul>
+        <div className="workspace-nav__footer">
+          <GuideNavButton />
+        </div>
       </nav>
       <main id={MAIN_ID} ref={mainRef} tabIndex={-1} className="workspace-main">
         {status === 'ready' ? (

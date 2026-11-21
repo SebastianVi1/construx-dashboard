@@ -1,0 +1,306 @@
+/*
+ * Getting-started guide: checklist panel (inside the `dock` modal), floating
+ * launcher and the sidebar entry. Tokens only.
+ */
+
+/* ---------- Panel ---------- */
+
+.guide-panel {
+  display: grid;
+  gap: 20px;
+}
+
+/* Progress as a measured rule: one tick per step, filled as steps are done. */
+.guide-meter {
+  display: grid;
+  gap: 8px;
+}
+
+.guide-meter__label {
+  margin: 0;
+  color: var(--cx-muted);
+  font: 500 13px/18px var(--cx-font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.guide-meter__track {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-meter__tick {
+  flex: 1;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--cx-border);
+  transition: background-color 180ms ease-out;
+}
+
+.guide-meter__tick[data-done='true'] {
+  background: var(--cx-success);
+}
+
+.guide-complete {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--cx-success) 40%, transparent);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-success-subtle);
+}
+
+.guide-complete__icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--cx-success);
+}
+
+.guide-complete__title {
+  margin: 0;
+  color: var(--cx-ink);
+  font: 600 16px/24px var(--cx-font-display);
+  letter-spacing: -0.01em;
+}
+
+.guide-complete__body {
+  margin: 2px 0 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.guide-section {
+  display: grid;
+  gap: 8px;
+}
+
+.guide-section__title {
+  margin: 0;
+  color: var(--cx-ink);
+  font: 600 15px/20px var(--cx-font-display);
+  letter-spacing: -0.01em;
+}
+
+.guide-steps {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--cx-border);
+}
+
+.guide-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+/* The step to do next carries the blueprint marker, like the active nav entry. */
+.guide-step[data-next]::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--cx-accent);
+}
+
+.guide-step__mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 1.5px solid var(--cx-border-strong);
+  border-radius: 50%;
+  color: var(--cx-on-primary);
+}
+
+.guide-step[data-status='completed'] .guide-step__mark {
+  border-color: var(--cx-success);
+  background: var(--cx-success);
+}
+
+.guide-step[data-status='skipped'] .guide-step__mark {
+  border-style: dashed;
+}
+
+.guide-step__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.guide-step__title {
+  margin: 0;
+  color: var(--cx-ink);
+  font: 500 14px/22px var(--cx-font-sans);
+}
+
+.guide-step[data-status='skipped'] .guide-step__title,
+.guide-step[data-status='completed'] .guide-step__title {
+  color: var(--cx-muted);
+}
+
+.guide-step__body,
+.guide-step__state {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.guide-step[data-status='completed'] .guide-step__state {
+  color: var(--cx-success);
+  font-weight: 500;
+}
+
+.guide-step__skip {
+  margin-top: -4px;
+}
+
+.guide-panel__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.guide-panel__link {
+  min-height: 44px;
+  margin: -12px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cx-accent);
+  font: 500 14px/20px var(--cx-font-sans);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.guide-panel__link:hover {
+  color: var(--cx-accent-hover);
+}
+
+.guide-panel__hint {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* ---------- Launcher ---------- */
+
+.guide-launcher {
+  position: fixed;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 40;
+}
+
+.guide-launcher__button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+  font: 600 14px/20px var(--cx-font-display);
+  box-shadow: 0 12px 28px -12px var(--cx-shadow-color);
+  cursor: pointer;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.guide-launcher__button:hover {
+  border-color: var(--cx-accent);
+}
+
+.guide-launcher__icon {
+  flex: none;
+  color: var(--cx-accent);
+}
+
+.guide-launcher__count {
+  padding: 2px 6px;
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-accent-subtle);
+  color: var(--cx-accent);
+  font: 500 12px/16px var(--cx-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.guide-launcher[data-state='complete'] .guide-launcher__button {
+  border-color: var(--cx-success);
+}
+
+.guide-launcher[data-state='complete'] .guide-launcher__icon {
+  color: var(--cx-success);
+}
+
+.guide-launcher[data-state='complete'] .guide-launcher__count {
+  background: var(--cx-success-subtle);
+  color: var(--cx-success);
+}
+
+/* ---------- Sidebar entry ---------- */
+
+.guide-nav-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.guide-nav-button[aria-expanded='true'] {
+  color: var(--cx-ink);
+  background: var(--cx-surface-raised);
+}
+
+.guide-nav-button__count {
+  margin-left: auto;
+  color: var(--cx-muted);
+  font: 500 12px/16px var(--cx-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tablet rail: icon above a short label, no room for the counter. */
+@media (max-width: 1080px) and (min-width: 761px) {
+  .guide-nav-button {
+    text-align: center;
+  }
+
+  .guide-nav-button__count {
+    display: none;
+  }
+}
+
+/* Phones: the launcher sits above the bottom tab bar. */
+@media (max-width: 760px) {
+  .guide-launcher {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(var(--cx-tabbar-height) + env(safe-area-inset-bottom) + 12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-meter__tick,
+  .guide-launcher__button {
+    transition: none;
+  }
+}

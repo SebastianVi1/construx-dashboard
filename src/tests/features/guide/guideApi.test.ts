@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
 import { configureHttp } from '../../../lib/http'
-import { getGuide, markGuideStepRemote, setGuideDismissed } from '../../../features/guide/guideApi'
+import { getGuide, markGuideStepRemote, setGuideDismissed, type GuideProgress } from '../../../features/guide/guideApi'
 
 type Config = { withCredentials?: boolean; headers?: Record<string, string> }
 type SendCall = [url: string, data?: unknown, config?: Config]
 type GetCall = [url: string, config?: Config]
 
 const csrfOk = { data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
-const notStarted = { started: false, steps: {}, dismissedAt: null, updatedAt: null }
-const started = {
+const notStarted: GuideProgress = { started: false, steps: {}, dismissedAt: null, updatedAt: null }
+const started: GuideProgress = {
   started: true,
   steps: { 'create-site': 'COMPLETED', 'invite-member': 'SKIPPED' },
   dismissedAt: null,

@@ -8,6 +8,7 @@ import {
 } from '../../../features/guide/catalog'
 import { guideProgressOf, selectGuide, type GuideSection } from '../../../features/guide/selection'
 import type { GuideProgress } from '../../../features/guide/guideApi'
+import { acceptsMark } from '../../../features/guide/guideState'
 import { accessOf, seededRoles } from '../../support/seededRoles'
 
 /** Sections and their step ids, in display order. */
@@ -144,6 +145,12 @@ describe('a section added only as list entries', () => {
       ['not-for-owners', ['look-around']],
     ])
     expect(shape(selectGuide(seededRoles.ADMINISTRATOR, catalog)).map(([id]) => id)).not.toContain('not-for-owners')
+  })
+
+  it('accepts marks for its steps like any built-in step', () => {
+    const sections = selectGuide(seededRoles.WORKER, catalog)
+    expect(acceptsMark(sections, progress({}), 'open-plan', 'COMPLETED')).toBe(true)
+    expect(acceptsMark(sections, progress({}), 'draw-zone', 'COMPLETED')).toBe(false)
   })
 
   it('counts its steps in progress like any built-in step', () => {

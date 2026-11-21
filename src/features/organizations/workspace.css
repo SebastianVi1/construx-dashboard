@@ -402,9 +402,21 @@
   align-self: start;
   height: calc(100svh - var(--cx-header-height));
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   padding: 16px 12px;
   border-right: 1px solid var(--cx-border);
   background: var(--cx-surface);
+}
+
+/* Help entries (the getting-started guide) sit at the foot of the rail, apart from the destinations. */
+.workspace-nav__footer {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.workspace-nav__footer:empty {
+  display: none;
 }
 
 .workspace-nav__list,

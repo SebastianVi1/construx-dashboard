@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { Form, useForm } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { useLocale } from '../../i18n'
+import { markGuideStep } from '../guide/guideEvents'
 import { makeSiteSchema } from './siteForm'
 import { siteFields } from './siteDisplay'
 import { createSite, siteErrorKind, type SiteErrorKind } from './sitesApi'
@@ -20,6 +21,7 @@ export function CreateSiteDialog({ organizationId, onClose }: { organizationId: 
     onSubmit: async (values) => {
       try {
         const site = await createSite(organizationId, values)
+        markGuideStep('create-site', organizationId)
         navigate(`/sites/${encodeURIComponent(site.id)}`)
       } catch (error) {
         setErrorKind(siteErrorKind(error))
