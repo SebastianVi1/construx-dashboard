@@ -322,6 +322,7 @@ export function GanttChart({
                       <button
                         type="button"
                         className="task-link gantt__add"
+                        data-tour="task-create"
                         aria-label={formatMessage(m.tasks.addLabel, { phase: row.label })}
                         onClick={() => onAddTask(row.goal)}
                       >

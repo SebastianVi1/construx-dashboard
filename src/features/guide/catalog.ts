@@ -89,9 +89,66 @@ export const guideSteps: GuideStepEntry[] = [
     tourTargets: ['site-create'],
     textKey: 'createSite',
   },
+  {
+    id: 'site-details',
+    sections: ['owner'],
+    requires: [{ action: 'MANAGE_PROJECT', scope: 'any' }],
+    page: 'site-details',
+    chapter: 'sites',
+    tourTargets: ['site-details-form'],
+    textKey: 'siteDetails',
+  },
+  {
+    id: 'invite-member',
+    sections: ['owner'],
+    requires: [{ action: 'MANAGE_MEMBERS', scope: 'any' }],
+    page: 'members',
+    chapter: 'company',
+    tourTargets: ['member-invite'],
+    textKey: 'inviteMember',
+  },
+  {
+    id: 'site-team',
+    sections: ['owner'],
+    // The member picker needs MANAGE_MEMBERS; the add form shows with MANAGE_PROJECT on the Site.
+    requires: [
+      { action: 'MANAGE_MEMBERS', scope: 'any' },
+      { action: 'MANAGE_PROJECT', scope: 'any' },
+    ],
+    page: 'site-details',
+    chapter: 'company',
+    tourTargets: ['site-team'],
+    textKey: 'siteTeam',
+  },
+  {
+    id: 'create-phase',
+    sections: ['owner'],
+    requires: [{ action: 'MANAGE_GOAL', scope: 'any' }],
+    page: 'phases',
+    chapter: 'tasks',
+    tourTargets: ['phase-create'],
+    textKey: 'createPhase',
+  },
+  {
+    id: 'assign-task',
+    sections: ['owner'],
+    requires: [
+      { action: 'MANAGE_ACTIVITY', scope: 'any' },
+      { action: 'ASSIGN_ACTIVITY', scope: 'any' },
+    ],
+    page: 'phases',
+    chapter: 'tasks',
+    tourTargets: ['task-create'],
+    textKey: 'assignTask',
+  },
 ]
 
-export const guidePages: GuidePageEntry[] = [{ id: 'sites', route: '/sites', needsSite: false }]
+export const guidePages: GuidePageEntry[] = [
+  { id: 'sites', route: '/sites', needsSite: false },
+  { id: 'site-details', route: '/sites/:siteId?tab=details', needsSite: true },
+  { id: 'members', route: '/members', needsSite: false },
+  { id: 'phases', route: '/sites/:siteId/phases', needsSite: true },
+]
 
 export const guideCatalog: GuideCatalog = { sections: guideSections, steps: guideSteps, pages: guidePages }
 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Form, useForm } from '../../components/form'
 import { Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
+import { markGuideStep } from '../guide/guideEvents'
 import { buildSitePatch, makeSiteSchema, siteToValues } from './siteForm'
 import { siteFields } from './siteDisplay'
 import { siteErrorKind, updateSite, type Site, type SiteErrorKind } from './sitesApi'
@@ -30,7 +31,9 @@ export function SiteDetailsForm({ organizationId, site, onSaved }: SiteDetailsFo
         return
       }
       try {
-        onSaved(await updateSite(organizationId, site.id, patch))
+        const updated = await updateSite(organizationId, site.id, patch)
+        markGuideStep('site-details', organizationId)
+        onSaved(updated)
       } catch (error) {
         setErrorKind(siteErrorKind(error))
         throw error

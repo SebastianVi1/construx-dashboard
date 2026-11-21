@@ -143,7 +143,7 @@ export function PhaseTasks({ organizationId, siteId, goal, filter, people, onSit
   return (
     <div className="phase-tasks">
       {canCreate ? (
-        <div className="phase-tasks__toolbar">
+        <div className="phase-tasks__toolbar" data-tour="task-create">
           <button
             type="button"
             className="button button--small"

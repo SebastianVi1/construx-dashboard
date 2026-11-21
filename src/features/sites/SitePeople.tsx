@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
 import { SkeletonTable, SkeletonForm, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
+import { markGuideStep } from '../guide/guideEvents'
 import { listMembers, type Member } from '../members/membersApi'
 import { roleLabel } from '../permissions'
 import { ApiError } from '../../lib/http'
@@ -215,7 +216,9 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
     if (!selected || busy) return
     setBusy(true)
     try {
-      onAdded(await assignToSite(organizationId, siteId, selected))
+      const person = await assignToSite(organizationId, siteId, selected)
+      markGuideStep('site-team', organizationId)
+      onAdded(person)
       setChosen('')
     } catch (error) {
       onFailed(accessErrorKind(error))

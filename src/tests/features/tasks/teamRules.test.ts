@@ -8,6 +8,7 @@ import {
   removeFromTeam,
   sameTeam,
   sortTeam,
+  taskSaveAssigns,
   teamIssue,
 } from '../../../features/tasks/teamRules'
 import type { Task, TeamPlace } from '../../../features/tasks/tasksApi'
@@ -104,5 +105,20 @@ describe('team rules', () => {
     expect(isLead(task, 'm-2')).toBe(false)
     expect(myTaskRole(task, 'm-2')).toBe('CREW')
     expect(myTaskRole(task, null)).toBeNull()
+  })
+})
+
+describe('taskSaveAssigns (ticks off the guide step "Create a task and assign it")', () => {
+  it('counts a task the server saved with someone on its team', () => {
+    expect(taskSaveAssigns(task)).toBe(true)
+    expect(taskSaveAssigns({ assignees: [task.assignees[0]] })).toBe(true)
+  })
+
+  it('does not count a task saved with nobody on its team', () => {
+    expect(taskSaveAssigns({ assignees: [] })).toBe(false)
+  })
+
+  it('does not count a save that sent no request (an edit with nothing changed)', () => {
+    expect(taskSaveAssigns(null)).toBe(false)
   })
 })

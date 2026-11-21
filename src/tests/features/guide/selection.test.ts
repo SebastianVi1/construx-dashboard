@@ -42,13 +42,16 @@ describe('built-in catalog', () => {
   })
 })
 
+/** "Run your company", in the order ticket #87 sets. */
+const runCompany = ['create-site', 'site-details', 'invite-member', 'site-team', 'create-phase', 'assign-task']
+
 describe('selectGuide over the built-in roles', () => {
-  it('gives the Owner "Run your company" with "Create your first site"', () => {
-    expect(shape(selectGuide(seededRoles.OWNER))).toEqual([['owner', ['create-site']]])
+  it('gives the Owner "Run your company" with its six steps in order', () => {
+    expect(shape(selectGuide(seededRoles.OWNER))).toEqual([['owner', runCompany]])
   })
 
-  it('gives the Administrator the same section as the Owner', () => {
-    expect(shape(selectGuide(seededRoles.ADMINISTRATOR))).toEqual([['owner', ['create-site']]])
+  it('gives the Administrator the same section as the Owner, and no Finance section', () => {
+    expect(shape(selectGuide(seededRoles.ADMINISTRATOR))).toEqual([['owner', runCompany]])
   })
 
   it('gives no section to roles without MANAGE_MEMBERS and MANAGE_PROJECT company-wide', () => {
@@ -63,7 +66,17 @@ describe('selectGuide over the built-in roles', () => {
 
   it('reads permissions, not role codes: a custom role with the grants gets the section', () => {
     const custom = accessOf('CUSTOM_LEAD', 'MANAGE_MEMBERS:ORGANIZATION,MANAGE_PROJECT:ORGANIZATION')
-    expect(shape(selectGuide(custom))).toEqual([['owner', ['create-site']]])
+    expect(shape(selectGuide(custom))).toEqual([['owner', ['create-site', 'site-details', 'invite-member', 'site-team']]])
+  })
+
+  it('leaves out the steps a custom role cannot do: planning without ASSIGN_ACTIVITY keeps the phase, drops the task', () => {
+    const custom = accessOf(
+      'CUSTOM_LEAD',
+      'MANAGE_MEMBERS:ORGANIZATION,MANAGE_PROJECT:ORGANIZATION,MANAGE_GOAL:ORGANIZATION,MANAGE_ACTIVITY:ORGANIZATION',
+    )
+    expect(shape(selectGuide(custom))).toEqual([
+      ['owner', ['create-site', 'site-details', 'invite-member', 'site-team', 'create-phase']],
+    ])
   })
 
   it('needs the organization scope: MANAGE_PROJECT on assigned sites only is not enough', () => {
@@ -129,7 +142,7 @@ describe('a section added only as list entries', () => {
   it('lists a shared step once, in the first section that has it', () => {
     expect(shape(selectGuide(seededRoles.OWNER, catalog))).toEqual([
       ['early', ['early-step']],
-      ['owner', ['create-site', 'open-plan']],
+      ['owner', [...runCompany, 'open-plan']],
       ['planning', ['draw-zone']],
     ])
   })
@@ -168,24 +181,26 @@ describe('guideProgressOf', () => {
   it('starts at zero with no progress loaded', () => {
     expect(guideProgressOf(ownerSections, null)).toEqual({
       done: 0,
-      total: 1,
+      total: 6,
       complete: false,
       next: guideCatalog.steps[0],
     })
   })
 
-  it('counts completed and skipped steps the member can see', () => {
-    expect(guideProgressOf(ownerSections, progress({ 'create-site': 'SKIPPED' }))).toMatchObject({
-      done: 1,
-      total: 1,
-      complete: true,
-      next: null,
-    })
+  it('counts completed and skipped steps the member can see; next is the first open one', () => {
+    const counted = guideProgressOf(ownerSections, progress({ 'create-site': 'COMPLETED', 'site-details': 'SKIPPED' }))
+    expect(counted).toMatchObject({ done: 2, total: 6, complete: false })
+    expect(counted.next?.id).toBe('invite-member')
+  })
+
+  it('is complete once every visible step is completed or skipped', () => {
+    const all = Object.fromEntries(runCompany.map((id, index) => [id, index % 2 === 0 ? 'COMPLETED' : 'SKIPPED'] as const))
+    expect(guideProgressOf(ownerSections, progress(all))).toMatchObject({ done: 6, total: 6, complete: true, next: null })
   })
 
   it('ignores stored ids that are unknown or hidden from the member', () => {
     const stored = progress({ 'old-step': 'COMPLETED', 'create-site': 'COMPLETED' })
     expect(guideProgressOf([], stored)).toEqual({ done: 0, total: 0, complete: false, next: null })
-    expect(guideProgressOf(ownerSections, progress({ 'old-step': 'COMPLETED' }))).toMatchObject({ done: 0, total: 1 })
+    expect(guideProgressOf(ownerSections, progress({ 'old-step': 'COMPLETED' }))).toMatchObject({ done: 0, total: 6 })
   })
 })

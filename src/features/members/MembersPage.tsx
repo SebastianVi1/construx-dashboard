@@ -3,6 +3,7 @@ import { useRemoteData, type RemoteData } from '../../components/data/useRemoteD
 import { SkeletonBlock, SkeletonRegion, SkeletonTable, Notice } from '../../components/page'
 import { skeletonRowCount } from '../../components/page/skeletonSize'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
+import { GuideHelpButton } from '../guide/GuideHelpButton'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
 import { Avatar } from '../profile/Avatar'
@@ -117,11 +118,12 @@ function MembersContent() {
           <h1>{t.title}</h1>
           <p>{t.description}</p>
         </div>
+        <GuideHelpButton page="members" />
       </header>
 
       <div className="members-columns">
         <div className="members-side">
-          <section className="page-section members-invite" aria-labelledby="invite-heading">
+          <section className="page-section members-invite" aria-labelledby="invite-heading" data-tour="member-invite">
             <div className="page-section__header">
               <div>
                 <h2 id="invite-heading">{t.invite.title}</h2>

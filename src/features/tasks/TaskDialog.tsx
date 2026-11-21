@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
+import { markGuideStep } from '../guide/guideEvents'
 import { dueText, instantToLocalInput, localInputToInstant } from '../goals/dueAt'
 import type { Goal } from '../goals/goalsApi'
 import type { SiteAccess } from '../sites/sitesApi'
@@ -17,7 +18,7 @@ import {
   type TeamPlace,
 } from './tasksApi'
 import { TeamEditor } from './TeamEditor'
-import { teamIssue } from './teamRules'
+import { taskSaveAssigns, teamIssue } from './teamRules'
 import { BarColorPicker } from '../gantt/BarColorPicker'
 
 type TaskDialogProps = {
@@ -95,12 +96,17 @@ export function TaskDialog({
         if (!task) {
           const startAt = localInputToInstant(values.startAt) ?? ''
           const dueAt = localInputToInstant(values.dueAt) ?? ''
-          onSaved(await createTask(at, { ...values, startAt, dueAt, assignees: team }), true)
+          const created = await createTask(at, { ...values, startAt, dueAt, assignees: team })
+          if (taskSaveAssigns(created)) markGuideStep('assign-task', at.organizationId)
+          onSaved(created, true)
           return
         }
         const changes = buildTaskChanges(task, values, canReassign ? team : task.assignees)
-        if (Object.keys(changes.patch).length > 0) latest = await updateTask(at, task.id, changes.patch)
-        if (changes.team) latest = await setTaskTeam(at, task.id, changes.team)
+        // The server's answer to this save; stays null when nothing changed and no request went out.
+        let answered: Task | null = null
+        if (Object.keys(changes.patch).length > 0) answered = latest = await updateTask(at, task.id, changes.patch)
+        if (changes.team) answered = latest = await setTaskTeam(at, task.id, changes.team)
+        if (taskSaveAssigns(answered)) markGuideStep('assign-task', at.organizationId)
         onSaved(latest ?? task, false)
       } catch (error) {
         // A rename can succeed before a failed team change; keep the list truthful.

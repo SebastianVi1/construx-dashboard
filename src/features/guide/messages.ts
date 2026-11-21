@@ -37,6 +37,26 @@ export const guideMessages = defineMessages({
         title: 'Create your first site',
         body: 'A site holds its team, phases, tasks and budget. Everything else starts here.',
       },
+      siteDetails: {
+        title: "Complete the site's details",
+        body: 'Add its address, dates and status. Reports and Finance rely on them.',
+      },
+      inviteMember: {
+        title: 'Invite a teammate',
+        body: 'Send an invitation by email with a role. The role decides what they can do in your company.',
+      },
+      siteTeam: {
+        title: "Add someone to the site's team",
+        body: "Joining the company doesn't put someone on a site. Add them to its team so they can work there.",
+      },
+      createPhase: {
+        title: 'Create a phase',
+        body: "A phase is a stage of the site's work with its own dates, such as Foundations or Finishes.",
+      },
+      assignTask: {
+        title: 'Create a task and assign it',
+        body: 'Add a task to a phase and choose who does it. The first person you add leads it.',
+      },
     },
     showMe: 'Show me',
     showMeLabel: 'Show me how: “{step}”',
@@ -56,6 +76,26 @@ export const guideMessages = defineMessages({
       'site-create': {
         title: 'Add your site here',
         body: 'Give it a name and save. The address, dates and status can wait.',
+      },
+      'site-details-form': {
+        title: 'Fill in the details',
+        body: 'Set the address, start and end dates and status, then choose Save changes.',
+      },
+      'member-invite': {
+        title: 'Invite by email',
+        body: 'Enter their email, pick a role and choose Send invitation. They get a link to join.',
+      },
+      'site-team': {
+        title: "The site's team",
+        body: 'Choose a company member under Add a person, then Add to site. Only people on the team can be given tasks here.',
+      },
+      'phase-create': {
+        title: 'Add a phase',
+        body: 'Give it a name and its start and due dates, then save.',
+      },
+      'task-create': {
+        title: 'Add a task to a phase',
+        body: 'Choose Add task on a phase, then add at least one person to its team before saving.',
       },
     },
   },
@@ -90,6 +130,26 @@ export const guideMessages = defineMessages({
         title: 'Crea tu primera obra',
         body: 'Una obra reúne su equipo, fases, tareas y presupuesto. Todo lo demás empieza aquí.',
       },
+      siteDetails: {
+        title: 'Completa los datos de la obra',
+        body: 'Agrega su dirección, fechas y estado. Los reportes y Finanzas dependen de ellos.',
+      },
+      inviteMember: {
+        title: 'Invita a un compañero',
+        body: 'Envía una invitación por correo con un rol. El rol define lo que puede hacer en tu empresa.',
+      },
+      siteTeam: {
+        title: 'Agrega a alguien al equipo de la obra',
+        body: 'Unirse a la empresa no pone a nadie en una obra. Agrégalo a su equipo para que pueda trabajar ahí.',
+      },
+      createPhase: {
+        title: 'Crea una fase',
+        body: 'Una fase es una etapa del trabajo de la obra con sus propias fechas, como Cimentación o Acabados.',
+      },
+      assignTask: {
+        title: 'Crea una tarea y asígnala',
+        body: 'Agrega una tarea a una fase y elige quién la hace. La primera persona que agregues la dirige.',
+      },
     },
     showMe: 'Muéstrame',
     showMeLabel: 'Muéstrame cómo: «{step}»',
@@ -108,6 +168,26 @@ export const guideMessages = defineMessages({
       'site-create': {
         title: 'Agrega tu obra aquí',
         body: 'Ponle nombre y guarda. La dirección, las fechas y el estado pueden esperar.',
+      },
+      'site-details-form': {
+        title: 'Completa los datos',
+        body: 'Pon la dirección, las fechas de inicio y fin y el estado, y elige Guardar cambios.',
+      },
+      'member-invite': {
+        title: 'Invita por correo',
+        body: 'Escribe su correo, elige un rol y elige Enviar invitación. Recibirá un enlace para unirse.',
+      },
+      'site-team': {
+        title: 'El equipo de la obra',
+        body: 'Elige a un miembro de la empresa en Agregar una persona y luego Agregar a la obra. Solo el equipo puede recibir tareas aquí.',
+      },
+      'phase-create': {
+        title: 'Agrega una fase',
+        body: 'Ponle nombre y sus fechas de inicio y fin, y guarda.',
+      },
+      'task-create': {
+        title: 'Agrega una tarea a una fase',
+        body: 'Elige Agregar tarea en una fase y agrega al menos una persona a su equipo antes de guardar.',
       },
     },
   },

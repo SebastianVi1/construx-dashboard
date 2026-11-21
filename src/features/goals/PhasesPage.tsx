@@ -9,6 +9,7 @@ import { formatMessage, useLocale } from '../../i18n'
 import { shiftInstant } from '../gantt/drag'
 import { GanttChart, type Reschedule } from '../gantt/GanttChart'
 import { buildRows, type GanttRow } from '../gantt/ganttRows'
+import { GuideHelpButton } from '../guide/GuideHelpButton'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { getSite, listSiteAccess, siteErrorKind, type Site, type SiteAccess } from '../sites/sitesApi'
@@ -72,6 +73,7 @@ export function PhasesPage() {
           <h1>{t.title}</h1>
           <p>{formatMessage(t.description, { site: current.name })}</p>
         </div>
+        <GuideHelpButton page="phases" />
       </header>
 
       {!canView ? (
@@ -241,7 +243,7 @@ export function PhaseSchedule({ organizationId, site, people, onSite }: PhaseSch
       <div className="empty-state">
         <p>{canManageGoal ? m.goals.emptyManager : m.goals.emptyViewer}</p>
         {canManageGoal ? (
-          <button type="button" className="button" onClick={() => setDialog({ kind: 'createPhase' })}>
+          <button type="button" className="button" data-tour="phase-create" onClick={() => setDialog({ kind: 'createPhase' })}>
             {m.goals.addFirst}
           </button>
         ) : null}
@@ -273,6 +275,7 @@ export function PhaseSchedule({ organizationId, site, people, onSite }: PhaseSch
               <button
                 type="button"
                 className="button button--primary"
+                data-tour="phase-create"
                 onClick={() => {
                   setToast(null)
                   setDialog({ kind: 'createPhase' })

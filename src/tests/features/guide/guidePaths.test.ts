@@ -7,7 +7,8 @@ import {
   type GuideStepEntry,
 } from '../../../features/guide/catalog'
 import { guidePath, showMeOutcome, siteIdInPath, stepsOnPage } from '../../../features/guide/guidePaths'
-import type { GuideSection } from '../../../features/guide/selection'
+import { selectGuide, type GuideSection } from '../../../features/guide/selection'
+import { seededRoles } from '../../support/seededRoles'
 
 const pages: GuidePageEntry[] = [
   { id: 'sites', route: '/sites', needsSite: false },
@@ -33,6 +34,30 @@ describe('guidePath', () => {
 
   it('knows nothing about a page that is not in the list', () => {
     expect(guidePath('nowhere', 's1', pages)).toBeNull()
+  })
+})
+
+describe('"Run your company" Show me paths', () => {
+  const ownerSteps = selectGuide(seededRoles.OWNER).flatMap((section) => section.steps)
+  const path = (stepId: string, siteId: string | null) =>
+    guidePath(ownerSteps.find((step) => step.id === stepId)?.page ?? '', siteId)
+
+  it('opens the Site steps in the last visited Site', () => {
+    expect(path('site-details', 's1')).toEqual({ path: '/sites/s1?tab=details', needsSite: false })
+    expect(path('site-team', 's1')).toEqual({ path: '/sites/s1?tab=details', needsSite: false })
+    expect(path('create-phase', 's1')).toEqual({ path: '/sites/s1/phases', needsSite: false })
+    expect(path('assign-task', 's1')).toEqual({ path: '/sites/s1/phases', needsSite: false })
+  })
+
+  it('sends the Site steps to Sites with the "Open a site first" hint when no Site was visited', () => {
+    for (const stepId of ['site-details', 'site-team', 'create-phase', 'assign-task']) {
+      expect([stepId, path(stepId, null)]).toEqual([stepId, { path: '/sites', needsSite: true }])
+    }
+  })
+
+  it('opens the Company steps as they are', () => {
+    expect(path('create-site', null)).toEqual({ path: '/sites', needsSite: false })
+    expect(path('invite-member', null)).toEqual({ path: '/members', needsSite: false })
   })
 })
 

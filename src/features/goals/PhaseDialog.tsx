@@ -3,6 +3,7 @@ import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/f
 import { Modal } from '../../components/modal'
 import { useCurrency } from '../../currency'
 import { formatMessage, useLocale } from '../../i18n'
+import { markGuideStep } from '../guide/guideEvents'
 import { instantToLocalInput, localInputToInstant } from './dueAt'
 import { buildGoalPatch, makeGoalSchema } from './goalForm'
 import { createGoal, goalErrorKind, setGoalBudget, updateGoal, type Goal, type GoalErrorKind } from './goalsApi'
@@ -58,6 +59,8 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
           const dueAt = localInputToInstant(values.dueAt) ?? ''
           saved = await createGoal(organizationId, siteId, { name: values.name, startAt, dueAt, color: values.color })
           setCreated(saved)
+          // The new Phase is saved even if its budget fails below; edits and retries never reach this branch.
+          markGuideStep('create-phase', organizationId)
         } else {
           const patch = buildGoalPatch(saved, values)
           if (Object.keys(patch).length > 0) saved = await updateGoal(organizationId, siteId, saved.id, patch)

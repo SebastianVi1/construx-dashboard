@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { formatMessage, useLocale } from '../../i18n'
+import { markGuideStep } from '../guide/guideEvents'
 import { roleLabel } from '../permissions'
 import type { Site } from '../sites/sitesApi'
 import {
@@ -33,6 +34,7 @@ export function InviteForm({ organizationId, roles, sites, onInvited }: InviteFo
     onSubmit: async (values) => {
       try {
         const invitation = await createInvitation(organizationId, values)
+        markGuideStep('invite-member', organizationId)
         onInvited(invitation, formatMessage(t.invite.sent, { email: invitation.email }))
       } catch (error) {
         setErrorKind(inviteErrorKind(error))
