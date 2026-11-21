@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react'
 import type { GuideProgress } from './guideApi'
 import type { GuideCount, GuideSection } from './selection'
+import type { GuideTours } from './useGuideTours'
 
 export type GuideContextValue = {
   /** The member's checklist in this Company; empty when they have no steps. */
@@ -25,7 +26,7 @@ export type GuideContextValue = {
   show: () => void
   /** "You're set up" has been seen. */
   acknowledgeCompletion: () => void
-}
+} & Omit<GuideTours, 'clearNotice'>
 
 export const GuideContext = createContext<GuideContextValue | undefined>(undefined)
 

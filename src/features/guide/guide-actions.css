@@ -1,0 +1,109 @@
+/*
+ * Guide actions that start spotlight tours: "Show me" in a checklist row
+ * and the page header's "?". Tokens only.
+ */
+
+.guide-step__show {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin: 2px 0 -6px -2px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: var(--cx-radius-sm);
+  background: transparent;
+  color: var(--cx-accent);
+  font: 500 13px/18px var(--cx-font-sans);
+  cursor: pointer;
+}
+
+.guide-step__show:hover {
+  color: var(--cx-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.guide-step__show:focus-visible,
+.guide-help:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 2px;
+}
+
+/* What happened after "Show me": a blueprint-ruled note, not an error. */
+.guide-step__notice {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--cx-accent);
+  border-radius: 0 var(--cx-radius-sm) var(--cx-radius-sm) 0;
+  background: var(--cx-accent-subtle);
+}
+
+.guide-step__notice p {
+  margin: 0;
+  color: var(--cx-ink);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.guide-step__notice p + p {
+  color: var(--cx-muted);
+}
+
+/* Page header "?": sits with the page's actions, quieter than the primary button. */
+.guide-help {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  margin-right: -12px;
+  padding: 0;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cx-muted);
+  font: 600 18px/1 var(--cx-font-display);
+  cursor: pointer;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.guide-help:hover {
+  border-color: var(--cx-accent);
+  background: var(--cx-accent-subtle);
+  color: var(--cx-accent);
+}
+
+/* The title block takes the free room, so on narrow screens "?" stays on the title's row. */
+.page-header:has(> .guide-help) > .page-header__text {
+  flex: 1 1 240px;
+}
+
+/* Alone in the header (no primary action next to it). */
+.guide-help:last-child {
+  margin-right: 0;
+}
+
+/* Phones: the primary action wraps to its own full-width row, so "?" ends the title row. */
+@media (max-width: 760px) {
+  .guide-help {
+    margin-right: 0;
+  }
+}
+
+@media (pointer: coarse) {
+  .guide-step__show {
+    min-height: 44px;
+    margin-bottom: -12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-help {
+    transition: none;
+  }
+}

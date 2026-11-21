@@ -35,6 +35,25 @@ export const guideMessages = defineMessages({
         body: 'A site holds its team, phases, tasks and budget. Everything else starts here.',
       },
     },
+    showMe: 'Show me',
+    showMeLabel: 'Show me how: “{step}”',
+    needsSite: 'Open a site first, then choose Show me again.',
+    targetMissing: "Construx couldn't find it on this page. It may still be loading, or your role may not include it.",
+    help: 'Show how this page works',
+    tour: {
+      next: 'Next',
+      previous: 'Back',
+      done: 'Got it',
+      close: 'Close the tour',
+      progress: '{{current}} of {{total}}',
+    },
+    /** Popover text for one `data-tour` target; without an entry the step's own text shows. */
+    targets: {
+      'site-create': {
+        title: 'Add your site here',
+        body: 'Give it a name and save. The address, dates and status can wait.',
+      },
+    },
   },
   es: {
     title: 'Primeros pasos',
@@ -63,6 +82,24 @@ export const guideMessages = defineMessages({
       createSite: {
         title: 'Crea tu primera obra',
         body: 'Una obra reúne su equipo, fases, tareas y presupuesto. Todo lo demás empieza aquí.',
+      },
+    },
+    showMe: 'Muéstrame',
+    showMeLabel: 'Muéstrame cómo: «{step}»',
+    needsSite: 'Abre una obra primero y vuelve a elegir Muéstrame.',
+    targetMissing: 'Construx no lo encontró en esta página. Puede que siga cargando o que tu rol no lo incluya.',
+    help: 'Ver cómo funciona esta página',
+    tour: {
+      next: 'Siguiente',
+      previous: 'Atrás',
+      done: 'Entendido',
+      close: 'Cerrar el recorrido',
+      progress: '{{current}} de {{total}}',
+    },
+    targets: {
+      'site-create': {
+        title: 'Agrega tu obra aquí',
+        body: 'Ponle nombre y guarda. La dirección, las fechas y el estado pueden esperar.',
       },
     },
   },

@@ -9,6 +9,7 @@ import { acceptsMark, guideReducer, initialGuideState } from './guideState'
 import { GuideLauncher } from './GuideLauncher'
 import { GuidePanel } from './GuidePanel'
 import { guideProgressOf, selectGuide } from './selection'
+import { useGuideTours } from './useGuideTours'
 import { guideVisibility, onboardingAnswer } from './visibility'
 
 /**
@@ -47,6 +48,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
   }, [organizationId])
 
   const sections = selectGuide(access)
+  const { clearNotice, ...tours } = useGuideTours({ organizationId, sections, setOpen: setIsOpen })
   const { progress } = state
   const count = guideProgressOf(sections, progress)
   const dismissed = progress.dismissedAt !== null
@@ -97,6 +99,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
 
   function close() {
     setIsOpen(false)
+    clearNotice()
     // The panel already showed "You're set up"; the launcher doesn't repeat it.
     setJustCompleted(false)
   }
@@ -125,6 +128,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
         },
         show: () => setDismissed(false),
         acknowledgeCompletion: () => setJustCompleted(false),
+        ...tours,
       }}
     >
       {children}

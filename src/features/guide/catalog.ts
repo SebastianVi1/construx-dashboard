@@ -98,6 +98,9 @@ export const guideCatalog: GuideCatalog = { sections: guideSections, steps: guid
 /** Same rule as the backend (`GUIDE_STEP_INVALID`). */
 export const GUIDE_STEP_ID = /^[a-z][a-z0-9-]{0,63}$/
 
+/** A `data-tour` value: a plain id, so it drops into a CSS attribute selector as is. */
+export const TOUR_TARGET = /^[a-z][a-z0-9-]*$/
+
 /** The backend keeps at most this many steps per member (`GUIDE_TOO_MANY_STEPS`). */
 export const GUIDE_MAX_STEPS = 50
 
@@ -115,6 +118,11 @@ export function catalogProblems(catalog: GuideCatalog): string[] {
     }
   }
   const pageIds = new Set(catalog.pages.map((page) => page.id))
+  for (const page of catalog.pages) {
+    const hasSite = page.route.includes(':siteId')
+    if (hasSite && !page.needsSite) problems.push(`page "${page.id}": a route with :siteId must set needsSite`)
+    if (!hasSite && page.needsSite) problems.push(`page "${page.id}": needsSite without :siteId in the route`)
+  }
   const stepIds = new Set<string>()
   for (const step of catalog.steps) {
     if (!GUIDE_STEP_ID.test(step.id)) problems.push(`step "${step.id}": id must match ${GUIDE_STEP_ID.source}`)
@@ -125,6 +133,9 @@ export function catalogProblems(catalog: GuideCatalog): string[] {
       if (!sectionIds.has(section)) problems.push(`step "${step.id}": unknown section "${section}"`)
     }
     if (!pageIds.has(step.page)) problems.push(`step "${step.id}": unknown page "${step.page}"`)
+    for (const target of step.tourTargets) {
+      if (!TOUR_TARGET.test(target)) problems.push(`step "${step.id}": tour target "${target}" must match ${TOUR_TARGET.source}`)
+    }
   }
   if (stepIds.size > GUIDE_MAX_STEPS) problems.push(`more than ${GUIDE_MAX_STEPS} steps`)
   return problems

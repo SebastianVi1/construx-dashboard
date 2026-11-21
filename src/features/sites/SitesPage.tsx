@@ -5,6 +5,7 @@ import { filterCounts, type FilterOption } from '../../components/filter'
 import { Notice } from '../../components/page'
 import { SitesGridSkeleton } from './SiteSkeletons'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
+import { GuideHelpButton } from '../guide'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { CreateSiteDialog } from './CreateSiteDialog'
@@ -51,8 +52,9 @@ export function SitesPage() {
           <h1>{t.title}</h1>
           <p>{t.description}</p>
         </div>
+        <GuideHelpButton page="sites" />
         {canCreate ? (
-          <button type="button" className="button button--primary" onClick={() => setCreating(true)}>
+          <button type="button" className="button button--primary" data-tour="site-create" onClick={() => setCreating(true)}>
             {t.add}
           </button>
         ) : null}

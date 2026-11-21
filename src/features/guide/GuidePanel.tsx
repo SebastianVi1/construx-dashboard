@@ -4,6 +4,7 @@ import { Modal } from '../../components/modal'
 import { formatMessage, useLocale } from '../../i18n'
 import type { GuideStepEntry } from './catalog'
 import { useGuide } from './guide-context'
+import { GuideShowMe } from './GuideShowMe'
 import { stepStatus, type GuideSection } from './selection'
 import './guide.css'
 
@@ -95,6 +96,7 @@ function GuideStepRow({ step, isNext }: { step: GuideStepEntry; isNext: boolean 
         ) : (
           <p className="guide-step__state">{status === 'COMPLETED' ? t.done : t.skipped}</p>
         )}
+        <GuideShowMe step={step} done={status !== null} />
       </div>
       {status === null ? (
         <button
