@@ -11,9 +11,11 @@ import { ExpenseTable } from '../finance/ExpenseTable'
 import { LaborCostSection } from '../finance/LaborCostSection'
 import { getBudgetSummary, listExpenses, type BudgetSummary, type Expense } from '../finance/financeApi'
 import '../finance/finance.css'
+import { GuideHelpButton } from '../guide/GuideHelpButton'
 import { BudgetOverviewSkeleton } from './SiteSkeletons'
 import { allocationIssue } from './budgetRules'
-import { setSiteBudget, siteErrorKind, type Site } from './sitesApi'
+import { saveSiteBudget } from './siteBudgetSave'
+import { siteErrorKind, type Site } from './sitesApi'
 import { useCurrency } from '../../currency'
 import { usePermissions } from '../permissions'
 
@@ -55,12 +57,13 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
           <h2 id="site-budget-heading">{t.title}</h2>
           <p>{formatMessage(t.currencyNote, { currency })}</p>
         </div>
+        <GuideHelpButton page="site-budget" />
         {canManage ? (
           <div className="button-row">
-            <button type="button" className="button" onClick={() => setDialog({ kind: 'budget' })}>
+            <button type="button" className="button" data-tour="site-budget-set" onClick={() => setDialog({ kind: 'budget' })}>
               {budget === null ? m.sites.budget.set : m.sites.budget.edit}
             </button>
-            <button type="button" className="button button--primary" onClick={() => setDialog({ kind: 'expense' })}>
+            <button type="button" className="button button--primary" data-tour="expense-add" onClick={() => setDialog({ kind: 'expense' })}>
               {t.addExpense}
             </button>
           </div>
@@ -95,7 +98,7 @@ export function SiteBudget({ organizationId, site, canManage, onSaved, onNotice 
           description={m.sites.budget.dialogBody}
           current={budget}
           save={async (amount) => {
-            const updated = await setSiteBudget(organizationId, site.id, amount)
+            const updated = await saveSiteBudget(organizationId, site.id, amount)
             setDialog(null)
             summary.reload()
             onSaved(updated, amount === null ? m.sites.budget.removed : m.sites.budget.saved)

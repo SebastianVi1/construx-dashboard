@@ -76,6 +76,12 @@ export const guideSections: GuideSectionEntry[] = [
     },
     titleKey: 'runCompany',
   },
+  {
+    id: 'finance',
+    order: 30,
+    rule: { requires: [{ action: 'MANAGE_BUDGET', scope: 'organization' }] },
+    titleKey: 'finance',
+  },
 ]
 
 /** Within a section, steps keep this list's order. */
@@ -141,6 +147,33 @@ export const guideSteps: GuideStepEntry[] = [
     tourTargets: ['task-create'],
     textKey: 'assignTask',
   },
+  {
+    id: 'site-budget',
+    sections: ['finance'],
+    requires: [{ action: 'MANAGE_BUDGET', scope: 'organization' }],
+    page: 'site-budget',
+    chapter: 'finance',
+    tourTargets: ['site-budget-set'],
+    textKey: 'siteBudget',
+  },
+  {
+    id: 'record-expense',
+    sections: ['finance'],
+    requires: [{ action: 'MANAGE_BUDGET', scope: 'organization' }],
+    page: 'site-budget',
+    chapter: 'finance',
+    tourTargets: ['expense-add'],
+    textKey: 'recordExpense',
+  },
+  {
+    id: 'view-finance',
+    sections: ['finance'],
+    requires: [{ action: 'VIEW_BUDGET', scope: 'organization' }],
+    page: 'finance',
+    chapter: 'finance',
+    tourTargets: ['finance-totals', 'finance-sites'],
+    textKey: 'viewFinance',
+  },
 ]
 
 export const guidePages: GuidePageEntry[] = [
@@ -148,6 +181,8 @@ export const guidePages: GuidePageEntry[] = [
   { id: 'site-details', route: '/sites/:siteId?tab=details', needsSite: true },
   { id: 'members', route: '/members', needsSite: false },
   { id: 'phases', route: '/sites/:siteId/phases', needsSite: true },
+  { id: 'site-budget', route: '/sites/:siteId?tab=details', needsSite: true },
+  { id: 'finance', route: '/finance', needsSite: false },
 ]
 
 export const guideCatalog: GuideCatalog = { sections: guideSections, steps: guideSteps, pages: guidePages }

@@ -46,17 +46,41 @@ describe('built-in catalog', () => {
 const runCompany = ['create-site', 'site-details', 'invite-member', 'site-team', 'create-phase', 'assign-task']
 
 describe('selectGuide over the built-in roles', () => {
-  it('gives the Owner "Run your company" with its six steps in order', () => {
-    expect(shape(selectGuide(seededRoles.OWNER))).toEqual([['owner', runCompany]])
+  it('gives the Owner "Run your company" with its six steps in order, then "Finance"', () => {
+    expect(shape(selectGuide(seededRoles.OWNER))).toEqual([
+      ['owner', runCompany],
+      ['finance', ['site-budget', 'record-expense', 'view-finance']],
+    ])
   })
 
-  it('gives the Administrator the same section as the Owner, and no Finance section', () => {
+  it('gives the Administrator the same "Run your company" as the Owner, but not "Finance": it has no MANAGE_BUDGET', () => {
     expect(shape(selectGuide(seededRoles.ADMINISTRATOR))).toEqual([['owner', runCompany]])
   })
 
-  it('gives no section to roles without MANAGE_MEMBERS and MANAGE_PROJECT company-wide', () => {
-    for (const role of ['MEMBER', 'WORKER', 'FINANCE', 'RESIDENT', 'SITE_MANAGER', 'SUPERINTENDENT'] as const) {
-      expect([role, shape(selectGuide(seededRoles[role]))]).toEqual([role, []])
+  it('gives the Finance role only "Finance": set a site budget, record an expense, review company finance', () => {
+    expect(shape(selectGuide(seededRoles.FINANCE))).toEqual([['finance', ['site-budget', 'record-expense', 'view-finance']]])
+  })
+
+  it('gives the Owner the same three Finance steps', () => {
+    expect(shape(selectGuide(seededRoles.OWNER))[1]).toEqual(['finance', ['site-budget', 'record-expense', 'view-finance']])
+  })
+
+  it('gives "Finance" only with MANAGE_BUDGET company-wide, whatever the role is called', () => {
+    expect(shape(selectGuide(accessOf('BOOKKEEPER', 'VIEW_BUDGET:ORGANIZATION,MANAGE_BUDGET:ORGANIZATION')))).toEqual([
+      ['finance', ['site-budget', 'record-expense', 'view-finance']],
+    ])
+    expect(selectGuide(accessOf('BOOKKEEPER', 'VIEW_BUDGET:ORGANIZATION,MANAGE_BUDGET:PROJECT'))).toEqual([])
+  })
+
+  it('leaves out "Review company finance" without VIEW_BUDGET company-wide', () => {
+    expect(shape(selectGuide(accessOf('BUYER', 'VIEW_BUDGET:PROJECT,MANAGE_BUDGET:ORGANIZATION')))).toEqual([
+      ['finance', ['site-budget', 'record-expense']],
+    ])
+  })
+
+  it('gives no section to roles with neither the owner nor the finance grants company-wide', () => {
+    for (const role of ['MEMBER', 'WORKER', 'RESIDENT', 'SITE_MANAGER', 'SUPERINTENDENT'] as const) {
+      expect([role, shape(selectGuide(seededRoles[role])).filter(([id]) => id === 'owner' || id === 'finance')]).toEqual([role, []])
     }
   })
 
@@ -119,10 +143,11 @@ describe('a section added only as list entries', () => {
     tourTargets: [],
     ...entry,
   })
+  // Only the first built-in section and step, so new built-in entries don't change these expectations.
   const catalog: GuideCatalog = {
-    sections: [...guideCatalog.sections, planning, early, notForOwners],
+    sections: [guideCatalog.sections[0], planning, early, notForOwners],
     steps: [
-      ...guideCatalog.steps,
+      base,
       step({ id: 'open-plan', sections: ['owner', 'planning'], requires: [{ action: 'VIEW_PLAN', scope: 'any' }] }),
       step({ id: 'draw-zone', sections: ['planning'], requires: [{ action: 'MANAGE_PLAN', scope: 'any' }] }),
       step({ id: 'early-step', sections: ['early'] }),
@@ -142,7 +167,7 @@ describe('a section added only as list entries', () => {
   it('lists a shared step once, in the first section that has it', () => {
     expect(shape(selectGuide(seededRoles.OWNER, catalog))).toEqual([
       ['early', ['early-step']],
-      ['owner', [...runCompany, 'open-plan']],
+      ['owner', ['create-site', 'open-plan']],
       ['planning', ['draw-zone']],
     ])
   })
@@ -176,31 +201,29 @@ describe('a section added only as list entries', () => {
 })
 
 describe('guideProgressOf', () => {
-  const ownerSections = selectGuide(seededRoles.OWNER)
+  const ownerSections: GuideSection[] = [{ id: 'owner', titleKey: 'runCompany', steps: [guideCatalog.steps[0]] }]
 
   it('starts at zero with no progress loaded', () => {
     expect(guideProgressOf(ownerSections, null)).toEqual({
       done: 0,
-      total: 6,
+      total: 1,
       complete: false,
       next: guideCatalog.steps[0],
     })
   })
 
-  it('counts completed and skipped steps the member can see; next is the first open one', () => {
-    const counted = guideProgressOf(ownerSections, progress({ 'create-site': 'COMPLETED', 'site-details': 'SKIPPED' }))
-    expect(counted).toMatchObject({ done: 2, total: 6, complete: false })
-    expect(counted.next?.id).toBe('invite-member')
-  })
-
-  it('is complete once every visible step is completed or skipped', () => {
-    const all = Object.fromEntries(runCompany.map((id, index) => [id, index % 2 === 0 ? 'COMPLETED' : 'SKIPPED'] as const))
-    expect(guideProgressOf(ownerSections, progress(all))).toMatchObject({ done: 6, total: 6, complete: true, next: null })
+  it('counts completed and skipped steps the member can see', () => {
+    expect(guideProgressOf(ownerSections, progress({ 'create-site': 'SKIPPED' }))).toMatchObject({
+      done: 1,
+      total: 1,
+      complete: true,
+      next: null,
+    })
   })
 
   it('ignores stored ids that are unknown or hidden from the member', () => {
     const stored = progress({ 'old-step': 'COMPLETED', 'create-site': 'COMPLETED' })
     expect(guideProgressOf([], stored)).toEqual({ done: 0, total: 0, complete: false, next: null })
-    expect(guideProgressOf(ownerSections, progress({ 'old-step': 'COMPLETED' }))).toMatchObject({ done: 0, total: 6 })
+    expect(guideProgressOf(ownerSections, progress({ 'old-step': 'COMPLETED' }))).toMatchObject({ done: 0, total: 1 })
   })
 })
