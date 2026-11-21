@@ -3,7 +3,7 @@ import { useOnboarding } from '../onboarding'
 import { usePermissions } from '../permissions'
 import { GuideContext } from './guide-context'
 import { getGuide, markGuideStepRemote, setGuideDismissed, type GuideStepStatus } from './guideApi'
-import { subscribeGuideSteps, type GuideMark } from './guideEvents'
+import { subscribeGuideSites, subscribeGuideSteps, type GuideMark } from './guideEvents'
 import { createGuideSaves } from './guideSaves'
 import { acceptsMark, guideReducer, initialGuideState } from './guideState'
 import { GuideLauncher } from './GuideLauncher'
@@ -25,6 +25,8 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
   const [isOpen, setIsOpen] = useState(false)
   const [autoOpened, setAutoOpened] = useState(false)
   const [justCompleted, setJustCompleted] = useState(false)
+  // Whether the member sees any open Site here; null until a page has loaded their Sites.
+  const [hasSites, setHasSites] = useState<boolean | null>(null)
   const [saves] = useState(() =>
     createGuideSaves({
       markStep: (stepId, status) => markGuideStepRemote(organizationId, stepId, status),
@@ -92,6 +94,14 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
 
   useEffect(() => subscribeGuideSteps(onMark), [])
 
+  useEffect(
+    () =>
+      subscribeGuideSites((report) => {
+        if (report.organizationId === organizationId) setHasSites(report.hasSites)
+      }),
+    [organizationId],
+  )
+
   function setDismissed(next: boolean) {
     dispatch({ type: 'dismissed', dismissed: next, at: new Date().toISOString() })
     saves.dismiss(next)
@@ -112,6 +122,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
         sections,
         progress,
         count,
+        hasSites,
         dismissed,
         isOpen,
         launcherVisible,

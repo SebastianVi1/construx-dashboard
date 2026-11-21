@@ -61,6 +61,19 @@ export function stepStatus(progress: GuideProgress | null, stepId: string): Guid
   return progress && Object.hasOwn(progress.steps, stepId) ? progress.steps[stepId] : null
 }
 
+/**
+ * The hint under a step, if any: its `noSiteHint` while the step is open and
+ * the member is known to be on no Site (`hasSites` is null until a page has
+ * loaded their Sites).
+ */
+export function stepHint(
+  step: GuideStepEntry,
+  status: GuideStepStatus | null,
+  hasSites: boolean | null,
+): NonNullable<GuideStepEntry['noSiteHint']> | null {
+  return step.noSiteHint && status === null && hasSites === false ? step.noSiteHint : null
+}
+
 /** Progress over the steps the member sees; stored ids of hidden or retired steps don't count. */
 export function guideProgressOf(sections: GuideSection[], progress: GuideProgress | null): GuideCount {
   const steps = sections.flatMap((section) => section.steps)

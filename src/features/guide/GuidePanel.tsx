@@ -8,7 +8,7 @@ import { useGuide } from './guide-context'
 import { NewTabIcon } from './GuideIcon'
 import { GuideShowMe, GuideStepNotice } from './GuideShowMe'
 import { landingGuideHref } from './landing'
-import { stepStatus, type GuideSection } from './selection'
+import { stepHint, stepStatus, type GuideSection } from './selection'
 import './guide.css'
 
 /** The checklist: one heading per section, a row per step, the counter and "Hide guide". */
@@ -81,11 +81,12 @@ function GuideSectionList({ section, nextId }: { section: GuideSection; nextId: 
 }
 
 function GuideStepRow({ step, isNext }: { step: GuideStepEntry; isNext: boolean }) {
-  const { progress, skip } = useGuide()
+  const { progress, hasSites, skip } = useGuide()
   const { messages: m, locale } = useLocale()
   const t = m.guide
   const text = t.steps[step.textKey]
   const status = stepStatus(progress, step.id)
+  const hint = stepHint(step, status, hasSites)
   const learnMoreHref = landingGuideHref(getLandingUrl(), locale, step.chapter)
 
   return (
@@ -100,6 +101,7 @@ function GuideStepRow({ step, isNext }: { step: GuideStepEntry; isNext: boolean 
         ) : (
           <p className="guide-step__state">{status === 'COMPLETED' ? t.done : t.skipped}</p>
         )}
+        {hint ? <p className="guide-step__hint">{t.hints[hint]}</p> : null}
         <GuideStepNotice step={step} done={status !== null} />
         <div className="guide-step__actions">
           <GuideShowMe step={step} />

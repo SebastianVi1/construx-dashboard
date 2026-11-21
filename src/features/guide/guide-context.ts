@@ -9,6 +9,8 @@ export type GuideContextValue = {
   /** This session's view of the saved progress (changes show before their saves finish). */
   progress: GuideProgress
   count: GuideCount
+  /** Whether the member sees any open Site in this Company; null until a page has loaded their Sites. */
+  hasSites: boolean | null
   /** The guide is hidden: no launcher, but the sidebar entry still opens it. */
   dismissed: boolean
   isOpen: boolean

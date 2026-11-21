@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'bun:test'
-import { markGuideStep, subscribeGuideSteps, type GuideMark } from '../../../features/guide/guideEvents'
+import {
+  markGuideStep,
+  reportGuideSites,
+  subscribeGuideSites,
+  subscribeGuideSteps,
+  type GuideMark,
+  type GuideSitesReport,
+} from '../../../features/guide/guideEvents'
 
 describe('guide step events', () => {
   it('a listener receives each marked step', () => {
@@ -42,5 +49,33 @@ describe('guide step events', () => {
 
   it('marking with no listener does nothing', () => {
     expect(() => markGuideStep('create-site')).not.toThrow()
+  })
+})
+
+describe('guide Site reports', () => {
+  it('a listener receives each report until it unsubscribes, and hears no step marks', () => {
+    const received: GuideSitesReport[] = []
+    const unsubscribe = subscribeGuideSites((report) => received.push(report))
+
+    reportGuideSites('org-1', false)
+    markGuideStep('open-site', 'org-1')
+    reportGuideSites('org-1', true)
+    unsubscribe()
+    reportGuideSites('org-1', false)
+
+    expect(received).toEqual([
+      { organizationId: 'org-1', hasSites: false },
+      { organizationId: 'org-1', hasSites: true },
+    ])
+  })
+
+  it('a step listener hears no Site reports, and reporting with no listener does nothing', () => {
+    const marks: GuideMark[] = []
+    const unsubscribe = subscribeGuideSteps((mark) => marks.push(mark))
+    reportGuideSites('org-1', false)
+    unsubscribe()
+
+    expect(marks).toEqual([])
+    expect(() => reportGuideSites('org-1', true)).not.toThrow()
   })
 })

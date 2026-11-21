@@ -160,6 +160,16 @@
   line-height: 18px;
 }
 
+/* Something only someone else can unblock (e.g. no Site yet): an amber rule, read as "not on you". */
+.guide-step__hint {
+  margin: 6px 0 0;
+  padding: 2px 0 2px 10px;
+  border-left: 2px solid var(--cx-warning);
+  color: var(--cx-ink);
+  font-size: 13px;
+  line-height: 18px;
+}
+
 .guide-step[data-status='completed'] .guide-step__state {
   color: var(--cx-success);
   font-weight: 500;

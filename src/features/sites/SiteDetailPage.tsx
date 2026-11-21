@@ -21,7 +21,8 @@ import { SitePeople } from './SitePeople'
 import { dateText, scheduleText } from './siteDisplay'
 import { siteProgress } from './siteHelpers'
 import { siteTab, siteTabSearch, siteSectionUrl, type SiteTab } from './siteNavigation'
-import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
+import { loadSite } from './siteLoad'
+import { listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import '../../components/filter/filter-tabs.css'
 import './sites.css'
 
@@ -33,7 +34,7 @@ export function SiteDetailPage() {
   const organization = useCurrentOrganization()
   const { access, can } = usePermissions()
   // Both requests start together; the people list does not wait for the site.
-  const site = useRemoteData(`${organization.id}:${siteId}`, () => getSite(organization.id, siteId))
+  const site = useRemoteData(`${organization.id}:${siteId}`, () => loadSite(organization.id, siteId))
   const people = useRemoteData(`${organization.id}:${siteId}:access`, () => listSiteAccess(organization.id, siteId))
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [formVersion, setFormVersion] = useState(0)

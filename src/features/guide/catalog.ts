@@ -48,6 +48,8 @@ export type GuideStepEntry = {
   tourTargets: string[]
   /** Title and body, from `messages.guide.steps`. */
   textKey: keyof typeof guideMessages.en.steps
+  /** Hint (from `messages.guide.hints`) shown under the open step when the member is on no Site. */
+  noSiteHint?: keyof typeof guideMessages.en.hints
 }
 
 export type GuidePageEntry = {
@@ -77,6 +79,19 @@ export const guideSections: GuideSectionEntry[] = [
     titleKey: 'runCompany',
   },
   {
+    // Site Manager, Resident, Superintendent and Member: they plan phases and assign tasks.
+    id: 'siteManager',
+    order: 20,
+    rule: {
+      requires: [
+        { action: 'MANAGE_GOAL', scope: 'any' },
+        { action: 'ASSIGN_ACTIVITY', scope: 'any' },
+      ],
+      unless: ['owner'],
+    },
+    titleKey: 'manageSites',
+  },
+  {
     id: 'finance',
     order: 30,
     rule: { requires: [{ action: 'MANAGE_BUDGET', scope: 'organization' }] },
@@ -96,8 +111,18 @@ export const guideSteps: GuideStepEntry[] = [
     textKey: 'createSite',
   },
   {
+    id: 'open-site',
+    sections: ['siteManager'],
+    requires: [{ action: 'VIEW_PROJECT', scope: 'any' }],
+    page: 'sites',
+    chapter: 'sites',
+    tourTargets: ['site-list'],
+    textKey: 'openSite',
+    noSiteHint: 'askAdmin',
+  },
+  {
     id: 'site-details',
-    sections: ['owner'],
+    sections: ['owner', 'siteManager'],
     requires: [{ action: 'MANAGE_PROJECT', scope: 'any' }],
     page: 'site-details',
     chapter: 'sites',
@@ -128,7 +153,7 @@ export const guideSteps: GuideStepEntry[] = [
   },
   {
     id: 'create-phase',
-    sections: ['owner'],
+    sections: ['owner', 'siteManager'],
     requires: [{ action: 'MANAGE_GOAL', scope: 'any' }],
     page: 'phases',
     chapter: 'tasks',
@@ -137,7 +162,7 @@ export const guideSteps: GuideStepEntry[] = [
   },
   {
     id: 'assign-task',
-    sections: ['owner'],
+    sections: ['owner', 'siteManager'],
     requires: [
       { action: 'MANAGE_ACTIVITY', scope: 'any' },
       { action: 'ASSIGN_ACTIVITY', scope: 'any' },

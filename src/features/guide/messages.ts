@@ -31,12 +31,17 @@ export const guideMessages = defineMessages({
     },
     sections: {
       runCompany: 'Run your company',
+      manageSites: 'Manage your sites',
       finance: 'Finance',
     },
     steps: {
       createSite: {
         title: 'Create your first site',
         body: 'A site holds its team, phases, tasks and budget. Everything else starts here.',
+      },
+      openSite: {
+        title: 'Open your site',
+        body: 'Your sites are listed under Sites. Open one to see its details, team, phases and tasks.',
       },
       siteDetails: {
         title: "Complete the site's details",
@@ -71,6 +76,10 @@ export const guideMessages = defineMessages({
         body: 'See the budget, spending and balance of every site in one place.',
       },
     },
+    /** Shown under an open step that sets `noSiteHint` while the member is on no Site. */
+    hints: {
+      askAdmin: "Don't see a site? Ask your administrator to add you to one.",
+    },
     showMe: 'Show me',
     showMeLabel: 'Show me how: “{step}”',
     needsSite: 'Open a site first, then choose Show me again.',
@@ -89,6 +98,10 @@ export const guideMessages = defineMessages({
       'site-create': {
         title: 'Add your site here',
         body: 'Give it a name and save. The address, dates and status can wait.',
+      },
+      'site-list': {
+        title: 'Your sites',
+        body: 'Every site you work on is here. Open one to see its work.',
       },
       'site-details-form': {
         title: 'Fill in the details',
@@ -153,12 +166,17 @@ export const guideMessages = defineMessages({
     },
     sections: {
       runCompany: 'Dirige tu empresa',
+      manageSites: 'Gestiona tus obras',
       finance: 'Finanzas',
     },
     steps: {
       createSite: {
         title: 'Crea tu primera obra',
         body: 'Una obra reúne su equipo, fases, tareas y presupuesto. Todo lo demás empieza aquí.',
+      },
+      openSite: {
+        title: 'Abre tu obra',
+        body: 'Tus obras aparecen en Obras. Abre una para ver sus datos, su equipo, sus fases y sus tareas.',
       },
       siteDetails: {
         title: 'Completa los datos de la obra',
@@ -193,6 +211,9 @@ export const guideMessages = defineMessages({
         body: 'Consulta el presupuesto, el gasto y el saldo de cada obra en un solo lugar.',
       },
     },
+    hints: {
+      askAdmin: '¿No ves ninguna obra? Pide a tu administrador que te agregue a una.',
+    },
     showMe: 'Muéstrame',
     showMeLabel: 'Muéstrame cómo: «{step}»',
     needsSite: 'Abre una obra primero y vuelve a elegir Muéstrame.',
@@ -210,6 +231,10 @@ export const guideMessages = defineMessages({
       'site-create': {
         title: 'Agrega tu obra aquí',
         body: 'Ponle nombre y guarda. La dirección, las fechas y el estado pueden esperar.',
+      },
+      'site-list': {
+        title: 'Tus obras',
+        body: 'Aquí están todas las obras en las que trabajas. Abre una para ver su trabajo.',
       },
       'site-details-form': {
         title: 'Completa los datos',

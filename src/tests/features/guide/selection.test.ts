@@ -6,7 +6,7 @@ import {
   type GuideSectionEntry,
   type GuideStepEntry,
 } from '../../../features/guide/catalog'
-import { guideProgressOf, selectGuide, type GuideSection } from '../../../features/guide/selection'
+import { guideProgressOf, selectGuide, stepHint, type GuideSection } from '../../../features/guide/selection'
 import type { GuideProgress } from '../../../features/guide/guideApi'
 import { acceptsMark } from '../../../features/guide/guideState'
 import { accessOf, seededRoles } from '../../support/seededRoles'
@@ -110,6 +110,88 @@ describe('selectGuide over the built-in roles', () => {
 
   it('carries each section title key for the panel', () => {
     expect(selectGuide(seededRoles.OWNER)[0].titleKey).toBe('runCompany')
+  })
+})
+
+/** "Manage your sites" for a role that may edit its Sites' details, in the order ticket #89 sets. */
+const manageSites = ['open-site', 'site-details', 'create-phase', 'assign-task']
+/** The same without "Complete the site's details": no MANAGE_PROJECT. */
+const manageSitesNoDetails = ['open-site', 'create-phase', 'assign-task']
+
+describe('selectGuide: "Manage your sites"', () => {
+  it('gives the Site Manager its four steps, opening its site first', () => {
+    expect(shape(selectGuide(seededRoles.SITE_MANAGER))).toEqual([['siteManager', manageSites]])
+  })
+
+  it('leaves out "Complete the site\'s details" for the Resident and the Superintendent: no MANAGE_PROJECT', () => {
+    expect(shape(selectGuide(seededRoles.RESIDENT))).toEqual([['siteManager', manageSitesNoDetails]])
+    expect(shape(selectGuide(seededRoles.SUPERINTENDENT))).toEqual([['siteManager', manageSitesNoDetails]])
+  })
+
+  it('gives it to the Member too: it manages phases and assigns tasks company-wide', () => {
+    expect(shape(selectGuide(seededRoles.MEMBER))).toEqual([['siteManager', manageSitesNoDetails]])
+  })
+
+  it('gives the Worker nothing: it can only update its own tasks', () => {
+    expect(selectGuide(seededRoles.WORKER)).toEqual([])
+  })
+
+  it('is not shown to roles that already get "Run your company"', () => {
+    expect(shape(selectGuide(seededRoles.OWNER)).map(([id]) => id)).toEqual(['owner', 'finance'])
+    expect(shape(selectGuide(seededRoles.ADMINISTRATOR)).map(([id]) => id)).toEqual(['owner'])
+  })
+
+  it('needs both MANAGE_GOAL and ASSIGN_ACTIVITY', () => {
+    expect(selectGuide(accessOf('PLANNER', 'VIEW_PROJECT:PROJECT,MANAGE_GOAL:PROJECT'))).toEqual([])
+    expect(selectGuide(accessOf('DISPATCHER', 'VIEW_PROJECT:PROJECT,MANAGE_ACTIVITY:PROJECT,ASSIGN_ACTIVITY:PROJECT'))).toEqual([])
+  })
+
+  it('lists a custom role with owner and site-manager grants under "Run your company" only, each step once', () => {
+    const mixed = accessOf(
+      'CUSTOM_MIXED',
+      'MANAGE_MEMBERS:ORGANIZATION,MANAGE_PROJECT:ORGANIZATION,VIEW_PROJECT:ORGANIZATION,' +
+        'MANAGE_GOAL:PROJECT,MANAGE_ACTIVITY:PROJECT,ASSIGN_ACTIVITY:PROJECT',
+    )
+    expect(shape(selectGuide(mixed))).toEqual([['owner', runCompany]])
+  })
+
+  it('puts a custom role with site-manager and finance grants under both, "Manage your sites" first', () => {
+    const mixed = accessOf(
+      'CUSTOM_SITE_FINANCE',
+      'VIEW_PROJECT:PROJECT,MANAGE_PROJECT:PROJECT,MANAGE_GOAL:PROJECT,MANAGE_ACTIVITY:PROJECT,' +
+        'ASSIGN_ACTIVITY:PROJECT,VIEW_BUDGET:ORGANIZATION,MANAGE_BUDGET:ORGANIZATION',
+    )
+    expect(shape(selectGuide(mixed))).toEqual([
+      ['siteManager', manageSites],
+      ['finance', ['site-budget', 'record-expense', 'view-finance']],
+    ])
+  })
+
+  it('carries its title key for the panel', () => {
+    expect(selectGuide(seededRoles.SITE_MANAGER)[0].titleKey).toBe('manageSites')
+  })
+})
+
+describe('stepHint', () => {
+  const [openSite, siteDetails] = selectGuide(seededRoles.SITE_MANAGER)[0].steps
+
+  it('asks a member on no Site to go to their administrator, under the open "Open your site"', () => {
+    expect(openSite.id).toBe('open-site')
+    expect(stepHint(openSite, null, false)).toBe('askAdmin')
+  })
+
+  it('stays quiet while the Sites are unknown or the member has some', () => {
+    expect(stepHint(openSite, null, null)).toBeNull()
+    expect(stepHint(openSite, null, true)).toBeNull()
+  })
+
+  it('stays quiet once the step is done or skipped', () => {
+    expect(stepHint(openSite, 'COMPLETED', false)).toBeNull()
+    expect(stepHint(openSite, 'SKIPPED', false)).toBeNull()
+  })
+
+  it('never shows under a step without a hint', () => {
+    expect(stepHint(siteDetails, null, false)).toBeNull()
   })
 })
 
