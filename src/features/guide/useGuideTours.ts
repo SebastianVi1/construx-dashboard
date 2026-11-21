@@ -2,26 +2,22 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useLocale } from '../../i18n'
 import type { GuideStepEntry } from './catalog'
-import { guidePath, siteIdInPath, stepsOnPage } from './guidePaths'
+import { guidePath, showMeOutcome, siteIdInPath, stepsOnPage, type GuideNoticeKind } from './guidePaths'
 import { readLastSite, rememberLastSite } from './lastSite'
 import type { GuideSection } from './selection'
 import { destroyActiveTour, isPhoneWidth, startTour, tourStops } from './tour'
 
-/** A hint the panel shows under one step after "Show me". */
-export type GuideNotice = {
-  stepId: string
-  /** `needsSite`: the step is inside a Site and none is known, so the Sites list opened. `targetMissing`: the spotlight's target never showed. */
-  kind: 'needsSite' | 'targetMissing'
-}
+/** A hint the panel shows under one step after "Show me" (see `GuideNoticeKind`). */
+export type GuideNotice = { stepId: string; kind: GuideNoticeKind }
 
 export type GuideTours = {
   /** The last Site visited in this Company (since the guide mounted, or remembered from before). */
   lastSiteId: string | null
   notice: GuideNotice | null
   clearNotice: () => void
-  /** Open the step's page and spotlight its targets; on phones only navigate. */
+  /** Open the step's page and spotlight its targets; on phones keep the sheet open with the step's text as the hint. */
   showMe: (stepId: string) => void
-  /** Replay the tours of the member's steps on a page (the page's "?"). On phones, open the panel. */
+  /** Replay the tours of the member's steps on a page (the page's "?"). On phones, open the sheet on the first one's hint. */
   replayPage: (pageId: string) => void
 }
 
@@ -72,26 +68,19 @@ export function useGuideTours({
     const target = step ? guidePath(step.page, lastSiteId) : null
     if (!step || !target) return
     if (`${pathname}${search}` !== target.path) navigate(target.path)
-    if (target.needsSite) {
-      setNotice({ stepId, kind: 'needsSite' })
-      return
-    }
-    setNotice(null)
-    setOpen(false)
-    if (isPhoneWidth()) return
-    void spotlight([step])
+    const outcome = showMeOutcome(target, isPhoneWidth())
+    setNotice(outcome.notice ? { stepId, kind: outcome.notice } : null)
+    setOpen(outcome.panel === 'open')
+    if (outcome.spotlight) void spotlight([step])
   }
 
   function replayPage(pageId: string) {
     const steps = stepsOnPage(sections, pageId)
     if (steps.length === 0) return
-    setNotice(null)
-    if (isPhoneWidth()) {
-      setOpen(true)
-      return
-    }
-    setOpen(false)
-    void spotlight(steps)
+    const outcome = showMeOutcome({ path: pathname, needsSite: false }, isPhoneWidth())
+    setNotice(outcome.notice ? { stepId: steps[0].id, kind: outcome.notice } : null)
+    setOpen(outcome.panel === 'open')
+    if (outcome.spotlight) void spotlight(steps)
   }
 
   return { lastSiteId, notice, clearNotice: () => setNotice(null), showMe, replayPage }

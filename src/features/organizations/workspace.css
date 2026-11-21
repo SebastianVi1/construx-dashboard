@@ -53,6 +53,14 @@
 .workspace-header__end {
   margin-left: auto;
   flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Slot for the phone Guide entry; the sidebar carries it on wider screens. */
+.workspace-header__guide {
+  display: none;
 }
 
 /* Breadcrumb: "/ Sites" after the company, like a sheet reference on a drawing. */
@@ -536,6 +544,10 @@
     gap: 8px;
     padding-left: max(8px, env(safe-area-inset-left));
     padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  .workspace-header__guide:not(:empty) {
+    display: flex;
   }
 
   .workspace-nav,

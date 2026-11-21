@@ -44,3 +44,25 @@ export function guidePath(pageId: string, siteId: string | null, pages: GuidePag
 export function stepsOnPage(sections: GuideSection[], pageId: string): GuideStepEntry[] {
   return sections.flatMap((section) => section.steps.filter((step) => step.page === pageId))
 }
+
+/**
+ * A hint the panel shows under one step. `needsSite`: the step is inside a
+ * Site and none is known, so the Sites list opened. `onPage` (phones): the
+ * page opened and the step's text is the hint, as there is no spotlight.
+ * `targetMissing`: the spotlight's target never showed.
+ */
+export type GuideNoticeKind = 'needsSite' | 'onPage' | 'targetMissing'
+
+export type ShowMeOutcome = {
+  /** The checklist after navigating: closed so the spotlight is visible, or open to show a hint. */
+  panel: 'open' | 'closed'
+  spotlight: boolean
+  notice: GuideNoticeKind | null
+}
+
+/** What "Show me" does once it has navigated to `target`. Phones never get a spotlight. */
+export function showMeOutcome(target: GuidePath, phone: boolean): ShowMeOutcome {
+  if (target.needsSite) return { panel: 'open', spotlight: false, notice: 'needsSite' }
+  if (phone) return { panel: 'open', spotlight: false, notice: 'onPage' }
+  return { panel: 'closed', spotlight: true, notice: null }
+}

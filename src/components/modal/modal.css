@@ -134,15 +134,36 @@
   }
 }
 
-/* Phones: full width above the bottom tab bar. */
+/*
+ * Phones: a bottom sheet. It rises from the bottom edge over the tab bar, full
+ * width with only its top corners rounded, and stops short of the header so
+ * the company and page stay readable above it.
+ */
 @media (max-width: 760px) {
   .modal-overlay--dock {
-    padding: calc(var(--cx-header-height) + 8px) 8px calc(var(--cx-tabbar-height) + env(safe-area-inset-bottom) + 8px);
+    place-items: end stretch;
+    padding: calc(var(--cx-header-height) + 8px) 0 0;
+    background: color-mix(in srgb, var(--cx-canvas) 60%, transparent);
   }
 
   .modal--dock {
     width: 100%;
-    max-height: calc(100svh - var(--cx-header-height) - var(--cx-tabbar-height) - env(safe-area-inset-bottom) - 16px);
+    max-height: min(85svh, calc(100svh - var(--cx-header-height) - 8px));
+    padding: 20px max(20px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    border-width: 1px 0 0;
+    border-radius: var(--cx-radius-lg) var(--cx-radius-lg) 0 0;
+    box-shadow: 0 -16px 40px -16px var(--cx-shadow-color);
+    overscroll-behavior: contain;
+    animation: sheet-in 220ms ease-out;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
   }
 }
 

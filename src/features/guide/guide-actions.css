@@ -3,13 +3,21 @@
  * and the page header's "?". Tokens only.
  */
 
+/* "Show me" and "Learn more" share one row under the step's text. */
+.guide-step__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 16px;
+  margin: 2px 0 -6px;
+}
+
 .guide-step__show {
-  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: 32px;
-  margin: 2px 0 -6px -2px;
+  margin-left: -2px;
   padding: 0 2px;
   border: 0;
   border-radius: var(--cx-radius-sm);
@@ -98,6 +106,9 @@
 @media (pointer: coarse) {
   .guide-step__show {
     min-height: 44px;
+  }
+
+  .guide-step__actions {
     margin-bottom: -12px;
   }
 }

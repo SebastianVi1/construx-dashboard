@@ -9,7 +9,8 @@ type ModalProps = {
   onClose: () => void
   /**
    * `drawer` slides in from the right edge at full height, for reading a record beside its list.
-   * `dock` sits in the bottom-right corner over a light scrim, for a panel opened from a floating button.
+   * `dock` sits in the bottom-right corner over a light scrim, for a panel opened from a floating button;
+   * on phones it becomes a bottom sheet.
    */
   variant?: 'dialog' | 'drawer' | 'dock'
   /** Accessible name of a close button in the header; without it the header has none. */

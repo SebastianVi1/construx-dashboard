@@ -6,7 +6,7 @@ import {
   type GuidePageEntry,
   type GuideStepEntry,
 } from '../../../features/guide/catalog'
-import { guidePath, siteIdInPath, stepsOnPage } from '../../../features/guide/guidePaths'
+import { guidePath, showMeOutcome, siteIdInPath, stepsOnPage } from '../../../features/guide/guidePaths'
 import type { GuideSection } from '../../../features/guide/selection'
 
 const pages: GuidePageEntry[] = [
@@ -104,5 +104,21 @@ describe('siteIdInPath', () => {
 
   it('ignores a Site id that is not valid URL encoding', () => {
     expect(siteIdInPath('/sites/%E0%A4%A')).toBeNull()
+  })
+})
+
+describe('showMeOutcome', () => {
+  it('spotlights the target with the panel closed on a tablet or desktop', () => {
+    expect(showMeOutcome({ path: '/sites', needsSite: false }, false)).toEqual({ panel: 'closed', spotlight: true, notice: null })
+  })
+
+  it('on a phone keeps the sheet open with the step\'s text as the hint, and never spotlights', () => {
+    expect(showMeOutcome({ path: '/sites', needsSite: false }, true)).toEqual({ panel: 'open', spotlight: false, notice: 'onPage' })
+  })
+
+  it('asks for a Site first, on any screen, when the page needs one', () => {
+    const toSites = { path: '/sites', needsSite: true }
+    expect(showMeOutcome(toSites, false)).toEqual({ panel: 'open', spotlight: false, notice: 'needsSite' })
+    expect(showMeOutcome(toSites, true)).toEqual({ panel: 'open', spotlight: false, notice: 'needsSite' })
   })
 })
