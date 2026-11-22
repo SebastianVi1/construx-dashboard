@@ -6,7 +6,9 @@ The lists are `as const`, so their ids are types (`GuideStepId`, `GuidePageId`, 
 
 **No backend change is needed.** The backend stores each member's progress keyed by the step id string and knows no step list (`construx/docs/guide.md`). Its only rules: the id matches `^[a-z][a-z0-9-]{0,63}$` and a member has at most 50 steps.
 
-**Preview your change:** under `bun run dev`, the account menu's "Start tour" (`devTools` in `config/env.ts`, absent from production builds) opens the panel as a brand-new member sees it and runs the first step's "Show me". Skips there are not saved; closing the panel ends the preview.
+**Step by step:** a step completed for real (a `markGuideStep` that changes it to COMPLETED, after progress loaded, outside a preview) is recorded as `lastDone` in `guideState.ts`. `completionFollowUp(state, sections)` says whether the panel opens on it (`open`), forgets it (`drop`: the guide is hidden, a preview shows, or the step isn't the member's) or has nothing to do (`none`). `GuideProvider` opens the panel once no other modal is open (`isModalOpen()`), and skips it when the guided tour completed its running step with the same mark (the tour reopens the panel itself). The panel ticks the step (`stepAdvance` names it and the next open step), moves focus to the next step's "Show me" or to the progress when none is left, and clears it (`stepDoneShown`). A Skip moves focus the same way. Nothing here names a step, so a new step gets this for free.
+
+**Preview your change:** under `bun run dev`, the account menu has two dev items (`devTools` in `config/env.ts`, absent from production builds). "Preview checklist" opens the panel as a brand-new member sees it and runs the first step's "Show me"; skips there are not saved, and closing the panel ends the preview. "Start tour" restarts the guided tour in the current Company at "Create your first site": it forgets this browser's tour memory there (saved server progress stays) and, unlike the preview, creates a real Site and saves real progress.
 
 ## Checklist
 
@@ -38,6 +40,28 @@ The lists are `as const`, so their ids are types (`GuideStepId`, `GuidePageId`, 
    - A Site page loads its Site through `sites/siteLoad.ts` `loadSite`, never `getSite` (`siteLoad.test.ts` checks every page).
    - The completion helper: a test next to the feature's tests (`src/tests/features/<feature>/`) that records marks with `recordGuideMarks()` (`src/tests/support/guideMarks.ts`) and checks a success marks once, a failure marks nothing, and an edit or a no-op marks nothing where the helper has one (`sites/siteSave.test.ts`).
 9. `bun run lint && bun run build && bun test`.
+
+## Adding a tour step
+
+The guided tour is a second, ordered list next to the checklist: `tourCatalog.ts` (`tourSteps`). Tour steps are never counted in "2/5"; they are gated by facts, saved on the server under their own `tour-…` id through the same `guideSaves`, and shown as rows of the timeline at the top of the panel (`GuideTourTimeline.tsx`). The reducer (`tourState.ts`) and the timeline read the list and never name a step. `useGuidedTour.ts` names none either, but it holds the one place that maps a created id to a fact, one case per prefill key (today `'site'` → `siteId` in `onMark`); a step whose mark creates something new adds its case there. Leave `catalog.ts`, `selection.ts`, `guideState.ts` and `guideCommands.ts` alone.
+
+The flow is timeline first. Every way into a step (start, "Continue tour", a timeline row, the dev "Start tour", a save that finished the previous step) only stages it: the panel opens on the timeline with the step's text and "Start this step". Nothing navigates, pre-fills or spotlights until that button (`run`), which closes the panel first, so only one modal is ever open. A save of the running step ticks it and reopens the panel on the next step (or "Tour complete"); closing the tour's form unsaved reopens it on the same step with "Not saved yet". Staged vs running is `useGuidedTour`'s `running` flag, not reducer state, and a mark completes a step only while it runs. The tour is offered only to members who see the 'owner' section and can create Sites (`MANAGE_PROJECT`).
+
+1. **Catalog entry** in `tourSteps`, in walk-through order (append; never reorder or rename shipped ids):
+   - `id`: `tour-` plus a name; matches `GUIDE_STEP_ID` and never changes once shipped (progress is stored under it).
+   - `page`: an id in `guidePages` (reused, not duplicated). A page with `:siteId` opens the tour's own Site (`facts.siteId`).
+   - `requires`: the facts that must hold to start or jump to the step. The timeline disables a step whose facts don't hold and lists what is missing.
+   - `doneWhen` (optional): a fact that counts the step as done even when its progress save never reached the server (for example `tour-site` uses `hasSite`), so a reload never asks for the same thing twice.
+   - `tourTargets`: `data-tour` values spotlighted while the step is current. `replayTargets` (optional): the targets a replay of a done step shows; a replay opens and creates nothing.
+   - `prefill` (optional): the key of a form the step opens with example values.
+   - `checklistStep` (optional): the checklist step whose existing `markGuideStep` completes this tour step. Without it, the step is completed by a mark carrying its own id.
+   - `textKey`: a key of `messages.guide.tourSteps` (`{ title, body, replay }`: `replay` replaces `body` when a done step is replayed).
+2. **Facts** (only for a new prerequisite): add it to `TourFact`, its value to `TourFacts`, its case to `factHolds`, and where it comes from to `tourFactsFrom` (`tourMemory.ts`) plus the `missing` line in `messages.guide.tourTimeline`. An id the tour created goes into `TourMemory` (one `localStorage` key per Company) from the `onMark` switch in `useGuidedTour.ts`.
+3. **Pre-fill** (only for a new form): add the key to `TourPrefillKey`; write a pure builder in the page's feature whose example copy lives in that feature's `messages.ts` (as `sites/siteTourValues.ts`, which reads `sites.tourExample` for the locale and takes `localToday()`); on the page, `useTourForm('<key>')`: when `requested`, open the form with the builder's values and call `opened()`; pass `failed` to the form so a failed save shows "Not saved yet"; call `closed()` when the form closes without a save; close a tour-opened form without reporting when `running` turns false (`sites/useCreateSiteDialog.ts` is the pattern). Tag the form's submit with `submitTour` (`components/form`) when the step spotlights it. The guide never imports the page's feature.
+4. **Text** in `messages.ts`, `en` and `es`: `tourSteps.<textKey>` (`{ title, body, replay }`) and, for a target with its own popover while the step runs, `targets['<target>']`. A replay never shows `targets` copy, only `replay`.
+5. **Completion**: nothing new when `checklistStep` is set: the page already marks that checklist step after its API call, and a mark while this step is running (after "Start this step", not replaying) completes it. A mark that creates something passes the new id as `markGuideStep`'s third argument (`createdId`), and `useGuidedTour`'s `onMark` maps it to a fact.
+6. **Tests** (the Tester's files): `tourCatalog.test.ts` keeps `tourCatalogProblems(tourSteps, guideCatalog)` at `[]`. It checks the id format and prefix, duplicates, clashes with checklist ids, unknown pages and checklist steps, target syntax, two steps sharing a `checklistStep`, and checklist plus tour ids under the 50-step cap. A new builder gets its own test (EN/ES, a fixed `today`).
+7. `bun run lint && bun run build && bun test`, then try it with the dev "Start tour".
 
 ## Worked example: a Prices section
 
