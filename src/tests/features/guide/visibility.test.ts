@@ -51,6 +51,10 @@ describe('guideVisibility: the launcher', () => {
     expect(guideVisibility({ ...midway, onboarding: 'unanswered' }).launcher).toBe(false)
   })
 
+  it('hides while the onboarding answer is unknown (still loading, or the load failed)', () => {
+    expect(guideVisibility({ ...midway, onboarding: 'unknown' }).launcher).toBe(false)
+  })
+
   it('hides for a member with no steps, and until progress loads', () => {
     expect(guideVisibility({ ...midway, hasSteps: false }).launcher).toBe(false)
     expect(guideVisibility({ ...midway, loaded: false }).launcher).toBe(false)

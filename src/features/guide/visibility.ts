@@ -24,13 +24,15 @@ export type GuideVisibilityInput = {
 /**
  * Whether the guide opens by itself and whether the launcher shows. It opens
  * by itself only for a member with no progress row, after the onboarding
- * question is answered, so the two never compete. The launcher stays away
- * while onboarding is unanswered, and once the guide is hidden or complete.
+ * question is answered, so the two never compete. The launcher also waits
+ * for an answer: it stays away while onboarding is unanswered or its answer
+ * is unknown (loading, or the load failed), and once the guide is hidden or
+ * complete. The sidebar entry opens the guide either way.
  */
 export function guideVisibility(input: GuideVisibilityInput): { autoOpen: boolean; launcher: boolean } {
   const ready = input.hasSteps && input.loaded
   return {
     autoOpen: ready && !input.started && input.onboarding === 'answered',
-    launcher: ready && !input.dismissed && !input.complete && input.onboarding !== 'unanswered',
+    launcher: ready && !input.dismissed && !input.complete && input.onboarding === 'answered',
   }
 }

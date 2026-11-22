@@ -114,7 +114,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
     setJustCompleted(false)
   }
 
-  const launcherVisible = !isOpen && answer !== 'unanswered' && (visibility.launcher || (justCompleted && !dismissed))
+  const launcherVisible = !isOpen && answer === 'answered' && (visibility.launcher || (justCompleted && !dismissed))
 
   return (
     <GuideContext.Provider
