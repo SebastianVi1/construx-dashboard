@@ -18,7 +18,7 @@ export type GuideContextValue = {
   launcherVisible: boolean
   /** The last open step was done in this session and "You're set up" hasn't been seen yet. */
   justCompleted: boolean
-  /** Open the panel; failed saves are sent again. */
+  /** Open the panel. Whatever opens it, failed saves are sent again. */
   open: () => void
   close: () => void
   skip: (stepId: string) => void

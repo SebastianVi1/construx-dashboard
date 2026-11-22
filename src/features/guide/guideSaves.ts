@@ -8,7 +8,7 @@ export type GuideServer = {
 export type GuideSaves = {
   step: (stepId: string, status: GuideStepStatus) => void
   dismiss: (dismissed: boolean) => void
-  /** Send again every save whose latest attempt failed. Call it when the panel opens. */
+  /** Send again every save whose latest attempt failed. `GuideProvider` calls it each time the panel opens. */
   retryFailed: () => void
 }
 

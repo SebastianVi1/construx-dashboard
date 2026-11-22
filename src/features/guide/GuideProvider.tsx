@@ -80,6 +80,12 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
     saves.dismiss(false)
   }, [autoOpened, saves])
 
+  // However the panel opens (launcher, sidebar, header, "Show me", a page's "?", or
+  // by itself), saves that failed are sent again. A second run finds none left.
+  useEffect(() => {
+    if (isOpen) saves.retryFailed()
+  }, [isOpen, saves])
+
   function apply(stepId: string, status: GuideStepStatus) {
     if (!acceptsMark(sections, progress, stepId, status)) return
     dispatch({ type: 'marked', stepId, status, at: new Date().toISOString(), sections })
@@ -126,10 +132,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
         isOpen,
         launcherVisible,
         justCompleted,
-        open: () => {
-          setIsOpen(true)
-          saves.retryFailed()
-        },
+        open: () => setIsOpen(true),
         close,
         skip: (stepId) => apply(stepId, 'SKIPPED'),
         hide: () => {
