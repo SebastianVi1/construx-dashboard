@@ -8,9 +8,22 @@ import {
   type GuideSitesReport,
   requestGuidePreview,
   subscribeGuidePreview,
+  requestGuidedTour,
+  subscribeGuidedTour,
 } from '../../../features/guide/guideEvents'
 
 describe('guide step events', () => {
+  it('carries the created Site id only when provided', () => {
+    const received: GuideMark[] = []
+    const unsubscribe = subscribeGuideSteps((mark) => received.push(mark))
+    markGuideStep('create-site', 'org-1', 'site-1')
+    markGuideStep('site-details', 'org-1')
+    unsubscribe()
+    expect(received).toStrictEqual([
+      { stepId: 'create-site', organizationId: 'org-1', createdId: 'site-1' },
+      { stepId: 'site-details', organizationId: 'org-1' },
+    ])
+  })
   it('a listener receives each marked step', () => {
     const received: GuideMark[] = []
     const unsubscribe = subscribeGuideSteps((mark) => received.push(mark))
@@ -63,6 +76,17 @@ describe('guide step events', () => {
 
   it('marking with no listener does nothing', () => {
     expect(() => markGuideStep('create-site', 'org-1')).not.toThrow()
+  })
+})
+
+describe('guided tour requests', () => {
+  it('delivers the requested step until unsubscribe', () => {
+    const received: string[] = []
+    const unsubscribe = subscribeGuidedTour((stepId) => received.push(stepId))
+    requestGuidedTour('tour-site')
+    unsubscribe()
+    requestGuidedTour('tour-site')
+    expect(received).toEqual(['tour-site'])
   })
 })
 
