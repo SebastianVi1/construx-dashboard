@@ -93,6 +93,19 @@ export function waitForTarget(selector: string, options: WaitOptions = {}): Prom
   })
 }
 
+const CSS_LENGTH = /^(\d*\.?\d+)(rem|px)$/
+
+/**
+ * A CSS length token (`0.5rem`, `8px`) in pixels, with rem read against the
+ * root font size; `fallback` for anything else (missing token, other units).
+ */
+export function cssLengthPx(value: string, rootFontPx: number, fallback: number): number {
+  const match = CSS_LENGTH.exec(value.trim())
+  if (!match) return fallback
+  const px = Number(match[1]) * (match[2] === 'rem' ? rootFontPx : 1)
+  return Number.isFinite(px) ? px : fallback
+}
+
 /** Phones (`PHONE_QUERY`) never get a spotlight: "Show me" only navigates there. */
 export function isPhoneWidth(): boolean {
   return window.matchMedia(PHONE_QUERY).matches

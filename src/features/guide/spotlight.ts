@@ -1,11 +1,17 @@
 import { driver, type DriveStep } from 'driver.js'
 import 'driver.js/dist/driver.css'
-import { TARGET_WAIT_MS, tourSelector, type TourLabels, type TourStop } from './tour'
+import { cssLengthPx, TARGET_WAIT_MS, tourSelector, type TourLabels, type TourStop } from './tour'
 import './tour.css'
 
 /** driver.js renders popover text as HTML; ours is plain text. */
 function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`)
+}
+
+/** The `--cx-radius-md` token in pixels, so the spotlight's hole matches the controls it frames. */
+function radiusMdPx(): number {
+  const root = getComputedStyle(document.documentElement)
+  return cssLengthPx(root.getPropertyValue('--cx-radius-md'), parseFloat(root.fontSize), 8)
 }
 
 /**
@@ -32,7 +38,7 @@ export function openSpotlight(first: Element, stops: TourStop[], labels: TourLab
     overlayColor: 'var(--cx-canvas)',
     overlayOpacity: 0.72,
     stagePadding: 6,
-    stageRadius: 8,
+    stageRadius: radiusMdPx(),
     popoverOffset: 12,
     popoverClass: 'guide-tour',
     waitForElement: TARGET_WAIT_MS,

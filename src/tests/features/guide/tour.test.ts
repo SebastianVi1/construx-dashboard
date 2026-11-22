@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { GuideStepEntry } from '../../../features/guide/catalog'
-import { tourSelector, tourStops, waitForTarget, type TargetRoot } from '../../../features/guide/tour'
+import { cssLengthPx, tourSelector, tourStops, waitForTarget, type TargetRoot } from '../../../features/guide/tour'
 
 /** An element as the wait sees it: rendered when it has a layout box. */
 function fakeElement(rendered = true): Element {
@@ -91,5 +91,20 @@ describe('waitForTarget', () => {
     const found = await waitForTarget(selector, { root: page.root, timeoutMs: 1000, intervalMs: 5, signal: cancel.signal })
     expect(found).toBeNull()
     expect(Date.now() - started).toBeLessThan(500)
+  })
+})
+
+describe('cssLengthPx', () => {
+  it('reads rem against the root font size, and px as is', () => {
+    expect(cssLengthPx('0.5rem', 16, 8)).toBe(8)
+    expect(cssLengthPx(' 0.75rem', 20, 8)).toBe(15)
+    expect(cssLengthPx('10px', 16, 8)).toBe(10)
+  })
+
+  it('falls back when the token is missing or not a length it reads', () => {
+    expect(cssLengthPx('', 16, 8)).toBe(8)
+    expect(cssLengthPx('var(--other)', 16, 8)).toBe(8)
+    expect(cssLengthPx('1em', 16, 8)).toBe(8)
+    expect(cssLengthPx('0.5rem', Number.NaN, 8)).toBe(8)
   })
 })
