@@ -1,4 +1,4 @@
-import { markGuideStep, reportGuideSiteOpened, reportGuideSites } from '../guide/guideEvents'
+import { markGuideStep, reportGuideSiteOpened, reportGuideSites } from '../guide'
 import { getSite, listSites, type Site } from './sitesApi'
 
 /**

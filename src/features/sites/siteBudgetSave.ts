@@ -1,4 +1,4 @@
-import { markGuideStep } from '../guide/guideEvents'
+import { markGuideStep } from '../guide'
 import { setSiteBudget, type Site } from './sitesApi'
 
 /**

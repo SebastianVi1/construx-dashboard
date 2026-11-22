@@ -1,4 +1,4 @@
-import { markGuideStep } from '../guide/guideEvents'
+import { markGuideStep } from '../guide'
 import { getOrgFinanceSummary, type OrgFinanceSummary } from './orgFinanceApi'
 
 /**

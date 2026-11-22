@@ -3,7 +3,7 @@ import { useRemoteData, type RemoteData } from '../../components/data/useRemoteD
 import { SkeletonBlock, SkeletonRegion, SkeletonTable, Notice } from '../../components/page'
 import { skeletonRowCount } from '../../components/page/skeletonSize'
 import { formatMessage, intlLocales, useLocale, type Locale, type Messages } from '../../i18n'
-import { GuideHelpButton } from '../guide/GuideHelpButton'
+import { GuideHelpButton } from '../guide'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
 import { Avatar } from '../profile/Avatar'

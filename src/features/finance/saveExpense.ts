@@ -1,4 +1,4 @@
-import { markGuideStep } from '../guide/guideEvents'
+import { markGuideStep } from '../guide'
 import type { Expense, ExpensePatch, NewExpense } from './financeApi'
 
 export type ExpenseSaveResult = 'created' | 'updated' | 'unchanged'
