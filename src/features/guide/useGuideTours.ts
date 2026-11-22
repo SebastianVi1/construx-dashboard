@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useLocale } from '../../i18n'
 import type { GuideStepEntry } from './catalog'
+import { subscribeGuideSiteOpened } from './guideEvents'
 import { guidePath, showMeOutcome, siteIdInPath, stepsOnPage, type GuideNoticeKind } from './guidePaths'
 import { readLastSite, rememberLastSite } from './lastSite'
 import type { GuideSection } from './selection'
@@ -48,6 +49,16 @@ export function useGuideTours({
   if (movedNow && !moved) setMoved(true)
   const siteHere = movedNow ? siteIdInPath(pathname) : null
   if (siteHere !== null && siteHere !== lastSiteId) setLastSiteId(siteHere)
+
+  // A Site page that loaded its Site in this Company proves the Site is ours, even
+  // when the guide mounted on that page (a reload or a link straight to the Site).
+  useEffect(
+    () =>
+      subscribeGuideSiteOpened((opened) => {
+        if (opened.organizationId === organizationId) setLastSiteId(opened.siteId)
+      }),
+    [organizationId],
+  )
 
   useEffect(() => {
     if (lastSiteId !== null) rememberLastSite(organizationId, lastSiteId)

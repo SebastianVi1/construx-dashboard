@@ -1,14 +1,17 @@
-import { markGuideStep, reportGuideSites } from '../guide/guideEvents'
+import { markGuideStep, reportGuideSiteOpened, reportGuideSites } from '../guide/guideEvents'
 import { getSite, listSites, type Site } from './sitesApi'
 
 /**
  * One Site, for any page inside it (details, phases, documents, attendance).
- * Once it loaded, the guide's "Open your site" step ticks off; a failed load
- * doesn't. Pages call this, never `getSite`, so every Site page counts.
+ * Once it loaded, the guide's "Open your site" step ticks off and the guide
+ * learns the Site is open (its "Show me" then uses it, even right after a
+ * reload); a failed load does neither. Pages call this, never `getSite`, so
+ * every Site page counts.
  */
 export async function loadSite(organizationId: string, siteId: string, load: typeof getSite = getSite): Promise<Site> {
   const site = await load(organizationId, siteId)
   markGuideStep('open-site', organizationId)
+  reportGuideSiteOpened(organizationId, siteId)
   return site
 }
 
