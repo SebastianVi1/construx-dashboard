@@ -17,13 +17,14 @@ export const guideProgressSchema = z.object({
 
 export type GuideProgress = z.infer<typeof guideProgressSchema>
 
-function guidePath(organizationId: string): string {
+/** The API URL of a Company's guide progress (app routes are `guidePaths.ts`). */
+function guideApiPath(organizationId: string): string {
   return `${organizationPath(organizationId)}/guide`
 }
 
 /** The caller's progress; never creates a row. */
 export function getGuide(organizationId: string): Promise<GuideProgress> {
-  return getJson(guidePath(organizationId), guideProgressSchema)
+  return getJson(guideApiPath(organizationId), guideProgressSchema)
 }
 
 /** Record a step as completed or skipped. Safe to repeat; a new status replaces the old one. */
@@ -34,7 +35,7 @@ export function markGuideStepRemote(
 ): Promise<GuideProgress> {
   return sendJson(
     'put',
-    `${guidePath(organizationId)}/steps/${encodeURIComponent(stepId)}`,
+    `${guideApiPath(organizationId)}/steps/${encodeURIComponent(stepId)}`,
     { status },
     200,
     guideProgressSchema,
@@ -43,5 +44,5 @@ export function markGuideStepRemote(
 
 /** Hide (`true`) or show (`false`) the guide. Either one creates the progress row. */
 export function setGuideDismissed(organizationId: string, dismissed: boolean): Promise<GuideProgress> {
-  return sendJson('put', guidePath(organizationId), { dismissed }, 200, guideProgressSchema)
+  return sendJson('put', guideApiPath(organizationId), { dismissed }, 200, guideProgressSchema)
 }
