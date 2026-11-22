@@ -5,6 +5,7 @@ import { filterCounts, type FilterOption } from '../../components/filter'
 import { Notice } from '../../components/page'
 import { SitesGridSkeleton } from './SiteSkeletons'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
+import { localToday } from '../../lib/dates'
 import { GuideHelpButton } from '../guide'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
@@ -13,12 +14,15 @@ import { ProgressMeter, SiteStatusBadge } from './SiteBits'
 import { scheduleText } from './siteDisplay'
 import { siteProgress } from './siteHelpers'
 import { loadOpenSites } from './siteLoad'
+import { siteTourValues } from './siteTourValues'
 import { listSites, siteErrorKind, siteStatuses, type Site, type SiteStatus } from './sitesApi'
+import { useCreateSiteDialog } from './useCreateSiteDialog'
 import './sites.css'
 
 /**
  * Sites of the selected company. Open sites load once and the status tabs filter them
- * here; archived sites are fetched only when their tab is chosen.
+ * here; archived sites are fetched only when their tab is chosen. The guided tour
+ * opens "Add site" pre-filled with example values (`useCreateSiteDialog`).
  */
 export function SitesPage() {
   const { messages: m, locale } = useLocale()
@@ -26,7 +30,6 @@ export function SitesPage() {
   const organization = useCurrentOrganization()
   const { can } = usePermissions()
   const [filter, setFilter] = useState<SiteStatus | ''>('')
-  const [creating, setCreating] = useState(false)
   const open = useRemoteData(`${organization.id}:sites`, () => loadOpenSites(organization.id))
   const archived = useRemoteData(filter === 'ARCHIVED' ? `${organization.id}:sites:ARCHIVED` : null, () =>
     listSites(organization.id, 'ARCHIVED'),
@@ -41,6 +44,7 @@ export function SitesPage() {
     { value: 'ARCHIVED', label: t.status.ARCHIVED, count: archived.data?.length },
   ]
   const canCreate = can('MANAGE_PROJECT')
+  const creating = useCreateSiteDialog(canCreate)
 
   useEffect(() => {
     document.title = `${t.title} | Construx`
@@ -55,7 +59,7 @@ export function SitesPage() {
         </div>
         <GuideHelpButton page="sites" />
         {canCreate ? (
-          <button type="button" className="button button--primary" data-tour="site-create" onClick={() => setCreating(true)}>
+          <button type="button" className="button button--primary" data-tour="site-create" onClick={creating.openBlank}>
             {t.add}
           </button>
         ) : null}
@@ -91,7 +95,7 @@ export function SitesPage() {
               <h2>{t.emptyTitle}</h2>
               <p>{canCreate ? t.emptyManager : t.emptyViewer}</p>
               {canCreate ? (
-                <button type="button" className="button button--primary" onClick={() => setCreating(true)}>
+                <button type="button" className="button button--primary" onClick={creating.openBlank}>
                   {t.addFirst}
                 </button>
               ) : null}
@@ -106,7 +110,15 @@ export function SitesPage() {
         )}
       </section>
 
-      {creating ? <CreateSiteDialog organizationId={organization.id} onClose={() => setCreating(false)} /> : null}
+      {creating.mode ? (
+        <CreateSiteDialog
+          key={creating.mode}
+          organizationId={organization.id}
+          initialValues={creating.mode === 'tour' ? siteTourValues(locale, localToday()) : undefined}
+          onFailed={creating.onFailed}
+          onClose={creating.close}
+        />
+      ) : null}
     </div>
   )
 }

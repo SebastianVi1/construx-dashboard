@@ -17,7 +17,7 @@ describe('addSite', () => {
     })
     expect(created).toBe(site)
     expect(sent).toEqual([['org-1', draft]])
-    expect(marks).toEqual([{ stepId: 'create-site', organizationId: 'org-1' }])
+    expect(marks).toEqual([{ stepId: 'create-site', organizationId: 'org-1', createdId: 'site-1' }])
   })
 
   it('does not tick the step when the create fails, and passes the error on', async () => {
@@ -41,6 +41,7 @@ describe('saveSiteDetails', () => {
     expect(saved).toBe(site)
     expect(sent).toEqual([['org-1', 'site-1', { address: 'Av. Reforma 1' }]])
     expect(marks).toEqual([{ stepId: 'site-details', organizationId: 'org-1' }])
+    expect(marks[0]).toStrictEqual({ stepId: 'site-details', organizationId: 'org-1' })
   })
 
   it('sends nothing and ticks nothing when nothing changed', async () => {
@@ -77,6 +78,7 @@ describe('addSitePerson', () => {
     expect(added).toBe(person)
     expect(sent).toEqual([['org-1', 'site-1', 'mem-1']])
     expect(marks).toEqual([{ stepId: 'site-team', organizationId: 'org-1' }])
+    expect(marks[0]).toStrictEqual({ stepId: 'site-team', organizationId: 'org-1' })
   })
 
   it('does not tick the step when the assignment fails, and passes the error on', async () => {
