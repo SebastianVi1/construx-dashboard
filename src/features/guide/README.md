@@ -2,6 +2,8 @@
 
 The getting-started guide is data. A new section or step is entries in `catalog.ts`, its text in `messages.ts`, and a few lines on the page where the action happens. Selection, progress, the panel and the tours read the lists and never name an id, so leave `selection.ts`, `guideState.ts`, `GuidePanel.tsx` and `tour.ts` alone.
 
+The lists are `as const`, so their ids are types (`GuideStepId`, `GuidePageId`, `GuideSectionId`, `GuideTourTarget`). A step naming an unknown section or page, and a misspelt id in `markGuideStep`, `<GuideHelpButton page>` or a `data-tour` attribute, fails `bun run build`. Add the catalog entries first; the page code then type-checks against them. A test-only catalog uses the wide `GuideIds` (`GuideCatalog<GuideIds>`), as `selection.test.ts` does.
+
 **No backend change is needed.** The backend stores each member's progress keyed by the step id string and knows no step list (`construx/docs/guide.md`). Its only rules: the id matches `^[a-z][a-z0-9-]{0,63}$` and a member has at most 50 steps.
 
 ## Checklist
@@ -31,6 +33,7 @@ The getting-started guide is data. A new section or step is entries in `catalog.
 8. **Tests** in `src/tests/features/guide/` (the Tester's files: request them in the ticket when you aren't granted them):
    - `selection.test.ts`, "built-in catalog": `catalogProblems(guideCatalog)` must stay `[]`. It checks ids, unknown sections, pages and `unless`, `:siteId` against `needsSite`, target syntax and the 50-step cap.
    - `selection.test.ts`, `selectGuide` blocks: update the exact shapes of every seeded role whose sections change (`seededRoles` mirrors the backend's `seeded-roles.properties`), and add a `describe` for the new section: who gets it, who doesn't, its `titleKey`. `guideState.test.ts` and `guidePaths.test.ts` also select for `seededRoles.OWNER`; rerun them.
+   - A Site page loads its Site through `sites/siteLoad.ts` `loadSite`, never `getSite` (`siteLoad.test.ts` checks every page).
    - The completion helper: a test next to the feature's tests (`src/tests/features/<feature>/`) that subscribes with `subscribeGuideSteps` and checks a success marks once and a failure marks nothing (`sites/siteBudgetSave.test.ts`).
 9. `bun run lint && bun run build && bun test`.
 
