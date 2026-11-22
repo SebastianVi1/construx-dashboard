@@ -72,6 +72,7 @@ export function listSites(organizationId: string, status?: SiteStatus): Promise<
   return getJson(`${sitesPath(organizationId)}${query}`, z.array(siteSchema))
 }
 
+/** One Site. Pages load it through `loadSite` (siteLoad.ts), which ticks the guide's "Open your site". */
 export function getSite(organizationId: string, siteId: string): Promise<Site> {
   return getJson(sitePath(organizationId, siteId), siteSchema)
 }

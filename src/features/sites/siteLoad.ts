@@ -2,8 +2,9 @@ import { markGuideStep, reportGuideSites } from '../guide/guideEvents'
 import { getSite, listSites, type Site } from './sitesApi'
 
 /**
- * One Site for its page. Once it loaded, the guide's "Open your site" step
- * ticks off; a failed load doesn't.
+ * One Site, for any page inside it (details, phases, documents, attendance).
+ * Once it loaded, the guide's "Open your site" step ticks off; a failed load
+ * doesn't. Pages call this, never `getSite`, so every Site page counts.
  */
 export async function loadSite(organizationId: string, siteId: string, load: typeof getSite = getSite): Promise<Site> {
   const site = await load(organizationId, siteId)

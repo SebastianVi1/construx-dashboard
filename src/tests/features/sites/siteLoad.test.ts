@@ -70,3 +70,15 @@ describe('loadOpenSites', () => {
     expect(reports).toEqual([])
   })
 })
+
+describe('Site pages', () => {
+  it('load their Site through loadSite, so "Open your site" ticks on any of them', async () => {
+    const direct: string[] = []
+    const features = `${import.meta.dir}/../../../features`
+    for await (const file of new Bun.Glob('**/*.tsx').scan(features)) {
+      const source = await Bun.file(`${features}/${file}`).text()
+      if (/import\s*\{[^}]*\bgetSite\b[^}]*\}\s*from\s*'[^']*sitesApi'/.test(source)) direct.push(file)
+    }
+    expect(direct).toEqual([])
+  })
+})

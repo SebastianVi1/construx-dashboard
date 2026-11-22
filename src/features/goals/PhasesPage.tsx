@@ -12,7 +12,8 @@ import { buildRows, type GanttRow } from '../gantt/ganttRows'
 import { GuideHelpButton } from '../guide/GuideHelpButton'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
-import { getSite, listSiteAccess, siteErrorKind, type Site, type SiteAccess } from '../sites/sitesApi'
+import { loadSite } from '../sites/siteLoad'
+import { listSiteAccess, siteErrorKind, type Site, type SiteAccess } from '../sites/sitesApi'
 import { TaskDialog } from '../tasks/TaskDialog'
 import { taskActions } from '../tasks/taskRules'
 import { listTasks, taskErrorKind, updateTask, type Task } from '../tasks/tasksApi'
@@ -35,7 +36,7 @@ export function PhasesPage() {
   const t = m.phasesPage
   const organization = useCurrentOrganization()
   const { access, can } = usePermissions()
-  const site = useRemoteData(`${organization.id}:${siteId}`, () => getSite(organization.id, siteId))
+  const site = useRemoteData(`${organization.id}:${siteId}`, () => loadSite(organization.id, siteId))
   const people = useRemoteData(`${organization.id}:${siteId}:access`, () => listSiteAccess(organization.id, siteId))
   const [view, setView] = useState<View>('schedule')
 
