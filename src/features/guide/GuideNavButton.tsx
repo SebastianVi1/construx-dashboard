@@ -6,7 +6,7 @@ import './guide.css'
 
 /**
  * "Guide" entry of the workspace sidebar. Opens the checklist even when the
- * guide is hidden. A member with no steps (a Worker) gets a link to the
+ * guide is hidden. While steps remain it shows a blue dot and the count. A member with no steps (a Worker) gets a link to the
  * landing guide instead, or no entry when no landing URL is configured.
  */
 export function GuideNavButton() {
@@ -22,10 +22,13 @@ export function GuideNavButton() {
       {entry.kind === 'landing' ? (
         <NewTabIcon className="guide-nav-button__new-tab" />
       ) : entry.progress ? (
-        <span className="guide-nav-button__count">
-          <span aria-hidden="true">{entry.progress.short}</span>
-          <span className="visually-hidden">{entry.progress.label}</span>
-        </span>
+        <>
+          <span className="guide-nav-button__dot" aria-hidden="true" />
+          <span className="guide-nav-button__count">
+            <span aria-hidden="true">{entry.progress.short}</span>
+            <span className="visually-hidden">{entry.progress.label}</span>
+          </span>
+        </>
       ) : null}
     </GuideEntryControl>
   )

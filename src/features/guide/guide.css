@@ -500,6 +500,11 @@
 
 /* ---------- Launcher ---------- */
 
+/*
+ * A filled primary pill: the one floating action on every screen. The ring
+ * measures progress around the count; the label names the next step.
+ * Elevation is the shadow alone (no border).
+ */
 .guide-launcher {
   position: fixed;
   right: max(24px, env(safe-area-inset-right));
@@ -508,50 +513,157 @@
 }
 
 .guide-launcher__button {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 48px;
-  padding: 0 14px 0 12px;
-  border: 1px solid var(--cx-border-strong);
-  border-radius: var(--cx-radius-lg);
-  background: var(--cx-surface-raised);
-  color: var(--cx-ink);
+  min-height: 52px;
+  max-width: min(420px, calc(100vw - 48px));
+  padding: 0 18px 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--cx-primary);
+  color: var(--cx-on-primary);
   font: 600 14px/20px var(--cx-font-display);
-  box-shadow: 0 12px 28px -12px var(--cx-shadow-color);
+  box-shadow:
+    0 2px 6px -2px var(--cx-shadow-color),
+    0 16px 32px -14px var(--cx-shadow-color);
   cursor: pointer;
-  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  animation: guide-launcher-bob 2.2s ease-in-out infinite;
+  will-change: transform;
+  transition: background-color 150ms ease-out;
 }
 
 .guide-launcher__button:hover {
-  border-color: var(--cx-accent);
+  background: var(--cx-primary-hover);
 }
 
-.guide-launcher__icon {
+.guide-launcher__button:active {
+  background: var(--cx-primary-pressed);
+}
+
+.guide-launcher__button:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 3px;
+}
+
+/* Held still while someone is about to use it. */
+.guide-launcher__button:hover,
+.guide-launcher__button:focus-visible,
+.guide-launcher__button:hover::after,
+.guide-launcher__button:focus-visible::after {
+  animation-play-state: paused;
+}
+
+/* A small compositor-driven float keeps the launcher responsive. */
+@keyframes guide-launcher-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Until the guide is first opened this session: a soft halo swells and fades every few seconds. */
+.guide-launcher__button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--cx-primary) 40%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.guide-launcher[data-attention] .guide-launcher__button::after {
+  animation: guide-launcher-glow 4.8s cubic-bezier(0.16, 1, 0.3, 1) 1.2s infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes guide-launcher-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  8% {
+    opacity: 1;
+  }
+  32%,
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+/* The progress ring: a faint track and the done share, starting at twelve o'clock. */
+.guide-launcher__ring {
+  position: relative;
   flex: none;
-  color: var(--cx-accent);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+}
+
+.guide-launcher__ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.guide-launcher__ring-track,
+.guide-launcher__ring-value {
+  fill: none;
+  stroke-width: 3;
+}
+
+.guide-launcher__ring-track {
+  stroke: color-mix(in srgb, var(--cx-on-primary) 28%, transparent);
+}
+
+.guide-launcher__ring-value {
+  stroke: var(--cx-on-primary);
+  stroke-linecap: round;
+  transition: stroke-dasharray 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .guide-launcher__count {
-  padding: 2px 6px;
-  border-radius: var(--cx-radius-sm);
-  background: var(--cx-accent-subtle);
-  color: var(--cx-accent);
-  font: 500 12px/16px var(--cx-font-data);
+  font: 600 11px/1 var(--cx-font-data);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* "10/10" still fits inside the ring. */
+.guide-launcher__count[data-long] {
+  font-size: 9.5px;
+}
+
+.guide-launcher__ring-icon {
+  flex: none;
+}
+
+.guide-launcher__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guide-launcher__arrow {
+  flex: none;
+  margin-left: -2px;
+  transition: transform 150ms ease-out;
+}
+
+.guide-launcher__button:hover .guide-launcher__arrow {
+  transform: translateX(2px);
 }
 
 .guide-launcher[data-state='complete'] .guide-launcher__button {
-  border-color: var(--cx-success);
-}
-
-.guide-launcher[data-state='complete'] .guide-launcher__icon {
-  color: var(--cx-success);
-}
-
-.guide-launcher[data-state='complete'] .guide-launcher__count {
-  background: var(--cx-success-subtle);
-  color: var(--cx-success);
+  background: var(--cx-success);
 }
 
 /* ---------- Sidebar entry ---------- */
@@ -568,6 +680,20 @@
 .guide-nav-button[aria-expanded='true'] {
   color: var(--cx-ink);
   background: var(--cx-surface-raised);
+}
+
+/* Steps remain: a blue dot ahead of the count, so the entry reads as "something to do". */
+.guide-nav-button__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--cx-accent);
+}
+
+.guide-nav-button__dot + .guide-nav-button__count {
+  margin-left: -6px;
 }
 
 .guide-nav-button__count {
@@ -590,9 +716,27 @@
     text-align: center;
   }
 
-  .guide-nav-button__count,
   .guide-nav-button__new-tab {
     display: none;
+  }
+
+  /* Out of sight but still read out, so the rail keeps "2 of 5 done" for screen readers. */
+  .guide-nav-button__count {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* No room for the count: the dot sits on the icon's corner. */
+  .guide-nav-button__dot {
+    position: absolute;
+    top: 8px;
+    left: calc(50% + 6px);
+    margin: 0;
+    box-shadow: 0 0 0 2px var(--cx-surface);
   }
 }
 
@@ -651,13 +795,26 @@
     right: max(12px, env(safe-area-inset-right));
     bottom: calc(var(--cx-tabbar-height) + env(safe-area-inset-bottom) + 12px);
   }
+
+  /* Leave the left of the screen readable: a long next-step title truncates. */
+  .guide-launcher__button {
+    max-width: min(320px, calc(100vw - 72px));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .guide-meter__tick,
   .guide-launcher__button,
+  .guide-launcher__ring-value,
+  .guide-launcher__arrow,
   .guide-step__more,
   .guide-header-button {
     transition: none;
+  }
+
+  .guide-launcher__button,
+  .guide-launcher[data-attention] .guide-launcher__button::after,
+  .guide-step[data-just-done] .guide-step__mark {
+    animation: none;
   }
 }
