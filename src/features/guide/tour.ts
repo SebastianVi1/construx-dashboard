@@ -1,5 +1,4 @@
 import { PHONE_QUERY } from '../../lib/breakpoints'
-import type { GuideStepEntry } from './catalog'
 
 /**
  * Spotlight tours. A tour is a list of stops, one per `data-tour` target;
@@ -44,12 +43,15 @@ export function tourSelector(target: string): string {
   return `[data-tour="${target}"]`
 }
 
+/** What `tourStops` reads from a step: checklist and guided tour entries both fit. */
+export type TourStopSource = { tourTargets: readonly string[]; textKey: string }
+
 /**
  * The stops for some steps, in order: each target once, with its own text
  * from `texts.targets` when it has one, otherwise its step's title and body.
  */
 export function tourStops(
-  steps: GuideStepEntry[],
+  steps: readonly TourStopSource[],
   texts: { steps: Record<string, GuideText>; targets: Partial<Record<string, GuideText>> },
 ): TourStop[] {
   const stops: TourStop[] = []
@@ -129,9 +131,10 @@ export function destroyActiveTour(): void {
  * Start a spotlight tour over `stops`, replacing any running one. Waits up to
  * `TARGET_WAIT_MS` for the first target; if it never shows, no overlay is
  * drawn and the result is `fallback`. Never rejects. Callers skip it on
- * phones (`isPhoneWidth`).
+ * phones (`isPhoneWidth`). `onEnd` runs once a shown spotlight closes, however
+ * it closes (done, close button, a newer tour or `destroyActiveTour`).
  */
-export async function startTour(stops: TourStop[], labels: TourLabels): Promise<TourResult> {
+export async function startTour(stops: TourStop[], labels: TourLabels, onEnd?: () => void): Promise<TourResult> {
   destroyActiveTour()
   if (stops.length === 0) return 'fallback'
   const run: ActiveTour = { controller: new AbortController() }
@@ -148,6 +151,7 @@ export async function startTour(stops: TourStop[], labels: TourLabels): Promise<
     }
     run.close = spotlight.openSpotlight(first, stops, labels, () => {
       if (active === run) active = null
+      onEnd?.()
     })
     return 'shown'
   } catch {
