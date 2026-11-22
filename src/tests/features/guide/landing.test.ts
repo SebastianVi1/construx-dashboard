@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { getLandingUrl } from '../../../config/env'
 import { landingGuideHref } from '../../../features/guide/landing'
 
 describe('landingGuideHref', () => {
@@ -15,13 +16,15 @@ describe('landingGuideHref', () => {
     expect(landingGuideHref('https://construx.test', 'en', 'finance')).toBe('https://construx.test/en/guide/#finance')
   })
 
-  it('never doubles the slash after a base that ends in one', () => {
-    expect(landingGuideHref('https://construx.test/', 'es', 'start')).toBe('https://construx.test/guia/#start')
-    expect(landingGuideHref('https://construx.test//', 'en', 'tasks')).toBe('https://construx.test/en/guide/#tasks')
+  it('never doubles the slash after a configured URL that ends in one', () => {
+    expect(landingGuideHref(getLandingUrl('https://construx.test/'), 'es', 'start')).toBe('https://construx.test/guia/#start')
+    expect(landingGuideHref(getLandingUrl('https://construx.test//'), 'en', 'tasks')).toBe(
+      'https://construx.test/en/guide/#tasks',
+    )
   })
 
   it('keeps a base path the landing page is served under', () => {
-    expect(landingGuideHref('https://example.test/construx/', 'en', 'company')).toBe(
+    expect(landingGuideHref(getLandingUrl('https://example.test/construx/'), 'en', 'company')).toBe(
       'https://example.test/construx/en/guide/#company',
     )
   })
