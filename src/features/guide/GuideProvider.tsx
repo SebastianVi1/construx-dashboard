@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useReducer, useRef, useState, type ReactNode
 import { useOnboarding } from '../onboarding'
 import { usePermissions } from '../permissions'
 import { GuideContext } from './guide-context'
-import { getGuide, markGuideStepRemote, setGuideDismissed, type GuideStepStatus } from './guideApi'
+import { getGuide, markGuideStepRemote, setGuideDismissed, type GuideProgress, type GuideStepStatus } from './guideApi'
 import { subscribeGuideSites, subscribeGuideSteps, type GuideMark } from './guideEvents'
 import { createGuideSaves } from './guideSaves'
 import { acceptsMark, guideReducer, initialGuideState } from './guideState'
@@ -24,7 +24,6 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
   const [state, dispatch] = useReducer(guideReducer, initialGuideState)
   const [isOpen, setIsOpen] = useState(false)
   const [autoOpened, setAutoOpened] = useState(false)
-  const [justCompleted, setJustCompleted] = useState(false)
   // Whether the member sees any open Site here; null until a page has loaded their Sites.
   const [hasSites, setHasSites] = useState<boolean | null>(null)
   const [saves] = useState(() =>
@@ -35,11 +34,15 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
   )
   const autoOpenSaved = useRef(false)
 
+  const sections = selectGuide(access)
+  // Reads the checklist as it is when the answer arrives, not when the request started.
+  const onLoaded = useEffectEvent((progress: GuideProgress) => dispatch({ type: 'loaded', progress, sections }))
+
   useEffect(() => {
     let active = true
     getGuide(organizationId).then(
       (progress) => {
-        if (active) dispatch({ type: 'loaded', progress })
+        if (active) onLoaded(progress)
       },
       // Without progress the guide stays out of the way; the sidebar entry still opens it.
       () => {},
@@ -49,9 +52,8 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
     }
   }, [organizationId])
 
-  const sections = selectGuide(access)
   const { clearNotice, ...tours } = useGuideTours({ organizationId, sections, setOpen: setIsOpen })
-  const { progress } = state
+  const { progress, justCompleted } = state
   const count = guideProgressOf(sections, progress)
   const dismissed = progress.dismissedAt !== null
   const answer = onboardingAnswer(onboarding.status, onboarding.intent)
@@ -80,11 +82,8 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
 
   function apply(stepId: string, status: GuideStepStatus) {
     if (!acceptsMark(sections, progress, stepId, status)) return
-    const action = { type: 'marked', stepId, status, at: new Date().toISOString() } as const
-    dispatch(action)
+    dispatch({ type: 'marked', stepId, status, at: new Date().toISOString(), sections })
     saves.step(stepId, status)
-    const after = guideProgressOf(sections, guideReducer(state, action).progress)
-    if (!count.complete && after.complete) setJustCompleted(true)
   }
 
   const onMark = useEffectEvent((mark: GuideMark) => {
@@ -111,7 +110,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
     setIsOpen(false)
     clearNotice()
     // The panel already showed "You're set up"; the launcher doesn't repeat it.
-    setJustCompleted(false)
+    dispatch({ type: 'acknowledged' })
   }
 
   const launcherVisible = !isOpen && answer === 'answered' && (visibility.launcher || (justCompleted && !dismissed))
@@ -138,7 +137,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
           close()
         },
         show: () => setDismissed(false),
-        acknowledgeCompletion: () => setJustCompleted(false),
+        acknowledgeCompletion: () => dispatch({ type: 'acknowledged' }),
         ...tours,
       }}
     >

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import type { GuideProgress } from '../../../features/guide/guideApi'
 import { acceptsMark, guideReducer, initialGuideState, type GuideState } from '../../../features/guide/guideState'
-import { selectGuide } from '../../../features/guide/selection'
+import { guideCatalog } from '../../../features/guide/catalog'
+import { selectGuide, type GuideSection } from '../../../features/guide/selection'
 import { seededRoles } from '../../support/seededRoles'
 
 const at = '2026-11-21T09:00:00Z'
@@ -9,7 +10,7 @@ const later = '2026-11-21T10:00:00Z'
 const notStarted: GuideProgress = { started: false, steps: {}, dismissedAt: null, updatedAt: null }
 
 function loaded(progress: GuideProgress): GuideState {
-  return guideReducer(initialGuideState, { type: 'loaded', progress })
+  return guideReducer(initialGuideState, { type: 'loaded', progress, sections: [] })
 }
 
 describe('guideReducer', () => {
@@ -24,22 +25,22 @@ describe('guideReducer', () => {
   })
 
   it('a mark ticks the step off and starts the guide', () => {
-    const state = guideReducer(loaded(notStarted), { type: 'marked', stepId: 'create-site', status: 'COMPLETED', at })
+    const state = guideReducer(loaded(notStarted), { type: 'marked', stepId: 'create-site', status: 'COMPLETED', at, sections: [] })
     expect(state.progress.started).toBe(true)
     expect(state.progress.steps).toEqual({ 'create-site': 'COMPLETED' })
   })
 
   it('a later completion replaces a skip, but a skip never undoes a completion', () => {
-    const skipped = guideReducer(loaded(notStarted), { type: 'marked', stepId: 'create-site', status: 'SKIPPED', at })
-    const completed = guideReducer(skipped, { type: 'marked', stepId: 'create-site', status: 'COMPLETED', at })
+    const skipped = guideReducer(loaded(notStarted), { type: 'marked', stepId: 'create-site', status: 'SKIPPED', at, sections: [] })
+    const completed = guideReducer(skipped, { type: 'marked', stepId: 'create-site', status: 'COMPLETED', at, sections: [] })
     expect(completed.progress.steps['create-site']).toBe('COMPLETED')
-    const again = guideReducer(completed, { type: 'marked', stepId: 'create-site', status: 'SKIPPED', at })
+    const again = guideReducer(completed, { type: 'marked', stepId: 'create-site', status: 'SKIPPED', at, sections: [] })
     expect(again.progress.steps['create-site']).toBe('COMPLETED')
   })
 
   it('keeps marks made before progress loaded', () => {
-    const early = guideReducer(initialGuideState, { type: 'marked', stepId: 'create-site', status: 'COMPLETED', at })
-    const state = guideReducer(early, { type: 'loaded', progress: notStarted })
+    const early = guideReducer(initialGuideState, { type: 'marked', stepId: 'create-site', status: 'COMPLETED', at, sections: [] })
+    const state = guideReducer(early, { type: 'loaded', progress: notStarted, sections: [] })
     expect(state.loaded).toBe(true)
     expect(state.progress.started).toBe(true)
     expect(state.progress.steps).toEqual({ 'create-site': 'COMPLETED' })
@@ -55,8 +56,61 @@ describe('guideReducer', () => {
 
   it('keeps a hide or show chosen before progress loaded', () => {
     const early = guideReducer(initialGuideState, { type: 'dismissed', dismissed: true, at })
-    const state = guideReducer(early, { type: 'loaded', progress: notStarted })
+    const state = guideReducer(early, { type: 'loaded', progress: notStarted, sections: [] })
     expect(state.progress.dismissedAt).toBe(at)
+  })
+})
+
+describe('guideReducer: "You\'re set up"', () => {
+  const step = (id: string) => guideCatalog.steps.find((entry) => entry.id === id)!
+  const [createSite, siteDetails] = [step('create-site'), step('site-details')]
+  /** A member whose checklist is two steps. */
+  const sections: GuideSection[] = [{ id: 'owner', titleKey: 'runCompany', steps: [createSite, siteDetails] }]
+  const mark = (stepId: string, status: 'COMPLETED' | 'SKIPPED' = 'COMPLETED') =>
+    ({ type: 'marked', stepId, status, at, sections }) as const
+  const load = (progress: GuideProgress) => ({ type: 'loaded', progress, sections }) as const
+  const run = (...actions: Parameters<typeof guideReducer>[1][]) => actions.reduce(guideReducer, initialGuideState)
+
+  it('is set when a mark does the last open step', () => {
+    expect(run(load(notStarted), mark('create-site')).justCompleted).toBe(false)
+    expect(run(load(notStarted), mark('create-site'), mark('site-details')).justCompleted).toBe(true)
+  })
+
+  it('counts a skip as doing the step', () => {
+    expect(run(load(notStarted), mark('create-site'), mark('site-details', 'SKIPPED')).justCompleted).toBe(true)
+  })
+
+  it('is decided against the latest progress, not the progress at the last render', () => {
+    const server: GuideProgress = { ...notStarted, started: true, steps: { 'create-site': 'COMPLETED' } }
+    expect(run(load(server), mark('site-details')).justCompleted).toBe(true)
+  })
+
+  it('is not set when progress loads already complete', () => {
+    const server: GuideProgress = { ...notStarted, started: true, steps: { 'create-site': 'COMPLETED', 'site-details': 'SKIPPED' } }
+    expect(run(load(server)).justCompleted).toBe(false)
+  })
+
+  it('waits for progress to load when a mark arrives first, then is set if that mark finished the guide', () => {
+    const early = run(mark('site-details'))
+    expect(early.justCompleted).toBe(false)
+    const server: GuideProgress = { ...notStarted, started: true, steps: { 'create-site': 'COMPLETED' } }
+    expect(guideReducer(early, load(server)).justCompleted).toBe(true)
+  })
+
+  it('is not set when a mark that arrived before the load repeats what the server already had', () => {
+    const server: GuideProgress = { ...notStarted, started: true, steps: { 'create-site': 'COMPLETED', 'site-details': 'COMPLETED' } }
+    expect(run(mark('site-details'), load(server)).justCompleted).toBe(false)
+  })
+
+  it('is not set before the load when a mark alone would look like the end', () => {
+    const oneStep: GuideSection[] = [{ id: 'owner', titleKey: 'runCompany', steps: [createSite] }]
+    const state = guideReducer(initialGuideState, { type: 'marked', stepId: 'create-site', status: 'COMPLETED', at, sections: oneStep })
+    expect(state.justCompleted).toBe(false)
+  })
+
+  it('clears once acknowledged', () => {
+    const done = run(load(notStarted), mark('create-site'), mark('site-details'))
+    expect(guideReducer(done, { type: 'acknowledged' }).justCompleted).toBe(false)
   })
 })
 

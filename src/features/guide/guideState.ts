@@ -1,5 +1,5 @@
 import type { GuideProgress, GuideStepStatus } from './guideApi'
-import { stepStatus, type GuideSection } from './selection'
+import { guideProgressOf, stepStatus, type GuideSection } from './selection'
 
 /**
  * The guide's progress for one Company as the session sees it: the server's
@@ -11,17 +11,30 @@ export type GuideState = {
   progress: GuideProgress
   /** Hide or show was chosen in this session; a late load must not undo it. */
   dismissChosen: boolean
+  /**
+   * A change in this session did the last open step and "You're set up"
+   * hasn't been acknowledged. Decided only once progress has loaded, against
+   * the progress the change produced.
+   */
+  justCompleted: boolean
 }
 
+/** `sections` on `loaded` and `marked`: the member's checklist then, to tell whether the guide is complete. */
 export type GuideAction =
-  | { type: 'loaded'; progress: GuideProgress }
-  | { type: 'marked'; stepId: string; status: GuideStepStatus; at: string }
+  | { type: 'loaded'; progress: GuideProgress; sections: GuideSection[] }
+  | { type: 'marked'; stepId: string; status: GuideStepStatus; at: string; sections: GuideSection[] }
   | { type: 'dismissed'; dismissed: boolean; at: string }
+  | { type: 'acknowledged' }
 
 export const initialGuideState: GuideState = {
   loaded: false,
   progress: { started: false, steps: {}, dismissedAt: null, updatedAt: null },
   dismissChosen: false,
+  justCompleted: false,
+}
+
+function complete(sections: GuideSection[], progress: GuideProgress): boolean {
+  return guideProgressOf(sections, progress).complete
 }
 
 export function guideReducer(state: GuideState, action: GuideAction): GuideState {
@@ -29,28 +42,27 @@ export function guideReducer(state: GuideState, action: GuideAction): GuideState
   switch (action.type) {
     case 'loaded': {
       const server = action.progress
-      return {
-        ...state,
-        loaded: true,
-        progress: {
-          started: server.started || local.started,
-          steps: { ...server.steps, ...local.steps },
-          dismissedAt: state.dismissChosen ? local.dismissedAt : server.dismissedAt,
-          updatedAt: local.updatedAt ?? server.updatedAt,
-        },
+      const progress: GuideProgress = {
+        started: server.started || local.started,
+        steps: { ...server.steps, ...local.steps },
+        dismissedAt: state.dismissChosen ? local.dismissedAt : server.dismissedAt,
+        updatedAt: local.updatedAt ?? server.updatedAt,
       }
+      // Marks made before the load finished the guide only if the server's progress alone didn't.
+      const finishedHere = complete(action.sections, progress) && !complete(action.sections, server)
+      return { ...state, loaded: true, progress, justCompleted: state.justCompleted || finishedHere }
     }
     case 'marked': {
       if (local.steps[action.stepId] === 'COMPLETED') return state
-      return {
-        ...state,
-        progress: {
-          ...local,
-          started: true,
-          steps: { ...local.steps, [action.stepId]: action.status },
-          updatedAt: action.at,
-        },
+      const progress: GuideProgress = {
+        ...local,
+        started: true,
+        steps: { ...local.steps, [action.stepId]: action.status },
+        updatedAt: action.at,
       }
+      // Before the load the server may already hold the other steps (or this one); the load decides then.
+      const finishedHere = state.loaded && complete(action.sections, progress) && !complete(action.sections, local)
+      return { ...state, progress, justCompleted: state.justCompleted || finishedHere }
     }
     case 'dismissed':
       return {
@@ -63,6 +75,8 @@ export function guideReducer(state: GuideState, action: GuideAction): GuideState
           updatedAt: action.at,
         },
       }
+    case 'acknowledged':
+      return state.justCompleted ? { ...state, justCompleted: false } : state
   }
 }
 
