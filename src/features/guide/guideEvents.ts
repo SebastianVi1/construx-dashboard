@@ -1,7 +1,7 @@
 /**
  * Signals from pages to the guide. A page calls `markGuideStep` after the real
- * API call succeeds, and `reportGuideSites` once it knows whether the member
- * is on any Site; the guide's state, when mounted, listens. Pages never import
+ * API call succeeds, `reportGuideSites` once it knows whether the member is on
+ * any Site, and `reportGuideSiteOpened` once a Site page loaded its Site; the guide's state, when mounted, listens. Pages never import
  * the guide's state, and with no listener a signal does nothing.
  */
 
@@ -13,6 +13,9 @@ export type GuideMark = {
 
 /** Whether the member sees any open Site in a Company (for hints such as "ask your administrator"). */
 export type GuideSitesReport = { organizationId: string; hasSites: boolean }
+
+/** A Site that loaded on its page, so the guide knows it belongs to that Company. */
+export type GuideSiteOpened = { organizationId: string; siteId: string }
 
 function channel<T>() {
   const listeners = new Set<(value: T) => void>()
@@ -33,6 +36,7 @@ function channel<T>() {
 
 const marks = channel<GuideMark>()
 const sites = channel<GuideSitesReport>()
+const openedSites = channel<GuideSiteOpened>()
 
 /** Report that the member really did a step's action. Call it only after the API call succeeds. */
 export function markGuideStep(stepId: string, organizationId?: string): void {
@@ -52,4 +56,14 @@ export function reportGuideSites(organizationId: string, hasSites: boolean): voi
 /** Listen for Site reports; returns the function that stops listening. */
 export function subscribeGuideSites(listener: (report: GuideSitesReport) => void): () => void {
   return sites.subscribe(listener)
+}
+
+/** Report that a Site's page loaded it. Call it only after the Site loaded. */
+export function reportGuideSiteOpened(organizationId: string, siteId: string): void {
+  openedSites.emit({ organizationId, siteId })
+}
+
+/** Listen for opened Sites; returns the function that stops listening. */
+export function subscribeGuideSiteOpened(listener: (site: GuideSiteOpened) => void): () => void {
+  return openedSites.subscribe(listener)
 }
