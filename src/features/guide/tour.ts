@@ -1,3 +1,4 @@
+import { PHONE_QUERY } from '../../lib/breakpoints'
 import type { GuideStepEntry } from './catalog'
 
 /**
@@ -10,9 +11,6 @@ import type { GuideStepEntry } from './catalog'
 
 /** How long a tour waits for a target before giving up (ticket #85: 4 s). */
 export const TARGET_WAIT_MS = 4000
-
-/** Where the workspace sidebar becomes the bottom tab bar; no spotlight starts below it. */
-export const PHONE_QUERY = '(max-width: 760px)'
 
 export type GuideText = { title: string; body: string }
 
@@ -95,7 +93,7 @@ export function waitForTarget(selector: string, options: WaitOptions = {}): Prom
   })
 }
 
-/** Phones never get a spotlight: "Show me" only navigates there. */
+/** Phones (`PHONE_QUERY`) never get a spotlight: "Show me" only navigates there. */
 export function isPhoneWidth(): boolean {
   return window.matchMedia(PHONE_QUERY).matches
 }
