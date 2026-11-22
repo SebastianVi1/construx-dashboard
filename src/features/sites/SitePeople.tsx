@@ -2,7 +2,6 @@ import { useId, useState } from 'react'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
 import { SkeletonTable, SkeletonForm, Notice } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
-import { markGuideStep } from '../guide/guideEvents'
 import { listMembers, type Member } from '../members/membersApi'
 import { roleLabel } from '../permissions'
 import { ApiError } from '../../lib/http'
@@ -10,7 +9,8 @@ import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { LaborRateDrawer, RateCell } from './LaborRateDrawer'
 import { assignableMembers } from './siteHelpers'
-import { accessErrorKind, assignToSite, removeFromSite, type AccessErrorKind, type SiteAccess } from './sitesApi'
+import { addSitePerson } from './siteSave'
+import { accessErrorKind, removeFromSite, type AccessErrorKind, type SiteAccess } from './sitesApi'
 
 type SitePeopleProps = {
   organizationId: string
@@ -216,8 +216,7 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
     if (!selected || busy) return
     setBusy(true)
     try {
-      const person = await assignToSite(organizationId, siteId, selected)
-      markGuideStep('site-team', organizationId)
+      const person = await addSitePerson(organizationId, siteId, selected)
       onAdded(person)
       setChosen('')
     } catch (error) {

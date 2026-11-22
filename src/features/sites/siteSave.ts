@@ -1,5 +1,13 @@
 import { markGuideStep } from '../guide'
-import { createSite, updateSite, type Site, type SiteDraft, type SitePatch } from './sitesApi'
+import {
+  assignToSite,
+  createSite,
+  updateSite,
+  type Site,
+  type SiteAccess,
+  type SiteDraft,
+  type SitePatch,
+} from './sitesApi'
 
 /**
  * Create a Site. One that was created ticks the guide's "Create your first
@@ -30,4 +38,19 @@ export async function saveSiteDetails(
   const site = await update(organizationId, siteId, patch)
   markGuideStep('site-details', organizationId)
   return site
+}
+
+/**
+ * Put a Company member on a Site. A member who was added ticks the guide's
+ * "Add people to your site" step; a failed assignment doesn't.
+ */
+export async function addSitePerson(
+  organizationId: string,
+  siteId: string,
+  membershipId: string,
+  assign: typeof assignToSite = assignToSite,
+): Promise<SiteAccess> {
+  const person = await assign(organizationId, siteId, membershipId)
+  markGuideStep('site-team', organizationId)
+  return person
 }
