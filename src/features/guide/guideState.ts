@@ -1,4 +1,4 @@
-import type { GuideIds } from './catalog'
+import type { GuideIds, GuideStepId } from './catalog'
 import type { GuideProgress, GuideStepStatus } from './guideApi'
 import { guideProgressOf, stepStatus, type GuideSection } from './selection'
 
@@ -23,7 +23,7 @@ export type GuideState = {
 /** `sections` on `loaded` and `marked`: the member's checklist then, to tell whether the guide is complete. */
 export type GuideAction =
   | { type: 'loaded'; progress: GuideProgress; sections: GuideSection[] }
-  | { type: 'marked'; stepId: string; status: GuideStepStatus; at: string; sections: GuideSection[] }
+  | { type: 'marked'; stepId: GuideStepId; status: GuideStepStatus; at: string; sections: GuideSection[] }
   | { type: 'dismissed'; dismissed: boolean; at: string }
   | { type: 'acknowledged' }
 
@@ -86,10 +86,10 @@ export function guideReducer(state: GuideState, action: GuideAction): GuideState
  * sees, it isn't completed yet, and the status is new. A skipped step can
  * still be completed.
  */
-export function acceptsMark(
-  sections: readonly GuideSection<GuideIds>[],
+export function acceptsMark<I extends GuideIds>(
+  sections: readonly GuideSection<I>[],
   progress: GuideProgress,
-  stepId: string,
+  stepId: I['step'],
   status: GuideStepStatus,
 ): boolean {
   const visible = sections.some((section) => section.steps.some((step) => step.id === stepId))

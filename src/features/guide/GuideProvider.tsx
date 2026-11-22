@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useReducer, useRef, useState, type ReactNode } from 'react'
 import { useOnboarding } from '../onboarding'
 import { usePermissions } from '../permissions'
+import type { GuideStepId } from './catalog'
 import { GuideContext } from './guide-context'
 import { getGuide, markGuideStepRemote, setGuideDismissed, type GuideProgress, type GuideStepStatus } from './guideApi'
 import { subscribeGuideSites, subscribeGuideSteps, type GuideMark } from './guideEvents'
@@ -86,7 +87,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
     if (isOpen) saves.retryFailed()
   }, [isOpen, saves])
 
-  function apply(stepId: string, status: GuideStepStatus) {
+  function apply(stepId: GuideStepId, status: GuideStepStatus) {
     if (!acceptsMark(sections, progress, stepId, status)) return
     dispatch({ type: 'marked', stepId, status, at: new Date().toISOString(), sections })
     saves.step(stepId, status)

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import type { GuideProgress } from '../../../features/guide/guideApi'
 import { acceptsMark, guideReducer, initialGuideState, type GuideState } from '../../../features/guide/guideState'
-import { guideCatalog } from '../../../features/guide/catalog'
+import { guideCatalog, type GuideIds, type GuideStepId } from '../../../features/guide/catalog'
 import { selectGuide, type GuideSection } from '../../../features/guide/selection'
 import { seededRoles } from '../../support/seededRoles'
 
@@ -66,7 +66,7 @@ describe('guideReducer: "You\'re set up"', () => {
   const [createSite, siteDetails] = [step('create-site'), step('site-details')]
   /** A member whose checklist is two steps. */
   const sections: GuideSection[] = [{ id: 'owner', titleKey: 'runCompany', steps: [createSite, siteDetails] }]
-  const mark = (stepId: string, status: 'COMPLETED' | 'SKIPPED' = 'COMPLETED') =>
+  const mark = (stepId: GuideStepId, status: 'COMPLETED' | 'SKIPPED' = 'COMPLETED') =>
     ({ type: 'marked', stepId, status, at, sections }) as const
   const load = (progress: GuideProgress) => ({ type: 'loaded', progress, sections }) as const
   const run = (...actions: Parameters<typeof guideReducer>[1][]) => actions.reduce(guideReducer, initialGuideState)
@@ -124,7 +124,7 @@ describe('acceptsMark', () => {
 
   it('ignores steps the member cannot see and unknown ids', () => {
     expect(acceptsMark(selectGuide(seededRoles.WORKER), notStarted, 'create-site', 'COMPLETED')).toBe(false)
-    expect(acceptsMark(sections, notStarted, 'old-step', 'COMPLETED')).toBe(false)
+    expect(acceptsMark<GuideIds>(sections, notStarted, 'old-step', 'COMPLETED')).toBe(false)
   })
 
   it('ignores a step already completed, or already in the same status', () => {

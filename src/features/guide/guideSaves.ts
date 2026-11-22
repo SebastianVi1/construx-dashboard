@@ -1,12 +1,13 @@
+import type { GuideStepId } from './catalog'
 import type { GuideStepStatus } from './guideApi'
 
 export type GuideServer = {
-  markStep: (stepId: string, status: GuideStepStatus) => Promise<unknown>
+  markStep: (stepId: GuideStepId, status: GuideStepStatus) => Promise<unknown>
   setDismissed: (dismissed: boolean) => Promise<unknown>
 }
 
 export type GuideSaves = {
-  step: (stepId: string, status: GuideStepStatus) => void
+  step: (stepId: GuideStepId, status: GuideStepStatus) => void
   dismiss: (dismissed: boolean) => void
   /** Send again every save whose latest attempt failed. `GuideProvider` calls it each time the panel opens. */
   retryFailed: () => void
