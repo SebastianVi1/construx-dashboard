@@ -13,6 +13,7 @@ export const guideMessages = defineMessages({
     count: '{done}/{total}',
     navEntry: 'Guide',
     launcher: 'Getting started',
+    launcherNext: 'Next: {step}',
     launcherLabel: 'Open the getting-started guide, {done} of {total} done',
     close: 'Close the guide',
     skip: 'Skip',
@@ -80,6 +81,39 @@ export const guideMessages = defineMessages({
         body: 'See the budget, spending and balance of every site in one place.',
       },
     },
+    /**
+     * Guided tour step texts, keyed by the `textKey` of their entries in `tourCatalog.ts`.
+     * `body` shows while the step is staged or running; `replay` replaces it when a done step is replayed.
+     */
+    tourSteps: {
+      site: {
+        title: 'Create your first site',
+        body: 'We filled in an example site. Change anything you like, then save.',
+        replay: 'Choose Add site to create a site. Only the name is required; the address, dates and status can wait.',
+      },
+    },
+    /** The guided tour's timeline in the panel. `missing` explains a step that can't start yet, per fact. */
+    tourTimeline: {
+      title: 'Guided tour',
+      description: 'Do each step for real. It ticks itself off when you save.',
+      stepLabel: 'Step {number}',
+      run: 'Start this step',
+      continue: 'Continue tour',
+      leave: 'Leave tour',
+      replay: 'Replay',
+      replayLabel: 'Replay “{step}”',
+      go: 'Go to step',
+      goLabel: 'Go to “{step}”',
+      done: 'Done',
+      current: 'Current step',
+      pending: 'Not started',
+      failed: 'Not saved yet. Choose Start this step to open the form again.',
+      finished: 'Tour complete',
+      missing: {
+        hasCompany: 'Create your company first.',
+        hasSite: 'Create a site in the tour first.',
+      },
+    },
     /** Shown under an open step that sets `noSiteHint` while the member is on no Site. */
     hints: {
       askAdmin: "Don't see a site? Ask your administrator to add you to one.",
@@ -99,6 +133,10 @@ export const guideMessages = defineMessages({
     },
     /** Popover text for one `data-tour` target; without an entry the step's own text shows. */
     targets: {
+      'site-create-save': {
+        title: 'Save your site',
+        body: 'Check the example values, edit them if you like, and choose Add site.',
+      },
       'site-create': {
         title: 'Add your site here',
         body: 'Give it a name and save. The address, dates and status can wait.',
@@ -152,6 +190,7 @@ export const guideMessages = defineMessages({
     count: '{done}/{total}',
     navEntry: 'Guía',
     launcher: 'Primeros pasos',
+    launcherNext: 'Siguiente: {step}',
     launcherLabel: 'Abrir la guía de primeros pasos, {done} de {total} hechos',
     close: 'Cerrar la guía',
     skip: 'Omitir',
@@ -219,6 +258,34 @@ export const guideMessages = defineMessages({
         body: 'Consulta el presupuesto, el gasto y el saldo de cada obra en un solo lugar.',
       },
     },
+    tourSteps: {
+      site: {
+        title: 'Crea tu primera obra',
+        body: 'Llenamos una obra de ejemplo. Cambia lo que quieras y guarda.',
+        replay: 'Elige Agregar obra para crear una obra. Solo el nombre es obligatorio; la dirección, las fechas y el estado pueden esperar.',
+      },
+    },
+    tourTimeline: {
+      title: 'Recorrido guiado',
+      description: 'Haz cada paso de verdad. Se marca solo cuando guardas.',
+      stepLabel: 'Paso {number}',
+      run: 'Iniciar este paso',
+      continue: 'Continuar recorrido',
+      leave: 'Salir del recorrido',
+      replay: 'Repetir',
+      replayLabel: 'Repetir «{step}»',
+      go: 'Ir al paso',
+      goLabel: 'Ir a «{step}»',
+      done: 'Hecho',
+      current: 'Paso actual',
+      pending: 'Sin empezar',
+      failed: 'Aún no se guarda. Elige Iniciar este paso para volver a abrir el formulario.',
+      finished: 'Recorrido completo',
+      missing: {
+        hasCompany: 'Crea tu empresa primero.',
+        hasSite: 'Crea una obra en el recorrido primero.',
+      },
+    },
     hints: {
       askAdmin: '¿No ves ninguna obra? Pide a tu administrador que te agregue a una.',
     },
@@ -236,6 +303,10 @@ export const guideMessages = defineMessages({
       progress: '{{current}} de {{total}}',
     },
     targets: {
+      'site-create-save': {
+        title: 'Guarda tu obra',
+        body: 'Revisa los valores de ejemplo, edítalos si quieres y elige Agregar obra.',
+      },
       'site-create': {
         title: 'Agrega tu obra aquí',
         body: 'Ponle nombre y guarda. La dirección, las fechas y el estado pueden esperar.',

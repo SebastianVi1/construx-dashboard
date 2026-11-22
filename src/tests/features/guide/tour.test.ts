@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { GuideStepEntry } from '../../../features/guide/catalog'
+import type { TourStepEntry } from '../../../features/guide/tourCatalog'
 import { cssLengthPx, tourSelector, tourStops, waitForTarget, type TargetRoot } from '../../../features/guide/tour'
 
 /** An element as the wait sees it: rendered when it has a layout box. */
@@ -25,6 +26,20 @@ describe('tourSelector', () => {
 })
 
 describe('tourStops', () => {
+  it('reads a guided tour entry and uses its step and target texts', () => {
+    const entry: TourStepEntry = {
+      id: 'tour-site', page: 'sites', requires: ['hasCompany'], tourTargets: ['site-create-save'], textKey: 'site',
+    }
+    expect(tourStops([entry], {
+      steps: { site: { title: 'Create a Site', body: 'Start here.' } },
+      targets: { 'site-create-save': { title: 'Save the Site', body: 'Finish the form.' } },
+    })).toEqual([{ target: 'site-create-save', title: 'Save the Site', body: 'Finish the form.' }])
+    expect(tourStops([entry], {
+      steps: { site: { title: 'Create a Site', body: 'Start here.' } },
+      targets: {},
+    })).toEqual([{ target: 'site-create-save', title: 'Create a Site', body: 'Start here.' }])
+  })
+
   const step = (id: string, textKey: string, tourTargets: string[]) =>
     ({ id, sections: ['owner'], requires: [], page: 'sites', chapter: 'sites', tourTargets, textKey }) as unknown as GuideStepEntry
   const texts = {
