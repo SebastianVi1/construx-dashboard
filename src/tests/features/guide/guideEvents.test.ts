@@ -13,14 +13,26 @@ describe('guide step events', () => {
     const received: GuideMark[] = []
     const unsubscribe = subscribeGuideSteps((mark) => received.push(mark))
 
-    markGuideStep('create-site')
-    markGuideStep('invite-member', 'org-1')
+    markGuideStep('create-site', 'org-1')
+    markGuideStep('invite-member', 'org-2')
     unsubscribe()
 
     expect(received).toEqual([
-      { stepId: 'create-site', organizationId: null },
-      { stepId: 'invite-member', organizationId: 'org-1' },
+      { stepId: 'create-site', organizationId: 'org-1' },
+      { stepId: 'invite-member', organizationId: 'org-2' },
     ])
+  })
+
+  it('always names the Company the action happened in', () => {
+    // Checked by `bun run build`: the closure is never called.
+    const checks = () => {
+      // @ts-expect-error the Company is required
+      markGuideStep('create-site')
+      // @ts-expect-error the Company is never null
+      const mark: GuideMark = { stepId: 'create-site', organizationId: null }
+      return mark
+    }
+    expect(typeof checks).toBe('function')
   })
 
   it('a listener hears nothing after it unsubscribes', () => {
@@ -28,7 +40,7 @@ describe('guide step events', () => {
     const unsubscribe = subscribeGuideSteps((mark) => received.push(mark))
     unsubscribe()
 
-    markGuideStep('create-site')
+    markGuideStep('create-site', 'org-1')
 
     expect(received).toEqual([])
   })
@@ -40,7 +52,7 @@ describe('guide step events', () => {
     const stopSecond = subscribeGuideSteps((mark) => second.push(mark.stepId))
 
     stopFirst()
-    markGuideStep('create-site')
+    markGuideStep('create-site', 'org-1')
     stopSecond()
 
     expect(first).toEqual([])
@@ -48,7 +60,7 @@ describe('guide step events', () => {
   })
 
   it('marking with no listener does nothing', () => {
-    expect(() => markGuideStep('create-site')).not.toThrow()
+    expect(() => markGuideStep('create-site', 'org-1')).not.toThrow()
   })
 })
 

@@ -93,7 +93,7 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
   }
 
   const onMark = useEffectEvent((mark: GuideMark) => {
-    if (mark.organizationId !== null && mark.organizationId !== organizationId) return
+    if (mark.organizationId !== organizationId) return
     apply(mark.stepId, 'COMPLETED')
   })
 

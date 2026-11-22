@@ -10,8 +10,8 @@ import type { GuideStepId } from './catalog'
 
 export type GuideMark = {
   stepId: GuideStepId
-  /** Company the action happened in; a mark for another Company is ignored. Null when the caller doesn't say. */
-  organizationId: string | null
+  /** Company the action happened in; a mark for another Company is ignored. */
+  organizationId: string
 }
 
 /** Whether the member sees any open Site in a Company (for hints such as "ask your administrator"). */
@@ -42,8 +42,8 @@ const sites = channel<GuideSitesReport>()
 const openedSites = channel<GuideSiteOpened>()
 
 /** Report that the member really did a step's action. Call it only after the API call succeeds. */
-export function markGuideStep(stepId: GuideStepId, organizationId?: string): void {
-  marks.emit({ stepId, organizationId: organizationId ?? null })
+export function markGuideStep(stepId: GuideStepId, organizationId: string): void {
+  marks.emit({ stepId, organizationId })
 }
 
 /** Listen for marks; returns the function that stops listening. */
