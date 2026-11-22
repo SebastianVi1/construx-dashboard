@@ -5,13 +5,14 @@ import { Notice } from '../../components/page'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
 import { useCurrency } from '../../currency'
 import { ApiError } from '../../lib/http'
+import { GuideHelpButton } from '../guide'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { landingPath } from '../permissions/landing'
 import { BudgetBurnChart } from './BudgetBurnChart'
 import { OrgCategoryChart } from './OrgCategoryChart'
 import { seesOrgFinance } from './orgFinanceAccess'
-import { getOrgFinanceSummary } from './orgFinanceApi'
+import { loadOrgFinanceSummary } from './orgFinanceLoad'
 import { OrgFinanceKPIRow } from './OrgFinanceKPIRow'
 import { SiteFinanceTable } from './SiteFinanceTable'
 import './org-finance.css'
@@ -32,7 +33,7 @@ function OrgFinanceDashboard() {
   const { messages: m, locale } = useLocale()
   const { currency } = useCurrency()
   const t = m.orgFinance
-  const summary = useRemoteData(`${organization.id}:finance-summary`, () => getOrgFinanceSummary(organization.id))
+  const summary = useRemoteData(`${organization.id}:finance-summary`, () => loadOrgFinanceSummary(organization.id))
   const forbidden = summary.error instanceof ApiError && summary.error.status === 403
   const overBudget = summary.data?.sites.filter((site) => site.status === 'OVER_BUDGET') ?? []
   const listFormat = new Intl.ListFormat(intlLocales[locale], { type: 'conjunction' })
@@ -45,6 +46,7 @@ function OrgFinanceDashboard() {
           <p>{t.subtitle}</p>
         </div>
         <p className="org-finance__scope">{formatMessage(t.currencyNote, { currency })}</p>
+        <GuideHelpButton page="finance" />
       </header>
 
       {summary.status === 'error' ? (
@@ -68,7 +70,7 @@ function OrgFinanceDashboard() {
 
           <OrgFinanceKPIRow summary={summary.data} />
 
-          <section className="page-section" aria-labelledby="org-sites-heading">
+          <section className="page-section" aria-labelledby="org-sites-heading" data-tour="finance-sites">
             <div className="page-section__header">
               <div>
                 <h2 id="org-sites-heading">{t.sites.title}</h2>

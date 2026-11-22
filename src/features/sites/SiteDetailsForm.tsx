@@ -4,7 +4,8 @@ import { Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
 import { buildSitePatch, makeSiteSchema, siteToValues } from './siteForm'
 import { siteFields } from './siteDisplay'
-import { siteErrorKind, updateSite, type Site, type SiteErrorKind } from './sitesApi'
+import { saveSiteDetails } from './siteSave'
+import { siteErrorKind, type Site, type SiteErrorKind } from './sitesApi'
 
 type SiteDetailsFormProps = {
   organizationId: string
@@ -24,13 +25,10 @@ export function SiteDetailsForm({ organizationId, site, onSaved }: SiteDetailsFo
     initialValues: siteToValues(site),
     schema: makeSiteSchema(t.validation, site),
     onSubmit: async (values) => {
-      const patch = buildSitePatch(site, values)
-      if (Object.keys(patch).length === 0) {
-        setUnchanged(true)
-        return
-      }
       try {
-        onSaved(await updateSite(organizationId, site.id, patch))
+        const updated = await saveSiteDetails(organizationId, site.id, buildSitePatch(site, values))
+        if (updated) onSaved(updated)
+        else setUnchanged(true)
       } catch (error) {
         setErrorKind(siteErrorKind(error))
         throw error

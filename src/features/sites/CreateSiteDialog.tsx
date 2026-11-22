@@ -5,7 +5,8 @@ import { Modal } from '../../components/modal'
 import { useLocale } from '../../i18n'
 import { makeSiteSchema } from './siteForm'
 import { siteFields } from './siteDisplay'
-import { createSite, siteErrorKind, type SiteErrorKind } from './sitesApi'
+import { addSite } from './siteSave'
+import { siteErrorKind, type SiteErrorKind } from './sitesApi'
 
 /** "Add site" dialog. On success it opens the new site so people can be added next. */
 export function CreateSiteDialog({ organizationId, onClose }: { organizationId: string; onClose: () => void }) {
@@ -19,7 +20,7 @@ export function CreateSiteDialog({ organizationId, onClose }: { organizationId: 
     schema: makeSiteSchema(t.validation),
     onSubmit: async (values) => {
       try {
-        const site = await createSite(organizationId, values)
+        const site = await addSite(organizationId, values)
         navigate(`/sites/${encodeURIComponent(site.id)}`)
       } catch (error) {
         setErrorKind(siteErrorKind(error))

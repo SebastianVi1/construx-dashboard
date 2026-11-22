@@ -6,16 +6,8 @@ import { dueText, instantToLocalInput, localInputToInstant } from '../goals/dueA
 import type { Goal } from '../goals/goalsApi'
 import type { SiteAccess } from '../sites/sitesApi'
 import { buildTaskChanges, makeTaskSchema } from './taskForm'
-import {
-  createTask,
-  setTaskTeam,
-  taskErrorKind,
-  updateTask,
-  type PhaseRef,
-  type Task,
-  type TaskErrorKind,
-  type TeamPlace,
-} from './tasksApi'
+import { addTask, editTask } from './taskSave'
+import { taskErrorKind, type PhaseRef, type Task, type TaskErrorKind, type TeamPlace } from './tasksApi'
 import { TeamEditor } from './TeamEditor'
 import { teamIssue } from './teamRules'
 import { BarColorPicker } from '../gantt/BarColorPicker'
@@ -90,21 +82,17 @@ export function TaskDialog({
         document.getElementById('field-team')?.focus()
         return
       }
-      let latest = task
       try {
         if (!task) {
           const startAt = localInputToInstant(values.startAt) ?? ''
           const dueAt = localInputToInstant(values.dueAt) ?? ''
-          onSaved(await createTask(at, { ...values, startAt, dueAt, assignees: team }), true)
+          onSaved(await addTask(at, { ...values, startAt, dueAt, assignees: team }), true)
           return
         }
         const changes = buildTaskChanges(task, values, canReassign ? team : task.assignees)
-        if (Object.keys(changes.patch).length > 0) latest = await updateTask(at, task.id, changes.patch)
-        if (changes.team) latest = await setTaskTeam(at, task.id, changes.team)
-        onSaved(latest ?? task, false)
+        // A rename can succeed before a failed team change; onPartial keeps the list truthful.
+        onSaved(await editTask(at, task, changes, { onPartial: onUpdated }), false)
       } catch (error) {
-        // A rename can succeed before a failed team change; keep the list truthful.
-        if (task && latest && latest !== task) onUpdated?.(latest)
         setErrorKind(taskErrorKind(error))
         throw error
       }

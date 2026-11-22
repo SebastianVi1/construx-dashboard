@@ -9,7 +9,8 @@ import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { LaborRateDrawer, RateCell } from './LaborRateDrawer'
 import { assignableMembers } from './siteHelpers'
-import { accessErrorKind, assignToSite, removeFromSite, type AccessErrorKind, type SiteAccess } from './sitesApi'
+import { addSitePerson } from './siteSave'
+import { accessErrorKind, removeFromSite, type AccessErrorKind, type SiteAccess } from './sitesApi'
 
 type SitePeopleProps = {
   organizationId: string
@@ -215,7 +216,8 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
     if (!selected || busy) return
     setBusy(true)
     try {
-      onAdded(await assignToSite(organizationId, siteId, selected))
+      const person = await addSitePerson(organizationId, siteId, selected)
+      onAdded(person)
       setChosen('')
     } catch (error) {
       onFailed(accessErrorKind(error))

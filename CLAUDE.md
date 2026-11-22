@@ -38,7 +38,7 @@ React 19 + TypeScript + Vite 8 (Rolldown) SPA. Bun is the package manager/runtim
 - Context pattern: context object + hook in a `*-context.ts` file, provider component in a separate `.tsx` (keeps `react-refresh` lint happy).
 - `tsconfig.app.json` fails the build on unused locals/params, value imports of types (use `import type`), and enums/namespaces/parameter properties.
 - Style: two-space indent, single quotes, no semicolons.
-- Only `VITE_API_`-prefixed env vars reach the browser; `src/config/env.ts` validates `VITE_API_BASE_URL` and throws if invalid. `.env` is gitignored, `.env.example` is committed.
+- Every `VITE_`-prefixed env var is bundled into the browser code, so none may hold a secret; `vite.config.ts` itself reads only `VITE_API_*` (the proxy target). `src/config/env.ts` validates `VITE_API_BASE_URL` (throws if invalid), `VITE_OAUTH2_AUTHORIZATION_URL` and `VITE_LANDING_URL` (unset or invalid hides the Google button or the guide links). `.env` is gitignored, `.env.example` is committed.
 
 ## Testing
 

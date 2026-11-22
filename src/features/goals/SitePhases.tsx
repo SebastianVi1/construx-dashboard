@@ -122,6 +122,7 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
           <button
             type="button"
             className="button button--primary"
+            data-tour="phase-create"
             onClick={() => {
               setNotice(null)
               setDialog({ kind: 'create' })
@@ -170,7 +171,7 @@ export function SitePhases({ organizationId, siteId, people, onSite, onProgressC
           <div className="empty-state">
             <p>{canManage ? t.emptyManager : t.emptyViewer}</p>
             {canManage ? (
-              <button type="button" className="button" onClick={() => setDialog({ kind: 'create' })}>
+              <button type="button" className="button" data-tour="phase-create" onClick={() => setDialog({ kind: 'create' })}>
                 {t.addFirst}
               </button>
             ) : null}

@@ -3,8 +3,8 @@ import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/f
 import { formatMessage, useLocale } from '../../i18n'
 import { roleLabel } from '../permissions'
 import type { Site } from '../sites/sitesApi'
+import { sendInvitation } from './inviteSave'
 import {
-  createInvitation,
   invitableRoles,
   inviteErrorKind,
   makeInviteSchema,
@@ -32,7 +32,7 @@ export function InviteForm({ organizationId, roles, sites, onInvited }: InviteFo
     schema: makeInviteSchema(t.validation),
     onSubmit: async (values) => {
       try {
-        const invitation = await createInvitation(organizationId, values)
+        const invitation = await sendInvitation(organizationId, values)
         onInvited(invitation, formatMessage(t.invite.sent, { email: invitation.email }))
       } catch (error) {
         setErrorKind(inviteErrorKind(error))

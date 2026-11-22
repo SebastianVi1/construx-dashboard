@@ -46,3 +46,34 @@ export function getOAuth2AuthorizationUrl(
   }
   return ''
 }
+
+/**
+ * Base URL of the marketing landing page (`VITE_LANDING_URL`), whose guide the
+ * dashboard links to, without a trailing slash. Unset, blank or malformed
+ * returns null, which hides the links instead of crashing the app.
+ */
+export function getLandingUrl(value = import.meta.env.VITE_LANDING_URL ?? ''): string | null {
+  const url = value.trim()
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    if (
+      ['http:', 'https:'].includes(parsed.protocol) &&
+      !parsed.username && !parsed.password && !parsed.search && !parsed.hash &&
+      !url.includes('?') && !url.includes('#')
+    ) {
+      return url.replace(/\/+$/, '')
+    }
+  } catch {
+    // Invalid configuration is treated as unset.
+  }
+  return null
+}
+
+/**
+ * Developer-only tools, such as the account menu's "Start tour": true only
+ * under `vite dev`. Keep it a plain comparison on `import.meta.env.DEV`: a
+ * production build inlines it as `false` and drops the code it guards, which
+ * it does not do through a function call.
+ */
+export const devTools: boolean = import.meta.env.DEV === true

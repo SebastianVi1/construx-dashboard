@@ -9,7 +9,7 @@ import { BackLink, SkeletonBlock, Notice } from '../../components/page'
 import { useLocale, type Locale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
-import { getSite } from '../sites/sitesApi'
+import { loadSite } from '../sites/siteLoad'
 import {
   createDocumentFolder,
   deleteDocumentFolder,
@@ -34,7 +34,7 @@ export function SiteDocumentsPage() {
   const { can } = usePermissions()
   const canManage = can('MANAGE_PROJECT', siteId)
   const navigate = useNavigate()
-  const site = useRemoteData(`${org.id}:${siteId}:site`, () => getSite(org.id, siteId))
+  const site = useRemoteData(`${org.id}:${siteId}:site`, () => loadSite(org.id, siteId))
   const remote = useRemoteData(`${org.id}:${siteId}:doc-folders`, () => getDocumentFolders(org.id, siteId))
 
   const [creating, setCreating] = useState(false)

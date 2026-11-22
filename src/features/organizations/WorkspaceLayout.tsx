@@ -1,8 +1,9 @@
-import { Suspense, useEffect, useRef, type MouseEvent } from 'react'
+import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { DocumentIcon, MaterialsIcon, SitesIcon, SpreadsheetIcon, TasksIcon, TeamIcon } from '../../components/icons'
 import { SkeletonList, Notice } from '../../components/page'
 import { useLocale } from '../../i18n'
+import { GuideHeaderButton, GuideNavButton, GuideProvider } from '../guide'
 import { PermissionsProvider, usePermissions } from '../permissions'
 import { seesWorkbooks } from '../excel/excelAccess'
 import { FinanceIcon } from '../org-finance/FinanceIcon'
@@ -34,6 +35,7 @@ const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
 export function WorkspaceLayout() {
   const organization = useCurrentOrganization()
   const { messages: m } = useLocale()
+  const [guideSlot, setGuideSlot] = useState<HTMLDivElement | null>(null)
 
   const skipToMain = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
@@ -45,15 +47,18 @@ export function WorkspaceLayout() {
       <a className="skip-link" href={`#${MAIN_ID}`} onClick={skipToMain}>
         {m.workspace.skipToContent}
       </a>
-      <WorkspaceHeader />
+      <WorkspaceHeader guideSlotRef={setGuideSlot} />
       <PermissionsProvider key={organization.id} organizationId={organization.id}>
-        <WorkspaceBody />
+        {/* Inside the per-Company boundary: a switch remounts the guide for the new Company. */}
+        <GuideProvider organizationId={organization.id}>
+          <WorkspaceBody guideSlot={guideSlot} />
+        </GuideProvider>
       </PermissionsProvider>
     </div>
   )
 }
 
-function WorkspaceBody() {
+function WorkspaceBody({ guideSlot }: { guideSlot: HTMLDivElement | null }) {
   const { messages: m } = useLocale()
   const t = m.workspace
   const { status, access, can, reload } = usePermissions()
@@ -93,6 +98,9 @@ function WorkspaceBody() {
     <>
       <nav className="workspace-nav" aria-label={t.navLabel}>
         <ul className="workspace-nav__list">{links('workspace-nav')}</ul>
+        <div className="workspace-nav__footer">
+          <GuideNavButton />
+        </div>
       </nav>
       <main id={MAIN_ID} ref={mainRef} tabIndex={-1} className="workspace-main">
         {status === 'ready' ? (
@@ -120,6 +128,8 @@ function WorkspaceBody() {
       <nav className="workspace-tabbar" aria-label={t.navLabel}>
         <ul className="workspace-tabbar__list">{links('workspace-tabbar')}</ul>
       </nav>
+      {/* Phones have no sidebar: the Guide entry sits in the header instead. */}
+      <GuideHeaderButton container={guideSlot} />
     </>
   )
 }

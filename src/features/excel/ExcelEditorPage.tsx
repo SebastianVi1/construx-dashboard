@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useParams } from 'react-router'
 import { BackLink, SkeletonList, Notice } from '../../components/page'
 import { intlLocales, useLocale } from '../../i18n'
+import { PHONE_QUERY } from '../../lib/breakpoints'
 import { downloadWorkbook, exportedRecord } from './excelDownload'
 import type { ExcelOp, ExcelRecord, GridSheet } from './excelModel'
 import { applyOps } from './excelOps'
@@ -16,18 +17,17 @@ import { excelErrorMessage, useExcelOwner, useExcelStore } from './useExcelStore
 import './excel.css'
 
 const SAVE_DELAY_MS = 500
-const NARROW = '(max-width: 760px)'
 const NOT_FOUND = Symbol('notFound')
 
 function subscribeNarrow(onChange: () => void) {
-  const query = window.matchMedia(NARROW)
+  const query = window.matchMedia(PHONE_QUERY)
   query.addEventListener('change', onChange)
   return () => query.removeEventListener('change', onChange)
 }
 
 /** Phones get a read-only table: editing a spreadsheet needs room. */
 function useNarrow(): boolean {
-  return useSyncExternalStore(subscribeNarrow, () => window.matchMedia(NARROW).matches)
+  return useSyncExternalStore(subscribeNarrow, () => window.matchMedia(PHONE_QUERY).matches)
 }
 
 type Loaded = { record: ExcelRecord; parsed: GridSheet[]; queue: SaveQueue }

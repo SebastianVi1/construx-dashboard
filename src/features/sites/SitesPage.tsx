@@ -5,12 +5,14 @@ import { filterCounts, type FilterOption } from '../../components/filter'
 import { Notice } from '../../components/page'
 import { SitesGridSkeleton } from './SiteSkeletons'
 import { formatMessage, useLocale, type Locale, type Messages } from '../../i18n'
+import { GuideHelpButton } from '../guide'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
 import { CreateSiteDialog } from './CreateSiteDialog'
 import { ProgressMeter, SiteStatusBadge } from './SiteBits'
 import { scheduleText } from './siteDisplay'
 import { siteProgress } from './siteHelpers'
+import { loadOpenSites } from './siteLoad'
 import { listSites, siteErrorKind, siteStatuses, type Site, type SiteStatus } from './sitesApi'
 import './sites.css'
 
@@ -25,7 +27,7 @@ export function SitesPage() {
   const { can } = usePermissions()
   const [filter, setFilter] = useState<SiteStatus | ''>('')
   const [creating, setCreating] = useState(false)
-  const open = useRemoteData(`${organization.id}:sites`, () => listSites(organization.id))
+  const open = useRemoteData(`${organization.id}:sites`, () => loadOpenSites(organization.id))
   const archived = useRemoteData(filter === 'ARCHIVED' ? `${organization.id}:sites:ARCHIVED` : null, () =>
     listSites(organization.id, 'ARCHIVED'),
   )
@@ -51,14 +53,15 @@ export function SitesPage() {
           <h1>{t.title}</h1>
           <p>{t.description}</p>
         </div>
+        <GuideHelpButton page="sites" />
         {canCreate ? (
-          <button type="button" className="button button--primary" onClick={() => setCreating(true)}>
+          <button type="button" className="button button--primary" data-tour="site-create" onClick={() => setCreating(true)}>
             {t.add}
           </button>
         ) : null}
       </header>
 
-      <section className="page-section" aria-label={t.title}>
+      <section className="page-section" aria-label={t.title} data-tour="site-list">
         <div className="sites-toolbar">
           <span className="sites-toolbar__label">{t.filterLabel}</span>
           <div className="filter-select">

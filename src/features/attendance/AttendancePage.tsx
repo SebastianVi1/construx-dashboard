@@ -8,7 +8,7 @@ import { ApiError } from '../../lib/http'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { Avatar } from '../profile/Avatar'
 import { dateText } from '../sites/siteDisplay'
-import { getSite } from '../sites/sitesApi'
+import { loadSite } from '../sites/siteLoad'
 import { removeCheckIn, type AttendancePerson } from './attendanceApi'
 import {
   attendanceGroups,
@@ -38,7 +38,7 @@ export function AttendancePage() {
   const t = m.attendance
   const organization = useCurrentOrganization()
   // Same key as the Site page, so its name is already there when arriving from it.
-  const site = useRemoteData(`${organization.id}:${siteId}`, () => getSite(organization.id, siteId))
+  const site = useRemoteData(`${organization.id}:${siteId}`, () => loadSite(organization.id, siteId))
   // The day asked for; null is today, as the backend defines it.
   const [day, setDay] = useState<DayChoice>({ date: null, today: null })
   const attendance = useAttendance(organization.id, siteId, day.date)

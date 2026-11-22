@@ -1,0 +1,145 @@
+/*
+ * Spotlight tours: driver.js themed with the dashboard tokens. Loaded with
+ * driver.js (after its stylesheet) when the first tour starts. The overlay
+ * colour is set in `spotlight.ts` (`--cx-canvas`).
+ */
+
+/* The highlighted control gets the blueprint focus ring: blue is "look here", orange stays "act". */
+.driver-active .driver-active-element {
+  outline: 2px solid var(--cx-accent);
+  outline-offset: 4px;
+  border-radius: var(--cx-radius-md);
+}
+
+.driver-popover.guide-tour {
+  box-sizing: border-box;
+  min-width: 260px;
+  max-width: min(340px, calc(100vw - 32px));
+  padding: 16px 16px 14px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font-family: var(--cx-font-sans);
+  box-shadow: 0 24px 48px -12px var(--cx-shadow-color);
+}
+
+.guide-tour .driver-popover-title {
+  padding-right: 32px;
+  color: var(--cx-ink);
+  font: 600 16px/22px var(--cx-font-display);
+  letter-spacing: -0.01em;
+}
+
+.guide-tour .driver-popover-title:not([style*='none']) + .driver-popover-description {
+  margin-top: 4px;
+}
+
+.guide-tour .driver-popover-description {
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.guide-tour .driver-popover-close-btn {
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font-size: 20px;
+  line-height: 32px;
+}
+
+.guide-tour .driver-popover-close-btn:hover,
+.guide-tour .driver-popover-close-btn:focus-visible {
+  color: var(--cx-ink);
+  background: var(--cx-accent-subtle);
+}
+
+.guide-tour .driver-popover-footer {
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.guide-tour .driver-popover-progress-text {
+  color: var(--cx-muted);
+  font: 500 12px/16px var(--cx-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.guide-tour .driver-popover-navigation-btns {
+  gap: 8px;
+}
+
+.guide-tour .driver-popover-navigation-btns button + button {
+  margin-inline-start: 0;
+}
+
+.guide-tour .driver-popover-footer-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  background: transparent;
+  color: var(--cx-ink);
+  font: 600 13px/20px var(--cx-font-display);
+  text-shadow: none;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.guide-tour .driver-popover-footer-btn:hover {
+  border-color: var(--cx-accent);
+  background: var(--cx-accent-subtle);
+}
+
+/* "Next" / "Got it" is the one action of the popover. */
+.guide-tour .driver-popover-next-btn {
+  border-color: var(--cx-primary);
+  background: var(--cx-primary);
+  color: var(--cx-on-primary);
+}
+
+.guide-tour .driver-popover-next-btn:hover {
+  border-color: var(--cx-primary-hover);
+  background: var(--cx-primary-hover);
+}
+
+.guide-tour .driver-popover-footer-btn:focus-visible,
+.guide-tour .driver-popover-close-btn:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 2px;
+}
+
+/* The arrow keeps its transparent sides; only the side facing the popover takes its surface colour. */
+.guide-tour .driver-popover-arrow-side-left {
+  border-left-color: var(--cx-surface);
+}
+
+.guide-tour .driver-popover-arrow-side-right {
+  border-right-color: var(--cx-surface);
+}
+
+.guide-tour .driver-popover-arrow-side-top {
+  border-top-color: var(--cx-surface);
+}
+
+.guide-tour .driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--cx-surface);
+}
+
+@media (pointer: coarse) {
+  .guide-tour .driver-popover-footer-btn,
+  .guide-tour .driver-popover-close-btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-tour .driver-popover-footer-btn {
+    transition: none;
+  }
+}

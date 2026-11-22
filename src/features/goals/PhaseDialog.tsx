@@ -5,7 +5,8 @@ import { useCurrency } from '../../currency'
 import { formatMessage, useLocale } from '../../i18n'
 import { instantToLocalInput, localInputToInstant } from './dueAt'
 import { buildGoalPatch, makeGoalSchema } from './goalForm'
-import { createGoal, goalErrorKind, setGoalBudget, updateGoal, type Goal, type GoalErrorKind } from './goalsApi'
+import { addPhase } from './phaseSave'
+import { goalErrorKind, setGoalBudget, updateGoal, type Goal, type GoalErrorKind } from './goalsApi'
 import { budgetChanged, budgetToInput, optionalBudgetAmount } from '../sites/budgetRules'
 import { BarColorPicker } from '../gantt/BarColorPicker'
 
@@ -56,7 +57,8 @@ export function PhaseDialog({ organizationId, siteId, goal, canManageBudget, onS
         if (!saved) {
           const startAt = localInputToInstant(values.startAt) ?? ''
           const dueAt = localInputToInstant(values.dueAt) ?? ''
-          saved = await createGoal(organizationId, siteId, { name: values.name, startAt, dueAt, color: values.color })
+          // Kept even if its budget fails below, so a retry edits it instead of adding it twice.
+          saved = await addPhase(organizationId, siteId, { name: values.name, startAt, dueAt, color: values.color })
           setCreated(saved)
         } else {
           const patch = buildGoalPatch(saved, values)

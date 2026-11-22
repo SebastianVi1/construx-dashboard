@@ -2,16 +2,21 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChevronDownIcon, SignOutIcon, UserIcon } from '../../components/icons'
 import { usePopover } from '../../components/popover'
+import { devTools } from '../../config/env'
 import { CurrencySwitcher, ExchangeRateNote } from '../../currency'
 import { LocaleSwitcher, useLocale } from '../../i18n'
 import { ThemeSwitcher } from '../../theme'
 import { useAuth } from '../auth/auth-context'
 import { Avatar } from './Avatar'
+import { DevTourItem } from './DevTourItem'
 import { displayName } from './profileDisplay'
 import { useMyProfile } from './useMyProfile'
 import './profile.css'
 
-/** Who is signed in, at the end of the workspace header: profile, language and sign out. */
+/**
+ * Who is signed in, at the end of the workspace header: profile, language and
+ * sign out, plus "Start tour" under `vite dev` only.
+ */
 export function AccountMenu() {
   const { messages: m } = useLocale()
   const { user, signOut } = useAuth()
@@ -74,6 +79,7 @@ export function AccountMenu() {
           <span>{m.common.theme}</span>
           <ThemeSwitcher />
         </div>
+        {devTools ? <DevTourItem onStart={() => close(false)} /> : null}
         <div className="popover__footer">
           <button
             type="button"

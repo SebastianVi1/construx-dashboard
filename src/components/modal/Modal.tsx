@@ -7,8 +7,12 @@ type ModalProps = {
   description?: string
   children: ReactNode
   onClose: () => void
-  /** `drawer` slides in from the right edge at full height, for reading a record beside its list. */
-  variant?: 'dialog' | 'drawer'
+  /**
+   * `drawer` slides in from the right edge at full height, for reading a record beside its list.
+   * `dock` sits in the bottom-right corner over a light scrim, for a panel opened from a floating button;
+   * on phones it becomes a bottom sheet.
+   */
+  variant?: 'dialog' | 'drawer' | 'dock'
   /** Accessible name of a close button in the header; without it the header has none. */
   closeLabel?: string
 }

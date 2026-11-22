@@ -1,0 +1,284 @@
+import type { PermissionAction } from '../permissions/can'
+import type { guideMessages } from './messages'
+
+/**
+ * The lists the getting-started guide is built from. A new section, step or
+ * page is only new entries here (plus its text in `messages.ts`); selection,
+ * progress and the UI read these lists and never name an id themselves.
+ * `catalogProblems` (run by the tests) checks that the entries fit together.
+ *
+ * The lists are `as const`, so their ids are types too (`GuideStepId`,
+ * `GuidePageId`, `GuideSectionId`, `GuideTourTarget`): a step naming an
+ * unknown section or page, or a page passing a misspelt id to
+ * `markGuideStep`, `<GuideHelpButton page>` or `data-tour`, fails the build.
+ */
+
+/**
+ * One permission a rule needs. `organization` means a company-wide grant;
+ * `any` accepts any scope (a grant on assigned sites or own tasks counts).
+ */
+export type GuideGrant = { readonly action: PermissionAction; readonly scope: 'organization' | 'any' }
+
+/**
+ * The ids a catalog uses. Entry types default to the built-in catalog's own
+ * ids; `GuideIds` itself (any string) types a catalog built elsewhere, such
+ * as one in a test, which `catalogProblems` then checks at run time.
+ */
+export type GuideIds = { section: string; step: string; page: string; target: string }
+
+/** Who sees a section: every grant in `requires`, and none of the sections named in `unless`. */
+export type GuideSectionRule<I extends GuideIds = GuideCatalogIds> = {
+  requires: readonly GuideGrant[]
+  /** Section ids; a member who meets the `requires` of any of them doesn't see this section. */
+  unless?: readonly I['section'][]
+}
+
+export type GuideSectionEntry<I extends GuideIds = GuideCatalogIds> = {
+  id: I['section']
+  /** Display position; lower comes first. A step shared by two sections shows in the first one only. */
+  order: number
+  rule: GuideSectionRule<I>
+  /** Heading, from `messages.guide.sections`. */
+  titleKey: keyof typeof guideMessages.en.sections
+}
+
+/** Chapter anchors of the landing page's long-form guide (`/guia#…`, `/en/guide#…`). */
+export type GuideChapter = 'start' | 'sites' | 'company' | 'tasks' | 'finance'
+
+export type GuideStepEntry<I extends GuideIds = GuideCatalogIds> = {
+  /** Stored on the server: must match `^[a-z][a-z0-9-]{0,63}$` and never change once shipped. */
+  id: I['step']
+  /** Section ids, in preference order; the step shows under the first visible one. */
+  sections: readonly I['section'][]
+  /** Every grant the member needs to do the step; otherwise the step is hidden and not counted. */
+  requires: readonly GuideGrant[]
+  /** Id of the page (in `pages`) where the step is done. */
+  page: I['page']
+  /** Landing-guide chapter that explains the step in depth. */
+  chapter: GuideChapter
+  /** `data-tour` attribute values on the step's page, highlighted in this order. */
+  tourTargets: readonly I['target'][]
+  /** Title and body, from `messages.guide.steps`. */
+  textKey: keyof typeof guideMessages.en.steps
+  /** Hint (from `messages.guide.hints`) shown under the open step when the member is on no Site. */
+  noSiteHint?: keyof typeof guideMessages.en.hints
+}
+
+export type GuidePageEntry<I extends GuideIds = GuideCatalogIds> = {
+  id: I['page']
+  /** App route. A route under a Site uses the `:siteId` placeholder. */
+  route: string
+  /** The route is inside one Site, so the guide needs a Site to open it. */
+  needsSite: boolean
+}
+
+export type GuideCatalog<I extends GuideIds = GuideCatalogIds> = {
+  sections: readonly GuideSectionEntry<I>[]
+  steps: readonly GuideStepEntry<I>[]
+  pages: readonly GuidePageEntry<I>[]
+}
+
+export const guideSections = [
+  {
+    id: 'owner',
+    order: 10,
+    rule: {
+      requires: [
+        { action: 'MANAGE_MEMBERS', scope: 'organization' },
+        { action: 'MANAGE_PROJECT', scope: 'organization' },
+      ],
+    },
+    titleKey: 'runCompany',
+  },
+  {
+    // Site Manager, Resident, Superintendent and Member: they plan phases and assign tasks.
+    id: 'siteManager',
+    order: 20,
+    rule: {
+      requires: [
+        { action: 'MANAGE_GOAL', scope: 'any' },
+        { action: 'ASSIGN_ACTIVITY', scope: 'any' },
+      ],
+      unless: ['owner'],
+    },
+    titleKey: 'manageSites',
+  },
+  {
+    id: 'finance',
+    order: 30,
+    rule: { requires: [{ action: 'MANAGE_BUDGET', scope: 'organization' }] },
+    titleKey: 'finance',
+  },
+] as const satisfies readonly GuideSectionEntry<GuideIds>[]
+
+export type GuideSectionId = (typeof guideSections)[number]['id']
+
+export const guidePages = [
+  { id: 'sites', route: '/sites', needsSite: false },
+  { id: 'site-details', route: '/sites/:siteId?tab=details', needsSite: true },
+  { id: 'members', route: '/members', needsSite: false },
+  { id: 'phases', route: '/sites/:siteId/phases', needsSite: true },
+  { id: 'site-budget', route: '/sites/:siteId?tab=details', needsSite: true },
+  { id: 'finance', route: '/finance', needsSite: false },
+] as const satisfies readonly GuidePageEntry<GuideIds>[]
+
+export type GuidePageId = (typeof guidePages)[number]['id']
+
+/** Within a section, steps keep this list's order. */
+export const guideSteps = [
+  {
+    id: 'create-site',
+    sections: ['owner'],
+    requires: [{ action: 'MANAGE_PROJECT', scope: 'organization' }],
+    page: 'sites',
+    chapter: 'sites',
+    tourTargets: ['site-create'],
+    textKey: 'createSite',
+  },
+  {
+    id: 'open-site',
+    sections: ['siteManager'],
+    requires: [{ action: 'VIEW_PROJECT', scope: 'any' }],
+    page: 'sites',
+    chapter: 'sites',
+    tourTargets: ['site-list'],
+    textKey: 'openSite',
+    noSiteHint: 'askAdmin',
+  },
+  {
+    id: 'site-details',
+    sections: ['owner', 'siteManager'],
+    requires: [{ action: 'MANAGE_PROJECT', scope: 'any' }],
+    page: 'site-details',
+    chapter: 'sites',
+    tourTargets: ['site-details-form'],
+    textKey: 'siteDetails',
+  },
+  {
+    id: 'invite-member',
+    sections: ['owner'],
+    requires: [{ action: 'MANAGE_MEMBERS', scope: 'any' }],
+    page: 'members',
+    chapter: 'company',
+    tourTargets: ['member-invite'],
+    textKey: 'inviteMember',
+  },
+  {
+    id: 'site-team',
+    sections: ['owner'],
+    // The member picker needs MANAGE_MEMBERS; the add form shows with MANAGE_PROJECT on the Site.
+    requires: [
+      { action: 'MANAGE_MEMBERS', scope: 'any' },
+      { action: 'MANAGE_PROJECT', scope: 'any' },
+    ],
+    page: 'site-details',
+    chapter: 'company',
+    tourTargets: ['site-team'],
+    textKey: 'siteTeam',
+  },
+  {
+    id: 'create-phase',
+    sections: ['owner', 'siteManager'],
+    requires: [{ action: 'MANAGE_GOAL', scope: 'any' }],
+    page: 'phases',
+    chapter: 'tasks',
+    tourTargets: ['phase-create'],
+    textKey: 'createPhase',
+  },
+  {
+    id: 'assign-task',
+    sections: ['owner', 'siteManager'],
+    requires: [
+      { action: 'MANAGE_ACTIVITY', scope: 'any' },
+      { action: 'ASSIGN_ACTIVITY', scope: 'any' },
+    ],
+    page: 'phases',
+    chapter: 'tasks',
+    tourTargets: ['task-create'],
+    textKey: 'assignTask',
+  },
+  {
+    id: 'site-budget',
+    sections: ['finance'],
+    requires: [{ action: 'MANAGE_BUDGET', scope: 'organization' }],
+    page: 'site-budget',
+    chapter: 'finance',
+    tourTargets: ['site-budget-set'],
+    textKey: 'siteBudget',
+  },
+  {
+    id: 'record-expense',
+    sections: ['finance'],
+    requires: [{ action: 'MANAGE_BUDGET', scope: 'organization' }],
+    page: 'site-budget',
+    chapter: 'finance',
+    tourTargets: ['expense-add'],
+    textKey: 'recordExpense',
+  },
+  {
+    id: 'view-finance',
+    sections: ['finance'],
+    requires: [{ action: 'VIEW_BUDGET', scope: 'organization' }],
+    page: 'finance',
+    chapter: 'finance',
+    tourTargets: ['finance-totals', 'finance-sites'],
+    textKey: 'viewFinance',
+  },
+  // Sections and pages must exist; step ids and targets are free (their format is checked at run time).
+] as const satisfies readonly GuideStepEntry<{ section: GuideSectionId; step: string; page: GuidePageId; target: string }>[]
+
+/** A step id of the built-in catalog, as pages pass it to `markGuideStep`. */
+export type GuideStepId = (typeof guideSteps)[number]['id']
+/** A `data-tour` value of the built-in catalog. */
+export type GuideTourTarget = (typeof guideSteps)[number]['tourTargets'][number]
+
+/** The built-in catalog's ids: the default of every entry type. */
+export type GuideCatalogIds = { section: GuideSectionId; step: GuideStepId; page: GuidePageId; target: GuideTourTarget }
+
+export const guideCatalog: GuideCatalog = { sections: guideSections, steps: guideSteps, pages: guidePages }
+
+/** Same rule as the backend (`GUIDE_STEP_INVALID`). */
+export const GUIDE_STEP_ID = /^[a-z][a-z0-9-]{0,63}$/
+
+/** A `data-tour` value: a plain id, so it drops into a CSS attribute selector as is. */
+export const TOUR_TARGET = /^[a-z][a-z0-9-]*$/
+
+/** The backend keeps at most this many steps per member (`GUIDE_TOO_MANY_STEPS`). */
+export const GUIDE_MAX_STEPS = 50
+
+/** Mistakes in a catalog, one sentence each; empty when every entry fits. */
+export function catalogProblems(catalog: GuideCatalog<GuideIds>): string[] {
+  const problems: string[] = []
+  const sectionIds = new Set<string>()
+  for (const section of catalog.sections) {
+    if (sectionIds.has(section.id)) problems.push(`section "${section.id}": duplicate id`)
+    sectionIds.add(section.id)
+  }
+  for (const section of catalog.sections) {
+    for (const other of section.rule.unless ?? []) {
+      if (!sectionIds.has(other)) problems.push(`section "${section.id}": unknown section "${other}" in unless`)
+    }
+  }
+  const pageIds = new Set(catalog.pages.map((page) => page.id))
+  for (const page of catalog.pages) {
+    const hasSite = page.route.includes(':siteId')
+    if (hasSite && !page.needsSite) problems.push(`page "${page.id}": a route with :siteId must set needsSite`)
+    if (!hasSite && page.needsSite) problems.push(`page "${page.id}": needsSite without :siteId in the route`)
+  }
+  const stepIds = new Set<string>()
+  for (const step of catalog.steps) {
+    if (!GUIDE_STEP_ID.test(step.id)) problems.push(`step "${step.id}": id must match ${GUIDE_STEP_ID.source}`)
+    if (stepIds.has(step.id)) problems.push(`step "${step.id}": duplicate id`)
+    stepIds.add(step.id)
+    if (step.sections.length === 0) problems.push(`step "${step.id}": belongs to no section`)
+    for (const section of step.sections) {
+      if (!sectionIds.has(section)) problems.push(`step "${step.id}": unknown section "${section}"`)
+    }
+    if (!pageIds.has(step.page)) problems.push(`step "${step.id}": unknown page "${step.page}"`)
+    for (const target of step.tourTargets) {
+      if (!TOUR_TARGET.test(target)) problems.push(`step "${step.id}": tour target "${target}" must match ${TOUR_TARGET.source}`)
+    }
+  }
+  if (stepIds.size > GUIDE_MAX_STEPS) problems.push(`more than ${GUIDE_MAX_STEPS} steps`)
+  return problems
+}

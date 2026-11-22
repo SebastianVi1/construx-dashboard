@@ -107,6 +107,66 @@
   }
 }
 
+/* Dock: a panel in the bottom-right corner, where its floating button lives; the page stays readable behind it. */
+.modal-overlay--dock {
+  place-items: end end;
+  padding: calc(var(--cx-header-height) + 16px) 24px 24px;
+  background: color-mix(in srgb, var(--cx-canvas) 35%, transparent);
+}
+
+.modal--dock {
+  width: min(100%, 400px);
+  max-height: calc(100svh - var(--cx-header-height) - 40px);
+  padding: 20px 20px 16px;
+  box-shadow: 0 24px 48px -12px var(--cx-shadow-color);
+  transform-origin: bottom right;
+  animation: dock-in 180ms ease-out;
+}
+
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Phones: a bottom sheet. It rises from the bottom edge over the tab bar, full
+ * width with only its top corners rounded, and stops short of the header so
+ * the company and page stay readable above it.
+ */
+@media (max-width: 760px) {
+  .modal-overlay--dock {
+    place-items: end stretch;
+    padding: calc(var(--cx-header-height) + 8px) 0 0;
+    background: color-mix(in srgb, var(--cx-canvas) 60%, transparent);
+  }
+
+  .modal--dock {
+    width: 100%;
+    max-height: min(85svh, calc(100svh - var(--cx-header-height) - 8px));
+    padding: 20px max(20px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    border-width: 1px 0 0;
+    border-radius: var(--cx-radius-lg) var(--cx-radius-lg) 0 0;
+    box-shadow: 0 -16px 40px -16px var(--cx-shadow-color);
+    overscroll-behavior: contain;
+    animation: sheet-in 220ms ease-out;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
 .modal__header h2 {
   font: 600 20px/28px var(--cx-font-sans);
   letter-spacing: -0.01em;

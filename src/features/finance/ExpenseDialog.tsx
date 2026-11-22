@@ -19,7 +19,8 @@ import {
   type ExpenseErrorKind,
 } from './catalogExpense'
 import { buildExpenseDraft, buildExpensePatch, expenseToValues, makeExpenseSchema } from './expenseForm'
-import { createExpense, expenseCategories, updateExpense, type Expense, type NewExpense } from './financeApi'
+import { createExpense, expenseCategories, updateExpense, type Expense, type ExpensePatch, type NewExpense } from './financeApi'
+import { saveExpense } from './saveExpense'
 
 type ExpenseDialogProps = {
   organizationId: string
@@ -36,6 +37,14 @@ type ExpenseDialogProps = {
 }
 
 type Mode = 'typed' | 'catalog'
+
+/** The Site's create and update calls both forms hand to `saveExpense`; a caller's `create` replaces the default. */
+function siteExpenseCalls(organizationId: string, siteId: string, create: ExpenseDialogProps['create']) {
+  return {
+    create: create ?? ((draft: NewExpense) => createExpense(organizationId, siteId, draft)),
+    update: (expenseId: string, patch: ExpensePatch) => updateExpense(organizationId, siteId, expenseId, patch),
+  }
+}
 
 function expenseFields(t: Messages['finance'], currency: Currency): FieldConfig[] {
   return [
@@ -130,16 +139,16 @@ function TypedExpenseForm({ organizationId, siteId, expense, create, onSaved, on
     schema: makeExpenseSchema(t.validation, money),
     onSubmit: async (values) => {
       try {
-        if (expense) {
-          const patch = buildExpensePatch(expense, values, money)
-          if (Object.keys(patch).length === 0) {
-            setUnchanged(true)
-            return
-          }
-          await updateExpense(organizationId, siteId, expense.id, patch)
-        } else {
-          const draft = buildExpenseDraft(values, money)
-          await (create ? create(draft) : createExpense(organizationId, siteId, draft))
+        const result = await saveExpense({
+          organizationId,
+          expense,
+          patch: (current) => buildExpensePatch(current, values, money),
+          draft: () => buildExpenseDraft(values, money),
+          ...siteExpenseCalls(organizationId, siteId, create),
+        })
+        if (result === 'unchanged') {
+          setUnchanged(true)
+          return
         }
         onSaved()
       } catch (error) {
@@ -191,16 +200,16 @@ function CatalogExpenseForm({ organizationId, siteId, expense, seePrices, create
     schema: makeCatalogExpenseSchema(t.validation),
     onSubmit: async (values) => {
       try {
-        if (expense) {
-          const patch = buildCatalogExpensePatch(expense, values)
-          if (Object.keys(patch).length === 0) {
-            setUnchanged(true)
-            return
-          }
-          await updateExpense(organizationId, siteId, expense.id, patch)
-        } else {
-          const draft = buildCatalogExpenseDraft(values)
-          await (create ? create(draft) : createExpense(organizationId, siteId, draft))
+        const result = await saveExpense({
+          organizationId,
+          expense,
+          patch: (current) => buildCatalogExpensePatch(current, values),
+          draft: () => buildCatalogExpenseDraft(values),
+          ...siteExpenseCalls(organizationId, siteId, create),
+        })
+        if (result === 'unchanged') {
+          setUnchanged(true)
+          return
         }
         onSaved()
       } catch (error) {

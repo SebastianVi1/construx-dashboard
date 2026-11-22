@@ -61,3 +61,12 @@ export function isOnTeam(task: WithTeam, membershipId: string | null): boolean {
 export function isLead(task: WithTeam, membershipId: string | null): boolean {
   return myTaskRole(task, membershipId) === 'LEAD'
 }
+
+/**
+ * Whether a Task save assigned someone, for the guide's "Create a task and
+ * assign it": `saved` is the task the server answered with, or null when the
+ * save sent no request (an edit with nothing changed).
+ */
+export function taskSaveAssigns(saved: WithTeam | null): boolean {
+  return saved !== null && saved.assignees.length > 0
+}

@@ -11,6 +11,7 @@ import { SiteFloorPlans } from '../floor-plans/SiteFloorPlansPage'
 import { SiteReportsSection } from '../reports/SiteReportsSection'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { usePermissions } from '../permissions'
+import { GuideHelpButton } from '../guide'
 import { ArchiveSiteDialog } from './ArchiveSiteDialog'
 import { SiteBudget } from './SiteBudget'
 import { ProgressMeter, SiteStatusBadge } from './SiteBits'
@@ -20,7 +21,8 @@ import { SitePeople } from './SitePeople'
 import { dateText, scheduleText } from './siteDisplay'
 import { siteProgress } from './siteHelpers'
 import { siteTab, siteTabSearch, siteSectionUrl, type SiteTab } from './siteNavigation'
-import { getSite, listSiteAccess, siteErrorKind, type Site } from './sitesApi'
+import { loadSite } from './siteLoad'
+import { listSiteAccess, siteErrorKind, type Site } from './sitesApi'
 import '../../components/filter/filter-tabs.css'
 import './sites.css'
 
@@ -32,7 +34,7 @@ export function SiteDetailPage() {
   const organization = useCurrentOrganization()
   const { access, can } = usePermissions()
   // Both requests start together; the people list does not wait for the site.
-  const site = useRemoteData(`${organization.id}:${siteId}`, () => getSite(organization.id, siteId))
+  const site = useRemoteData(`${organization.id}:${siteId}`, () => loadSite(organization.id, siteId))
   const people = useRemoteData(`${organization.id}:${siteId}:access`, () => listSiteAccess(organization.id, siteId))
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [formVersion, setFormVersion] = useState(0)
@@ -105,6 +107,11 @@ export function SiteDetailPage() {
             <h1>{current.name}</h1>
             <p>{current.address || t.noAddress}</p>
           </div>
+          {tab === 'list' || tab === 'gantt' ? (
+            <GuideHelpButton page="phases" />
+          ) : (
+            <GuideHelpButton page="site-details" onReplay={tab === 'details' ? undefined : () => setTab('details')} />
+          )}
           {tab !== 'list' && can('VIEW_GOAL', current.id, { onSite }) ? (
             <Link className="button button--primary" to={siteSectionUrl(current.id, 'list')}>
               {t.overview.viewPhases}
@@ -174,7 +181,7 @@ export function SiteDetailPage() {
       ) : tab === 'details' ? (
         <>
           <div className="site-columns">
-            <section className="page-section" aria-labelledby="site-details-heading">
+            <section className="page-section" aria-labelledby="site-details-heading" data-tour="site-details-form">
               <div className="page-section__header">
                 <h2 id="site-details-heading">{t.detail.details}</h2>
               </div>
@@ -213,7 +220,7 @@ export function SiteDetailPage() {
               )}
             </section>
 
-            <div id="site-team" className="site-section-target" tabIndex={-1}>
+            <div id="site-team" className="site-section-target" tabIndex={-1} data-tour="site-team">
               <SitePeople
                 organizationId={organization.id}
                 siteId={current.id}
