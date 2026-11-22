@@ -1,4 +1,4 @@
-import type { GuideIds, GuideStepId } from './catalog'
+import type { GuideIds, GuideStepEntry, GuideStepId } from './catalog'
 import type { GuideProgress, GuideStepStatus } from './guideApi'
 import { guideProgressOf, stepStatus, type GuideSection } from './selection'
 
@@ -23,6 +23,13 @@ export type GuideState = {
    * sees it, with this preview's skips. Never saved; null when not previewing.
    */
   preview: GuideProgress | null
+  /**
+   * A step a page just completed for real (its status changed to COMPLETED in
+   * this session, outside a preview, after progress loaded) that the panel
+   * hasn't shown yet. The panel opens on it (`completionFollowUp`), ticks it
+   * and moves on to the next step (`stepAdvance`), then `stepDoneShown` clears it.
+   */
+  lastDone: GuideStepId | null
 }
 
 /** `sections` on `loaded` and `marked`: the member's checklist then, to tell whether the guide is complete. */
@@ -34,6 +41,7 @@ export type GuideAction =
   | { type: 'previewStarted' }
   | { type: 'previewMarked'; stepId: GuideStepId; status: GuideStepStatus }
   | { type: 'previewEnded' }
+  | { type: 'stepDoneShown' }
 
 const notStarted: GuideProgress = { started: false, steps: {}, dismissedAt: null, updatedAt: null }
 
@@ -43,6 +51,7 @@ export const initialGuideState: GuideState = {
   dismissChosen: false,
   justCompleted: false,
   preview: null,
+  lastDone: null,
 }
 
 /** The progress the panel shows: the preview's while previewing, otherwise the real one. */
@@ -79,7 +88,14 @@ export function guideReducer(state: GuideState, action: GuideAction): GuideState
       }
       // Before the load the server may already hold the other steps (or this one); the load decides then.
       const finishedHere = state.loaded && complete(action.sections, progress) && !complete(action.sections, local)
-      return { ...state, progress, justCompleted: state.justCompleted || finishedHere }
+      // Before the load the server may already hold it, so only a mark after the load counts as new.
+      const doneHere = action.status === 'COMPLETED' && state.loaded && state.preview === null
+      return {
+        ...state,
+        progress,
+        justCompleted: state.justCompleted || finishedHere,
+        lastDone: doneHere ? action.stepId : state.lastDone,
+      }
     }
     case 'dismissed':
       return {
@@ -101,7 +117,40 @@ export function guideReducer(state: GuideState, action: GuideAction): GuideState
       return { ...state, preview: { ...state.preview, steps: { ...state.preview.steps, [action.stepId]: action.status } } }
     case 'previewEnded':
       return state.preview ? { ...state, preview: null } : state
+    case 'stepDoneShown':
+      return state.lastDone === null ? state : { ...state, lastDone: null }
   }
+}
+
+/**
+ * What a step a page just completed leads to: `open` the panel on it, `drop`
+ * it (the guide is hidden, a preview is showing, or the step is no longer in
+ * the member's `sections`), or `none` (nothing new). The caller also waits
+ * until no other modal is open before opening, and drops it when the guided
+ * tour already reopens the panel for the same mark.
+ */
+export function completionFollowUp<I extends GuideIds>(state: GuideState, sections: readonly GuideSection<I>[]): 'open' | 'drop' | 'none' {
+  if (state.lastDone === null) return 'none'
+  const hidden = state.progress.dismissedAt !== null || state.preview !== null
+  return hidden || stepAdvance(sections, state.progress, state.lastDone) === null ? 'drop' : 'open'
+}
+
+/**
+ * The panel's step-by-step move after `done`: that step (to tick) and the
+ * first open step the member sees, in display order (to highlight and focus),
+ * or `next: null` when none is left ("You're set up" shows). Null when nothing
+ * was just done or the step isn't in the member's checklist.
+ */
+export function stepAdvance<I extends GuideIds>(
+  sections: readonly GuideSection<I>[],
+  progress: GuideProgress,
+  done: string | null,
+): { done: GuideStepEntry<I>; next: GuideStepEntry<I> | null } | null {
+  if (done === null) return null
+  const steps = sections.flatMap((section) => section.steps)
+  const entry = steps.find((step) => step.id === done)
+  if (!entry) return null
+  return { done: entry, next: guideProgressOf(sections, progress).next }
 }
 
 /**

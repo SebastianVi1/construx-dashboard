@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { GuideProgress } from '../../../features/guide/guideApi'
-import { acceptsMark, guideReducer, initialGuideState, shownProgress, type GuideState } from '../../../features/guide/guideState'
+import { acceptsMark, completionFollowUp, guideReducer, initialGuideState, shownProgress, stepAdvance, type GuideState } from '../../../features/guide/guideState'
 import { guideCatalog, type GuideIds, type GuideStepId } from '../../../features/guide/catalog'
 import { guideProgressOf, selectGuide, type GuideSection } from '../../../features/guide/selection'
 import { seededRoles } from '../../support/seededRoles'
@@ -138,6 +138,73 @@ describe('acceptsMark', () => {
   it('accepts completing a skipped step', () => {
     const skipped: GuideProgress = { ...notStarted, started: true, steps: { 'create-site': 'SKIPPED' } }
     expect(acceptsMark(sections, skipped, 'create-site', 'COMPLETED')).toBe(true)
+  })
+})
+
+describe('step-by-step completion', () => {
+  const sections = selectGuide(seededRoles.OWNER)
+  const mark = (state: GuideState, stepId: GuideStepId, status: 'COMPLETED' | 'SKIPPED' = 'COMPLETED') =>
+    guideReducer(state, { type: 'marked', stepId, status, at, sections })
+
+  it('records only a new completion after progress loads and clears it once shown', () => {
+    expect(initialGuideState.lastDone).toBeNull()
+    const done = mark(loaded(notStarted), 'create-site')
+    expect(done.lastDone).toBe('create-site')
+    expect(mark(done, 'create-site')).toBe(done)
+    const shown = guideReducer(done, { type: 'stepDoneShown' })
+    expect(shown.lastDone).toBeNull()
+    expect(guideReducer(shown, { type: 'stepDoneShown' })).toBe(shown)
+  })
+
+  it('does not record a skipped step or a completion before progress loads', () => {
+    expect(mark(loaded(notStarted), 'create-site', 'SKIPPED').lastDone).toBeNull()
+    const beforeLoad = mark(initialGuideState, 'create-site')
+    expect(beforeLoad.lastDone).toBeNull()
+    expect(guideReducer(beforeLoad, { type: 'loaded', progress: notStarted, sections }).lastDone).toBeNull()
+  })
+
+  it('does not record a real completion while a preview is showing', () => {
+    const preview = guideReducer(loaded(notStarted), { type: 'previewStarted' })
+    expect(mark(preview, 'create-site').lastDone).toBeNull()
+  })
+
+  it('opens a follow-up only for a visible completion in an active guide', () => {
+    const done = mark(loaded(notStarted), 'create-site')
+    expect(completionFollowUp(initialGuideState, sections)).toBe('none')
+    expect(completionFollowUp(done, sections)).toBe('open')
+    expect(completionFollowUp(guideReducer(done, { type: 'dismissed', dismissed: true, at }), sections)).toBe('drop')
+    expect(completionFollowUp(guideReducer(done, { type: 'previewStarted' }), sections)).toBe('drop')
+    expect(completionFollowUp(done, selectGuide(seededRoles.FINANCE))).toBe('drop')
+  })
+
+  it('advances to the first open visible step across sections, skipping completed and skipped steps', () => {
+    const progress: GuideProgress = {
+      ...notStarted,
+      started: true,
+      steps: {
+        'create-site': 'COMPLETED',
+        'site-details': 'SKIPPED',
+        'invite-member': 'COMPLETED',
+        'site-team': 'SKIPPED',
+        'create-phase': 'COMPLETED',
+        'assign-task': 'SKIPPED',
+        'site-budget': 'SKIPPED',
+      },
+    }
+    const advance = stepAdvance(sections, progress, 'assign-task')
+    expect(advance?.done.id).toBe('assign-task')
+    expect(advance?.next?.id).toBe('record-expense')
+  })
+
+  it('returns no next step after the last visible step and rejects absent steps', () => {
+    const progress: GuideProgress = {
+      ...notStarted,
+      started: true,
+      steps: Object.fromEntries(sections.flatMap((section) => section.steps.map((step) => [step.id, 'COMPLETED' as const]))),
+    }
+    expect(stepAdvance(sections, progress, 'view-finance')?.next).toBeNull()
+    expect(stepAdvance(sections, progress, null)).toBeNull()
+    expect(stepAdvance(sections, progress, 'unknown-step')).toBeNull()
   })
 })
 
