@@ -11,7 +11,7 @@ import {
 
 /**
  * Create a Site. One that was created ticks the guide's "Create your first
- * site" step; a failed create doesn't.
+ * site" step (with its id, which the guided tour remembers); a failed create doesn't.
  */
 export async function addSite(
   organizationId: string,
@@ -19,7 +19,7 @@ export async function addSite(
   create: typeof createSite = createSite,
 ): Promise<Site> {
   const site = await create(organizationId, draft)
-  markGuideStep('create-site', organizationId)
+  markGuideStep('create-site', organizationId, site.id)
   return site
 }
 

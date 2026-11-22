@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useReducer, useRef, useState, type ReactNode } from 'react'
+import { isModalOpen } from '../../components/modal'
 import { useOnboarding } from '../onboarding'
 import { usePermissions } from '../permissions'
 import { GuideContext } from './guide-context'
@@ -6,10 +7,12 @@ import { getGuide, markGuideStepRemote, setGuideDismissed, type GuideProgress } 
 import { guideCommands } from './guideCommands'
 import { subscribeGuidePreview, subscribeGuideSites, subscribeGuideSteps, type GuideMark } from './guideEvents'
 import { createGuideSaves } from './guideSaves'
-import { guideReducer, initialGuideState, shownProgress } from './guideState'
+import { completionFollowUp, guideReducer, initialGuideState, shownProgress } from './guideState'
+import { guideOpenedThisSession, rememberGuideOpened } from './guideSession'
 import { GuideLauncher } from './GuideLauncher'
 import { GuidePanel } from './GuidePanel'
 import { guideProgressOf, selectGuide } from './selection'
+import { useGuidedTour } from './useGuidedTour'
 import { useGuideTours } from './useGuideTours'
 import { guideVisibility, onboardingAnswer } from './visibility'
 
@@ -19,12 +22,20 @@ import { guideVisibility, onboardingAnswer } from './visibility'
  * reloads, the panel closes, and nothing is saved to the previous Company.
  * Renders the launcher and the panel next to its children.
  *
- * A `requestGuidePreview` (the dev-only "Start tour") opens a preview: every
- * step open, nothing saved, and the first step's "Show me". It lasts until the
- * panel is closed; a tour hiding the panel doesn't end it.
+ * A `requestGuidePreview` (the dev-only "Preview checklist") opens a preview:
+ * every step open, nothing saved, and the first step's "Show me". It lasts
+ * until the panel is closed; a tour hiding the panel doesn't end it. The dev
+ * "Start tour" is the guided tour's own request (`useGuidedTour`).
+ *
+ * The guided tour (`useGuidedTour`) shares the panel, the saves and the step
+ * marks: a mark ticks the checklist first, then the tour's running step.
+ *
+ * Step by step: when a page completes a checklist step for real, the panel
+ * opens by itself on it (`completionFollowUp`), once no other modal is open,
+ * unless the guide is hidden or the tour already reopens it for that mark.
  */
 export function GuideProvider({ organizationId, children }: { organizationId: string; children: ReactNode }) {
-  const { access } = usePermissions()
+  const { access, can } = usePermissions()
   const onboarding = useOnboarding()
   const [state, dispatch] = useReducer(guideReducer, initialGuideState)
   const [isOpen, setIsOpen] = useState(false)
@@ -38,10 +49,23 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
     }),
   )
   const autoOpenSaved = useRef(false)
+  // Until the member opens the guide in this tab's session, the launcher glows now and then.
+  const [openedOnce, setOpenedOnce] = useState(guideOpenedThisSession)
+  if (isOpen && !openedOnce) setOpenedOnce(true)
 
   const sections = selectGuide(access)
+  const { hydrate: hydrateTour, onMark: onTourMark, ...tour } = useGuidedTour({
+    organizationId,
+    sections,
+    canCreateSites: can('MANAGE_PROJECT'),
+    saves,
+    setOpen: setIsOpen,
+  })
   // Reads the checklist as it is when the answer arrives, not when the request started.
-  const onLoaded = useEffectEvent((progress: GuideProgress) => dispatch({ type: 'loaded', progress, sections }))
+  const onLoaded = useEffectEvent((progress: GuideProgress) => {
+    dispatch({ type: 'loaded', progress, sections })
+    hydrateTour(progress)
+  })
 
   useEffect(() => {
     let active = true
@@ -99,9 +123,15 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
     if (isOpen && !previewing) saves.retryFailed()
   }, [isOpen, previewing, saves])
 
+  useEffect(() => {
+    if (openedOnce) rememberGuideOpened()
+  }, [openedOnce])
+
   const onMark = useEffectEvent((mark: GuideMark) => {
     if (mark.organizationId !== organizationId) return
     commands.complete(mark.stepId)
+    // The tour reopens the panel on its own timeline for this mark: one path, so the checklist doesn't too.
+    if (onTourMark(mark)) dispatch({ type: 'stepDoneShown' })
   })
 
   useEffect(() => subscribeGuideSteps(onMark), [])
@@ -124,15 +154,35 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
     [organizationId],
   )
 
+  // A step a page just completed: open the panel on it, or forget it while the guide is hidden or previewing.
+  const followUp = completionFollowUp(state, sections)
+  if (followUp === 'drop') dispatch({ type: 'stepDoneShown' })
+  const waitingToOpen = followUp === 'open' && !isOpen
+  useEffect(() => {
+    if (!waitingToOpen) return
+    // Never on top of another modal (a dialog still closing, another form): check again until none is open.
+    const timer = setInterval(() => {
+      if (isModalOpen()) return
+      clearInterval(timer)
+      setIsOpen(true)
+    }, 150)
+    return () => clearInterval(timer)
+  }, [waitingToOpen])
+
   function close() {
     setIsOpen(false)
     clearNotice()
     // The panel already showed "You're set up"; the launcher doesn't repeat it.
     dispatch({ type: 'acknowledged' })
     dispatch({ type: 'previewEnded' })
+    // The timeline already showed "Tour complete".
+    tour.acknowledgeFinish()
   }
 
-  const launcherVisible = !isOpen && answer === 'answered' && (visibility.launcher || (justCompleted && !realDismissed))
+  // While the guided tour runs, the launcher stays so "Leave tour" is one click away.
+  const launcherVisible =
+    !isOpen &&
+    (tour.state.active || (answer === 'answered' && (visibility.launcher || (justCompleted && !realDismissed))))
 
   return (
     <GuideContext.Provider
@@ -155,6 +205,10 @@ export function GuideProvider({ organizationId, children }: { organizationId: st
         },
         show: () => commands.setDismissed(false),
         acknowledgeCompletion: () => dispatch({ type: 'acknowledged' }),
+        lastDone: state.lastDone,
+        doneShown: () => dispatch({ type: 'stepDoneShown' }),
+        attention: !openedOnce,
+        tour,
         ...tours,
       }}
     >

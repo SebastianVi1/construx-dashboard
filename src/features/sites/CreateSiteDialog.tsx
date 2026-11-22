@@ -3,20 +3,36 @@ import { useNavigate } from 'react-router'
 import { Form, useForm } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { useLocale } from '../../i18n'
-import { makeSiteSchema } from './siteForm'
+import { makeSiteSchema, type SiteValues } from './siteForm'
 import { siteFields } from './siteDisplay'
 import { addSite } from './siteSave'
 import { siteErrorKind, type SiteErrorKind } from './sitesApi'
 
-/** "Add site" dialog. On success it opens the new site so people can be added next. */
-export function CreateSiteDialog({ organizationId, onClose }: { organizationId: string; onClose: () => void }) {
+const blankValues: SiteValues = { name: '', address: '', startDate: '', expectedEndDate: '', status: '' }
+
+/**
+ * "Add site" dialog. On success it opens the new site so people can be added next.
+ * The guided tour opens it with example `initialValues` and hears about a failed
+ * save through `onFailed`; "Add site" opens it blank.
+ */
+export function CreateSiteDialog({
+  organizationId,
+  onClose,
+  initialValues = blankValues,
+  onFailed,
+}: {
+  organizationId: string
+  onClose: () => void
+  initialValues?: SiteValues
+  onFailed?: () => void
+}) {
   const { messages: m } = useLocale()
   const t = m.sites
   const navigate = useNavigate()
   const [errorKind, setErrorKind] = useState<SiteErrorKind>('generic')
 
   const form = useForm({
-    initialValues: { name: '', address: '', startDate: '', expectedEndDate: '', status: '' },
+    initialValues,
     schema: makeSiteSchema(t.validation),
     onSubmit: async (values) => {
       try {
@@ -24,6 +40,7 @@ export function CreateSiteDialog({ organizationId, onClose }: { organizationId: 
         navigate(`/sites/${encodeURIComponent(site.id)}`)
       } catch (error) {
         setErrorKind(siteErrorKind(error))
+        onFailed?.()
         throw error
       }
     },
@@ -35,7 +52,13 @@ export function CreateSiteDialog({ organizationId, onClose }: { organizationId: 
 
   return (
     <Modal title={t.create.title} description={t.create.description} onClose={onClose}>
-      <Form controller={form} fields={siteFields(t, { statusDefault: true })} submitLabel={t.create.submit} pendingLabel={t.create.pending}>
+      <Form
+        controller={form}
+        fields={siteFields(t, { statusDefault: true })}
+        submitLabel={t.create.submit}
+        pendingLabel={t.create.pending}
+        submitTour="site-create-save"
+      >
         {form.submitError ? (
           <p className="form-error" role="alert">
             {t.error[errorKind]}
