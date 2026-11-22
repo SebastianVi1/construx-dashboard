@@ -401,6 +401,22 @@
   text-align: right;
 }
 
+/* Dev-only "Start tour" (vite dev): the tag keeps it from passing for a product feature. */
+.account-menu__dev-label {
+  flex: 1;
+}
+
+.account-menu__dev-badge {
+  flex: none;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--cx-warning) 55%, transparent);
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-warning);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
 /* ---------- Side navigation ---------- */
 
 .workspace-nav {
