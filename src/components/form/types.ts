@@ -1,4 +1,4 @@
-import type { FormEvent, ReactNode, Ref } from 'react'
+import type { FormEvent, HTMLAttributes, ReactNode, Ref } from 'react'
 
 export type FieldType =
   | 'text'
@@ -119,6 +119,8 @@ export type FormProps = {
   submitClassName?: string
   /** Disable the submit button for a screen-specific unchanged or empty state. */
   submitDisabled?: boolean
+  /** `data-tour` value for the submit button, so a guided tour can spotlight it. Unset renders none. */
+  submitTour?: HTMLAttributes<HTMLButtonElement>['data-tour']
   /** An optional control rendered before the submit button, such as Cancel. */
   beforeSubmit?: ReactNode
   /** Optional content rendered before the configured fields. */

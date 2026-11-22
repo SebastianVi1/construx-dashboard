@@ -49,6 +49,11 @@ export const sitesMessages = defineMessages({
       pending: 'Adding site…',
       cancel: 'Cancel',
     },
+    /** The guided tour's example Site (`siteTourValues`): fictional, and every value stays editable. */
+    tourExample: {
+      name: 'Lomas House',
+      address: '214 Hillside Ave, San Antonio, TX 78209',
+    },
     field: {
       name: 'Site name',
       namePlaceholder: 'Torre Norte',
@@ -274,6 +279,10 @@ export const sitesMessages = defineMessages({
       submit: 'Agregar obra',
       pending: 'Agregando obra…',
       cancel: 'Cancelar',
+    },
+    tourExample: {
+      name: 'Casa Lomas',
+      address: 'Av. de las Lomas 214, Col. Lomas del Valle, 66256 San Pedro Garza García, N.L.',
     },
     field: {
       name: 'Nombre de la obra',
