@@ -2,23 +2,14 @@ import { useState } from 'react'
 import { Form, TEXT_LIMITS, useForm, type FieldConfig } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { formatMessage, intlLocales, useLocale } from '../../i18n'
-import { markGuideStep } from '../guide/guideEvents'
 import { dueText, instantToLocalInput, localInputToInstant } from '../goals/dueAt'
 import type { Goal } from '../goals/goalsApi'
 import type { SiteAccess } from '../sites/sitesApi'
 import { buildTaskChanges, makeTaskSchema } from './taskForm'
-import {
-  createTask,
-  setTaskTeam,
-  taskErrorKind,
-  updateTask,
-  type PhaseRef,
-  type Task,
-  type TaskErrorKind,
-  type TeamPlace,
-} from './tasksApi'
+import { addTask, editTask } from './taskSave'
+import { taskErrorKind, type PhaseRef, type Task, type TaskErrorKind, type TeamPlace } from './tasksApi'
 import { TeamEditor } from './TeamEditor'
-import { taskSaveAssigns, teamIssue } from './teamRules'
+import { teamIssue } from './teamRules'
 import { BarColorPicker } from '../gantt/BarColorPicker'
 
 type TaskDialogProps = {
@@ -91,26 +82,17 @@ export function TaskDialog({
         document.getElementById('field-team')?.focus()
         return
       }
-      let latest = task
       try {
         if (!task) {
           const startAt = localInputToInstant(values.startAt) ?? ''
           const dueAt = localInputToInstant(values.dueAt) ?? ''
-          const created = await createTask(at, { ...values, startAt, dueAt, assignees: team })
-          if (taskSaveAssigns(created)) markGuideStep('assign-task', at.organizationId)
-          onSaved(created, true)
+          onSaved(await addTask(at, { ...values, startAt, dueAt, assignees: team }), true)
           return
         }
         const changes = buildTaskChanges(task, values, canReassign ? team : task.assignees)
-        // The server's answer to this save; stays null when nothing changed and no request went out.
-        let answered: Task | null = null
-        if (Object.keys(changes.patch).length > 0) answered = latest = await updateTask(at, task.id, changes.patch)
-        if (changes.team) answered = latest = await setTaskTeam(at, task.id, changes.team)
-        if (taskSaveAssigns(answered)) markGuideStep('assign-task', at.organizationId)
-        onSaved(latest ?? task, false)
+        // A rename can succeed before a failed team change; onPartial keeps the list truthful.
+        onSaved(await editTask(at, task, changes, { onPartial: onUpdated }), false)
       } catch (error) {
-        // A rename can succeed before a failed team change; keep the list truthful.
-        if (task && latest && latest !== task) onUpdated?.(latest)
         setErrorKind(taskErrorKind(error))
         throw error
       }
