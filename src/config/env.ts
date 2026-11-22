@@ -69,3 +69,11 @@ export function getLandingUrl(value = import.meta.env.VITE_LANDING_URL ?? ''): s
   }
   return null
 }
+
+/**
+ * Developer-only tools, such as the account menu's "Start tour": true only
+ * under `vite dev`. Keep it a plain comparison on `import.meta.env.DEV`: a
+ * production build inlines it as `false` and drops the code it guards, which
+ * it does not do through a function call.
+ */
+export const devTools: boolean = import.meta.env.DEV === true

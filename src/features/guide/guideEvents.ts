@@ -4,7 +4,7 @@ import type { GuideStepId } from './catalog'
  * Signals from pages to the guide. A page calls `markGuideStep` after the real
  * API call succeeds, `reportGuideSites` once it knows whether the member is on
  * any Site, and `reportGuideSiteOpened` once a Site page loaded its Site; the
- * guide's state, when mounted, listens. Pages never import the guide's state,
+ * guide's state, when mounted, listens (as it does to `requestGuidePreview`). Pages never import the guide's state,
  * and with no listener a signal does nothing.
  */
 
@@ -40,6 +40,7 @@ function channel<T>() {
 const marks = channel<GuideMark>()
 const sites = channel<GuideSitesReport>()
 const openedSites = channel<GuideSiteOpened>()
+const previews = channel<void>()
 
 /** Report that the member really did a step's action. Call it only after the API call succeeds. */
 export function markGuideStep(stepId: GuideStepId, organizationId: string): void {
@@ -69,4 +70,17 @@ export function reportGuideSiteOpened(organizationId: string, siteId: string): v
 /** Listen for opened Sites; returns the function that stops listening. */
 export function subscribeGuideSiteOpened(listener: (site: GuideSiteOpened) => void): () => void {
   return openedSites.subscribe(listener)
+}
+
+/**
+ * Ask the guide to open its preview and start the first step's tour (the
+ * dev-only "Start tour" in the account menu, which sits outside the guide).
+ */
+export function requestGuidePreview(): void {
+  previews.emit()
+}
+
+/** Listen for preview requests; returns the function that stops listening. */
+export function subscribeGuidePreview(listener: () => void): () => void {
+  return previews.subscribe(listener)
 }

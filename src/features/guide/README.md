@@ -6,6 +6,8 @@ The lists are `as const`, so their ids are types (`GuideStepId`, `GuidePageId`, 
 
 **No backend change is needed.** The backend stores each member's progress keyed by the step id string and knows no step list (`construx/docs/guide.md`). Its only rules: the id matches `^[a-z][a-z0-9-]{0,63}$` and a member has at most 50 steps.
 
+**Preview your change:** under `bun run dev`, the account menu's "Start tour" (`devTools` in `config/env.ts`, absent from production builds) opens the panel as a brand-new member sees it and runs the first step's "Show me". Skips there are not saved; closing the panel ends the preview.
+
 ## Checklist
 
 1. **Section** (only for a new section): an entry in `guideSections`.

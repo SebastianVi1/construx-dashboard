@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import type { GuideProgress } from '../../../features/guide/guideApi'
-import { acceptsMark, guideReducer, initialGuideState, type GuideState } from '../../../features/guide/guideState'
+import { acceptsMark, guideReducer, initialGuideState, shownProgress, type GuideState } from '../../../features/guide/guideState'
 import { guideCatalog, type GuideIds, type GuideStepId } from '../../../features/guide/catalog'
-import { selectGuide, type GuideSection } from '../../../features/guide/selection'
+import { guideProgressOf, selectGuide, type GuideSection } from '../../../features/guide/selection'
 import { seededRoles } from '../../support/seededRoles'
 
 const at = '2026-11-21T09:00:00Z'
@@ -138,5 +138,45 @@ describe('acceptsMark', () => {
   it('accepts completing a skipped step', () => {
     const skipped: GuideProgress = { ...notStarted, started: true, steps: { 'create-site': 'SKIPPED' } }
     expect(acceptsMark(sections, skipped, 'create-site', 'COMPLETED')).toBe(true)
+  })
+})
+
+describe('guide preview (dev "Start tour")', () => {
+  const sections = selectGuide(seededRoles.OWNER)
+  const real: GuideProgress = { started: true, steps: { 'create-site': 'COMPLETED', 'site-details': 'SKIPPED' }, dismissedAt: at, updatedAt: at }
+  const previewing = () => guideReducer(loaded(real), { type: 'previewStarted' })
+
+  it('shows every step open and the guide not hidden, whatever was saved', () => {
+    const shown = shownProgress(previewing())
+    expect(shown.steps).toEqual({})
+    expect(shown.dismissedAt).toBeNull()
+    const count = guideProgressOf(sections, shown)
+    expect(count.done).toBe(0)
+    expect(count.complete).toBe(false)
+    expect(count.next?.id).toBe(sections[0].steps[0].id)
+  })
+
+  it('a skip in the preview shows only in the preview', () => {
+    const skipped = guideReducer(previewing(), { type: 'previewMarked', stepId: 'invite-member', status: 'SKIPPED' })
+    expect(shownProgress(skipped).steps).toEqual({ 'invite-member': 'SKIPPED' })
+    expect(skipped.progress).toEqual(real)
+  })
+
+  it('a real mark while previewing updates the real progress, not the preview', () => {
+    const marked = guideReducer(previewing(), { type: 'marked', stepId: 'invite-member', status: 'COMPLETED', at: later, sections })
+    expect(marked.progress.steps['invite-member']).toBe('COMPLETED')
+    expect(shownProgress(marked).steps).toEqual({})
+  })
+
+  it('leaving the preview shows the real progress again', () => {
+    const skipped = guideReducer(previewing(), { type: 'previewMarked', stepId: 'invite-member', status: 'SKIPPED' })
+    const left = guideReducer(skipped, { type: 'previewEnded' })
+    expect(left.preview).toBeNull()
+    expect(shownProgress(left)).toEqual(real)
+  })
+
+  it('shows the real progress when not previewing', () => {
+    expect(shownProgress(loaded(real))).toEqual(real)
+    expect(initialGuideState.preview).toBeNull()
   })
 })

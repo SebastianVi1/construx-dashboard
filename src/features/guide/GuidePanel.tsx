@@ -13,9 +13,13 @@ import { landingGuideHref } from './landing'
 import { stepHint, stepStatus, type GuideSection } from './selection'
 import './guide.css'
 
-/** The checklist: one heading per section, a row per step, the counter and "Hide guide". */
+/**
+ * The checklist: one heading per section, a row per step, the counter and
+ * "Hide guide". In the dev preview a note replaces "Hide guide", and a role
+ * with no steps gets a line saying so.
+ */
 export function GuidePanel() {
-  const { sections, count, dismissed, close, hide, show } = useGuide()
+  const { sections, count, dismissed, preview, close, hide, show } = useGuide()
   const { messages: m } = useLocale()
   const t = m.guide
 
@@ -45,8 +49,12 @@ export function GuidePanel() {
           <GuideSectionList key={section.id} section={section} nextId={count.next?.id ?? null} />
         ))}
 
+        {preview && sections.length === 0 ? <p className="guide-panel__empty">{t.preview.empty}</p> : null}
+
         <div className="guide-panel__footer">
-          {dismissed ? (
+          {preview ? (
+            <p className="guide-panel__preview">{t.preview.note}</p>
+          ) : dismissed ? (
             <button type="button" className="guide-panel__link" onClick={show}>
               {t.show}
             </button>

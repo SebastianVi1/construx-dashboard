@@ -6,6 +6,8 @@ import {
   subscribeGuideSteps,
   type GuideMark,
   type GuideSitesReport,
+  requestGuidePreview,
+  subscribeGuidePreview,
 } from '../../../features/guide/guideEvents'
 
 describe('guide step events', () => {
@@ -89,5 +91,16 @@ describe('guide Site reports', () => {
 
     expect(marks).toEqual([])
     expect(() => reportGuideSites('org-1', true)).not.toThrow()
+  })
+})
+
+describe('guide preview requests', () => {
+  it('a listener hears each request until it unsubscribes', () => {
+    let heard = 0
+    const unsubscribe = subscribeGuidePreview(() => heard++)
+    requestGuidePreview()
+    unsubscribe()
+    requestGuidePreview()
+    expect(heard).toBe(1)
   })
 })

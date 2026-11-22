@@ -29,6 +29,10 @@ export const guideMessages = defineMessages({
       title: "You're set up",
       body: 'Every step is done. Guide keeps this list for later.',
     },
+    preview: {
+      note: 'Preview: the guide as a new member sees it. Nothing you do here is saved.',
+      empty: 'Your role has no guide steps.',
+    },
     sections: {
       runCompany: 'Run your company',
       manageSites: 'Manage your sites',
@@ -163,6 +167,10 @@ export const guideMessages = defineMessages({
     complete: {
       title: 'Todo listo',
       body: 'Terminaste todos los pasos. Guía conserva esta lista para después.',
+    },
+    preview: {
+      note: 'Vista previa: la guía como la ve un miembro nuevo. Nada de lo que hagas aquí se guarda.',
+      empty: 'Tu rol no tiene pasos en la guía.',
     },
     sections: {
       runCompany: 'Dirige tu empresa',

@@ -18,6 +18,11 @@ export type GuideState = {
    * the progress the change produced.
    */
   justCompleted: boolean
+  /**
+   * The dev-only preview ("Start tour"): the checklist as a brand-new member
+   * sees it, with this preview's skips. Never saved; null when not previewing.
+   */
+  preview: GuideProgress | null
 }
 
 /** `sections` on `loaded` and `marked`: the member's checklist then, to tell whether the guide is complete. */
@@ -26,12 +31,23 @@ export type GuideAction =
   | { type: 'marked'; stepId: GuideStepId; status: GuideStepStatus; at: string; sections: GuideSection[] }
   | { type: 'dismissed'; dismissed: boolean; at: string }
   | { type: 'acknowledged' }
+  | { type: 'previewStarted' }
+  | { type: 'previewMarked'; stepId: GuideStepId; status: GuideStepStatus }
+  | { type: 'previewEnded' }
+
+const notStarted: GuideProgress = { started: false, steps: {}, dismissedAt: null, updatedAt: null }
 
 export const initialGuideState: GuideState = {
   loaded: false,
-  progress: { started: false, steps: {}, dismissedAt: null, updatedAt: null },
+  progress: notStarted,
   dismissChosen: false,
   justCompleted: false,
+  preview: null,
+}
+
+/** The progress the panel shows: the preview's while previewing, otherwise the real one. */
+export function shownProgress(state: GuideState): GuideProgress {
+  return state.preview ?? state.progress
 }
 
 function complete(sections: GuideSection[], progress: GuideProgress): boolean {
@@ -78,6 +94,13 @@ export function guideReducer(state: GuideState, action: GuideAction): GuideState
       }
     case 'acknowledged':
       return state.justCompleted ? { ...state, justCompleted: false } : state
+    case 'previewStarted':
+      return { ...state, preview: notStarted }
+    case 'previewMarked':
+      if (!state.preview) return state
+      return { ...state, preview: { ...state.preview, steps: { ...state.preview.steps, [action.stepId]: action.status } } }
+    case 'previewEnded':
+      return state.preview ? { ...state, preview: null } : state
   }
 }
 

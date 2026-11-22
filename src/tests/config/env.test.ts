@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { getLandingUrl } from '../../config/env'
+import { devTools, getLandingUrl } from '../../config/env'
 
 describe('getLandingUrl', () => {
   it('is null when the setting is unset or blank', () => {
@@ -25,5 +25,12 @@ describe('getLandingUrl', () => {
     expect(getLandingUrl('https://user:secret@construx.test')).toBeNull()
     expect(getLandingUrl('https://construx.test/?ref=app')).toBeNull()
     expect(getLandingUrl('https://construx.test/#guide')).toBeNull()
+  })
+})
+
+describe('devTools', () => {
+  it('is false outside the Vite dev server', () => {
+    // `bun test` is not `vite dev`; a production build is not either.
+    expect(devTools).toBe(false)
   })
 })

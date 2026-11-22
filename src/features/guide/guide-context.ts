@@ -19,6 +19,11 @@ export type GuideContextValue = {
   launcherVisible: boolean
   /** The last open step was done in this session and "You're set up" hasn't been seen yet. */
   justCompleted: boolean
+  /**
+   * The dev-only preview is on: `sections` as a brand-new member sees them
+   * (`progress`, `count` and `dismissed` are the preview's) and nothing is saved.
+   */
+  preview: boolean
   /** Open the panel. Whatever opens it, failed saves are sent again. */
   open: () => void
   close: () => void
