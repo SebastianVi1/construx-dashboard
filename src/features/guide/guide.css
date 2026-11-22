@@ -131,8 +131,30 @@
   background: var(--cx-success);
 }
 
+/* The step a page just completed: its tick pops once when the panel opens on it. */
+.guide-step[data-just-done] .guide-step__mark {
+  animation: guide-step-done 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes guide-step-done {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Skipped is finished too: the same ticked mark, in neutral ink rather than success green. */
 .guide-step[data-status='skipped'] .guide-step__mark {
-  border-style: dashed;
+  border-color: var(--cx-border-strong);
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
 }
 
 .guide-step__text {
@@ -175,8 +197,38 @@
   font-weight: 500;
 }
 
-.guide-step__skip {
-  margin-top: -4px;
+/*
+ * Skip: a quiet secondary action, the row's own height and focus ring, with
+ * no outline at rest so the step's "Show me" stays the first thing to read.
+ */
+.button.guide-step__skip {
+  margin-top: -6px;
+  gap: 6px;
+  padding: 0 10px;
+  border-color: transparent;
+  color: var(--cx-muted);
+  font-weight: 500;
+}
+
+.button.guide-step__skip:hover:not(:disabled) {
+  border-color: var(--cx-border-strong);
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+}
+
+.button.guide-step__skip:active:not(:disabled) {
+  border-color: var(--cx-border-strong);
+  background: var(--cx-border);
+  color: var(--cx-ink);
+}
+
+.button.guide-step__skip:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 2px;
+}
+
+.guide-step__skip svg {
+  flex: none;
 }
 
 /* "Learn more": a quiet blueprint link under the step text, out to the landing guide. */
@@ -264,6 +316,186 @@
   color: var(--cx-muted);
   font-size: 12px;
   line-height: 16px;
+}
+
+/* ---------- Guided tour timeline ---------- */
+
+/*
+ * A survey line: numbered stations joined by a rule. Done stations fill
+ * green and the rule after them turns green; the current station carries
+ * the blueprint ring, like the checklist's next step.
+ */
+.tour-timeline {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.tour-timeline__header {
+  display: grid;
+  gap: 2px;
+}
+
+.tour-timeline__description {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.tour-timeline__steps {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tour-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 8px 0 12px;
+}
+
+/* The rule down to the next station. */
+.tour-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 34px;
+  bottom: -6px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--cx-border);
+  transition: background-color 150ms ease-out;
+}
+
+.tour-step[data-status='done']:not(:last-child)::after {
+  background: var(--cx-success);
+}
+
+.tour-step__node {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--cx-border-strong);
+  border-radius: 50%;
+  background: var(--cx-surface);
+  color: var(--cx-muted);
+  font: 500 12px/1 var(--cx-font-data);
+  font-variant-numeric: tabular-nums;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+
+.tour-step[data-status='done'] .tour-step__node {
+  border-color: var(--cx-success);
+  background: var(--cx-success);
+  color: var(--cx-on-primary);
+}
+
+.tour-step[data-status='current'] .tour-step__node {
+  border: 2px solid var(--cx-accent);
+  background: var(--cx-accent-subtle);
+  color: var(--cx-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cx-accent) 18%, transparent);
+}
+
+.tour-step__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.tour-step__title {
+  margin: 0;
+  color: var(--cx-ink);
+  font: 500 14px/22px var(--cx-font-sans);
+}
+
+.tour-step[data-status='current'] .tour-step__title {
+  font-weight: 600;
+}
+
+.tour-step__body,
+.tour-step__state {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.tour-step[data-status='done'] .tour-step__state {
+  color: var(--cx-success);
+  font-weight: 500;
+}
+
+/*
+ * A ruled note under a step. `missing`: what it still needs, the amber rule of
+ * the checklist's "not on you" hint. `failed`: not saved yet, a rose rule,
+ * never orange (that means "act").
+ */
+.tour-step__note {
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 0;
+  padding: 2px 0 2px 10px;
+  border-left: 2px solid var(--cx-warning);
+  color: var(--cx-ink);
+  font-size: 13px;
+  line-height: 18px;
+  list-style: none;
+}
+
+.tour-step__note[data-tone='failed'] {
+  border-left-color: var(--cx-danger);
+}
+
+/* "Start this step": the staged row's one action, under its text. */
+.tour-step__run {
+  justify-self: start;
+  margin-top: 10px;
+}
+
+.tour-step__run svg {
+  flex: none;
+  transition: transform 150ms ease-out;
+}
+
+.tour-step__run:hover:not(:disabled) svg {
+  transform: translateX(2px);
+}
+
+.tour-step__action {
+  margin-top: -2px;
+}
+
+.tour-timeline__finished {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--cx-success);
+  font: 600 14px/20px var(--cx-font-display);
+}
+
+.tour-timeline__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-step::after,
+  .tour-step__node,
+  .tour-step__run svg {
+    transition: none;
+  }
 }
 
 /* ---------- Launcher ---------- */
