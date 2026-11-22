@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, setSystemTime } from 'bun:test'
-import { localToday } from '../../lib/dates'
+import { addMonths, localToday } from '../../lib/dates'
 
 const originalTimeZone = process.env.TZ
 
@@ -7,6 +7,25 @@ afterEach(() => {
   setSystemTime()
   if (originalTimeZone === undefined) delete process.env.TZ
   else process.env.TZ = originalTimeZone
+})
+
+describe('addMonths', () => {
+  it.each([
+    ['2026-01-31', 3, '2026-04-30'],
+    ['2026-11-30', 3, '2027-02-28'],
+    ['2027-11-30', 3, '2028-02-29'],
+    ['2026-12-31', 3, '2027-03-31'],
+    ['2026-11-22', 3, '2027-02-22'],
+    ['2026-11-22', 0, '2026-11-22'],
+    ['2026-12-15', 1, '2027-01-15'],
+    ['2028-02-29', 12, '2029-02-28'],
+  ])('%s plus %i calendar months is %s', (date, months, expected) => {
+    expect(addMonths(date, months)).toBe(expected)
+  })
+
+  it.each(['2026-13-01', '2026-1-5', ''])('rejects malformed date %s', (date) => {
+    expect(() => addMonths(date, 3)).toThrow(RangeError)
+  })
 })
 
 describe('localToday', () => {

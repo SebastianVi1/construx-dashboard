@@ -74,6 +74,19 @@ Checkbox-group values are JSON arrays stored as strings in the controller. Use
 `Form` also accepts screen layout classes, `beforeSubmit`, and `submitDisabled`
 for modal action rows and state-dependent submit buttons.
 
+## `Form` props beyond the fields
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `submitLabel` / `pendingLabel` | `string` | Submit text while idle / while the submit is in flight (falls back to `submitLabel`). |
+| `className`, `actionsClassName`, `submitClassName` | `string` | Screen layout classes for the form, the action row and the submit button. |
+| `submitDisabled` | `boolean` | Disable the submit for a screen-specific unchanged or empty state. |
+| `submitTour` | `string` | `data-tour` value on the submit button, so a spotlight tour can highlight it (the guided tour's `site-create-save` in `CreateSiteDialog`). Unset renders no attribute. Values match the guide's `TOUR_TARGET` (`^[a-z][a-z0-9-]*$`). |
+| `beforeSubmit` | `ReactNode` | A control rendered before the submit button, such as Cancel. |
+| `beforeFields` | `ReactNode` | Content rendered before the configured fields. |
+| `formRef` | `Ref<HTMLFormElement>` | Ref to the `<form>`, for a retry that submits again. |
+| `children` | `ReactNode` | Rendered between the fields and the submit button (alerts, status). |
+
 ## `useForm` options
 
 | Option | Type | Description |

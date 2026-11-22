@@ -16,6 +16,7 @@ export function Form({
   actionsClassName,
   submitClassName,
   submitDisabled = false,
+  submitTour,
   beforeSubmit,
   beforeFields,
   formRef,
@@ -28,6 +29,7 @@ export function Form({
       type="submit"
       disabled={isSubmitting || submitDisabled}
       aria-busy={isSubmitting}
+      data-tour={submitTour}
     >
       {isSubmitting && pendingLabel ? pendingLabel : submitLabel}
     </button>
