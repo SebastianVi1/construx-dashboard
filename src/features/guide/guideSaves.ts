@@ -1,13 +1,18 @@
 import type { GuideStepId } from './catalog'
 import type { GuideStepStatus } from './guideApi'
+import type { TourStepId } from './tourCatalog'
 
+/** A checklist step or a guided tour step; both are saved the same way. */
+export type GuideSaveStepId = GuideStepId | TourStepId
+
+// `markStep` and `step` are methods so a fake typed to checklist ids only still fits.
 export type GuideServer = {
-  markStep: (stepId: GuideStepId, status: GuideStepStatus) => Promise<unknown>
+  markStep(stepId: GuideSaveStepId, status: GuideStepStatus): Promise<unknown>
   setDismissed: (dismissed: boolean) => Promise<unknown>
 }
 
 export type GuideSaves = {
-  step: (stepId: GuideStepId, status: GuideStepStatus) => void
+  step(stepId: GuideSaveStepId, status: GuideStepStatus): void
   dismiss: (dismissed: boolean) => void
   /** Send again every save whose latest attempt failed. `GuideProvider` calls it each time the panel opens. */
   retryFailed: () => void

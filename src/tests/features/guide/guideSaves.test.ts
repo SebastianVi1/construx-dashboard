@@ -25,6 +25,31 @@ function fakeServer() {
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('guide saves', () => {
+  it('sends completion for the tour Site step', async () => {
+    const server = fakeServer()
+    const saves = createGuideSaves(server)
+    saves.step('tour-site', 'COMPLETED')
+    await settle()
+    expect(server.sent).toEqual([['step', 'tour-site', 'COMPLETED']])
+  })
+
+  it('retries a failed tour Site completion when the server recovers', async () => {
+    const server = fakeServer()
+    const saves = createGuideSaves(server)
+    server.offline = true
+    saves.step('tour-site', 'COMPLETED')
+    await settle()
+    server.offline = false
+    saves.retryFailed()
+    await settle()
+    saves.retryFailed()
+    await settle()
+    expect(server.sent).toEqual([
+      ['step', 'tour-site', 'COMPLETED'],
+      ['step', 'tour-site', 'COMPLETED'],
+    ])
+  })
+
   it('sends a step save and a dismiss save right away', async () => {
     const server = fakeServer()
     const saves = createGuideSaves(server)
