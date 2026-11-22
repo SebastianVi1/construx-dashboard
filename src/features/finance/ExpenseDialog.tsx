@@ -19,7 +19,7 @@ import {
   type ExpenseErrorKind,
 } from './catalogExpense'
 import { buildExpenseDraft, buildExpensePatch, expenseToValues, makeExpenseSchema } from './expenseForm'
-import { createExpense, expenseCategories, updateExpense, type Expense, type NewExpense } from './financeApi'
+import { createExpense, expenseCategories, updateExpense, type Expense, type ExpensePatch, type NewExpense } from './financeApi'
 import { saveExpense } from './saveExpense'
 
 type ExpenseDialogProps = {
@@ -37,6 +37,14 @@ type ExpenseDialogProps = {
 }
 
 type Mode = 'typed' | 'catalog'
+
+/** The Site's create and update calls both forms hand to `saveExpense`; a caller's `create` replaces the default. */
+function siteExpenseCalls(organizationId: string, siteId: string, create: ExpenseDialogProps['create']) {
+  return {
+    create: create ?? ((draft: NewExpense) => createExpense(organizationId, siteId, draft)),
+    update: (expenseId: string, patch: ExpensePatch) => updateExpense(organizationId, siteId, expenseId, patch),
+  }
+}
 
 function expenseFields(t: Messages['finance'], currency: Currency): FieldConfig[] {
   return [
@@ -136,8 +144,7 @@ function TypedExpenseForm({ organizationId, siteId, expense, create, onSaved, on
           expense,
           patch: (current) => buildExpensePatch(current, values, money),
           draft: () => buildExpenseDraft(values, money),
-          create: create ?? ((draft) => createExpense(organizationId, siteId, draft)),
-          update: (expenseId, patch) => updateExpense(organizationId, siteId, expenseId, patch),
+          ...siteExpenseCalls(organizationId, siteId, create),
         })
         if (result === 'unchanged') {
           setUnchanged(true)
@@ -198,8 +205,7 @@ function CatalogExpenseForm({ organizationId, siteId, expense, seePrices, create
           expense,
           patch: (current) => buildCatalogExpensePatch(current, values),
           draft: () => buildCatalogExpenseDraft(values),
-          create: create ?? ((draft) => createExpense(organizationId, siteId, draft)),
-          update: (expenseId, patch) => updateExpense(organizationId, siteId, expenseId, patch),
+          ...siteExpenseCalls(organizationId, siteId, create),
         })
         if (result === 'unchanged') {
           setUnchanged(true)
