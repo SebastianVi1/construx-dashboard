@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useLocale } from '../../i18n'
+import { GuideEntryControl } from './GuideEntryControl'
 import { GuideIcon } from './GuideIcon'
 import { useGuideEntry } from './useGuideEntry'
 import './guide.css'
@@ -13,35 +14,15 @@ import './guide.css'
 export function GuideHeaderButton({ container }: { container: HTMLElement | null }) {
   const entry = useGuideEntry()
   const { messages: m } = useLocale()
-  const t = m.guide
 
   if (container === null || entry === null) return null
 
-  const content = (
-    <>
-      <GuideIcon className="guide-header-button__icon" />
-      <span className="guide-header-button__label">{t.navEntry}</span>
-    </>
-  )
-
   return createPortal(
-    entry.kind === 'landing' ? (
-      <a className="guide-header-button" href={entry.href} target="_blank" rel="noopener noreferrer">
-        {content}
-        <span className="visually-hidden"> {t.landingEntryLabel}</span>
-      </a>
-    ) : (
-      <button
-        type="button"
-        className="guide-header-button"
-        aria-haspopup="dialog"
-        aria-expanded={entry.isOpen}
-        onClick={entry.open}
-      >
-        {content}
-        {entry.progress ? <span className="visually-hidden">, {entry.progress.label}</span> : null}
-      </button>
-    ),
+    <GuideEntryControl entry={entry} className="guide-header-button">
+      <GuideIcon className="guide-header-button__icon" />
+      <span className="guide-header-button__label">{m.guide.navEntry}</span>
+      {entry.kind === 'panel' && entry.progress ? <span className="visually-hidden">, {entry.progress.label}</span> : null}
+    </GuideEntryControl>,
     container,
   )
 }
