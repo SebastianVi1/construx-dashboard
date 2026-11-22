@@ -1,4 +1,4 @@
-import { guidePages, type GuidePageEntry, type GuideStepEntry } from './catalog'
+import { guidePages, type GuideIds, type GuidePageEntry, type GuideStepEntry } from './catalog'
 import type { GuideSection } from './selection'
 
 /** Where a Site page sends the member when the guide knows no Site yet. */
@@ -32,7 +32,11 @@ export type GuidePath = {
  * remembered Site, and a Site page with no Site known falls back to the
  * Sites list with `needsSite`. Null for an unknown page id.
  */
-export function guidePath(pageId: string, siteId: string | null, pages: GuidePageEntry[] = guidePages): GuidePath | null {
+export function guidePath(
+  pageId: string,
+  siteId: string | null,
+  pages: readonly GuidePageEntry<GuideIds>[] = guidePages,
+): GuidePath | null {
   const page = pages.find((entry) => entry.id === pageId)
   if (!page) return null
   if (!page.needsSite) return { path: page.route, needsSite: false }
@@ -41,7 +45,7 @@ export function guidePath(pageId: string, siteId: string | null, pages: GuidePag
 }
 
 /** The member's steps on one page, in checklist order; the page's "?" replays them. */
-export function stepsOnPage(sections: GuideSection[], pageId: string): GuideStepEntry[] {
+export function stepsOnPage<I extends GuideIds>(sections: readonly GuideSection<I>[], pageId: I['page']): GuideStepEntry<I>[] {
   return sections.flatMap((section) => section.steps.filter((step) => step.page === pageId))
 }
 

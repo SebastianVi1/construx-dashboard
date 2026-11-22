@@ -1,3 +1,4 @@
+import type { GuideIds } from './catalog'
 import type { GuideProgress, GuideStepStatus } from './guideApi'
 import { guideProgressOf, stepStatus, type GuideSection } from './selection'
 
@@ -86,7 +87,7 @@ export function guideReducer(state: GuideState, action: GuideAction): GuideState
  * still be completed.
  */
 export function acceptsMark(
-  sections: GuideSection[],
+  sections: readonly GuideSection<GuideIds>[],
   progress: GuideProgress,
   stepId: string,
   status: GuideStepStatus,

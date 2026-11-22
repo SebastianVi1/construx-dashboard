@@ -3,6 +3,7 @@ import {
   catalogProblems,
   guideCatalog,
   type GuideCatalog,
+  type GuideIds,
   type GuidePageEntry,
   type GuideStepEntry,
 } from '../../../features/guide/catalog'
@@ -10,7 +11,7 @@ import { guidePath, showMeOutcome, siteIdInPath, stepsOnPage } from '../../../fe
 import { selectGuide, type GuideSection } from '../../../features/guide/selection'
 import { seededRoles } from '../../support/seededRoles'
 
-const pages: GuidePageEntry[] = [
+const pages: GuidePageEntry<GuideIds>[] = [
   { id: 'sites', route: '/sites', needsSite: false },
   { id: 'members', route: '/members', needsSite: false },
   { id: 'site-details', route: '/sites/:siteId?tab=details', needsSite: true },
@@ -63,7 +64,7 @@ describe('"Run your company" Show me paths', () => {
 
 describe('catalogProblems on pages and tour targets', () => {
   it('reports a Site route that does not say it needs a Site, and the reverse', () => {
-    const catalog: GuideCatalog = {
+    const catalog: GuideCatalog<GuideIds> = {
       ...guideCatalog,
       pages: [
         ...guideCatalog.pages,
@@ -78,7 +79,7 @@ describe('catalogProblems on pages and tour targets', () => {
   })
 
   it('reports a tour target that is not a plain id', () => {
-    const catalog: GuideCatalog = {
+    const catalog: GuideCatalog<GuideIds> = {
       ...guideCatalog,
       steps: [{ ...guideCatalog.steps[0], tourTargets: ['site-create', 'New site"]'] }],
     }
@@ -89,7 +90,7 @@ describe('catalogProblems on pages and tour targets', () => {
 })
 
 describe('stepsOnPage', () => {
-  const step = (id: string, page: string): GuideStepEntry => ({
+  const step = (id: string, page: string): GuideStepEntry<GuideIds> => ({
     id,
     sections: ['owner'],
     requires: [],
@@ -98,7 +99,7 @@ describe('stepsOnPage', () => {
     tourTargets: [id],
     textKey: 'createSite',
   })
-  const sections: GuideSection[] = [
+  const sections: GuideSection<GuideIds>[] = [
     { id: 'owner', titleKey: 'runCompany', steps: [step('create-site', 'sites'), step('invite-member', 'members')] },
     { id: 'finance', titleKey: 'runCompany', steps: [step('open-site', 'sites')] },
   ]

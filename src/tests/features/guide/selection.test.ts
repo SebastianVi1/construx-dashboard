@@ -3,6 +3,7 @@ import {
   catalogProblems,
   guideCatalog,
   type GuideCatalog,
+  type GuideIds,
   type GuideSectionEntry,
   type GuideStepEntry,
 } from '../../../features/guide/catalog'
@@ -12,7 +13,7 @@ import { acceptsMark } from '../../../features/guide/guideState'
 import { accessOf, seededRoles } from '../../support/seededRoles'
 
 /** Sections and their step ids, in display order. */
-function shape(sections: GuideSection[]): [string, string[]][] {
+function shape(sections: readonly GuideSection<GuideIds>[]): [string, string[]][] {
   return sections.map((section) => [section.id, section.steps.map((step) => step.id)])
 }
 
@@ -26,7 +27,7 @@ describe('built-in catalog', () => {
   })
 
   it('reports a step that names an unknown section or page, or has an id the server rejects', () => {
-    const broken: GuideCatalog = {
+    const broken: GuideCatalog<GuideIds> = {
       ...guideCatalog,
       steps: [
         ...guideCatalog.steps,
@@ -200,33 +201,34 @@ describe('stepHint', () => {
  * through selection and progress with no change to the guide's core code.
  */
 describe('a section added only as list entries', () => {
-  const planning: GuideSectionEntry = {
+  const planning: GuideSectionEntry<GuideIds> = {
     id: 'planning',
     order: 20,
     rule: { requires: [{ action: 'VIEW_PLAN', scope: 'any' }] },
     titleKey: 'runCompany',
   }
-  const early: GuideSectionEntry = {
+  const early: GuideSectionEntry<GuideIds> = {
     id: 'early',
     order: 5,
     rule: { requires: [{ action: 'VIEW_PLAN', scope: 'organization' }] },
     titleKey: 'runCompany',
   }
-  const notForOwners: GuideSectionEntry = {
+  const notForOwners: GuideSectionEntry<GuideIds> = {
     id: 'not-for-owners',
     order: 30,
     rule: { requires: [{ action: 'VIEW_PROJECT', scope: 'any' }], unless: ['owner'] },
     titleKey: 'runCompany',
   }
   const base = guideCatalog.steps[0]
-  const step = (entry: Partial<GuideStepEntry> & Pick<GuideStepEntry, 'id' | 'sections'>): GuideStepEntry => ({
+  type TestStep = GuideStepEntry<GuideIds>
+  const step = (entry: Partial<TestStep> & Pick<TestStep, 'id' | 'sections'>): TestStep => ({
     ...base,
     requires: [],
     tourTargets: [],
     ...entry,
   })
   // Only the first built-in section and step, so new built-in entries don't change these expectations.
-  const catalog: GuideCatalog = {
+  const catalog: GuideCatalog<GuideIds> = {
     sections: [guideCatalog.sections[0], planning, early, notForOwners],
     steps: [
       base,

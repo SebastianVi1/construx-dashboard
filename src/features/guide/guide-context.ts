@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { GuideStepId } from './catalog'
 import type { GuideProgress } from './guideApi'
 import type { GuideCount, GuideSection } from './selection'
 import type { GuideTours } from './useGuideTours'
@@ -21,7 +22,7 @@ export type GuideContextValue = {
   /** Open the panel. Whatever opens it, failed saves are sent again. */
   open: () => void
   close: () => void
-  skip: (stepId: string) => void
+  skip: (stepId: GuideStepId) => void
   /** Hide the guide (the launcher goes away). */
   hide: () => void
   /** Bring the launcher back after hiding the guide. */

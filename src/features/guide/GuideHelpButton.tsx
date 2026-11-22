@@ -1,4 +1,5 @@
 import { useLocale } from '../../i18n'
+import type { GuidePageId } from './catalog'
 import { useGuide } from './guide-context'
 import { stepsOnPage } from './guidePaths'
 import './guide-actions.css'
@@ -10,7 +11,7 @@ import './guide-actions.css'
  * `onReplay` runs first: a page whose targets sit behind one of its tabs
  * opens that tab there, and the tour waits for the targets to show.
  */
-export function GuideHelpButton({ page, onReplay }: { page: string; onReplay?: () => void }) {
+export function GuideHelpButton({ page, onReplay }: { page: GuidePageId; onReplay?: () => void }) {
   const { sections, replayPage } = useGuide()
   const { messages: m } = useLocale()
 

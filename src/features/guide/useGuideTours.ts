@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useLocale } from '../../i18n'
-import type { GuideStepEntry } from './catalog'
+import type { GuidePageId, GuideStepEntry, GuideStepId } from './catalog'
 import { subscribeGuideSiteOpened } from './guideEvents'
 import { guidePath, showMeOutcome, siteIdInPath, stepsOnPage, type GuideNoticeKind } from './guidePaths'
 import { readLastSite, rememberLastSite } from './lastSite'
@@ -9,7 +9,7 @@ import type { GuideSection } from './selection'
 import { destroyActiveTour, isPhoneWidth, startTour, tourStops } from './tour'
 
 /** A hint the panel shows under one step after "Show me" (see `GuideNoticeKind`). */
-export type GuideNotice = { stepId: string; kind: GuideNoticeKind }
+export type GuideNotice = { stepId: GuideStepId; kind: GuideNoticeKind }
 
 export type GuideTours = {
   /** The last Site visited in this Company (since the guide mounted, or remembered from before). */
@@ -17,9 +17,9 @@ export type GuideTours = {
   notice: GuideNotice | null
   clearNotice: () => void
   /** Open the step's page and spotlight its targets; on phones keep the sheet open with the step's text as the hint. */
-  showMe: (stepId: string) => void
+  showMe: (stepId: GuideStepId) => void
   /** Replay the tours of the member's steps on a page (the page's "?"). On phones, open the sheet on the first one's hint. */
-  replayPage: (pageId: string) => void
+  replayPage: (pageId: GuidePageId) => void
 }
 
 /**
@@ -74,7 +74,7 @@ export function useGuideTours({
     setOpen(true)
   }
 
-  function showMe(stepId: string) {
+  function showMe(stepId: GuideStepId) {
     const step = sections.flatMap((section) => section.steps).find((entry) => entry.id === stepId)
     const target = step ? guidePath(step.page, lastSiteId) : null
     if (!step || !target) return
@@ -85,7 +85,7 @@ export function useGuideTours({
     if (outcome.spotlight) void spotlight([step])
   }
 
-  function replayPage(pageId: string) {
+  function replayPage(pageId: GuidePageId) {
     const steps = stepsOnPage(sections, pageId)
     if (steps.length === 0) return
     const outcome = showMeOutcome({ path: pathname, needsSite: false }, isPhoneWidth())

@@ -1,12 +1,15 @@
+import type { GuideStepId } from './catalog'
+
 /**
  * Signals from pages to the guide. A page calls `markGuideStep` after the real
  * API call succeeds, `reportGuideSites` once it knows whether the member is on
- * any Site, and `reportGuideSiteOpened` once a Site page loaded its Site; the guide's state, when mounted, listens. Pages never import
- * the guide's state, and with no listener a signal does nothing.
+ * any Site, and `reportGuideSiteOpened` once a Site page loaded its Site; the
+ * guide's state, when mounted, listens. Pages never import the guide's state,
+ * and with no listener a signal does nothing.
  */
 
 export type GuideMark = {
-  stepId: string
+  stepId: GuideStepId
   /** Company the action happened in; a mark for another Company is ignored. Null when the caller doesn't say. */
   organizationId: string | null
 }
@@ -39,7 +42,7 @@ const sites = channel<GuideSitesReport>()
 const openedSites = channel<GuideSiteOpened>()
 
 /** Report that the member really did a step's action. Call it only after the API call succeeds. */
-export function markGuideStep(stepId: string, organizationId?: string): void {
+export function markGuideStep(stepId: GuideStepId, organizationId?: string): void {
   marks.emit({ stepId, organizationId: organizationId ?? null })
 }
 

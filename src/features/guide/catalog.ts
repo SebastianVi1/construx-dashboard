@@ -6,26 +6,38 @@ import type { guideMessages } from './messages'
  * page is only new entries here (plus its text in `messages.ts`); selection,
  * progress and the UI read these lists and never name an id themselves.
  * `catalogProblems` (run by the tests) checks that the entries fit together.
+ *
+ * The lists are `as const`, so their ids are types too (`GuideStepId`,
+ * `GuidePageId`, `GuideSectionId`, `GuideTourTarget`): a step naming an
+ * unknown section or page, or a page passing a misspelt id to
+ * `markGuideStep`, `<GuideHelpButton page>` or `data-tour`, fails the build.
  */
 
 /**
  * One permission a rule needs. `organization` means a company-wide grant;
  * `any` accepts any scope (a grant on assigned sites or own tasks counts).
  */
-export type GuideGrant = { action: PermissionAction; scope: 'organization' | 'any' }
+export type GuideGrant = { readonly action: PermissionAction; readonly scope: 'organization' | 'any' }
+
+/**
+ * The ids a catalog uses. Entry types default to the built-in catalog's own
+ * ids; `GuideIds` itself (any string) types a catalog built elsewhere, such
+ * as one in a test, which `catalogProblems` then checks at run time.
+ */
+export type GuideIds = { section: string; step: string; page: string; target: string }
 
 /** Who sees a section: every grant in `requires`, and none of the sections named in `unless`. */
-export type GuideSectionRule = {
-  requires: GuideGrant[]
+export type GuideSectionRule<I extends GuideIds = GuideCatalogIds> = {
+  requires: readonly GuideGrant[]
   /** Section ids; a member who meets the `requires` of any of them doesn't see this section. */
-  unless?: string[]
+  unless?: readonly I['section'][]
 }
 
-export type GuideSectionEntry = {
-  id: string
+export type GuideSectionEntry<I extends GuideIds = GuideCatalogIds> = {
+  id: I['section']
   /** Display position; lower comes first. A step shared by two sections shows in the first one only. */
   order: number
-  rule: GuideSectionRule
+  rule: GuideSectionRule<I>
   /** Heading, from `messages.guide.sections`. */
   titleKey: keyof typeof guideMessages.en.sections
 }
@@ -33,40 +45,40 @@ export type GuideSectionEntry = {
 /** Chapter anchors of the landing page's long-form guide (`/guia#…`, `/en/guide#…`). */
 export type GuideChapter = 'start' | 'sites' | 'company' | 'tasks' | 'finance'
 
-export type GuideStepEntry = {
+export type GuideStepEntry<I extends GuideIds = GuideCatalogIds> = {
   /** Stored on the server: must match `^[a-z][a-z0-9-]{0,63}$` and never change once shipped. */
-  id: string
+  id: I['step']
   /** Section ids, in preference order; the step shows under the first visible one. */
-  sections: string[]
+  sections: readonly I['section'][]
   /** Every grant the member needs to do the step; otherwise the step is hidden and not counted. */
-  requires: GuideGrant[]
+  requires: readonly GuideGrant[]
   /** Id of the page (in `pages`) where the step is done. */
-  page: string
+  page: I['page']
   /** Landing-guide chapter that explains the step in depth. */
   chapter: GuideChapter
   /** `data-tour` attribute values on the step's page, highlighted in this order. */
-  tourTargets: string[]
+  tourTargets: readonly I['target'][]
   /** Title and body, from `messages.guide.steps`. */
   textKey: keyof typeof guideMessages.en.steps
   /** Hint (from `messages.guide.hints`) shown under the open step when the member is on no Site. */
   noSiteHint?: keyof typeof guideMessages.en.hints
 }
 
-export type GuidePageEntry = {
-  id: string
+export type GuidePageEntry<I extends GuideIds = GuideCatalogIds> = {
+  id: I['page']
   /** App route. A route under a Site uses the `:siteId` placeholder. */
   route: string
   /** The route is inside one Site, so the guide needs a Site to open it. */
   needsSite: boolean
 }
 
-export type GuideCatalog = {
-  sections: GuideSectionEntry[]
-  steps: GuideStepEntry[]
-  pages: GuidePageEntry[]
+export type GuideCatalog<I extends GuideIds = GuideCatalogIds> = {
+  sections: readonly GuideSectionEntry<I>[]
+  steps: readonly GuideStepEntry<I>[]
+  pages: readonly GuidePageEntry<I>[]
 }
 
-export const guideSections: GuideSectionEntry[] = [
+export const guideSections = [
   {
     id: 'owner',
     order: 10,
@@ -97,10 +109,23 @@ export const guideSections: GuideSectionEntry[] = [
     rule: { requires: [{ action: 'MANAGE_BUDGET', scope: 'organization' }] },
     titleKey: 'finance',
   },
-]
+] as const satisfies readonly GuideSectionEntry<GuideIds>[]
+
+export type GuideSectionId = (typeof guideSections)[number]['id']
+
+export const guidePages = [
+  { id: 'sites', route: '/sites', needsSite: false },
+  { id: 'site-details', route: '/sites/:siteId?tab=details', needsSite: true },
+  { id: 'members', route: '/members', needsSite: false },
+  { id: 'phases', route: '/sites/:siteId/phases', needsSite: true },
+  { id: 'site-budget', route: '/sites/:siteId?tab=details', needsSite: true },
+  { id: 'finance', route: '/finance', needsSite: false },
+] as const satisfies readonly GuidePageEntry<GuideIds>[]
+
+export type GuidePageId = (typeof guidePages)[number]['id']
 
 /** Within a section, steps keep this list's order. */
-export const guideSteps: GuideStepEntry[] = [
+export const guideSteps = [
   {
     id: 'create-site',
     sections: ['owner'],
@@ -199,16 +224,16 @@ export const guideSteps: GuideStepEntry[] = [
     tourTargets: ['finance-totals', 'finance-sites'],
     textKey: 'viewFinance',
   },
-]
+  // Sections and pages must exist; step ids and targets are free (their format is checked at run time).
+] as const satisfies readonly GuideStepEntry<{ section: GuideSectionId; step: string; page: GuidePageId; target: string }>[]
 
-export const guidePages: GuidePageEntry[] = [
-  { id: 'sites', route: '/sites', needsSite: false },
-  { id: 'site-details', route: '/sites/:siteId?tab=details', needsSite: true },
-  { id: 'members', route: '/members', needsSite: false },
-  { id: 'phases', route: '/sites/:siteId/phases', needsSite: true },
-  { id: 'site-budget', route: '/sites/:siteId?tab=details', needsSite: true },
-  { id: 'finance', route: '/finance', needsSite: false },
-]
+/** A step id of the built-in catalog, as pages pass it to `markGuideStep`. */
+export type GuideStepId = (typeof guideSteps)[number]['id']
+/** A `data-tour` value of the built-in catalog. */
+export type GuideTourTarget = (typeof guideSteps)[number]['tourTargets'][number]
+
+/** The built-in catalog's ids: the default of every entry type. */
+export type GuideCatalogIds = { section: GuideSectionId; step: GuideStepId; page: GuidePageId; target: GuideTourTarget }
 
 export const guideCatalog: GuideCatalog = { sections: guideSections, steps: guideSteps, pages: guidePages }
 
@@ -222,7 +247,7 @@ export const TOUR_TARGET = /^[a-z][a-z0-9-]*$/
 export const GUIDE_MAX_STEPS = 50
 
 /** Mistakes in a catalog, one sentence each; empty when every entry fits. */
-export function catalogProblems(catalog: GuideCatalog): string[] {
+export function catalogProblems(catalog: GuideCatalog<GuideIds>): string[] {
   const problems: string[] = []
   const sectionIds = new Set<string>()
   for (const section of catalog.sections) {
