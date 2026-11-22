@@ -1,5 +1,4 @@
-import { formatMessage, useLocale } from '../../i18n'
-import { useGuide } from './guide-context'
+import { useLocale } from '../../i18n'
 import { GuideIcon, NewTabIcon } from './GuideIcon'
 import { useGuideEntry } from './useGuideEntry'
 import './guide.css'
@@ -10,7 +9,6 @@ import './guide.css'
  * landing guide instead, or no entry when no landing URL is configured.
  */
 export function GuideNavButton() {
-  const { count, isOpen, open } = useGuide()
   const entry = useGuideEntry()
   const { messages: m } = useLocale()
   const t = m.guide
@@ -35,17 +33,17 @@ export function GuideNavButton() {
       type="button"
       className="workspace-nav__link guide-nav-button"
       aria-haspopup="dialog"
-      aria-expanded={isOpen}
-      onClick={open}
+      aria-expanded={entry.isOpen}
+      onClick={entry.open}
     >
       <GuideIcon className="workspace-nav__icon" />
       <span className="workspace-nav__label">{t.navEntry}</span>
-      {count.complete ? null : (
+      {entry.progress ? (
         <span className="guide-nav-button__count">
-          <span aria-hidden="true">{formatMessage(t.count, { done: count.done, total: count.total })}</span>
-          <span className="visually-hidden">{formatMessage(t.progress, { done: count.done, total: count.total })}</span>
+          <span aria-hidden="true">{entry.progress.short}</span>
+          <span className="visually-hidden">{entry.progress.label}</span>
         </span>
-      )}
+      ) : null}
     </button>
   )
 }

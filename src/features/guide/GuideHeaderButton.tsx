@@ -1,6 +1,5 @@
 import { createPortal } from 'react-dom'
-import { formatMessage, useLocale } from '../../i18n'
-import { useGuide } from './guide-context'
+import { useLocale } from '../../i18n'
 import { GuideIcon } from './GuideIcon'
 import { useGuideEntry } from './useGuideEntry'
 import './guide.css'
@@ -12,7 +11,6 @@ import './guide.css'
  * a slot the header leaves for it. CSS shows it only at phone width.
  */
 export function GuideHeaderButton({ container }: { container: HTMLElement | null }) {
-  const { count, isOpen, open } = useGuide()
   const entry = useGuideEntry()
   const { messages: m } = useLocale()
   const t = m.guide
@@ -37,13 +35,11 @@ export function GuideHeaderButton({ container }: { container: HTMLElement | null
         type="button"
         className="guide-header-button"
         aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        onClick={open}
+        aria-expanded={entry.isOpen}
+        onClick={entry.open}
       >
         {content}
-        {count.complete ? null : (
-          <span className="visually-hidden">, {formatMessage(t.progress, { done: count.done, total: count.total })}</span>
-        )}
+        {entry.progress ? <span className="visually-hidden">, {entry.progress.label}</span> : null}
       </button>
     ),
     container,

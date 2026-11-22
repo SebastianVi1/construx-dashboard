@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { guideEntry } from '../../../features/guide/entry'
+import { entryProgress, guideEntry } from '../../../features/guide/entry'
+import { guideMessages } from '../../../features/guide/messages'
 
 const landing = 'https://construx.test/en/guide/#start'
 
@@ -22,5 +23,24 @@ describe('guideEntry', () => {
 
   it('shows nothing until permissions load, so nobody briefly sees the Worker link', () => {
     expect(guideEntry({ permissionsReady: false, hasSteps: false, landingHref: landing })).toBeNull()
+  })
+})
+
+describe('entryProgress', () => {
+  const en = guideMessages.en
+
+  it('gives the short counter and the spoken progress while steps are open', () => {
+    expect(entryProgress({ done: 2, total: 5, complete: false }, en)).toEqual({ short: '2/5', label: '2 of 5 done' })
+  })
+
+  it('reads in Spanish too', () => {
+    expect(entryProgress({ done: 0, total: 3, complete: false }, guideMessages.es)).toEqual({
+      short: '0/3',
+      label: '0 de 3 hechos',
+    })
+  })
+
+  it('shows nothing once the guide is complete', () => {
+    expect(entryProgress({ done: 5, total: 5, complete: true }, en)).toBeNull()
   })
 })
