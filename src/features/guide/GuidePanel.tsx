@@ -4,6 +4,7 @@ import { Modal } from '../../components/modal'
 import { getLandingUrl } from '../../config/env'
 import { formatMessage, useLocale } from '../../i18n'
 import type { GuideStepEntry } from './catalog'
+import { progressText } from './entry'
 import { useGuide } from './guide-context'
 import { NewTabIcon } from './GuideIcon'
 import { GuideShowMe } from './GuideShowMe'
@@ -22,7 +23,7 @@ export function GuidePanel() {
     <Modal variant="dock" title={t.title} description={t.description} onClose={close} closeLabel={t.close}>
       <div className="guide-panel">
         <div className="guide-meter">
-          <p className="guide-meter__label">{formatMessage(t.progress, { done: count.done, total: count.total })}</p>
+          <p className="guide-meter__label">{progressText(count, t).label}</p>
           <ol className="guide-meter__track" aria-hidden="true">
             {Array.from({ length: count.total }, (_, index) => (
               <li key={index} className="guide-meter__tick" data-done={index < count.done} />

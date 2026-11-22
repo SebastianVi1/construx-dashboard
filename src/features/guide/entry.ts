@@ -18,12 +18,15 @@ export function guideEntry(input: { permissionsReady: boolean; hasSteps: boolean
 /** Progress beside a Guide entry: `short` to show ("2/5"), `label` to read out. */
 export type EntryProgress = { short: string; label: string }
 
-/** The entry's progress while steps are open; none once the guide is complete. */
-export function entryProgress(
-  count: Pick<GuideCount, 'done' | 'total' | 'complete'>,
-  t: { count: string; progress: string },
-): EntryProgress | null {
-  if (count.complete) return null
+type ProgressMessages = { count: string; progress: string }
+
+/** The progress text wherever it shows (launcher, panel, Guide entry), complete or not. */
+export function progressText(count: Pick<GuideCount, 'done' | 'total'>, t: ProgressMessages): EntryProgress {
   const values = { done: count.done, total: count.total }
   return { short: formatMessage(t.count, values), label: formatMessage(t.progress, values) }
+}
+
+/** The entry's progress while steps are open; none once the guide is complete. */
+export function entryProgress(count: Pick<GuideCount, 'done' | 'total' | 'complete'>, t: ProgressMessages): EntryProgress | null {
+  return count.complete ? null : progressText(count, t)
 }

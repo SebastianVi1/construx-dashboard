@@ -1,7 +1,8 @@
 import { useEffect, useEffectEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { CheckIcon } from '../../components/icons'
-import { formatMessage, useLocale } from '../../i18n'
+import { useLocale } from '../../i18n'
+import { progressText } from './entry'
 import { useGuide } from './guide-context'
 import { GuideIcon } from './GuideIcon'
 import './guide.css'
@@ -29,7 +30,7 @@ export function GuideLauncher() {
 
   if (!launcherVisible) return null
 
-  const counter = formatMessage(t.count, { done: count.done, total: count.total })
+  const counter = progressText(count, t)
 
   return createPortal(
     <div className="guide-launcher" data-state={celebrating ? 'complete' : 'open'}>
@@ -47,9 +48,9 @@ export function GuideLauncher() {
           {celebrating ? t.complete.title : t.launcher}
         </span>
         <span className="guide-launcher__count" aria-hidden="true">
-          {counter}
+          {counter.short}
         </span>
-        <span className="visually-hidden">{formatMessage(t.progress, { done: count.done, total: count.total })}</span>
+        <span className="visually-hidden">{counter.label}</span>
       </button>
     </div>,
     document.body,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { entryProgress, guideEntry } from '../../../features/guide/entry'
+import { entryProgress, guideEntry, progressText } from '../../../features/guide/entry'
 import { guideMessages } from '../../../features/guide/messages'
 
 const landing = 'https://construx.test/en/guide/#start'
@@ -42,5 +42,12 @@ describe('entryProgress', () => {
 
   it('shows nothing once the guide is complete', () => {
     expect(entryProgress({ done: 5, total: 5, complete: true }, en)).toBeNull()
+  })
+})
+
+describe('progressText', () => {
+  it('gives the counter and the spoken progress, also once the guide is complete (launcher and panel)', () => {
+    expect(progressText({ done: 5, total: 5 }, guideMessages.en)).toEqual({ short: '5/5', label: '5 of 5 done' })
+    expect(progressText({ done: 1, total: 4 }, guideMessages.es)).toEqual({ short: '1/4', label: '1 de 4 hechos' })
   })
 })
