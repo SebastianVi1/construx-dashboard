@@ -42,6 +42,26 @@ describe('getJson', () => {
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ status: 409, code: 'DUPLICATE' })
   })
+
+  it('keeps the other problem properties readable, such as a rule\'s action and requirement', async () => {
+    fakeFetcher(() => ({
+      status: 400,
+      data: { type: 'about:blank', status: 400, code: 'ROLE_DEPENDENCY_MISSING', action: 'MANAGE_PLAN', requires: 'VIEW_PLAN' },
+    }))
+
+    const error = (await getJson('/sites', okSchema).catch((e: unknown) => e)) as ApiError
+    expect(error.problem).toMatchObject({ action: 'MANAGE_PLAN', requires: 'VIEW_PLAN' })
+    expect(error.problemString('requires')).toBe('VIEW_PLAN')
+    expect(error.problemString('status')).toBeUndefined()
+  })
+
+  it('has an empty problem when the body is not an object', async () => {
+    fakeFetcher(() => ({ status: 502, data: '<html>Bad gateway</html>' }))
+
+    const error = (await getJson('/sites', okSchema).catch((e: unknown) => e)) as ApiError
+    expect(error.problem).toEqual({})
+    expect(error.problemString('code')).toBeUndefined()
+  })
 })
 
 /** Fake presigned storage: answers every transfer with `status` and records it. */
