@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { TEXT_LIMITS } from '../../components/form'
 import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
-import { roleNamesSchema, roleSchema } from '../permissions/can'
+import { roleSchema } from '../permissions/can'
 import { personSchema } from '../people/personSchema'
 import { organizationPath } from '../../lib/apiPaths'
 
@@ -14,16 +14,6 @@ export const memberSchema = personSchema.extend({
 })
 
 export type Member = z.infer<typeof memberSchema>
-
-export const organizationRoleSchema = z.object({
-  id: z.string().min(1),
-  code: z.string(),
-  name: z.string(),
-  names: roleNamesSchema.optional(),
-  system: z.boolean(),
-})
-
-export type OrganizationRole = z.infer<typeof organizationRoleSchema>
 
 export const invitationSchema = z.object({
   id: z.string().min(1),
@@ -44,13 +34,9 @@ export function listMembers(organizationId: string): Promise<Member[]> {
   return getJson(`${organizationPath(organizationId)}/members`, z.array(memberSchema))
 }
 
-export function listRoles(organizationId: string): Promise<OrganizationRole[]> {
-  return getJson(`${organizationPath(organizationId)}/roles`, z.array(organizationRoleSchema))
-}
-
-/** Roles an invitation may grant: every role except OWNER (there is one owner, the creator). */
-export function invitableRoles<T extends { code: string }>(roles: T[]): T[] {
-  return roles.filter((role) => role.code !== 'OWNER')
+/** Roles an invitation may grant: those the server marks assignable for the caller (never Owner; roles contract §3). */
+export function invitableRoles<T extends { assignable: boolean }>(roles: T[]): T[] {
+  return roles.filter((role) => role.assignable)
 }
 
 export function listInvitations(organizationId: string): Promise<Invitation[]> {

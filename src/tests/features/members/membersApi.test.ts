@@ -8,7 +8,6 @@ import {
   inviteErrorKind,
   listInvitations,
   listMembers,
-  listRoles,
   makeInviteSchema,
   revokeErrorKind,
   revokeInvitation,
@@ -35,9 +34,10 @@ const member = {
   status: 'ACTIVE',
 }
 const roles = [
-  { id: 'r-0', code: 'OWNER', name: 'Propietario', names: { en: 'Owner', es: 'Propietario' }, system: true },
-  { id: 'r-1', code: 'ADMINISTRATOR', name: 'Administrador', names: { en: 'Administrator', es: 'Administrador' }, system: true },
-  { id: 'r-2', code: 'WORKER', name: 'Trabajador', names: { en: 'Worker', es: 'Trabajador' }, system: true },
+  { code: 'OWNER', assignable: false },
+  { code: 'ADMINISTRATOR', assignable: true },
+  { code: 'FINANCE', assignable: false },
+  { code: 'WORKER', assignable: true },
 ]
 
 function stubApi(responses: { get?: (url: string) => unknown; send?: () => unknown } = {}) {
@@ -57,14 +57,7 @@ describe('members API', () => {
     expect(get.mock.calls[0][0]).toBe('/api/organizations/org-1/members')
   })
 
-  it('listRoles: gets the organization roles with their names in both languages', async () => {
-    const { get } = stubApi({ get: () => ({ status: 200, data: roles }) })
-
-    expect(await listRoles('org-1')).toEqual(roles)
-    expect(get.mock.calls[0][0]).toBe('/api/organizations/org-1/roles')
-  })
-
-  it('invitableRoles: leaves out OWNER, which cannot be invited', () => {
+  it('invitableRoles: keeps only the roles the server says the caller may assign', () => {
     expect(invitableRoles(roles).map((role) => role.code)).toEqual(['ADMINISTRATOR', 'WORKER'])
   })
 

@@ -21,6 +21,11 @@ export const permissionActions = [
 
 export type PermissionAction = (typeof permissionActions)[number]
 
+/** Reach of a grant, narrowest first: `OWN` < `PROJECT` < `ORGANIZATION` (roles contract §3). */
+export const scopeSchema = z.enum(['OWN', 'PROJECT', 'ORGANIZATION'])
+
+export type Scope = z.infer<typeof scopeSchema>
+
 /** A role's display name in each language (roles contract §5.11). */
 export const roleNamesSchema = z.object({ en: z.string(), es: z.string() })
 
@@ -39,7 +44,7 @@ export const myAccessSchema = z.object({
     z.object({
       // Unknown actions are kept (a newer backend may add some); scopes are a closed set.
       action: z.string(),
-      scope: z.enum(['ORGANIZATION', 'PROJECT', 'OWN']),
+      scope: scopeSchema,
     }),
   ),
 })

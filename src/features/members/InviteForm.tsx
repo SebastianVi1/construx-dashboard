@@ -10,12 +10,12 @@ import {
   makeInviteSchema,
   type Invitation,
   type InviteErrorKind,
-  type OrganizationRole,
 } from './membersApi'
+import type { RoleSummary } from '../roles/rolesApi'
 
 type InviteFormProps = {
   organizationId: string
-  roles: OrganizationRole[]
+  roles: RoleSummary[]
   /** Sites the invitation may grant; null hides the site field (no MANAGE_PROJECT). */
   sites: Site[] | null
   onInvited: (invitation: Invitation, message: string) => void
