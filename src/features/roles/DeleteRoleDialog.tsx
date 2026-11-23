@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Field } from '../../components/form'
 import { ConfirmDialog } from '../../components/modal'
 import { Notice } from '../../components/page'
@@ -36,9 +36,11 @@ export function DeleteRoleDialog({ organizationId, role, onDeleted, onClose }: P
   const options = roles.data ? replacementOptions(roles.data, role.code) : null
   const chosen = options?.find((option) => option.code === replacement) ?? null
   const lines = countLines(counts, m)
+  const deleting = useRef(false)
 
   async function confirm() {
-    if (counts.needsReplacement && !chosen) return
+    if (deleting.current || (counts.needsReplacement && !chosen)) return
+    deleting.current = true
     setError(null)
     try {
       const target = counts.needsReplacement && chosen ? chosen.code : null
@@ -48,6 +50,8 @@ export function DeleteRoleDialog({ organizationId, role, onDeleted, onClose }: P
       const next = reportedReplacementCounts(failure)
       if (next) setReported(next)
       setError(roleErrorMessage(failure, m, null, locale))
+    } finally {
+      deleting.current = false
     }
   }
 
