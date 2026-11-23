@@ -1,18 +1,18 @@
 import { useState } from 'react'
-import { useRemoteData } from '../../components/data/useRemoteData'
 import { Field } from '../../components/form'
 import { ConfirmDialog } from '../../components/modal'
 import { Notice } from '../../components/page'
 import { formatMessage, useLocale, type Messages } from '../../i18n'
 import { roleLabel } from '../permissions'
 import { deletionCounts, replacementOptions, reportedReplacementCounts, type DeletionCounts, type ReplacementCounts } from './customRoles'
-import { deleteRole, listRoles, type RoleSummary } from './rolesApi'
+import { deleteRole, type RoleDetail } from './rolesApi'
+import { useRoles } from './rolesCache'
 import { invitationCountLabel, memberCountLabel, roleErrorMessage } from './roleView'
 import '../../components/form/form.css'
 
 type Props = {
   organizationId: string
-  role: RoleSummary
+  role: RoleDetail
   /** The role is gone; `replacement` is where its members and invitations went, if anywhere. */
   onDeleted: (replacement: string | null) => void
   onClose: () => void
@@ -20,15 +20,15 @@ type Props = {
 
 /**
  * "Delete role" (roles contract §5.6, §8.3). A role anyone still references
- * (members, members who left, invitations) needs a replacement chosen from the
- * roles the caller may assign. Former members only show up once the server
- * refuses with `ROLE_REPLACEMENT_REQUIRED`: then the dialog stays open with the
- * server's counts and asks for a replacement.
+ * (members, members who left, invitations in any status) needs a replacement
+ * chosen from the roles the caller may assign. The role page's counts show
+ * before the first attempt; if the server still refuses with
+ * `ROLE_REPLACEMENT_REQUIRED` (someone joined meanwhile), its counts replace them.
  */
 export function DeleteRoleDialog({ organizationId, role, onDeleted, onClose }: Props) {
   const { messages: m, locale } = useLocale()
   const t = m.roles.remove
-  const roles = useRemoteData(`${organizationId}:roles`, () => listRoles(organizationId))
+  const roles = useRoles(organizationId)
   const [reported, setReported] = useState<ReplacementCounts | null>(null)
   const [replacement, setReplacement] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -109,13 +109,21 @@ export function DeleteRoleDialog({ organizationId, role, onDeleted, onClose }: P
   )
 }
 
-/** "3 members", "1 former member", "2 pending invitations": only the counts above zero. */
+/** "3 members", "1 former member", "2 pending invitations", "1 past invitation": only the counts above zero. */
 function countLines(counts: DeletionCounts, m: Messages): string[] {
-  const t = m.roles.remove.formerMembers
+  const t = m.roles.remove
   const lines: string[] = []
   if (counts.memberCount > 0) lines.push(memberCountLabel(counts.memberCount, m))
-  if (counts.formerMemberCount) lines.push(counts.formerMemberCount === 1 ? t.one : formatMessage(t.many, { count: counts.formerMemberCount }))
+  const former = countLabel(counts.formerMemberCount, t.formerMembers)
+  if (former) lines.push(former)
   const invitations = invitationCountLabel(counts.pendingInvitationCount, m)
   if (invitations) lines.push(invitations)
+  const past = countLabel(counts.pastInvitationCount, t.pastInvitations)
+  if (past) lines.push(past)
   return lines
+}
+
+function countLabel(count: number, labels: { one: string; many: string }): string | null {
+  if (count <= 0) return null
+  return count === 1 ? labels.one : formatMessage(labels.many, { count })
 }

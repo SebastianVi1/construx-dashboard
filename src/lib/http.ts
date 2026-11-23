@@ -41,6 +41,12 @@ export class ApiError extends Error {
     const value = this.problem[name]
     return typeof value === 'string' ? value : undefined
   }
+
+  /** A finite number property of the problem body, or undefined when absent or not a number. */
+  problemNumber(name: string): number | undefined {
+    const value = this.problem[name]
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+  }
 }
 
 export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete'

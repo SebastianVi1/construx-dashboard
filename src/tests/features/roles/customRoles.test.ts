@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import {
   canCreateRole,
+  canDeleteRole,
   canDuplicate,
   copyName,
   deletionCounts,
@@ -124,15 +125,25 @@ describe('replacementOptions', () => {
 
 describe('reportedReplacementCounts', () => {
   it('reads the member, former-member and invitation counts of ROLE_REPLACEMENT_REQUIRED', () => {
-    const error = new ApiError(409, undefined, 'ROLE_REPLACEMENT_REQUIRED', { memberCount: 0, formerMemberCount: 1, pendingInvitationCount: 2 })
+    const error = new ApiError(409, undefined, 'ROLE_REPLACEMENT_REQUIRED', {
+      memberCount: 0,
+      formerMemberCount: 1,
+      pendingInvitationCount: 2,
+      invitationCount: 3,
+    })
 
-    expect(reportedReplacementCounts(error)).toEqual({ memberCount: 0, formerMemberCount: 1, pendingInvitationCount: 2 })
+    expect(reportedReplacementCounts(error)).toEqual({ memberCount: 0, formerMemberCount: 1, pendingInvitationCount: 2, invitationCount: 3 })
   })
 
   it('treats a missing or non-numeric count as unknown', () => {
     const error = new ApiError(409, undefined, 'ROLE_REPLACEMENT_REQUIRED', { memberCount: '3' })
 
-    expect(reportedReplacementCounts(error)).toEqual({ memberCount: null, formerMemberCount: null, pendingInvitationCount: null })
+    expect(reportedReplacementCounts(error)).toEqual({
+      memberCount: null,
+      formerMemberCount: null,
+      pendingInvitationCount: null,
+      invitationCount: null,
+    })
   })
 
   it('is null for any other failure', () => {
@@ -142,26 +153,63 @@ describe('reportedReplacementCounts', () => {
 })
 
 describe('deletionCounts', () => {
-  const held = role('CUSTOM_A', 'CUSTOM', { memberCount: 3, pendingInvitationCount: 1 })
-
-  it('starts from the role page counts, with former members not known yet', () => {
-    expect(deletionCounts(held, null)).toEqual({ memberCount: 3, formerMemberCount: null, pendingInvitationCount: 1, needsReplacement: true })
+  const usage = (counts: Partial<Record<'memberCount' | 'formerMemberCount' | 'pendingInvitationCount' | 'invitationCount', number>>) => ({
+    memberCount: 0,
+    formerMemberCount: 0,
+    pendingInvitationCount: 0,
+    invitationCount: 0,
+    ...counts,
   })
 
-  it('needs no replacement while nothing is known to reference the role', () => {
-    expect(deletionCounts(role('CUSTOM_A', 'CUSTOM'), null).needsReplacement).toBe(false)
+  it('shows every count from the role page before the first attempt', () => {
+    expect(deletionCounts(usage({ memberCount: 3, formerMemberCount: 2, pendingInvitationCount: 1, invitationCount: 4 }), null)).toEqual({
+      memberCount: 3,
+      formerMemberCount: 2,
+      pendingInvitationCount: 1,
+      pastInvitationCount: 3,
+      needsReplacement: true,
+    })
   })
 
-  it("takes the server's counts once it asked for a replacement, even when they are all known to be zero but one", () => {
-    const counts = deletionCounts(role('CUSTOM_A', 'CUSTOM'), { memberCount: 0, formerMemberCount: 1, pendingInvitationCount: 0 })
+  it('needs a replacement for a role held only by former members or past invitations', () => {
+    expect(deletionCounts(usage({ formerMemberCount: 1 }), null).needsReplacement).toBe(true)
+    expect(deletionCounts(usage({ invitationCount: 1 }), null)).toMatchObject({ pastInvitationCount: 1, needsReplacement: true })
+  })
 
-    expect(counts).toEqual({ memberCount: 0, formerMemberCount: 1, pendingInvitationCount: 0, needsReplacement: true })
+  it('needs no replacement while nothing references the role', () => {
+    expect(deletionCounts(usage({}), null).needsReplacement).toBe(false)
+  })
+
+  it("takes the server's counts once it asked for a replacement", () => {
+    const counts = deletionCounts(usage({}), { memberCount: 0, formerMemberCount: 0, pendingInvitationCount: 0, invitationCount: 2 })
+
+    expect(counts).toEqual({ memberCount: 0, formerMemberCount: 0, pendingInvitationCount: 0, pastInvitationCount: 2, needsReplacement: true })
   })
 
   it('needs a replacement once the server asked for one, even if it sent no counts', () => {
-    const counts = deletionCounts(role('CUSTOM_A', 'CUSTOM'), { memberCount: null, formerMemberCount: null, pendingInvitationCount: null })
+    const counts = deletionCounts(usage({ memberCount: 1 }), { memberCount: null, formerMemberCount: null, pendingInvitationCount: null, invitationCount: null })
 
-    expect(counts).toEqual({ memberCount: 0, formerMemberCount: null, pendingInvitationCount: 0, needsReplacement: true })
+    expect(counts).toEqual({ memberCount: 1, formerMemberCount: 0, pendingInvitationCount: 0, pastInvitationCount: 0, needsReplacement: true })
+  })
+})
+
+describe('canDeleteRole', () => {
+  const unused = { kind: 'CUSTOM' as const, editable: true, memberCount: 0, formerMemberCount: 0, invitationCount: 0 }
+
+  it('offers an unused Custom role the caller may edit, even without MANAGE_MEMBERS', () => {
+    expect(canDeleteRole(unused, false)).toBe(true)
+  })
+
+  it('needs MANAGE_MEMBERS for a role in use, since the replacement must be assignable', () => {
+    for (const used of [{ memberCount: 1 }, { formerMemberCount: 1 }, { invitationCount: 1 }]) {
+      expect(canDeleteRole({ ...unused, ...used }, false)).toBe(false)
+      expect(canDeleteRole({ ...unused, ...used }, true)).toBe(true)
+    }
+  })
+
+  it('never offers a Built-in role or one the caller cannot edit', () => {
+    expect(canDeleteRole({ ...unused, kind: 'BUILT_IN' }, true)).toBe(false)
+    expect(canDeleteRole({ ...unused, editable: false }, true)).toBe(false)
   })
 })
 

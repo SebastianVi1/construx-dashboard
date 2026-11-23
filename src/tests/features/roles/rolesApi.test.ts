@@ -68,6 +68,10 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: (url: strin
   return { get, send }
 }
 
+
+/** What a delete would move, sent only with a role's detail (§5.2). */
+const usage = { formerMemberCount: 1, invitationCount: 2 }
+
 describe('roles API', () => {
   afterEach(() => mock.restore())
 
@@ -98,18 +102,20 @@ describe('roles API', () => {
       { action: 'VIEW_ACTIVITY', scope: 'OWN' },
     ]
     const defaults: Grant[] = [{ action: 'VIEW_PROJECT', scope: 'PROJECT' }]
-    const detail = { ...worker, permissions, defaults }
+    const detail = { ...worker, permissions, defaults, ...usage }
     const { get } = stubApi({ get: () => ({ status: 200, data: detail }) })
 
     const role = await getRole('org-1', 'WORKER')
 
     expect(get.mock.calls[0][0]).toBe('/api/organizations/org-1/roles/WORKER')
+    expect(role.formerMemberCount).toBe(1)
+    expect(role.invitationCount).toBe(2)
     expect(role.permissions).toEqual(detail.permissions)
     expect(role.defaults).toEqual(detail.defaults)
   })
 
   it('getRole: a Custom role has no defaults', async () => {
-    stubApi({ get: () => ({ status: 200, data: { ...foreman, permissions: [], defaults: null } }) })
+    stubApi({ get: () => ({ status: 200, data: { ...foreman, permissions: [], defaults: null, ...usage } }) })
 
     expect((await getRole('org-1', 'CUSTOM_ABCDEFGHIJ')).defaults).toBeNull()
   })
@@ -153,7 +159,7 @@ describe('role writes', () => {
   afterEach(() => mock.restore())
 
   type Call = [string, unknown, { headers?: Record<string, string> }]
-  const detail = { ...foreman, permissions: [{ action: 'VIEW_PROJECT', scope: 'PROJECT' }], defaults: null }
+  const detail = { ...foreman, permissions: [{ action: 'VIEW_PROJECT', scope: 'PROJECT' }], defaults: null, ...usage }
   const grants = [{ action: 'VIEW_PROJECT', scope: 'PROJECT' as const }]
 
   it('createRole: posts name, description and permissions with CSRF proof and expects 201', async () => {
@@ -169,7 +175,7 @@ describe('role writes', () => {
   })
 
   it('updateRole: sends the version, and no name or description for a Built-in role', async () => {
-    const { send } = stubApi({ send: () => ({ status: 200, data: { ...worker, permissions: grants, defaults: grants } }) })
+    const { send } = stubApi({ send: () => ({ status: 200, data: { ...worker, permissions: grants, defaults: grants, ...usage } }) })
 
     await updateRole('org-1', 'WORKER', { permissions: grants }, 3)
     await updateRole('org-1', 'CUSTOM_ABCDEFGHIJ', { name: 'Capataz', description: 'Lead', permissions: [] }, 4)
@@ -185,7 +191,7 @@ describe('role writes', () => {
   })
 
   it('restoreRole: posts the version to restore-defaults', async () => {
-    const { send } = stubApi({ send: () => ({ status: 200, data: { ...worker, permissions: grants, defaults: grants } }) })
+    const { send } = stubApi({ send: () => ({ status: 200, data: { ...worker, permissions: grants, defaults: grants, ...usage } }) })
 
     await restoreRole('org-1', 'WORKER', 3)
 

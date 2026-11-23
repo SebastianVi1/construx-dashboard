@@ -328,6 +328,14 @@
   margin: 0;
 }
 
+/* Someone else saved the role: said here, in the sticky bar, where the user just pressed Save. */
+.permission-savebar__conflict {
+  margin: 0;
+  color: var(--cx-warning);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* Restore and lowering previews in the confirm dialogs. */
 .permission-changes {
   display: grid;

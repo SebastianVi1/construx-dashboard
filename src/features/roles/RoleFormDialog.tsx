@@ -4,10 +4,12 @@ import { z } from 'zod'
 import { Form, useForm, type FieldConfig } from '../../components/form'
 import { Modal } from '../../components/modal'
 import { formatMessage, useLocale } from '../../i18n'
+import { TEXT_LIMITS } from '../../components/form/limits'
 import { writeSessionValue } from '../../lib/sessionCache'
 import { roleLabel } from '../permissions'
-import { copyName, ROLE_DESCRIPTION_MAX, ROLE_NAME_MAX } from './customRoles'
+import { copyName } from './customRoles'
 import { createRole, getRole, type RoleSummary } from './rolesApi'
+import { roleKey, rolesChanged, summaryOf, withRole } from './rolesCache'
 import { roleErrorMessage } from './roleView'
 
 type Props = {
@@ -19,9 +21,9 @@ type Props = {
 
 /**
  * "New role" and "Duplicate" (roles contract §5.3, §8.2): a name and an
- * optional description. A blank role starts with no permissions; a copy takes
- * the source's current permissions. Either way the new role's page opens next,
- * where the Permissions editor finishes the job.
+ * optional description. Submitting creates the role right away: a blank role
+ * with no permissions, a copy with the source's current permissions. The new
+ * role's page opens next, where the Permissions editor finishes the job.
  */
 export function RoleFormDialog({ organizationId, source, onClose }: Props) {
   const { messages: m, locale } = useLocale()
@@ -34,8 +36,8 @@ export function RoleFormDialog({ organizationId, source, onClose }: Props) {
   const form = useForm({
     initialValues: { name: sourceName ? copyName(sourceName, t.copySuffix) : '', description: '' },
     schema: z.object({
-      name: z.string().trim().min(1, d.required).max(ROLE_NAME_MAX, d.nameTooLong),
-      description: z.string().trim().max(ROLE_DESCRIPTION_MAX, d.descriptionTooLong),
+      name: z.string().trim().min(1, d.required).max(TEXT_LIMITS.roleName, d.nameTooLong),
+      description: z.string().trim().max(TEXT_LIMITS.roleDescription, d.descriptionTooLong),
     }),
     onSubmit: async (values) => {
       setError(null)
@@ -43,7 +45,8 @@ export function RoleFormDialog({ organizationId, source, onClose }: Props) {
         // The source is read again so the copy holds its permissions as they are now.
         const permissions = source ? (await getRole(organizationId, source.code)).permissions : []
         const created = await createRole(organizationId, { name: values.name, description: values.description, permissions })
-        writeSessionValue(`${organizationId}:role:${created.code}`, created)
+        writeSessionValue(roleKey(organizationId, created.code), created)
+        rolesChanged(organizationId, (roles) => withRole(roles, summaryOf(created)))
         navigate(`/members/roles/${encodeURIComponent(created.code)}`)
       } catch (failure) {
         setError(roleErrorMessage(failure, m, null, locale))
@@ -57,8 +60,8 @@ export function RoleFormDialog({ organizationId, source, onClose }: Props) {
   })
 
   const fields: FieldConfig[] = [
-    { name: 'name', label: d.name, autoComplete: 'off', maxLength: ROLE_NAME_MAX },
-    { name: 'description', label: d.description, type: 'textarea', hint: d.descriptionHint, rows: 3, maxLength: ROLE_DESCRIPTION_MAX },
+    { name: 'name', label: d.name, autoComplete: 'off', maxLength: TEXT_LIMITS.roleName },
+    { name: 'description', label: d.description, type: 'textarea', hint: d.descriptionHint, rows: 3, maxLength: TEXT_LIMITS.roleDescription },
   ]
 
   return (

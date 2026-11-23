@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Field } from '../../components/form'
+import { TEXT_LIMITS } from '../../components/form/limits'
 import { ConfirmDialog } from '../../components/modal'
 import { Notice, SkeletonList } from '../../components/page'
 import { formatMessage } from '../../i18n/format'
@@ -23,8 +24,6 @@ import {
   detailsChanged,
   detailsOf,
   editDraft,
-  ROLE_DESCRIPTION_MAX,
-  ROLE_NAME_MAX,
   roleDetailsErrors,
   type RoleDetails,
 } from './customRoles'
@@ -37,6 +36,7 @@ import {
   type PermissionCatalog,
   type RoleDetail,
 } from './rolesApi'
+import { rolesChanged, summaryOf, withRole } from './rolesCache'
 import { actionName, permissionGroups, readOnlyReason, roleErrorMessage } from './roleView'
 import '../../components/form/form.css'
 
@@ -50,7 +50,14 @@ type Props = {
   hidden?: boolean
 }
 
-type Flash = 'saved' | 'restored' | 'changed' | null
+type Flash = 'saved' | 'restored' | null
+
+/**
+ * Someone else saved the role while it was open here: `notSaved` after our save
+ * or restore was refused with ROLE_CHANGED, `newer` when their version simply
+ * arrived. Either way the user's draft stays until they save or discard it.
+ */
+type Conflict = 'notSaved' | 'newer' | null
 
 /** Requirements the last change switched on or widened, shown under the row that caused them. */
 type AutoNote = { action: string; turnedOn: string[]; raised: string[] }
@@ -112,23 +119,27 @@ function PermissionsEditor({
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [flash, setFlash] = useState<Flash>(null)
-  // Set after ROLE_CHANGED: the reloaded role replaces the draft whatever its version.
-  const [awaitingReload, setAwaitingReload] = useState(false)
+  const [conflict, setConflict] = useState<Conflict>(null)
+  // The version our own last save or restore produced: that one replaces the draft.
+  const [ownVersion, setOwnVersion] = useState<number | null>(null)
+  const writing = useRef(false)
 
   const saved = fromGrants(base.permissions)
   const changes = diffGrants(saved, draft, catalog)
   const custom = base.kind === 'CUSTOM'
   const dirty = changes.length > 0 || (custom && detailsChanged(base, details))
 
-  // A newer version (our save, a restore, or someone else's save) replaces the draft;
-  // a background revalidation of the same version keeps what is being edited.
+  // Our own save or restore, or any role while nothing is being edited, replaces the draft.
+  // Someone else's newer version never does while there are unsaved changes: the user decides (story 16).
   if (role !== base) {
     setBase(role)
-    setAwaitingReload(false)
-    if (awaitingReload || role.version !== base.version || !dirty) {
+    const newer = role.version !== base.version
+    if (!dirty || (newer && role.version === ownVersion)) {
       setDraft(fromGrants(role.permissions))
       setDetails(detailsOf(role))
       setNote(null)
+    } else if (newer) {
+      setConflict((current) => current ?? 'newer')
     }
   }
 
@@ -167,38 +178,52 @@ function PermissionsEditor({
 
   function failed(error: unknown, show: (message: string) => void) {
     if (roleErrorKind(error) === 'roleChanged') {
-      setFlash('changed')
-      setAwaitingReload(true)
+      // Shown in the save bar, where the user is; the draft stays and their version loads underneath.
+      setConflict('notSaved')
       onReload()
       return
     }
     show(roleErrorMessage(error, m, catalog, locale))
   }
 
+  /** The server's answer to our write: the page shows it, and the roles lists refetch (§8.5). */
+  function written(next: RoleDetail) {
+    setOwnVersion(next.version)
+    setConflict(null)
+    onSaved(next)
+    rolesChanged(orgId, (roles) => withRole(roles, summaryOf(next)))
+  }
+
   async function save() {
-    if (saving || invalid) return
+    if (writing.current || invalid) return
+    writing.current = true
     setSaving(true)
     setSaveError(null)
     setFlash(null)
     try {
-      onSaved(await updateRole(orgId, role.code, editDraft(role, details, toGrants(draft)), role.version))
+      written(await updateRole(orgId, role.code, editDraft(role, details, toGrants(draft)), role.version))
       setFlash('saved')
     } catch (error) {
       failed(error, setSaveError)
     } finally {
+      writing.current = false
       setSaving(false)
     }
   }
 
   async function restore() {
+    if (writing.current) return
+    writing.current = true
     setRestoreError(null)
     try {
-      onSaved(await restoreRole(orgId, role.code, role.version))
+      written(await restoreRole(orgId, role.code, role.version))
       setRestoring(false)
       setFlash('restored')
     } catch (error) {
       if (roleErrorKind(error) === 'roleChanged') setRestoring(false)
       failed(error, setRestoreError)
+    } finally {
+      writing.current = false
     }
   }
 
@@ -207,6 +232,7 @@ function PermissionsEditor({
     setDetails(detailsOf(base))
     setNote(null)
     setSaveError(null)
+    setConflict(null)
   }
 
   function editDetails(change: Partial<RoleDetails>) {
@@ -222,7 +248,7 @@ function PermissionsEditor({
           <h2>{t.details.title}</h2>
           <div className="role-details__fields">
             <Field
-              config={{ name: 'roleName', label: t.details.name, autoComplete: 'off', maxLength: ROLE_NAME_MAX }}
+              config={{ name: 'roleName', label: t.details.name, autoComplete: 'off', maxLength: TEXT_LIMITS.roleName }}
               value={details.name}
               error={detailErrors.name ? (detailErrors.name === 'required' ? t.details.required : t.details.nameTooLong) : undefined}
               disabled={saving}
@@ -235,7 +261,7 @@ function PermissionsEditor({
                 type: 'textarea',
                 hint: t.details.descriptionHint,
                 rows: 2,
-                maxLength: ROLE_DESCRIPTION_MAX,
+                maxLength: TEXT_LIMITS.roleDescription,
               }}
               value={details.description}
               error={detailErrors.description ? t.details.descriptionTooLong : undefined}
@@ -263,7 +289,6 @@ function PermissionsEditor({
       </div>
 
       {reason ? <Notice>{t.readOnly[reason]}</Notice> : null}
-      {flash === 'changed' ? <Notice>{e.changed}</Notice> : null}
       {flash === 'saved' ? <Notice tone="success">{custom ? e.savedRole : e.saved}</Notice> : null}
       {flash === 'restored' ? <Notice tone="success">{e.restore.done}</Notice> : null}
       {isEmpty(draft) ? <Notice>{t.role.empty}</Notice> : null}
@@ -301,8 +326,13 @@ function PermissionsEditor({
         ))}
       </div>
 
-      {editable && (dirty || saveError) ? (
+      {editable && (dirty || saveError || conflict) ? (
         <div className="permission-savebar" role="region" aria-label={e.unsaved}>
+          {conflict ? (
+            <p className="permission-savebar__conflict" role="alert">
+              {dirty ? e.conflict[conflict] : e.conflict.reloaded}
+            </p>
+          ) : null}
           {saveError ? (
             <p className="form-error" role="alert">
               {saveError}
@@ -311,12 +341,23 @@ function PermissionsEditor({
           <div className="permission-savebar__row">
             <span className="permission-savebar__label">{dirty ? e.unsaved : null}</span>
             <div className="button-row">
-              <button type="button" className="button" onClick={discard} disabled={saving || !dirty}>
-                {e.discard}
-              </button>
-              <button type="button" className="button button--primary" onClick={() => void save()} disabled={saving || !dirty || invalid} aria-busy={saving}>
-                {saving ? e.saving : custom ? e.saveRole : e.save}
-              </button>
+              {dirty ? (
+                <>
+                  <button type="button" className="button" onClick={discard} disabled={saving}>
+                    {e.discard}
+                  </button>
+                  <button type="button" className="button button--primary" onClick={() => void save()} disabled={saving || invalid} aria-busy={saving}>
+                    {saving ? e.saving : custom ? e.saveRole : e.save}
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="button" onClick={() => {
+                  setConflict(null)
+                  setSaveError(null)
+                }}>
+                  {e.conflict.dismiss}
+                </button>
+              )}
             </div>
           </div>
         </div>

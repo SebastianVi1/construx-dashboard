@@ -55,6 +55,15 @@ describe('getJson', () => {
     expect(error.problemString('status')).toBeUndefined()
   })
 
+  it('reads a numeric problem property, ignoring other types', () => {
+    const error = new ApiError(409, undefined, 'ROLE_REPLACEMENT_REQUIRED', { memberCount: 2, formerMemberCount: '1', bad: Number.NaN })
+
+    expect(error.problemNumber('memberCount')).toBe(2)
+    expect(error.problemNumber('formerMemberCount')).toBeUndefined()
+    expect(error.problemNumber('bad')).toBeUndefined()
+    expect(error.problemNumber('missing')).toBeUndefined()
+  })
+
   it('has an empty problem when the body is not an object', async () => {
     fakeFetcher(() => ({ status: 502, data: '<html>Bad gateway</html>' }))
 

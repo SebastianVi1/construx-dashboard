@@ -1,5 +1,6 @@
+import { TEXT_LIMITS } from '../../components/form/limits'
 import { ApiError } from '../../lib/http'
-import type { Grant, RoleDraft, RoleSummary } from './rolesApi'
+import type { Grant, RoleDetail, RoleDraft, RoleSummary } from './rolesApi'
 
 /**
  * Pure rules of creating, duplicating, renaming and deleting Custom roles
@@ -9,10 +10,6 @@ import type { Grant, RoleDraft, RoleSummary } from './rolesApi'
 
 /** Most Custom roles a company may have (§5.3, `ROLE_LIMIT_REACHED`). */
 export const CUSTOM_ROLE_LIMIT = 30
-
-/** Name and description lengths a Custom role allows (§5.12 `ROLE_NAME_INVALID`). */
-export const ROLE_NAME_MAX = 100
-export const ROLE_DESCRIPTION_MAX = 280
 
 const OWNER_CODE = 'OWNER'
 
@@ -35,7 +32,7 @@ export function canDuplicate(role: Pick<RoleSummary, 'code' | 'editable' | 'assi
 
 /** "<name> (copy)", with the name shortened when the copy would pass 100 characters. */
 export function copyName(name: string, suffix: string): string {
-  const room = ROLE_NAME_MAX - suffix.length - 1
+  const room = TEXT_LIMITS.roleName - suffix.length - 1
   return `${name.trim().slice(0, room).trimEnd()} ${suffix}`
 }
 
@@ -48,8 +45,8 @@ export function roleDetailsErrors({ name, description }: RoleDetails): RoleDetai
   const errors: RoleDetailsErrors = {}
   const trimmed = name.trim()
   if (trimmed.length === 0) errors.name = 'required'
-  else if (trimmed.length > ROLE_NAME_MAX) errors.name = 'tooLong'
-  if (description.trim().length > ROLE_DESCRIPTION_MAX) errors.description = 'tooLong'
+  else if (trimmed.length > TEXT_LIMITS.roleName) errors.name = 'tooLong'
+  if (description.trim().length > TEXT_LIMITS.roleDescription) errors.description = 'tooLong'
   return errors
 }
 
@@ -84,47 +81,63 @@ export type ReplacementCounts = {
   memberCount: number | null
   formerMemberCount: number | null
   pendingInvitationCount: number | null
-}
-
-function count(error: ApiError, name: string): number | null {
-  const value = error.problem[name]
-  return typeof value === 'number' && Number.isFinite(value) ? value : null
+  /** Invitations in any status (pending, accepted or revoked). */
+  invitationCount: number | null
 }
 
 /** The counts of a `ROLE_REPLACEMENT_REQUIRED` refusal; null for any other failure. */
 export function reportedReplacementCounts(error: unknown): ReplacementCounts | null {
   if (!(error instanceof ApiError) || error.code !== 'ROLE_REPLACEMENT_REQUIRED') return null
+  const count = (name: keyof ReplacementCounts) => error.problemNumber(name) ?? null
   return {
-    memberCount: count(error, 'memberCount'),
-    formerMemberCount: count(error, 'formerMemberCount'),
-    pendingInvitationCount: count(error, 'pendingInvitationCount'),
+    memberCount: count('memberCount'),
+    formerMemberCount: count('formerMemberCount'),
+    pendingInvitationCount: count('pendingInvitationCount'),
+    invitationCount: count('invitationCount'),
   }
 }
 
+/** What references a role: the role page's counts (§5.2). */
+export type RoleUsage = Pick<RoleDetail, 'memberCount' | 'formerMemberCount' | 'pendingInvitationCount' | 'invitationCount'>
+
 export type DeletionCounts = {
   memberCount: number
-  /** Members who left still reference the role; only the server knows how many. */
-  formerMemberCount: number | null
+  formerMemberCount: number
   pendingInvitationCount: number
+  /** Accepted or revoked invitations: they still reference the role and move with it. */
+  pastInvitationCount: number
   needsReplacement: boolean
 }
 
 /**
- * What the delete dialog states and asks for. Before the first attempt only
- * the role's own counts are known; once the server asked for a replacement its
- * counts win and a replacement is required whatever they say.
+ * What the delete dialog states and asks for, before the first attempt: the
+ * role page's counts. Once the server asked for a replacement its counts win
+ * and a replacement is required whatever they say.
  */
-export function deletionCounts(
-  role: Pick<RoleSummary, 'memberCount' | 'pendingInvitationCount'>,
-  reported: ReplacementCounts | null,
-): DeletionCounts {
+export function deletionCounts(role: RoleUsage, reported: ReplacementCounts | null): DeletionCounts {
   const memberCount = reported?.memberCount ?? role.memberCount
+  const formerMemberCount = reported?.formerMemberCount ?? role.formerMemberCount
   const pendingInvitationCount = reported?.pendingInvitationCount ?? role.pendingInvitationCount
-  const formerMemberCount = reported?.formerMemberCount ?? null
+  const invitationCount = reported?.invitationCount ?? role.invitationCount
   return {
     memberCount,
     formerMemberCount,
     pendingInvitationCount,
-    needsReplacement: reported !== null || memberCount > 0 || pendingInvitationCount > 0 || (formerMemberCount ?? 0) > 0,
+    pastInvitationCount: Math.max(0, invitationCount - pendingInvitationCount),
+    needsReplacement: reported !== null || memberCount > 0 || formerMemberCount > 0 || invitationCount > 0,
   }
+}
+
+/**
+ * Whether the role page offers "Delete role": a Custom role the caller may
+ * edit (§3, §5.6). A role anything still references needs a replacement the
+ * caller may assign, so that also needs `MANAGE_MEMBERS`.
+ */
+export function canDeleteRole(
+  role: Pick<RoleDetail, 'kind' | 'editable' | 'memberCount' | 'formerMemberCount' | 'invitationCount'>,
+  canManageMembers: boolean,
+): boolean {
+  if (role.kind !== 'CUSTOM' || !role.editable) return false
+  const inUse = role.memberCount > 0 || role.formerMemberCount > 0 || role.invitationCount > 0
+  return canManageMembers || !inUse
 }

@@ -39,10 +39,16 @@ export const grantSchema = z.object({ action: z.string().min(1), scope: scopeSch
 
 export type Grant = z.infer<typeof grantSchema>
 
-/** `GET /roles/{code}` (§5.2): the summary plus its grants in catalog order and, for Built-in roles, the file defaults. */
+/**
+ * `GET /roles/{code}` (§5.2): the summary plus its grants in catalog order,
+ * for Built-in roles the file defaults, and what a delete would move: members
+ * who left and invitations in any status.
+ */
 export const roleDetailSchema = roleSummarySchema.extend({
   permissions: z.array(grantSchema),
   defaults: z.array(grantSchema).nullable(),
+  formerMemberCount: z.number().int(),
+  invitationCount: z.number().int(),
 })
 
 export type RoleDetail = z.infer<typeof roleDetailSchema>
@@ -95,9 +101,6 @@ export function deleteRole(organizationId: string, code: string, replacement?: s
   return deleteJson(`${rolePath(organizationId, code)}${query}`)
 }
 
-/** Name or description of a catalog entry in each language. */
-const localizedSchema = z.object({ en: z.string(), es: z.string() })
-
 /**
  * How far a requirement must reach (§5.10): `SAME` = at least the granted
  * scope, `PROJECT` = at least max(granted, PROJECT), `ORGANIZATION` = company-wide.
@@ -107,8 +110,8 @@ export const minScopeSchema = z.enum(['SAME', 'PROJECT', 'ORGANIZATION'])
 export const catalogActionSchema = z.object({
   action: z.string().min(1),
   group: z.string().min(1),
-  names: localizedSchema,
-  descriptions: localizedSchema,
+  names: roleNamesSchema,
+  descriptions: roleNamesSchema,
   scopes: z.array(scopeSchema).min(1),
   requires: z.array(z.object({ action: z.string().min(1), minScope: minScopeSchema })),
 })
@@ -117,7 +120,7 @@ export type CatalogAction = z.infer<typeof catalogActionSchema>
 
 /** `GET /api/permissions/catalog`: groups and actions, each in display order. */
 export const permissionCatalogSchema = z.object({
-  groups: z.array(z.object({ key: z.string().min(1), names: localizedSchema })),
+  groups: z.array(z.object({ key: z.string().min(1), names: roleNamesSchema })),
   actions: z.array(catalogActionSchema),
 })
 

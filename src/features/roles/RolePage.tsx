@@ -4,7 +4,6 @@ import { useRemoteData } from '../../components/data/useRemoteData'
 import { BackLink, Notice, SkeletonList } from '../../components/page'
 import { useLocale, type Locale, type Messages } from '../../i18n'
 import { ApiError } from '../../lib/http'
-import { readSessionValue, writeSessionValue } from '../../lib/sessionCache'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
 import { DeleteRoleDialog } from './DeleteRoleDialog'
@@ -12,7 +11,9 @@ import { PeopleTab } from './PeopleTab'
 import { PeopleTabs } from './PeopleTabs'
 import { PermissionsTab } from './PermissionsTab'
 import { RoleBadges } from './RoleBits'
-import { getRole, type RoleDetail, type RoleSummary } from './rolesApi'
+import { canDeleteRole } from './customRoles'
+import { getRole, type RoleDetail } from './rolesApi'
+import { roleKey, rolesChanged, withoutRole } from './rolesCache'
 import { invitationCountLabel, memberCountLabel } from './roleView'
 import { roleTab, roleTabSearch } from './roleAssignment'
 import '../../components/filter/filter-tabs.css'
@@ -25,7 +26,7 @@ export function RolePage() {
   const { code = '' } = useParams()
   const organization = useCurrentOrganization()
   const orgId = organization.id
-  const role = useRemoteData(`${orgId}:role:${code}`, () => getRole(orgId, code))
+  const role = useRemoteData(roleKey(orgId, code), () => getRole(orgId, code))
   const navigate = useNavigate()
   const title = role.data ? roleLabel(role.data, locale) : t.list.title
 
@@ -46,10 +47,8 @@ export function RolePage() {
           onReload={role.reload}
           onPeopleChanged={role.reload}
           onDeleted={() => {
-            // The list shows without the deleted role straight away; its revalidation brings the moved counts.
-            const listKey = `${orgId}:roles`
-            const cached = readSessionValue<RoleSummary[]>(listKey)
-            if (cached) writeSessionValue(listKey, cached.filter((entry) => entry.code !== code))
+            // The list shows without the deleted role straight away; the refetch brings the moved counts.
+            rolesChanged(orgId, (roles) => withoutRole(roles, code))
             navigate('/members/roles', { state: { deletedRole: title } })
           }}
         />
@@ -91,8 +90,7 @@ function RoleContent({ role, m, locale, onSaved, onReload, onPeopleChanged, onDe
   const description = role.description?.[locale] ?? null
   const invitations = invitationCountLabel(role.pendingInvitationCount, m)
   const [deleting, setDeleting] = useState(false)
-  // Deleting needs the same authority as editing (§3), and only Custom roles can go (§5.6).
-  const canDelete = role.kind === 'CUSTOM' && role.editable
+  const canDelete = canDeleteRole(role, canSeePeople)
 
   return (
     <>
