@@ -2,6 +2,7 @@ import { PanelSkeleton } from './FloorPlanSkeletons'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { formatMessage, useLocale } from '../../i18n'
+import { personRoleLabel } from './personRole'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { usePermissions } from '../permissions'
 import { Avatar } from '../profile/Avatar'
@@ -28,7 +29,7 @@ function initials(name: string): string {
 }
 
 export function AssignmentPanel({ organizationId, siteId, onDragStart, onDragEnd }: AssignmentPanelProps) {
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.floorPlans.assignments
   const { can } = usePermissions()
   // Crews are managed on the Team page; planners without it have the crews page of their own.
@@ -104,7 +105,7 @@ export function AssignmentPanel({ organizationId, siteId, onDragStart, onDragEnd
                 <Avatar fullName={member.fullName} avatarUrl={member.avatarUrl} decorative />
                 <span className="assignment-chip__text">
                   <span className="assignment-chip__name">{member.fullName ?? t.occupant.noName}</span>
-                  <span className="assignment-chip__meta">{member.roleName}</span>
+                  <span className="assignment-chip__meta">{personRoleLabel(member, locale)}</span>
                 </span>
               </div>
             ))

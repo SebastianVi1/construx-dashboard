@@ -3,6 +3,7 @@ import { getJson, sendJson } from '../../lib/http'
 import { floorPlanPath } from '../../lib/apiPaths'
 import { personSchema } from '../people/personSchema'
 import { taskRoles, taskStatuses } from '../tasks/tasksApi'
+import { roleNamesSchema } from '../permissions/can'
 
 export const shiftSchema = z.enum(['MORNING', 'AFTERNOON', 'FULL_DAY'])
 export type Shift = z.infer<typeof shiftSchema>
@@ -27,6 +28,8 @@ export type OpenTask = z.infer<typeof openTaskSchema>
 export const workerSchema = personSchema.extend({
   membershipId: z.string().min(1),
   roleName: z.string().nullable(),
+  /** The role per language (roles contract §5.11); optional so an older backend still parses. */
+  roleNames: roleNamesSchema.nullable().optional(),
   crewLeader: z.boolean(),
   openTasks: z.array(openTaskSchema),
 })
