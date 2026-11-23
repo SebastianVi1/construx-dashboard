@@ -110,6 +110,31 @@
   white-space: nowrap;
 }
 
+/* A role row with a Duplicate action beside its link (a button may not sit inside the link). */
+.role-list__item {
+  display: flex;
+  align-items: center;
+}
+
+.role-list__item .role-list__row {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-list__duplicate {
+  flex: none;
+  margin-right: 16px;
+}
+
+/* The whole row lights up, Duplicate cell included. */
+.role-list__item:has(.role-list__row:hover) {
+  background: var(--cx-surface-raised);
+}
+
+.role-list__item .role-list__row:hover {
+  background: transparent;
+}
+
 /* Role page */
 .role-header__title {
   display: flex;
@@ -376,5 +401,70 @@
   .role-list__row,
   .scope-control__option {
     transition: none;
+  }
+}
+
+/* Custom role name and description, above its permissions. */
+.role-details {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.role-details h2 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.role-details__fields {
+  display: grid;
+  gap: 16px;
+  max-width: 60ch;
+}
+
+/* Delete role dialog: what moves, then where to. */
+.role-delete {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.role-delete__intro,
+.role-delete__hint {
+  margin: 0 0 16px;
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.role-delete .role-delete__intro,
+.role-delete .role-delete__hint {
+  margin: 0;
+}
+
+.role-delete__counts {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .role-list__item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .role-list__item .role-list__row {
+    align-self: stretch;
+  }
+
+  .role-list__duplicate {
+    margin: 0 16px 12px;
   }
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { Field } from '../../components/form'
 import { ConfirmDialog } from '../../components/modal'
 import { Notice, SkeletonList } from '../../components/page'
 import { formatMessage } from '../../i18n/format'
@@ -19,6 +20,15 @@ import {
   type ScopeChange,
 } from './permissionEditor'
 import {
+  detailsChanged,
+  detailsOf,
+  editDraft,
+  ROLE_DESCRIPTION_MAX,
+  ROLE_NAME_MAX,
+  roleDetailsErrors,
+  type RoleDetails,
+} from './customRoles'
+import {
   getCatalog,
   restoreRole,
   roleErrorKind,
@@ -26,9 +36,9 @@ import {
   type CatalogAction,
   type PermissionCatalog,
   type RoleDetail,
-  type RoleDraft,
 } from './rolesApi'
 import { actionName, permissionGroups, readOnlyReason, roleErrorMessage } from './roleView'
+import '../../components/form/form.css'
 
 type Props = {
   role: RoleDetail
@@ -93,6 +103,8 @@ function PermissionsEditor({
   const { access } = usePermissions()
   const [base, setBase] = useState(role)
   const [draft, setDraft] = useState<GrantMap>(() => fromGrants(role.permissions))
+  // A Custom role's name and description, saved together with its permissions.
+  const [details, setDetails] = useState<RoleDetails>(() => detailsOf(role))
   const [note, setNote] = useState<AutoNote | null>(null)
   const [pendingLower, setPendingLower] = useState<PendingLower | null>(null)
   const [restoring, setRestoring] = useState(false)
@@ -105,7 +117,8 @@ function PermissionsEditor({
 
   const saved = fromGrants(base.permissions)
   const changes = diffGrants(saved, draft, catalog)
-  const dirty = changes.length > 0
+  const custom = base.kind === 'CUSTOM'
+  const dirty = changes.length > 0 || (custom && detailsChanged(base, details))
 
   // A newer version (our save, a restore, or someone else's save) replaces the draft;
   // a background revalidation of the same version keeps what is being edited.
@@ -114,6 +127,7 @@ function PermissionsEditor({
     setAwaitingReload(false)
     if (awaitingReload || role.version !== base.version || !dirty) {
       setDraft(fromGrants(role.permissions))
+      setDetails(detailsOf(role))
       setNote(null)
     }
   }
@@ -129,6 +143,9 @@ function PermissionsEditor({
 
   const reason = readOnlyReason(role, access?.role.code ?? null)
   const editable = role.editable
+  const showDetails = editable && role.kind === 'CUSTOM'
+  const detailErrors = showDetails ? roleDetailsErrors(details) : {}
+  const invalid = Object.keys(detailErrors).length > 0
   const caller = access && access.role.code !== 'OWNER' ? fromGrants(access.permissions) : null
   const defaults = role.kind === 'BUILT_IN' && role.defaults ? fromGrants(role.defaults) : null
   const restoreChanges = defaults ? diffGrants(saved, defaults, catalog) : []
@@ -148,12 +165,6 @@ function PermissionsEditor({
     setNote(change.turnedOn.length > 0 || change.raised.length > 0 ? { action: action.action, turnedOn: change.turnedOn, raised: change.raised } : null)
   }
 
-  function draftBody(): RoleDraft {
-    const permissions = toGrants(draft)
-    // A Custom role keeps its name and description; a Built-in role must not send them (ROLE_NAME_FIXED).
-    return role.kind === 'CUSTOM' ? { name: role.name, description: role.description?.en ?? null, permissions } : { permissions }
-  }
-
   function failed(error: unknown, show: (message: string) => void) {
     if (roleErrorKind(error) === 'roleChanged') {
       setFlash('changed')
@@ -165,12 +176,12 @@ function PermissionsEditor({
   }
 
   async function save() {
-    if (saving) return
+    if (saving || invalid) return
     setSaving(true)
     setSaveError(null)
     setFlash(null)
     try {
-      onSaved(await updateRole(orgId, role.code, draftBody(), role.version))
+      onSaved(await updateRole(orgId, role.code, editDraft(role, details, toGrants(draft)), role.version))
       setFlash('saved')
     } catch (error) {
       failed(error, setSaveError)
@@ -193,12 +204,48 @@ function PermissionsEditor({
 
   function discard() {
     setDraft(saved)
+    setDetails(detailsOf(base))
     setNote(null)
+    setSaveError(null)
+  }
+
+  function editDetails(change: Partial<RoleDetails>) {
+    setDetails((current) => ({ ...current, ...change }))
+    setFlash(null)
     setSaveError(null)
   }
 
   return (
     <>
+      {showDetails ? (
+        <div className="role-details">
+          <h2>{t.details.title}</h2>
+          <div className="role-details__fields">
+            <Field
+              config={{ name: 'roleName', label: t.details.name, autoComplete: 'off', maxLength: ROLE_NAME_MAX }}
+              value={details.name}
+              error={detailErrors.name ? (detailErrors.name === 'required' ? t.details.required : t.details.nameTooLong) : undefined}
+              disabled={saving}
+              onChange={(name) => editDetails({ name })}
+            />
+            <Field
+              config={{
+                name: 'roleDescription',
+                label: t.details.description,
+                type: 'textarea',
+                hint: t.details.descriptionHint,
+                rows: 2,
+                maxLength: ROLE_DESCRIPTION_MAX,
+              }}
+              value={details.description}
+              error={detailErrors.description ? t.details.descriptionTooLong : undefined}
+              disabled={saving}
+              onChange={(description) => editDetails({ description })}
+            />
+          </div>
+        </div>
+      ) : null}
+
       <div className="page-section__header">
         <h2 id="role-permissions-heading">{t.role.permissions}</h2>
         {canRestore ? (
@@ -217,7 +264,7 @@ function PermissionsEditor({
 
       {reason ? <Notice>{t.readOnly[reason]}</Notice> : null}
       {flash === 'changed' ? <Notice>{e.changed}</Notice> : null}
-      {flash === 'saved' ? <Notice tone="success">{e.saved}</Notice> : null}
+      {flash === 'saved' ? <Notice tone="success">{custom ? e.savedRole : e.saved}</Notice> : null}
       {flash === 'restored' ? <Notice tone="success">{e.restore.done}</Notice> : null}
       {isEmpty(draft) ? <Notice>{t.role.empty}</Notice> : null}
 
@@ -267,8 +314,8 @@ function PermissionsEditor({
               <button type="button" className="button" onClick={discard} disabled={saving || !dirty}>
                 {e.discard}
               </button>
-              <button type="button" className="button button--primary" onClick={() => void save()} disabled={saving || !dirty} aria-busy={saving}>
-                {saving ? e.saving : e.save}
+              <button type="button" className="button button--primary" onClick={() => void save()} disabled={saving || !dirty || invalid} aria-busy={saving}>
+                {saving ? e.saving : custom ? e.saveRole : e.save}
               </button>
             </div>
           </div>

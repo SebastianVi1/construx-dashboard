@@ -1,16 +1,18 @@
-import { useEffect } from 'react'
-import { useParams, useSearchParams } from 'react-router'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { BackLink, Notice, SkeletonList } from '../../components/page'
 import { useLocale, type Locale, type Messages } from '../../i18n'
 import { ApiError } from '../../lib/http'
+import { readSessionValue, writeSessionValue } from '../../lib/sessionCache'
 import { useCurrentOrganization } from '../organizations/organizations-context'
 import { roleLabel, usePermissions } from '../permissions'
+import { DeleteRoleDialog } from './DeleteRoleDialog'
 import { PeopleTab } from './PeopleTab'
 import { PeopleTabs } from './PeopleTabs'
 import { PermissionsTab } from './PermissionsTab'
 import { RoleBadges } from './RoleBits'
-import { getRole, type RoleDetail } from './rolesApi'
+import { getRole, type RoleDetail, type RoleSummary } from './rolesApi'
 import { invitationCountLabel, memberCountLabel } from './roleView'
 import { roleTab, roleTabSearch } from './roleAssignment'
 import '../../components/filter/filter-tabs.css'
@@ -24,6 +26,7 @@ export function RolePage() {
   const organization = useCurrentOrganization()
   const orgId = organization.id
   const role = useRemoteData(`${orgId}:role:${code}`, () => getRole(orgId, code))
+  const navigate = useNavigate()
   const title = role.data ? roleLabel(role.data, locale) : t.list.title
 
   useEffect(() => {
@@ -42,6 +45,13 @@ export function RolePage() {
           onSaved={(saved) => role.update(() => saved)}
           onReload={role.reload}
           onPeopleChanged={role.reload}
+          onDeleted={() => {
+            // The list shows without the deleted role straight away; its revalidation brings the moved counts.
+            const listKey = `${orgId}:roles`
+            const cached = readSessionValue<RoleSummary[]>(listKey)
+            if (cached) writeSessionValue(listKey, cached.filter((entry) => entry.code !== code))
+            navigate('/members/roles', { state: { deletedRole: title } })
+          }}
         />
       ) : role.status === 'error' ? (
         role.error instanceof ApiError && role.error.status === 404 ? (
@@ -67,9 +77,11 @@ type RoleContentProps = {
   /** Someone else saved the role first: load it again. */
   onReload: () => void
   onPeopleChanged: () => void
+  /** The role was deleted: leave its page. */
+  onDeleted: () => void
 }
 
-function RoleContent({ role, m, locale, onSaved, onReload, onPeopleChanged }: RoleContentProps) {
+function RoleContent({ role, m, locale, onSaved, onReload, onPeopleChanged, onDeleted }: RoleContentProps) {
   const t = m.roles
   const { access, can } = usePermissions()
   const organization = useCurrentOrganization()
@@ -78,6 +90,9 @@ function RoleContent({ role, m, locale, onSaved, onReload, onPeopleChanged }: Ro
   const tab = roleTab(searchParams, canSeePeople)
   const description = role.description?.[locale] ?? null
   const invitations = invitationCountLabel(role.pendingInvitationCount, m)
+  const [deleting, setDeleting] = useState(false)
+  // Deleting needs the same authority as editing (§3), and only Custom roles can go (§5.6).
+  const canDelete = role.kind === 'CUSTOM' && role.editable
 
   return (
     <>
@@ -93,7 +108,16 @@ function RoleContent({ role, m, locale, onSaved, onReload, onPeopleChanged }: Ro
             {invitations ? ` · ${invitations}` : null}
           </p>
         </div>
+        {canDelete ? (
+          <button type="button" className="button button--danger" onClick={() => setDeleting(true)}>
+            {t.remove.button}
+          </button>
+        ) : null}
       </header>
+
+      {deleting ? (
+        <DeleteRoleDialog organizationId={organization.id} role={role} onDeleted={onDeleted} onClose={() => setDeleting(false)} />
+      ) : null}
 
       {canSeePeople ? (
         <nav className="filter-tabs" aria-label={t.tabs.label}>
