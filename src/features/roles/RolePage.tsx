@@ -44,7 +44,7 @@ export function RolePage() {
           role={role.data}
           m={m}
           locale={locale}
-          onSaved={(saved) => role.update(() => saved)}
+          onLoaded={(loaded) => role.update(() => loaded)}
           onReload={role.reload}
           onPeopleChanged={role.reload}
           onDeleted={() => {
@@ -76,16 +76,16 @@ type RoleContentProps = {
   role: RoleDetail
   m: Messages
   locale: Locale
-  /** A save or restore answered with the role's new state. */
-  onSaved: (role: RoleDetail) => void
-  /** Someone else saved the role first: load it again. */
+  /** A newer state of the role: a save or restore's answer, or their version after a conflict. */
+  onLoaded: (role: RoleDetail) => void
+  /** The role answered 404: load it again, so the page says it is gone. */
   onReload: () => void
   onPeopleChanged: () => void
   /** The role was deleted: leave its page. */
   onDeleted: () => void
 }
 
-function RoleContent({ role, m, locale, onSaved, onReload, onPeopleChanged, onDeleted }: RoleContentProps) {
+function RoleContent({ role, m, locale, onLoaded, onReload, onPeopleChanged, onDeleted }: RoleContentProps) {
   const t = m.roles
   const { access, can } = usePermissions()
   const organization = useCurrentOrganization()
@@ -148,7 +148,7 @@ function RoleContent({ role, m, locale, onSaved, onReload, onPeopleChanged, onDe
       ) : null}
 
       {/* Kept mounted while People is open, so unsaved permission edits survive a tab switch. */}
-      <PermissionsTab role={role} onSaved={onSaved} onReload={onReload} hidden={tab !== 'permissions'} />
+      <PermissionsTab role={role} onLoaded={onLoaded} onReload={onReload} hidden={tab !== 'permissions'} />
     </>
   )
 }

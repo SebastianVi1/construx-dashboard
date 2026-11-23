@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'bun:test'
 import type { PermissionCatalog } from '../../../features/roles/rolesApi'
 import { messages } from '../../../i18n/messages'
-import { invitationCountLabel, memberCountLabel, permissionGroups, readOnlyReason, roleErrorMessage } from '../../../features/roles/roleView'
+import {
+  conflictNotice,
+  invitationCountLabel,
+  memberCountLabel,
+  permissionGroups,
+  readOnlyReason,
+  roleErrorMessage,
+  saveBarShown,
+} from '../../../features/roles/roleView'
 import { ApiError } from '../../../lib/http'
 import { permissionCatalog } from '../../support/permissionCatalog'
 
@@ -118,5 +126,52 @@ describe('roleErrorMessage', () => {
     expect(roleErrorMessage(new ApiError(403, undefined, 'ROLE_ABOVE_CALLER'), en, null, 'en')).toBe(en.roles.errors.roleAboveCaller)
     expect(roleErrorMessage(new ApiError(403), en, null, 'en')).toBe(en.roles.errors.forbidden)
     expect(roleErrorMessage(new Error('boom'), en, null, 'en')).toBe(en.roles.errors.generic)
+  })
+})
+
+describe('conflictNotice', () => {
+  it('says their version is loading, not loaded, until it is', () => {
+    expect(conflictNotice('save', true, 'loading')).toEqual({ parts: ['notSaved', 'loading', 'kept'], versionStale: true })
+    expect(conflictNotice('save', true, 'loaded')).toEqual({ parts: ['notSaved', 'loaded', 'saveAgain'], versionStale: false })
+    expect(conflictNotice('save', false, 'loading')).toEqual({ parts: ['unchanged', 'loading'], versionStale: true })
+    expect(conflictNotice('save', false, 'loaded')).toEqual({ parts: ['unchanged', 'loaded'], versionStale: false })
+  })
+
+  it('never claims their version is loaded when loading it failed, and keeps Save off', () => {
+    expect(conflictNotice('save', true, 'failed')).toEqual({ parts: ['notSaved', 'loadFailed', 'retryKept'], versionStale: true })
+    expect(conflictNotice('restore', false, 'failed')).toEqual({ parts: ['unchanged', 'loadFailed', 'retry'], versionStale: true })
+  })
+
+  it('words a refused restore as a restore, not a save', () => {
+    expect(conflictNotice('restore', true, 'loaded')).toEqual({ parts: ['notRestored', 'loaded', 'saveOrDiscard'], versionStale: false })
+    expect(conflictNotice('restore', true, 'loading').parts[0]).toBe('notRestored')
+  })
+
+  it('has its own words when their version simply arrived while editing', () => {
+    expect(conflictNotice('arrived', true, 'loaded')).toEqual({ parts: ['newer'], versionStale: false })
+  })
+
+  it('has every part in both languages', () => {
+    const parts = ['notSaved', 'notRestored', 'unchanged', 'newer', 'loading', 'loaded', 'loadFailed', 'kept', 'saveAgain', 'saveOrDiscard', 'retryKept', 'retry'] as const
+    for (const locale of ['en', 'es'] as const) {
+      for (const part of parts) expect(messages[locale].roles.editor.conflict[part].length).toBeGreaterThan(0)
+    }
+    expect(messages.es.roles.editor.conflict.notRestored).not.toBe(messages.en.roles.editor.conflict.notRestored)
+  })
+})
+
+describe('saveBarShown', () => {
+  const quiet = { editable: true, dirty: false, saveError: false, conflict: false, saved: false }
+
+  it('shows the bar for unsaved changes, an error, a conflict, or the notice that a save from it worked', () => {
+    expect(saveBarShown(quiet)).toBe(false)
+    expect(saveBarShown({ ...quiet, dirty: true })).toBe(true)
+    expect(saveBarShown({ ...quiet, saveError: true })).toBe(true)
+    expect(saveBarShown({ ...quiet, conflict: true })).toBe(true)
+    expect(saveBarShown({ ...quiet, saved: true })).toBe(true)
+  })
+
+  it('never shows it on a read-only role', () => {
+    expect(saveBarShown({ ...quiet, editable: false, dirty: true, saved: true })).toBe(false)
   })
 })

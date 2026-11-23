@@ -73,3 +73,62 @@ export function roleErrorMessage(error: unknown, m: Messages, catalog: Permissio
   }
   return t[kind]
 }
+
+/**
+ * Where a ROLE_CHANGED came from: our save or our restore was refused (their
+ * version then loads in the background), or their newer version simply arrived
+ * while the user was editing.
+ */
+export type ConflictSource = 'save' | 'restore' | 'arrived'
+
+/** Their version after our write was refused: still loading, on screen, or the load failed. */
+export type TheirVersion = 'loading' | 'loaded' | 'failed'
+
+export type ConflictPart =
+  | 'notSaved'
+  | 'notRestored'
+  | 'unchanged'
+  | 'newer'
+  | 'loading'
+  | 'loaded'
+  | 'loadFailed'
+  | 'kept'
+  | 'saveAgain'
+  | 'saveOrDiscard'
+  | 'retryKept'
+  | 'retry'
+
+/**
+ * The save bar's conflict text, as sentences of `roles.editor.conflict`: what
+ * was refused, then the truth about their version (loading, loaded or not),
+ * then what the user can do. `versionStale` is true while the page still holds
+ * the version the server refused: saving with it would only be refused again.
+ */
+export function conflictNotice(
+  source: ConflictSource,
+  dirty: boolean,
+  theirs: TheirVersion,
+): { parts: ConflictPart[]; versionStale: boolean } {
+  if (source === 'arrived') return { parts: ['newer'], versionStale: false }
+  const lead: ConflictPart = !dirty ? 'unchanged' : source === 'save' ? 'notSaved' : 'notRestored'
+  const parts: ConflictPart[] = [lead]
+  if (theirs === 'loading') parts.push('loading', ...(dirty ? (['kept'] as const) : []))
+  else if (theirs === 'failed') parts.push('loadFailed', dirty ? 'retryKept' : 'retry')
+  else parts.push('loaded', ...(dirty ? ([source === 'save' ? 'saveAgain' : 'saveOrDiscard'] as const) : []))
+  return { parts, versionStale: theirs !== 'loaded' }
+}
+
+/**
+ * The sticky save bar shows on an editable role while there are unsaved
+ * changes, a save error or a conflict, and right after a save made from it, so
+ * the confirmation appears where the user pressed Save.
+ */
+export function saveBarShown(state: {
+  editable: boolean
+  dirty: boolean
+  saveError: boolean
+  conflict: boolean
+  saved: boolean
+}): boolean {
+  return state.editable && (state.dirty || state.saveError || state.conflict || state.saved)
+}

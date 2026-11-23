@@ -341,6 +341,14 @@
   font-weight: 600;
 }
 
+/* A save made from the bar is confirmed in the bar, not at the top of the list. */
+.permission-savebar__done {
+  margin: 0;
+  color: var(--cx-success);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* Restore and lowering previews in the confirm dialogs. */
 .permission-changes {
   display: grid;
