@@ -3,6 +3,7 @@ import type { AxiosInstance } from 'axios'
 import { ApiError, configureHttp } from '../../../lib/http'
 import { messages } from '../../../i18n/messages'
 import {
+  changeMemberRole,
   createInvitation,
   invitableRoles,
   inviteErrorKind,
@@ -43,7 +44,7 @@ const roles = [
 function stubApi(responses: { get?: (url: string) => unknown; send?: () => unknown } = {}) {
   const get = mock(async (url: string) => (url.endsWith('/auth/csrf') ? csrfOk : responses.get?.(url)))
   const send = mock(async () => responses.send?.())
-  configureHttp({ client: { get, post: send, delete: send } as unknown as AxiosInstance, baseUrl: '/api' })
+  configureHttp({ client: { get, post: send, patch: send, delete: send } as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
 }
 
@@ -55,6 +56,32 @@ describe('members API', () => {
 
     expect(await listMembers('org-1')).toEqual([member])
     expect(get.mock.calls[0][0]).toBe('/api/organizations/org-1/members')
+  })
+
+  it('listMembers: filters by status and role when asked (roles contract §5.7)', async () => {
+    const { get } = stubApi({ get: () => ({ status: 200, data: [member] }) })
+
+    await listMembers('org-1', { status: 'SUSPENDED', role: 'CUSTOM_AB2' })
+    expect(get.mock.calls[0][0]).toBe('/api/organizations/org-1/members?status=SUSPENDED&role=CUSTOM_AB2')
+  })
+
+  it('changeMemberRole: patches the role code with CSRF proof and returns the moved member', async () => {
+    const moved = { ...member, role: { code: 'RESIDENT', name: 'Residente', names: { en: 'Resident', es: 'Residente' } } }
+    const { send } = stubApi({ send: () => ({ status: 200, data: moved }) })
+
+    expect(await changeMemberRole('org-1', 'm 1', 'RESIDENT')).toEqual(moved)
+    const [url, body, config] = send.mock.calls[0] as unknown as [string, unknown, Config]
+    expect(url).toBe('/api/organizations/org-1/members/m%201')
+    expect(body).toEqual({ roleCode: 'RESIDENT' })
+    expect(config.headers?.['X-XSRF-TOKEN']).toBe('proof')
+  })
+
+  it('changeMemberRole: surfaces the role rule the server names', async () => {
+    stubApi({ send: () => ({ status: 403, data: { code: 'ROLE_ABOVE_CALLER' } }) })
+
+    const error = await changeMemberRole('org-1', 'm-1', 'FINANCE').catch((caught: unknown) => caught)
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).code).toBe('ROLE_ABOVE_CALLER')
   })
 
   it('invitableRoles: keeps only the roles the server says the caller may assign', () => {
@@ -125,6 +152,7 @@ describe('invitation rules', () => {
     expect(inviteErrorKind(new ApiError(400, undefined, 'INVALID_ARGUMENT'))).toBe('invalid')
     expect(inviteErrorKind(new ApiError(401))).toBe('session')
     expect(inviteErrorKind(new ApiError(403))).toBe('forbidden')
+    expect(inviteErrorKind(new ApiError(403, undefined, 'ROLE_ABOVE_CALLER'))).toBe('roleAboveCaller')
     expect(inviteErrorKind(new ApiError(404))).toBe('notFound')
     expect(inviteErrorKind(new Error('offline'))).toBe('generic')
   })

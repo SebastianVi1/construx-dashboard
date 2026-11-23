@@ -30,6 +30,7 @@ export const membersMessages = defineMessages({
       alreadyMember: 'This person is already a member of this company.',
       invalidEmail: 'Enter a valid email address.',
       invalid: 'This invitation was not accepted. Check the role and site.',
+      roleAboveCaller: 'You can’t invite someone with a role that holds permissions you don’t have.',
       session: 'Your session has ended. Sign in again.',
       forbidden: 'Your role cannot invite people to this site or company.',
       notFound: 'The role or site no longer exists. Reload the page.',
@@ -59,6 +60,8 @@ export const membersMessages = defineMessages({
     list: {
       title: 'Members',
       search: 'Search by name or email',
+      filterRole: 'Filter by role',
+      allRoles: 'All roles',
       column: { name: 'Name', email: 'Email', role: 'Role' },
       empty: 'No active members.',
       unnamed: 'Name not set',
@@ -114,6 +117,7 @@ export const membersMessages = defineMessages({
       alreadyMember: 'Esta persona ya es miembro de esta empresa.',
       invalidEmail: 'Ingresa un correo electrónico válido.',
       invalid: 'Esta invitación no fue aceptada. Revisa el rol y la obra.',
+      roleAboveCaller: 'No puedes invitar a alguien con un rol que tiene permisos que tú no tienes.',
       session: 'Tu sesión terminó. Inicia sesión de nuevo.',
       forbidden: 'Tu rol no puede invitar personas a esta obra o empresa.',
       notFound: 'El rol o la obra ya no existe. Vuelve a cargar la página.',
@@ -143,6 +147,8 @@ export const membersMessages = defineMessages({
     list: {
       title: 'Miembros',
       search: 'Buscar por nombre o correo',
+      filterRole: 'Filtrar por rol',
+      allRoles: 'Todos los roles',
       column: { name: 'Nombre', email: 'Correo', role: 'Rol' },
       empty: 'No hay miembros activos.',
       unnamed: 'Nombre sin definir',

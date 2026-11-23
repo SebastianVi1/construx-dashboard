@@ -31,9 +31,21 @@
   overflow-wrap: anywhere;
 }
 
-/* Member list search */
+/* Member list search and role filter */
 .members-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 8px;
+}
+
+.members-search-input {
+  flex: 1 1 220px;
+}
+
+.members-role-filter select {
+  min-height: 40px;
+  font-size: 0.875rem;
 }
 
 .members-search-input {

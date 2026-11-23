@@ -36,6 +36,8 @@ type Props = {
   onSaved: (role: RoleDetail) => void
   /** Load the role again (someone else saved it first). */
   onReload: () => void
+  /** Another tab of the role page is showing; the editor stays mounted to keep its draft. */
+  hidden?: boolean
 }
 
 type Flash = 'saved' | 'restored' | 'changed' | null
@@ -51,12 +53,12 @@ type PendingLower = { action: string; change: ScopeChange; dependents: GrantDiff
  * role's version, and Restore defaults for a Built-in role. Read-only, with its
  * reason, when the server says the caller may not edit the role.
  */
-export function PermissionsTab({ role, onSaved, onReload }: Props) {
+export function PermissionsTab({ role, onSaved, onReload, hidden = false }: Props) {
   const { messages: m, locale } = useLocale()
   const catalog = useRemoteData('permissions:catalog', getCatalog)
 
   return (
-    <section className="page-section" aria-labelledby="role-permissions-heading">
+    <section className="page-section" aria-labelledby="role-permissions-heading" hidden={hidden}>
       {catalog.data ? (
         <PermissionsEditor role={role} catalog={catalog.data} onSaved={onSaved} onReload={onReload} m={m} locale={locale} />
       ) : (

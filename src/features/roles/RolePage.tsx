@@ -1,19 +1,22 @@
 import { useEffect } from 'react'
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { BackLink, Notice, SkeletonList } from '../../components/page'
 import { useLocale, type Locale, type Messages } from '../../i18n'
 import { ApiError } from '../../lib/http'
 import { useCurrentOrganization } from '../organizations/organizations-context'
-import { roleLabel } from '../permissions'
+import { roleLabel, usePermissions } from '../permissions'
+import { PeopleTab } from './PeopleTab'
 import { PeopleTabs } from './PeopleTabs'
-import { RoleBadges } from './RoleBits'
 import { PermissionsTab } from './PermissionsTab'
+import { RoleBadges } from './RoleBits'
 import { getRole, type RoleDetail } from './rolesApi'
 import { invitationCountLabel, memberCountLabel } from './roleView'
+import { roleTab, roleTabSearch } from './roleAssignment'
+import '../../components/filter/filter-tabs.css'
 import './roles.css'
 
-/** People › Roles & permissions › one role (roles contract §8.3): header and its Permissions. */
+/** People › Roles & permissions › one role (roles contract §8.3): its Permissions and, with MANAGE_MEMBERS, its People. */
 export function RolePage() {
   const { messages: m, locale } = useLocale()
   const t = m.roles
@@ -34,10 +37,11 @@ export function RolePage() {
       {role.data ? (
         <RoleContent
           role={role.data}
-          onSaved={(saved) => role.update(() => saved)}
-          onReload={role.reload}
           m={m}
           locale={locale}
+          onSaved={(saved) => role.update(() => saved)}
+          onReload={role.reload}
+          onPeopleChanged={role.reload}
         />
       ) : role.status === 'error' ? (
         role.error instanceof ApiError && role.error.status === 404 ? (
@@ -56,13 +60,22 @@ export function RolePage() {
 
 type RoleContentProps = {
   role: RoleDetail
-  onSaved: (role: RoleDetail) => void
-  onReload: () => void
   m: Messages
   locale: Locale
+  /** A save or restore answered with the role's new state. */
+  onSaved: (role: RoleDetail) => void
+  /** Someone else saved the role first: load it again. */
+  onReload: () => void
+  onPeopleChanged: () => void
 }
 
-function RoleContent({ role, onSaved, onReload, m, locale }: RoleContentProps) {
+function RoleContent({ role, m, locale, onSaved, onReload, onPeopleChanged }: RoleContentProps) {
+  const t = m.roles
+  const { access, can } = usePermissions()
+  const organization = useCurrentOrganization()
+  const canSeePeople = can('MANAGE_MEMBERS')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = roleTab(searchParams, canSeePeople)
   const description = role.description?.[locale] ?? null
   const invitations = invitationCountLabel(role.pendingInvitationCount, m)
 
@@ -82,7 +95,33 @@ function RoleContent({ role, onSaved, onReload, m, locale }: RoleContentProps) {
         </div>
       </header>
 
-      <PermissionsTab role={role} onSaved={onSaved} onReload={onReload} />
+      {canSeePeople ? (
+        <nav className="filter-tabs" aria-label={t.tabs.label}>
+          {(['permissions', 'people'] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              className="filter-tabs__tab"
+              aria-pressed={tab === key}
+              onClick={() => setSearchParams(roleTabSearch(searchParams, key), { replace: true })}
+            >
+              {t.tabs[key]}
+            </button>
+          ))}
+        </nav>
+      ) : null}
+
+      {tab === 'people' ? (
+        <PeopleTab
+          organizationId={organization.id}
+          role={role}
+          myMembershipId={access?.membershipId ?? null}
+          onChanged={onPeopleChanged}
+        />
+      ) : null}
+
+      {/* Kept mounted while People is open, so unsaved permission edits survive a tab switch. */}
+      <PermissionsTab role={role} onSaved={onSaved} onReload={onReload} hidden={tab !== 'permissions'} />
     </>
   )
 }
