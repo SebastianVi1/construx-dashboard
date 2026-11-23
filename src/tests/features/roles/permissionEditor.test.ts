@@ -46,7 +46,7 @@ describe('setScope: own tasks and raising', () => {
 })
 
 describe('setScope: switching off or lowering', () => {
-  // Member as shipped (contract §6.1 / seeded-roles.properties).
+  // Member as shipped (contract §6.1 / built-in-roles.yml).
   const member = fromGrants([
     { action: 'VIEW_PROJECT', scope: 'ORGANIZATION' },
     { action: 'VIEW_GOAL', scope: 'ORGANIZATION' },
