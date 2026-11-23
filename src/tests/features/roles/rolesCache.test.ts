@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import {
   onRolesChanged,
+  roleDeleted,
   roleKey,
   rolesChanged,
   rolesKey,
@@ -9,7 +10,7 @@ import {
   withRole,
 } from '../../../features/roles/rolesCache'
 import type { RoleDetail, RoleSummary } from '../../../features/roles/rolesApi'
-import { clearSessionValues, readSessionValue, writeSessionValue } from '../../../lib/sessionCache'
+import { clearSessionValues, hasSessionValue, readSessionValue, writeSessionValue } from '../../../lib/sessionCache'
 
 function summary(code: string, flags: Partial<RoleSummary> = {}): RoleSummary {
   return {
@@ -79,5 +80,23 @@ describe('rolesChanged', () => {
     rolesChanged('org-3', (roles) => withRole(roles, summary('CUSTOM_A')))
 
     expect(readSessionValue(rolesKey('org-3'))).toBeUndefined()
+  })
+})
+
+describe('roleDeleted', () => {
+  it("forgets the role's page and drops it from the remembered list, so going back cannot show it as live", () => {
+    writeSessionValue(roleKey('org-1', 'CUSTOM_A'), { code: 'CUSTOM_A' })
+    writeSessionValue(roleKey('org-1', 'CUSTOM_B'), { code: 'CUSTOM_B' })
+    writeSessionValue(rolesKey('org-1'), [summary('CUSTOM_A'), summary('CUSTOM_B')])
+    const heard: string[] = []
+    const stop = onRolesChanged((organizationId) => heard.push(organizationId))
+
+    roleDeleted('org-1', 'CUSTOM_A')
+    stop()
+
+    expect(hasSessionValue(roleKey('org-1', 'CUSTOM_A'))).toBe(false)
+    expect(hasSessionValue(roleKey('org-1', 'CUSTOM_B'))).toBe(true)
+    expect(readSessionValue<RoleSummary[]>(rolesKey('org-1'))?.map((role) => role.code)).toEqual(['CUSTOM_B'])
+    expect(heard).toEqual(['org-1'])
   })
 })

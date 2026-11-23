@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
-import { readSessionValue, writeSessionValue } from '../../lib/sessionCache'
+import { forgetSessionValue, readSessionValue, writeSessionValue } from '../../lib/sessionCache'
 import { listRoles, roleSummarySchema, type RoleDetail, type RoleSummary } from './rolesApi'
 
 /** Key of a company's `GET /roles` list in `useRemoteData` and the session cache. */
@@ -51,6 +51,16 @@ export function rolesChanged(organizationId: string, change?: (roles: RoleSummar
   const cached = readSessionValue<RoleSummary[]>(rolesKey(organizationId))
   if (change && cached) writeSessionValue(rolesKey(organizationId), change(cached))
   for (const listener of [...listeners]) listener(organizationId)
+}
+
+/**
+ * A role was deleted: its page is forgotten, so going back to it loads it again
+ * (and finds it gone) instead of showing the remembered role as live, and the
+ * lists drop it at once and refetch (see {@link rolesChanged}).
+ */
+export function roleDeleted(organizationId: string, code: string): void {
+  forgetSessionValue(roleKey(organizationId, code))
+  rolesChanged(organizationId, (roles) => withoutRole(roles, code))
 }
 
 /** The company's roles list, fetched again whenever {@link rolesChanged} names the company. */

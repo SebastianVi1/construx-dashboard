@@ -13,7 +13,7 @@ import { PermissionsTab } from './PermissionsTab'
 import { RoleBadges } from './RoleBits'
 import { canDeleteRole } from './customRoles'
 import { getRole, type RoleDetail } from './rolesApi'
-import { roleKey, rolesChanged, withoutRole } from './rolesCache'
+import { roleDeleted, roleKey } from './rolesCache'
 import { invitationCountLabel, memberCountLabel } from './roleView'
 import { roleTab, roleTabSearch } from './roleAssignment'
 import '../../components/filter/filter-tabs.css'
@@ -26,7 +26,8 @@ export function RolePage() {
   const { code = '' } = useParams()
   const organization = useCurrentOrganization()
   const orgId = organization.id
-  const role = useRemoteData(roleKey(orgId, code), () => getRole(orgId, code))
+  // A 404 is final: a role deleted here or by someone else never shows again from the remembered copy.
+  const role = useRemoteData(roleKey(orgId, code), () => getRole(orgId, code), { gone: isNotFound })
   const navigate = useNavigate()
   const title = role.data ? roleLabel(role.data, locale) : t.list.title
 
@@ -48,12 +49,12 @@ export function RolePage() {
           onPeopleChanged={role.reload}
           onDeleted={() => {
             // The list shows without the deleted role straight away; the refetch brings the moved counts.
-            rolesChanged(orgId, (roles) => withoutRole(roles, code))
+            roleDeleted(orgId, code)
             navigate('/members/roles', { state: { deletedRole: title } })
           }}
         />
       ) : role.status === 'error' ? (
-        role.error instanceof ApiError && role.error.status === 404 ? (
+        isNotFound(role.error) ? (
           <Notice>{t.role.notFound}</Notice>
         ) : (
           <Notice tone="error" action={{ label: t.retry, onClick: role.reload }}>
@@ -65,6 +66,10 @@ export function RolePage() {
       )}
     </div>
   )
+}
+
+function isNotFound(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404
 }
 
 type RoleContentProps = {
