@@ -96,26 +96,21 @@
   border-top: 1px solid var(--cx-border);
 }
 
-.role-people-add__label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--cx-ink);
-}
-
 .role-people-add__row {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: 8px;
 }
 
-.role-people-add__row .role-select {
+.role-people-add__row .form-field {
   flex: 1 1 240px;
+  margin: 0;
 }
 
-.role-people-add__row .role-select select {
-  max-width: none;
+/* The button lines up with the select. */
+.role-people-add__row > .button {
   min-height: 44px;
-  font-size: 0.875rem;
 }
 
 .role-people-add__hint {

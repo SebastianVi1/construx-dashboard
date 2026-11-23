@@ -1,13 +1,17 @@
 import { useId, useState } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
+import { Field } from '../../components/form'
 import { Notice, SkeletonForm, SkeletonList } from '../../components/page'
-import { formatMessage, useLocale, type Locale } from '../../i18n'
-import { changeMemberRole, listMembers, type Member } from '../members/membersApi'
+import { useLocale, type Locale } from '../../i18n'
+import { listMembers, type Member } from '../members/membersApi'
 import { roleLabel } from '../permissions'
 import { Avatar } from '../profile/Avatar'
 import { RoleSelect } from './RoleSelect'
-import { addPersonCandidates, assignErrorKind } from './roleAssignment'
-import { listRoles, type RoleSummary } from './rolesApi'
+import { addPersonCandidates } from './roleAssignment'
+import { useRoles } from './rolesCache'
+import type { RoleSummary } from './rolesApi'
+import { useRoleMove, type MoveFeedback } from './useRoleMove'
+import '../../components/form/form.css'
 import '../profile/profile.css'
 import '../members/members.css'
 import './people.css'
@@ -40,39 +44,26 @@ export function PeopleTab({ organizationId, role, myMembershipId, onChanged }: P
     loadHolders(organizationId, role.code),
   )
   // Same keys as the Members page, so both show the same lists.
-  const roles = useRemoteData(`${organizationId}:roles`, () => listRoles(organizationId))
+  const roles = useRoles(organizationId)
   const members = useRemoteData(role.assignable ? `${organizationId}:members` : null, () =>
     listMembers(organizationId),
   )
-  const [pending, setPending] = useState<{ membershipId: string; roleCode: string } | null>(null)
-  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
-
-  const nameOf = (member: Member) => member.fullName || member.email
-
-  /** Moves a member to `roleCode`; into this role from "Add person", out of it from a row. */
-  async function move(member: Member, roleCode: string) {
-    setPending({ membershipId: member.membershipId, roleCode })
-    setFeedback(null)
-    try {
-      const moved = await changeMemberRole(organizationId, member.membershipId, roleCode)
+  const [feedback, setFeedback] = useState<MoveFeedback | null>(null)
+  // Into this role from "Add person", out of it from a row.
+  const { move, pending } = useRoleMove(organizationId, {
+    onMoved: (moved) => {
       holders.update((list) =>
         moved.role.code === role.code
           ? [...list.filter((item) => item.membershipId !== moved.membershipId), moved]
           : list.filter((item) => item.membershipId !== moved.membershipId),
       )
       members.update((list) => list.map((item) => (item.membershipId === moved.membershipId ? moved : item)))
-      roles.reload()
       onChanged()
-      setFeedback({
-        tone: 'success',
-        text: formatMessage(t.moved, { name: nameOf(moved), role: roleLabel(moved.role, locale) }),
-      })
-    } catch (error) {
-      setFeedback({ tone: 'error', text: m.roles.assignError[assignErrorKind(error)] })
-    } finally {
-      setPending(null)
-    }
-  }
+    },
+    onFeedback: setFeedback,
+  })
+
+  const nameOf = (member: Member) => member.fullName || member.email
 
   return (
     <section className="page-section" aria-labelledby={headingId}>
@@ -174,7 +165,6 @@ type AddPersonProps = {
 function AddPerson({ role, members, membersFailed, roles, myMembershipId, busy, locale, onAdd, onRetry }: AddPersonProps) {
   const { messages: m } = useLocale()
   const t = m.roles.people.add
-  const selectId = useId()
   const [chosen, setChosen] = useState('')
 
   if (!members || !roles) {
@@ -208,20 +198,24 @@ function AddPerson({ role, members, membersFailed, roles, myMembershipId, busy, 
         setChosen('')
       }}
     >
-      <label className="role-people-add__label" htmlFor={selectId}>
-        {t.label}
-      </label>
       <div className="role-people-add__row">
-        <span className="role-select">
-          <select id={selectId} value={selected?.membershipId ?? ''} onChange={(event) => setChosen(event.target.value)} disabled={busy}>
-            <option value="">{t.placeholder}</option>
-            {candidates.map((member) => (
-              <option key={member.membershipId} value={member.membershipId}>
-                {`${member.fullName || m.members.list.unnamed} (${member.email}), ${roleLabel(member.role, locale)}`}
-              </option>
-            ))}
-          </select>
-        </span>
+        <Field
+          config={{
+            name: `add-person-${role.code}`,
+            label: t.label,
+            type: 'select',
+            options: [
+              { value: '', label: t.placeholder },
+              ...candidates.map((member) => ({
+                value: member.membershipId,
+                label: `${member.fullName || m.members.list.unnamed} (${member.email}), ${roleLabel(member.role, locale)}`,
+              })),
+            ],
+          }}
+          value={selected?.membershipId ?? ''}
+          disabled={busy}
+          onChange={setChosen}
+        />
         <button type="submit" className="button" disabled={busy || !selected} aria-busy={busy}>
           {busy ? t.pending : t.submit}
         </button>

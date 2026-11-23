@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice, SkeletonList } from '../../components/page'
 import { formatMessage, useLocale } from '../../i18n'
 import { useCurrentOrganization } from '../organizations/organizations-context'
@@ -10,7 +9,8 @@ import { canCreateRole, canDuplicate } from './customRoles'
 import { RoleBadges } from './RoleBits'
 import { RoleFormDialog } from './RoleFormDialog'
 import { memberCountLabel } from './roleView'
-import { listRoles, type RoleSummary } from './rolesApi'
+import type { RoleSummary } from './rolesApi'
+import { useRoles } from './rolesCache'
 import './roles.css'
 
 /**
@@ -23,7 +23,7 @@ export function RolesPage() {
   const t = m.roles
   const organization = useCurrentOrganization()
   const orgId = organization.id
-  const roles = useRemoteData(`${orgId}:roles`, () => listRoles(orgId))
+  const roles = useRoles(orgId)
   const { access, can } = usePermissions()
   const manageRoles = can('MANAGE_ROLES')
   const myRoleCode = access?.role.code ?? null

@@ -9,6 +9,7 @@ import { seesWorkbooks } from '../excel/excelAccess'
 import { FinanceIcon } from '../org-finance/FinanceIcon'
 import { seesOrgFinance } from '../org-finance/orgFinanceAccess'
 import { hasPermission } from '../permissions/landing'
+import { peopleAccess } from '../roles/peopleAccess'
 import { useCurrentOrganization } from './organizations-context'
 import { WorkspaceHeader } from './WorkspaceHeader'
 import { workspaceNavItems, type WorkspaceNavItem, type WorkspaceNavLink } from './workspaceNav'
@@ -84,8 +85,7 @@ function WorkspaceBody({ guideSlot }: { guideSlot: HTMLDivElement | null }) {
     seesOwnTasks: hasPermission(access, 'VIEW_ACTIVITY') || hasPermission(access, 'MANAGE_ACTIVITY'),
     seesPrices: can('VIEW_PRICES'),
     seesBudget: seesWorkbooks(access),
-    managesMembers: can('MANAGE_MEMBERS'),
-    managesRoles: can('MANAGE_ROLES'),
+    ...peopleAccess(can),
   })
 
   const link = (prefix: 'workspace-nav' | 'workspace-tabbar', item: WorkspaceNavItem, className = '') => {

@@ -10,13 +10,13 @@ import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { CrewsSection } from '../crews/CrewsSection'
 import { listSites, type Site } from '../sites/sitesApi'
-import { listRoles, type RoleSummary } from '../roles/rolesApi'
+import type { RoleSummary } from '../roles/rolesApi'
+import { useRoles } from '../roles/rolesCache'
 import { RoleSelect } from '../roles/RoleSelect'
-import { assignErrorKind } from '../roles/roleAssignment'
 import { PeopleTabs } from '../roles/PeopleTabs'
+import { useRoleMove } from '../roles/useRoleMove'
 import { InviteForm } from './InviteForm'
 import {
-  changeMemberRole,
   createInvitation,
   inviteErrorKind,
   listInvitations,
@@ -59,7 +59,7 @@ function MembersContent() {
   const canInviteToSite = can('MANAGE_PROJECT')
 
   // Independent lists load in parallel.
-  const roles = useRemoteData(`${orgId}:roles`, () => listRoles(orgId))
+  const roles = useRoles(orgId)
   const invitations = useRemoteData(`${orgId}:invitations`, () => listInvitations(orgId))
   const members = useRemoteData(`${orgId}:members`, () => listMembers(orgId))
   const sites = useRemoteData(canInviteToSite ? `${orgId}:sites` : null, () => listSites(orgId))
@@ -177,7 +177,6 @@ function MembersContent() {
             roles={roles.data}
             canManage={can('MANAGE_MEMBERS')}
             myMembershipId={myMembershipId}
-            onRolesChanged={roles.reload}
             onMemberUpdated={(updated) =>
               members.update((list) =>
                 list.map((item) => (item.membershipId === updated.membershipId ? updated : item)),
@@ -290,8 +289,6 @@ type MemberListProps = {
   roles: RoleSummary[] | undefined
   canManage: boolean
   myMembershipId: string | null
-  /** A member changed role: member counts on the roles list are stale. */
-  onRolesChanged: () => void
   onMemberUpdated: (member: Member) => void
   onMemberRemoved: (membershipId: string) => void
 }
@@ -304,7 +301,6 @@ function MemberList({
   roles,
   canManage,
   myMembershipId,
-  onRolesChanged,
   onMemberUpdated,
   onMemberRemoved,
 }: MemberListProps) {
@@ -312,8 +308,11 @@ function MemberList({
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [pendingRole, setPendingRole] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
+  const { move: changeRole, pending: pendingMove } = useRoleMove(organizationId, {
+    onMoved: onMemberUpdated,
+    onFeedback: setFeedback,
+  })
 
   // Filter by the roles members hold, in the roles list order; a role nobody holds any more stops filtering.
   const heldRoles = (roles ?? []).filter((role) => members.data?.some((member) => member.role.code === role.code))
@@ -340,29 +339,6 @@ function MemberList({
       setFeedback({ tone: 'error', text: t.statusError[memberActionErrorKind(error)] })
     } finally {
       setBusyId(null)
-    }
-  }
-
-  async function changeRole(member: Member, roleCode: string) {
-    setBusyId(member.membershipId)
-    setPendingRole(roleCode)
-    setFeedback(null)
-    try {
-      const moved = await changeMemberRole(organizationId, member.membershipId, roleCode)
-      onMemberUpdated(moved)
-      onRolesChanged()
-      setFeedback({
-        tone: 'success',
-        text: formatMessage(m.roles.people.moved, {
-          name: moved.fullName || moved.email,
-          role: roleLabel(moved.role, locale),
-        }),
-      })
-    } catch (error) {
-      setFeedback({ tone: 'error', text: m.roles.assignError[assignErrorKind(error)] })
-    } finally {
-      setBusyId(null)
-      setPendingRole(null)
     }
   }
 
@@ -418,7 +394,7 @@ function MemberList({
                   const isOwner = member.role.code === 'OWNER'
                   const isSelf = member.membershipId === myMembershipId
                   const canAct = canManage && !isOwner && !isSelf
-                  const busy = busyId === member.membershipId && pendingRole === null
+                  const busy = busyId === member.membershipId
                   return (
                     <div key={member.membershipId} className="member-row">
                       <Avatar fullName={member.fullName} email={member.email} avatarUrl={member.avatarUrl} decorative />
@@ -433,8 +409,8 @@ function MemberList({
                             roles={roles}
                             myMembershipId={myMembershipId}
                             name={name}
-                            pendingCode={busyId === member.membershipId ? pendingRole : null}
-                            disabled={busyId !== null}
+                            pendingCode={pendingMove?.membershipId === member.membershipId ? pendingMove.roleCode : null}
+                            disabled={busyId !== null || pendingMove !== null}
                             onChange={(roleCode) => void changeRole(member, roleCode)}
                           />
                         ) : (
@@ -445,7 +421,7 @@ function MemberList({
                             <button
                               type="button"
                               className="button button--small"
-                              disabled={busyId !== null}
+                              disabled={busyId !== null || pendingMove !== null}
                               aria-label={formatMessage(t.suspendLabel, { name })}
                               onClick={() => void suspend(member)}
                               aria-busy={busy}
@@ -455,7 +431,7 @@ function MemberList({
                             <button
                               type="button"
                               className="button button--small button--danger"
-                              disabled={busyId !== null}
+                              disabled={busyId !== null || pendingMove !== null}
                               aria-label={formatMessage(t.removeLabel, { name })}
                               onClick={() => void remove(member)}
                               aria-busy={busy}

@@ -4,7 +4,7 @@ export const membersMessages = defineMessages({
   en: {
     title: 'Members',
     description: 'Invite people to this company and see who already belongs to it.',
-    loadError: 'We could not load the team.',
+    loadError: 'We could not load the members.',
     retry: 'Try again',
     invite: {
       title: 'Invite someone',
@@ -91,7 +91,7 @@ export const membersMessages = defineMessages({
   es: {
     title: 'Miembros',
     description: 'Invita personas a esta empresa y mira quiénes ya forman parte.',
-    loadError: 'No pudimos cargar el equipo.',
+    loadError: 'No pudimos cargar a los miembros.',
     retry: 'Intentar de nuevo',
     invite: {
       title: 'Invitar a alguien',
