@@ -20,13 +20,32 @@ export class ApiError extends Error {
   readonly retryAfterSeconds: number | undefined
   /** `code` property of the RFC 7807 problem body, when present. */
   readonly code: string | undefined
+  /**
+   * The whole problem body, for rule-specific properties next to `code` (for
+   * example `action` and `requires` of `ROLE_DEPENDENCY_MISSING`). Empty when
+   * the body was not a JSON object.
+   */
+  readonly problem: Readonly<Record<string, unknown>>
 
-  constructor(status?: number, retryAfterSeconds?: number, code?: string) {
+  constructor(status?: number, retryAfterSeconds?: number, code?: string, problem: Record<string, unknown> = {}) {
     super('API request failed')
     this.name = 'ApiError'
     this.status = status
     this.retryAfterSeconds = retryAfterSeconds
     this.code = code
+    this.problem = problem
+  }
+
+  /** A string property of the problem body, or undefined when absent or not a string. */
+  problemString(name: string): string | undefined {
+    const value = this.problem[name]
+    return typeof value === 'string' ? value : undefined
+  }
+
+  /** A finite number property of the problem body, or undefined when absent or not a number. */
+  problemNumber(name: string): number | undefined {
+    const value = this.problem[name]
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined
   }
 }
 
@@ -96,10 +115,8 @@ export function configureHttp(options: {
   if (options.baseUrl) baseUrl = options.baseUrl
 }
 
-function parseProblemCode(data: unknown): string | undefined {
-  if (typeof data !== 'object' || data === null) return undefined
-  const code = (data as { code?: unknown }).code
-  return typeof code === 'string' ? code : undefined
+function parseProblem(data: unknown): Record<string, unknown> {
+  return typeof data === 'object' && data !== null && !Array.isArray(data) ? (data as Record<string, unknown>) : {}
 }
 
 function parseRetryAfter(value: unknown): number | undefined {
@@ -109,10 +126,12 @@ function parseRetryAfter(value: unknown): number | undefined {
 }
 
 function errorFromResponse(response: HttpResponse): ApiError {
+  const problem = parseProblem(response.data)
   return new ApiError(
     response.status,
     parseRetryAfter(response.headers?.['retry-after']),
-    parseProblemCode(response.data),
+    typeof problem.code === 'string' ? problem.code : undefined,
+    problem,
   )
 }
 

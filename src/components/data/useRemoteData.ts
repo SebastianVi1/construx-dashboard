@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import { isMainScreen } from '../../lib/mainScreen'
-import { hasSessionValue, readSessionValue, writeSessionValue } from '../../lib/sessionCache'
+import { forgetSessionValue, hasSessionValue, readSessionValue, writeSessionValue } from '../../lib/sessionCache'
 
 export type RemoteStatus = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -32,6 +32,12 @@ export type RemoteDataOptions = {
    * the next visit reads it again instead of rendering an expired address.
    */
   remember?: boolean
+  /**
+   * Whether a failure means the thing no longer exists (for example a 404 for
+   * one record). Such a failure is final: the remembered value is dropped and
+   * the error shows, instead of the rows already on screen staying as if live.
+   */
+  gone?: (error: unknown) => boolean
 }
 
 /** How long a screen's first load keeps its placeholder, so the skeleton can be read. */
@@ -40,6 +46,20 @@ export const FIRST_LOAD_MIN_MS = 500
 /** Time left of the first-load minimum; zero once it has elapsed. */
 export function firstLoadDelay(startedAt: number, now = Date.now(), minMs = FIRST_LOAD_MIN_MS): number {
   return Math.max(0, minMs - (now - startedAt))
+}
+
+/**
+ * What a failed request leaves on screen: the value already shown stays (a
+ * failed revalidation is not news), unless `gone` says the failure means the
+ * thing no longer exists.
+ */
+export function failedLoad<T>(
+  error: unknown,
+  shown: T | undefined,
+  gone?: (error: unknown) => boolean,
+): { ok: true; data: T } | { ok: false; error: unknown } {
+  if (shown !== undefined && !gone?.(error)) return { ok: true, data: shown }
+  return { ok: false, error }
 }
 
 /** When each navigation first showed a placeholder, by `location.key`. */
@@ -78,11 +98,12 @@ export function clearFirstLoadWindows(): void {
 export function useRemoteData<T>(
   key: string | null,
   load: () => Promise<T>,
-  { immediate = false, remember = true }: RemoteDataOptions = {},
+  { immediate = false, remember = true, gone }: RemoteDataOptions = {},
 ): RemoteData<T> {
   const [request, setRequest] = useState(0)
   const [loaded, setLoaded] = useState<Loaded<T> | null>(null)
   const run = useEffectEvent(() => load())
+  const isGone = useEffectEvent((error: unknown) => gone?.(error) ?? false)
   const location = useLocation()
   const screenRef = useRef(location.key)
   // Only a main screen holds its skeleton; a section inside one opens immediately.
@@ -115,10 +136,11 @@ export function useRemoteData<T>(
     run().then(
       (data) => settle({ key, request, ok: true, data }),
       (error: unknown) => {
-        // A failed revalidation leaves the rows already on screen in place.
+        // A failed revalidation leaves the rows already on screen in place, unless the thing is gone.
         const previous = alreadyShown ? readSessionValue<T>(key) : undefined
-        if (previous !== undefined) return settle({ key, request, ok: true, data: previous })
-        settle({ key, request, ok: false, error })
+        const outcome = failedLoad(error, previous, isGone)
+        if (!outcome.ok && active) forgetSessionValue(key)
+        settle({ key, request, ...outcome })
       },
     )
     return () => {

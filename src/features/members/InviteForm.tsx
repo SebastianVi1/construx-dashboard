@@ -10,12 +10,12 @@ import {
   makeInviteSchema,
   type Invitation,
   type InviteErrorKind,
-  type OrganizationRole,
 } from './membersApi'
+import type { RoleSummary } from '../roles/rolesApi'
 
 type InviteFormProps = {
   organizationId: string
-  roles: OrganizationRole[]
+  roles: RoleSummary[]
   /** Sites the invitation may grant; null hides the site field (no MANAGE_PROJECT). */
   sites: Site[] | null
   onInvited: (invitation: Invitation, message: string) => void
@@ -23,7 +23,7 @@ type InviteFormProps = {
 
 /** Invite by email and role, optionally onto a site. Remount (new `key`) to clear it. */
 export function InviteForm({ organizationId, roles, sites, onInvited }: InviteFormProps) {
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.members
   const [errorKind, setErrorKind] = useState<InviteErrorKind>('generic')
 
@@ -62,7 +62,7 @@ export function InviteForm({ organizationId, roles, sites, onInvited }: InviteFo
       type: 'select',
       options: [
         { value: '', label: t.invite.rolePlaceholder },
-        ...invitableRoles(roles).map((role) => ({ value: role.code, label: roleLabel(role, m.roles) })),
+        ...invitableRoles(roles).map((role) => ({ value: role.code, label: roleLabel(role, locale) })),
       ],
     },
   ]

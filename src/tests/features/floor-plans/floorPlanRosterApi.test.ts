@@ -3,7 +3,15 @@ import { ApiError, configureHttp, type HttpRequest } from '../../../lib/http'
 import { getFloorPlanRoster } from '../../../features/floor-plans/floorPlanRosterApi'
 
 const roster = {
-  people: [{ membershipId: 'm1', fullName: 'Ana Perez', avatarUrl: null, roleName: 'Trabajador' }],
+  people: [
+    {
+      membershipId: 'm1',
+      fullName: 'Ana Perez',
+      avatarUrl: null,
+      roleName: 'Trabajador',
+      roleNames: { en: 'Worker', es: 'Trabajador' },
+    },
+  ],
   crews: [{ id: 'c1', name: 'Rebar crew', memberCount: 3 }],
   equipment: [{ id: 'e1', type: 'Excavator', identifier: 'EX-01' }],
 }
@@ -26,7 +34,7 @@ describe('getFloorPlanRoster', () => {
     serve(200, roster, seen)
     const result = await getFloorPlanRoster('o 1', 's1')
     expect(seen[0].url).toBe('/api/organizations/o%201/projects/s1/floor-plans/roster')
-    expect(result.people[0]).toEqual({ membershipId: 'm1', fullName: 'Ana Perez', avatarUrl: null, roleName: 'Trabajador' })
+    expect(result.people[0]).toEqual(roster.people[0])
     expect(result.crews[0].memberCount).toBe(3)
     expect(result.equipment[0].identifier).toBe('EX-01')
   })

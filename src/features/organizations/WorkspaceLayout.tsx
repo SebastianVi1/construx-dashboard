@@ -9,9 +9,10 @@ import { seesWorkbooks } from '../excel/excelAccess'
 import { FinanceIcon } from '../org-finance/FinanceIcon'
 import { seesOrgFinance } from '../org-finance/orgFinanceAccess'
 import { hasPermission } from '../permissions/landing'
+import { peopleAccess } from '../roles/peopleAccess'
 import { useCurrentOrganization } from './organizations-context'
 import { WorkspaceHeader } from './WorkspaceHeader'
-import { workspaceNavItems, type WorkspaceNavItem } from './workspaceNav'
+import { workspaceNavItems, type WorkspaceNavItem, type WorkspaceNavLink } from './workspaceNav'
 import './workspace.css'
 
 const MAIN_ID = 'workspace-main'
@@ -23,8 +24,14 @@ const navIcons: Record<WorkspaceNavItem['key'], typeof SitesIcon> = {
   prices: MaterialsIcon,
   excel: SpreadsheetIcon,
   documents: DocumentIcon,
+  people: TeamIcon,
+  // Members and roles only appear under People; they share its icon.
   members: TeamIcon,
+  roles: TeamIcon,
 }
+
+/** Members is the group's root path: it must not stay highlighted on the roles pages below it. */
+const endsAtItself = (item: WorkspaceNavLink) => item.key === 'members'
 
 /**
  * Frame of the company workspace: header across the top, navigation beside
@@ -78,26 +85,58 @@ function WorkspaceBody({ guideSlot }: { guideSlot: HTMLDivElement | null }) {
     seesOwnTasks: hasPermission(access, 'VIEW_ACTIVITY') || hasPermission(access, 'MANAGE_ACTIVITY'),
     seesPrices: can('VIEW_PRICES'),
     seesBudget: seesWorkbooks(access),
-    managesMembers: can('MANAGE_MEMBERS'),
+    ...peopleAccess(can),
   })
 
-  const links = (prefix: 'workspace-nav' | 'workspace-tabbar') =>
-    items.map((item) => {
-      const Icon = navIcons[item.key]
-      return (
-        <li key={item.key} className={`${prefix}__item`}>
-          <NavLink className={`${prefix}__link`} to={item.to}>
-            <Icon className={`${prefix}__icon`} />
-            <span className={`${prefix}__label`}>{t[item.key]}</span>
-          </NavLink>
+  const link = (prefix: 'workspace-nav' | 'workspace-tabbar', item: WorkspaceNavItem, className = '') => {
+    const Icon = navIcons[item.key]
+    return (
+      <NavLink className={`${prefix}__link${className}`} to={item.to} end={'children' in item ? false : endsAtItself(item)}>
+        <Icon className={`${prefix}__icon`} />
+        <span className={`${prefix}__label`}>{t[item.key]}</span>
+      </NavLink>
+    )
+  }
+
+  // Sidebar: a group is a heading over indented sub-links. The tablet rail is too
+  // narrow for that, so it shows the group as one link, like the phone tab bar,
+  // and the pages carry the sub-page strip (PeopleTabs).
+  const PeopleIcon = navIcons.people
+  const sidebarLinks = items.map((item) =>
+    'children' in item ? (
+      <li key={item.key} className="workspace-nav__item workspace-nav__group">
+        {link('workspace-nav', item, ' workspace-nav__group-link')}
+        <span className="workspace-nav__group-label" id={`workspace-nav-${item.key}`}>
+          <PeopleIcon className="workspace-nav__icon" />
+          <span className="workspace-nav__label">{t[item.key]}</span>
+        </span>
+        <ul className="workspace-nav__sublist" aria-labelledby={`workspace-nav-${item.key}`}>
+          {item.children.map((child) => (
+            <li key={child.key} className="workspace-nav__item">
+              <NavLink className="workspace-nav__link workspace-nav__link--sub" to={child.to} end={endsAtItself(child)}>
+                <span className="workspace-nav__label">{t[child.key]}</span>
+              </NavLink>
             </li>
-      )
-    })
+          ))}
+        </ul>
+      </li>
+    ) : (
+      <li key={item.key} className="workspace-nav__item">
+        {link('workspace-nav', item)}
+      </li>
+    ),
+  )
+
+  const tabbarLinks = items.map((item) => (
+    <li key={item.key} className="workspace-tabbar__item">
+      {link('workspace-tabbar', item)}
+    </li>
+  ))
 
   return (
     <>
       <nav className="workspace-nav" aria-label={t.navLabel}>
-        <ul className="workspace-nav__list">{links('workspace-nav')}</ul>
+        <ul className="workspace-nav__list">{sidebarLinks}</ul>
         <div className="workspace-nav__footer">
           <GuideNavButton />
         </div>
@@ -126,7 +165,7 @@ function WorkspaceBody({ guideSlot }: { guideSlot: HTMLDivElement | null }) {
         )}
       </main>
       <nav className="workspace-tabbar" aria-label={t.navLabel}>
-        <ul className="workspace-tabbar__list">{links('workspace-tabbar')}</ul>
+        <ul className="workspace-tabbar__list">{tabbarLinks}</ul>
       </nav>
       {/* Phones have no sidebar: the Guide entry sits in the header instead. */}
       <GuideHeaderButton container={guideSlot} />

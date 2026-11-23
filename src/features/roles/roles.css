@@ -1,0 +1,491 @@
+/* People › Roles & permissions. Tokens only (design.md). */
+
+/* Members | Roles strip: tablet and phone, where the navigation shows People as one link; the desktop sidebar lists the sub-pages. */
+.people-tabs {
+  display: none;
+}
+
+.people-tabs .filter-tabs__tab {
+  text-decoration: none;
+}
+
+.people-tabs .filter-tabs__tab[aria-current='page'] {
+  border-bottom-color: var(--cx-accent);
+  color: var(--cx-ink);
+  font-weight: 600;
+}
+
+@media (max-width: 1080px) {
+  .people-tabs {
+    display: flex;
+  }
+}
+
+.role-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Role list: one ruled row per role, like an index sheet. */
+.role-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+  overflow: hidden;
+}
+
+.role-list li + li {
+  border-top: 1px solid var(--cx-border);
+}
+
+.role-list__row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 12px 16px;
+  color: var(--cx-ink);
+  text-decoration: none;
+  transition: background-color 150ms ease-out;
+}
+
+.role-list__row:hover {
+  background: var(--cx-surface-raised);
+}
+
+.role-list__row:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: -2px;
+}
+
+.role-list__main {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.role-list__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.role-list__name {
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.role-list__description {
+  max-width: 72ch;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.role-list__end {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  flex: none;
+  text-align: right;
+}
+
+.role-list__count {
+  color: var(--cx-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.role-list__view-only {
+  color: color-mix(in srgb, var(--cx-muted) 80%, transparent);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* A role row with a Duplicate action beside its link (a button may not sit inside the link). */
+.role-list__item {
+  display: flex;
+  align-items: center;
+}
+
+.role-list__item .role-list__row {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-list__duplicate {
+  flex: none;
+  margin-right: 16px;
+}
+
+/* The whole row lights up, Duplicate cell included. */
+.role-list__item:has(.role-list__row:hover) {
+  background: var(--cx-surface-raised);
+}
+
+.role-list__item .role-list__row:hover {
+  background: transparent;
+}
+
+/* Role page */
+.role-header__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.page-header .role-header__meta {
+  font-size: 13px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.permission-groups {
+  display: grid;
+  gap: 24px;
+}
+
+.permission-group {
+  display: grid;
+  gap: 8px;
+}
+
+.permission-group h3 {
+  color: var(--cx-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.permission-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+}
+
+.permission-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 56px;
+  padding: 10px 16px;
+}
+
+.permission-row + .permission-row {
+  border-top: 1px solid var(--cx-border);
+}
+
+.permission-row__text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.permission-row__name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.permission-row__description {
+  max-width: 72ch;
+  color: var(--cx-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.permission-scope {
+  flex: none;
+  padding: 2px 10px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-ink);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.permission-scope[data-scope='ORGANIZATION'] {
+  border-color: color-mix(in srgb, var(--cx-accent) 45%, transparent);
+  background: var(--cx-accent-subtle);
+}
+
+.permission-scope[data-scope='NONE'] {
+  border-style: dashed;
+  border-color: var(--cx-border);
+  color: var(--cx-muted);
+  font-weight: 400;
+}
+
+/* A row whose scope differs from the saved role: a rule in the margin, like a marked-up drawing. */
+.permission-row[data-changed] {
+  box-shadow: inset 3px 0 0 var(--cx-accent);
+}
+
+.permission-row__note {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+  color: var(--cx-accent);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* None | Own tasks | Assigned sites | Whole company */
+.scope-control {
+  display: inline-flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface);
+}
+
+.scope-control__option {
+  display: inline-grid;
+  place-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.scope-control__option:hover:not(:has(input:checked)):not(:has(input:disabled)) {
+  background: var(--cx-primary-subtle);
+  color: var(--cx-ink);
+}
+
+.scope-control__option:has(input:checked) {
+  background: var(--cx-primary);
+  color: var(--cx-on-primary);
+}
+
+.scope-control__option[data-scope='NONE']:has(input:checked) {
+  background: var(--cx-surface-raised);
+  color: var(--cx-ink);
+}
+
+.scope-control__option:has(input:disabled:not(:checked)) {
+  color: color-mix(in srgb, var(--cx-muted) 45%, transparent);
+  cursor: not-allowed;
+}
+
+/* A save or restore is in flight: the choices wait for its answer. */
+.scope-control[aria-disabled='true'] .scope-control__option {
+  cursor: progress;
+}
+
+.scope-control__option:has(input:focus-visible) {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: 1px;
+}
+
+/* Unsaved changes stay in reach while scrolling a long list. */
+.permission-savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-lg);
+  background: var(--cx-surface);
+  box-shadow: 0 -4px 16px var(--cx-shadow-color);
+}
+
+.permission-savebar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.permission-savebar__label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.permission-savebar .form-error {
+  margin: 0;
+}
+
+/* Someone else saved the role: said here, in the sticky bar, where the user just pressed Save. */
+.permission-savebar__conflict {
+  margin: 0;
+  color: var(--cx-warning);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* A save made from the bar is confirmed in the bar, not at the top of the list. */
+.permission-savebar__done {
+  margin: 0;
+  color: var(--cx-success);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Restore and lowering previews in the confirm dialogs. */
+.permission-changes {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.permission-changes__row dt {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.permission-changes__row dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin: 2px 0 0;
+  color: var(--cx-ink);
+  font-size: 13px;
+}
+
+.permission-changes__from {
+  color: var(--cx-muted);
+  text-decoration: line-through;
+}
+
+.permission-changes__warning {
+  margin: 0 0 12px;
+  color: var(--cx-warning);
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .permission-savebar {
+    bottom: calc(var(--cx-tabbar-height) + env(safe-area-inset-bottom) + 8px);
+  }
+}
+
+@media (max-width: 560px) {
+  .role-list__row,
+  .permission-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .role-list__end {
+    justify-items: start;
+    text-align: left;
+  }
+
+  /* Phones: the choices share the row's width in equal columns instead of wrapping unevenly. */
+  .scope-control {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    align-self: stretch;
+  }
+
+  .scope-control__option {
+    padding: 4px 6px;
+    font-size: 12px;
+    line-height: 16px;
+    text-align: center;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-list__row,
+  .scope-control__option {
+    transition: none;
+  }
+}
+
+/* Custom role name and description, above its permissions. */
+.role-details {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.role-details h2 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.role-details__fields {
+  display: grid;
+  gap: 16px;
+  max-width: 60ch;
+}
+
+/* Delete role dialog: what moves, then where to. */
+.role-delete {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.role-delete__intro,
+.role-delete__hint {
+  margin: 0 0 16px;
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.role-delete .role-delete__intro,
+.role-delete .role-delete__hint {
+  margin: 0;
+}
+
+.role-delete__counts {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .role-list__item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .role-list__item .role-list__row {
+    align-self: stretch;
+  }
+
+  .role-list__duplicate {
+    margin: 0 16px 12px;
+  }
+}

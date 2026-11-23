@@ -10,13 +10,17 @@ import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { CrewsSection } from '../crews/CrewsSection'
 import { listSites, type Site } from '../sites/sitesApi'
+import type { RoleSummary } from '../roles/rolesApi'
+import { useRoles } from '../roles/rolesCache'
+import { RoleSelect } from '../roles/RoleSelect'
+import { PeopleTabs } from '../roles/PeopleTabs'
+import { useRoleMove } from '../roles/useRoleMove'
 import { InviteForm } from './InviteForm'
 import {
   createInvitation,
   inviteErrorKind,
   listInvitations,
   listMembers,
-  listRoles,
   memberActionErrorKind,
   removeMember,
   revokeErrorKind,
@@ -55,7 +59,7 @@ function MembersContent() {
   const canInviteToSite = can('MANAGE_PROJECT')
 
   // Independent lists load in parallel.
-  const roles = useRemoteData(`${orgId}:roles`, () => listRoles(orgId))
+  const roles = useRoles(orgId)
   const invitations = useRemoteData(`${orgId}:invitations`, () => listInvitations(orgId))
   const members = useRemoteData(`${orgId}:members`, () => listMembers(orgId))
   const sites = useRemoteData(canInviteToSite ? `${orgId}:sites` : null, () => listSites(orgId))
@@ -113,6 +117,7 @@ function MembersContent() {
 
   return (
     <div className="page">
+      <PeopleTabs />
       <header className="page-header">
         <div className="page-header__text">
           <h1>{t.title}</h1>
@@ -167,7 +172,9 @@ function MembersContent() {
           <MemberList
             members={members}
             m={m}
+            locale={locale}
             organizationId={orgId}
+            roles={roles.data}
             canManage={can('MANAGE_MEMBERS')}
             myMembershipId={myMembershipId}
             onMemberUpdated={(updated) =>
@@ -224,7 +231,7 @@ function PendingInvitations({ invitations, sites, busyId, onResend, onRevoke, m,
                 {invitations.data.map((invitation) => (
                   <tr key={invitation.id}>
                     <td className="members-email">{invitation.email}</td>
-                    <td>{roleLabel(invitation.role, m.roles)}</td>
+                    <td>{roleLabel(invitation.role, locale)}</td>
                     <td className={invitation.projectId ? undefined : 'cell-muted'}>
                       {invitation.projectId ? (siteNames.get(invitation.projectId) ?? t.unknownSite) : t.noSite}
                     </td>
@@ -276,7 +283,10 @@ function PendingInvitations({ invitations, sites, busyId, onResend, onRevoke, m,
 type MemberListProps = {
   members: RemoteData<Member[]>
   m: Messages
+  locale: Locale
   organizationId: string
+  /** `GET /roles` for the caller (undefined while loading): the role dropdowns and the role filter. */
+  roles: RoleSummary[] | undefined
   canManage: boolean
   myMembershipId: string | null
   onMemberUpdated: (member: Member) => void
@@ -286,7 +296,9 @@ type MemberListProps = {
 function MemberList({
   members,
   m,
+  locale,
   organizationId,
+  roles,
   canManage,
   myMembershipId,
   onMemberUpdated,
@@ -294,11 +306,21 @@ function MemberList({
 }: MemberListProps) {
   const t = m.members.list
   const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
+  const { move: changeRole, pending: pendingMove } = useRoleMove(organizationId, {
+    onMoved: onMemberUpdated,
+    onFeedback: setFeedback,
+  })
+
+  // Filter by the roles members hold, in the roles list order; a role nobody holds any more stops filtering.
+  const heldRoles = (roles ?? []).filter((role) => members.data?.some((member) => member.role.code === role.code))
+  const shownRole = heldRoles.length > 1 && heldRoles.some((role) => role.code === roleFilter) ? roleFilter : ''
 
   const filtered = members.data
     ? members.data.filter((member) => {
+        if (shownRole && member.role.code !== shownRole) return false
         if (!search) return true
         const q = search.toLowerCase()
         return member.fullName?.toLowerCase().includes(q) || member.email.toLowerCase().includes(q)
@@ -348,9 +370,22 @@ function MemberList({
                 type="search"
                 className="members-search-input"
                 placeholder={t.search}
+                aria-label={t.search}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
+              {heldRoles.length > 1 ? (
+                <span className="role-select members-role-filter">
+                  <select value={shownRole} onChange={(e) => setRoleFilter(e.target.value)} aria-label={t.filterRole}>
+                    <option value="">{t.allRoles}</option>
+                    {heldRoles.map((role) => (
+                      <option key={role.code} value={role.code}>
+                        {roleLabel(role, locale)}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              ) : null}
             </div>
             {filtered && filtered.length > 0 ? (
               <div className="member-rows">
@@ -368,13 +403,25 @@ function MemberList({
                         <span className="member-email">{member.email}</span>
                       </div>
                       <div className="member-row__end">
-                        <span className="member-role">{roleLabel(member.role, m.roles)}</span>
+                        {canManage ? (
+                          <RoleSelect
+                            member={member}
+                            roles={roles}
+                            myMembershipId={myMembershipId}
+                            name={name}
+                            pendingCode={pendingMove?.membershipId === member.membershipId ? pendingMove.roleCode : null}
+                            disabled={busyId !== null || pendingMove !== null}
+                            onChange={(roleCode) => void changeRole(member, roleCode)}
+                          />
+                        ) : (
+                          <span className="member-role">{roleLabel(member.role, locale)}</span>
+                        )}
                         {canAct ? (
                           <div className="button-row">
                             <button
                               type="button"
                               className="button button--small"
-                              disabled={busyId !== null}
+                              disabled={busyId !== null || pendingMove !== null}
                               aria-label={formatMessage(t.suspendLabel, { name })}
                               onClick={() => void suspend(member)}
                               aria-busy={busy}
@@ -384,7 +431,7 @@ function MemberList({
                             <button
                               type="button"
                               className="button button--small button--danger"
-                              disabled={busyId !== null}
+                              disabled={busyId !== null || pendingMove !== null}
                               aria-label={formatMessage(t.removeLabel, { name })}
                               onClick={() => void remove(member)}
                               aria-busy={busy}

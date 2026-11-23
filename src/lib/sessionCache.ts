@@ -29,6 +29,11 @@ export function writeSessionValue<T>(key: string, value: T): void {
   shown.set(key, value)
 }
 
+/** Drop one value, e.g. for something that no longer exists. */
+export function forgetSessionValue(key: string): void {
+  shown.delete(key)
+}
+
 /** Drop every value, e.g. when the session ends. */
 export function clearSessionValues(): void {
   shown.clear()

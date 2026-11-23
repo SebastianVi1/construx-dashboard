@@ -101,7 +101,7 @@ export function SiteOverviewTab({
 
 /** Who is on the site at a glance: head count per role, then the people with leadership first. */
 function TeamRoster({ people, myMembershipId, moreUrl }: { people: SiteAccess[]; myMembershipId: string | null; moreUrl: string }) {
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.sites.overview
   // When the team overflows, the last slot becomes the "see all" tile so the grid keeps its rows.
   const limit = people.length > ROSTER_LIMIT ? ROSTER_LIMIT - 1 : ROSTER_LIMIT
@@ -112,7 +112,7 @@ function TeamRoster({ people, myMembershipId, moreUrl }: { people: SiteAccess[];
       <ul className="site-team__roles" aria-label={t.teamRoles}>
         {roles.map(({ role, count }) => (
           <li key={role.code}>
-            {roleLabel(role, m.roles)}
+            {roleLabel(role, locale)}
             <span className="site-team__role-count data-mono">{count}</span>
           </li>
         ))}
@@ -128,7 +128,7 @@ function TeamRoster({ people, myMembershipId, moreUrl }: { people: SiteAccess[];
                 </span>
                 {person.membershipId === myMembershipId ? <span className="person-you">{m.sites.people.you}</span> : null}
               </span>
-              <span className="site-team__role">{roleLabel(person.role, m.roles)}</span>
+              <span className="site-team__role">{roleLabel(person.role, locale)}</span>
             </div>
           </li>
         ))}

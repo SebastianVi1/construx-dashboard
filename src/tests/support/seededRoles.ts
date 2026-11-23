@@ -4,7 +4,7 @@ type Scope = MyAccess['permissions'][number]['scope']
 
 /**
  * `MyAccess` of each built-in role, copied from the backend's
- * `seeded-roles.properties` (OWNER always holds every action company-wide).
+ * `built-in-roles.yml` (default grants; OWNER always holds every action company-wide).
  * Update both together when a role's grants change.
  */
 const grants: Record<string, string> = {

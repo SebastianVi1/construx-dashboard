@@ -1,0 +1,138 @@
+/* Assigning members to roles: the role dropdown and a role's People tab. Tokens only (design.md). */
+
+.role-select {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.role-select::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--cx-muted);
+  border-bottom: 1.5px solid var(--cx-muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+.role-select select {
+  width: 100%;
+  max-width: 220px;
+  min-height: 36px;
+  padding: 0 32px 0 10px;
+  appearance: none;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-canvas);
+  color: var(--cx-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.role-select select:hover:not(:disabled) {
+  border-color: var(--cx-accent);
+}
+
+.role-select select:focus-visible {
+  outline: none;
+  border-color: var(--cx-accent);
+  box-shadow: 0 0 0 3px var(--cx-accent-subtle);
+}
+
+/* Locked: reads as a value, not a control. */
+.role-select select:disabled {
+  border-color: transparent;
+  background: var(--cx-surface-raised);
+  color: var(--cx-muted);
+  cursor: default;
+}
+
+.role-select:has(select:disabled)::after {
+  display: none;
+}
+
+.role-select select[aria-busy='true'] {
+  color: var(--cx-ink);
+  opacity: 0.7;
+}
+
+.role-select option {
+  background: var(--cx-surface);
+}
+
+/* Role page: the tab not shown stays mounted (a draft survives a tab switch) but hidden. */
+.page-section[hidden] {
+  display: none;
+}
+
+/* Role page: People tab */
+.role-people__you {
+  padding: 0 6px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.role-people__role {
+  font-size: 0.8125rem;
+  color: var(--cx-muted);
+  white-space: nowrap;
+}
+
+.role-people-add {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--cx-border);
+}
+
+.role-people-add__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.role-people-add__row .form-field {
+  flex: 1 1 240px;
+  margin: 0;
+}
+
+/* The button lines up with the select. */
+.role-people-add__row > .button {
+  min-height: 44px;
+}
+
+.role-people-add__hint {
+  margin-bottom: 0;
+  color: var(--cx-muted);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 560px) {
+  .member-row:has(.role-select) {
+    flex-wrap: wrap;
+  }
+
+  .member-row:has(.role-select) .member-row__end {
+    flex-wrap: wrap;
+    width: 100%;
+    padding-left: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-select select {
+    transition: none;
+  }
+}

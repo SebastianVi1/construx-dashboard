@@ -2,7 +2,6 @@ import type { DeepStringify } from './defineMessages'
 import type { Locale } from './locale'
 import { commonMessages } from './slices/common'
 import { validationMessages } from './slices/validation'
-import { rolesMessages } from '../features/permissions/messages'
 import { authMessages } from '../features/auth/messages'
 import { onboardingMessages } from '../features/onboarding/messages'
 import { organizationsMessages, workspaceMessages } from '../features/organizations/messages'
@@ -16,6 +15,7 @@ import { financeMessages } from '../features/finance/messages'
 import { excelMessages } from '../features/excel/messages'
 import { pricesMessages } from '../features/prices/messages'
 import { membersMessages } from '../features/members/messages'
+import { rolesMessages } from '../features/roles/messages'
 import { goalsMessages, phasesPageMessages } from '../features/goals/messages'
 import { ganttMessages } from '../features/gantt/messages'
 import { tasksMessages } from '../features/tasks/messages'
@@ -37,7 +37,6 @@ const en = {
   workspace: workspaceMessages.en,
   documents: documentsMessages.en,
   profile: profileMessages.en,
-  roles: rolesMessages.en,
   sites: sitesMessages.en,
   reports: reportsMessages.en,
   plans: plansMessages.en,
@@ -46,6 +45,7 @@ const en = {
   excel: excelMessages.en,
   prices: pricesMessages.en,
   members: membersMessages.en,
+  roles: rolesMessages.en,
   goals: goalsMessages.en,
   phasesPage: phasesPageMessages.en,
   gantt: ganttMessages.en,
@@ -70,7 +70,6 @@ const es: Messages = {
   workspace: workspaceMessages.es,
   documents: documentsMessages.es,
   profile: profileMessages.es,
-  roles: rolesMessages.es,
   sites: sitesMessages.es,
   reports: reportsMessages.es,
   plans: plansMessages.es,
@@ -79,6 +78,7 @@ const es: Messages = {
   excel: excelMessages.es,
   prices: pricesMessages.es,
   members: membersMessages.es,
+  roles: rolesMessages.es,
   goals: goalsMessages.es,
   phasesPage: phasesPageMessages.es,
   gantt: ganttMessages.es,

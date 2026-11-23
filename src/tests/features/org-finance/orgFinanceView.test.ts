@@ -90,7 +90,7 @@ describe('org finance access', () => {
 })
 
 describe('workspaceNavItems finance entry', () => {
-  const base = { seesOwnTasks: false, seesPrices: false, seesBudget: false, managesMembers: false }
+  const base = { seesOwnTasks: false, seesPrices: false, seesBudget: false, managesMembers: false, managesRoles: false }
 
   it('lists finance first when the role sees the company finances', () => {
     expect(workspaceNavItems({ ...base, seesFinance: true }).map((item) => item.to)).toEqual([

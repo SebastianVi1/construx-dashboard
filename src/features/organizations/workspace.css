@@ -500,6 +500,41 @@
   color: var(--cx-accent);
 }
 
+/* A group: a heading over indented sub-links (desktop). The tablet rail shows one link instead. */
+.workspace-nav__group-link {
+  display: none;
+}
+
+.workspace-nav__group-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--cx-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.workspace-nav__group:has(.active) .workspace-nav__group-label,
+.workspace-nav__group:has(.active) .workspace-nav__group-label .workspace-nav__icon {
+  color: var(--cx-ink);
+}
+
+.workspace-nav__sublist {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Sub-links line up with the group label's text, past the icon. */
+.workspace-nav__link--sub {
+  min-height: 40px;
+  padding-left: 44px;
+}
+
 .workspace-main {
   grid-area: main;
   min-width: 0;
@@ -540,6 +575,15 @@
   .workspace-nav__link.active::before {
     top: 14px;
     bottom: 14px;
+  }
+
+  .workspace-nav__group-link {
+    display: flex;
+  }
+
+  .workspace-nav__group-label,
+  .workspace-nav__sublist {
+    display: none;
   }
 
   .account-menu__name {

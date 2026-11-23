@@ -26,6 +26,8 @@ export const TEXT_LIMITS = {
   zoneLevel: 40,
   pinTitle: 120,
   reportTitle: 120,
+  roleName: 100,
+  roleDescription: 280,
   email: 254,
   longText: 500,
 } as const

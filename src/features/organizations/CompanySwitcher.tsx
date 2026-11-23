@@ -13,7 +13,7 @@ import { deleteOrganization, type Organization } from './organizationsApi'
  */
 export function CompanySwitcher() {
   const { organizations, current, select, remove } = useOrganizations()
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.workspace
   const ctx = m.organizations.context
   const { open, triggerRef, panelRef, panelId, toggle, close } = usePopover()
@@ -73,7 +73,7 @@ export function CompanySwitcher() {
         <span className="company-switcher__text">
           <span className="company-switcher__name">{current.name}</span>
           {current.myRole ? (
-            <span className="company-switcher__role">{roleLabel(current.myRole, m.roles)}</span>
+            <span className="company-switcher__role">{roleLabel(current.myRole, locale)}</span>
           ) : null}
         </span>
         <ChevronDownIcon className="company-switcher__chevron" width="16" height="16" />
@@ -103,7 +103,7 @@ export function CompanySwitcher() {
                     <span className="popover__item-text">
                       <span className="popover__item-title">{organization.name}</span>
                       {organization.myRole ? (
-                        <span className="popover__item-meta">{roleLabel(organization.myRole, m.roles)}</span>
+                        <span className="popover__item-meta">{roleLabel(organization.myRole, locale)}</span>
                       ) : null}
                     </span>
                     {selected ? <CheckIcon className="popover__check" width="18" height="18" /> : null}

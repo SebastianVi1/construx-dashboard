@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'bun:test'
-import { messages } from '../../../i18n/messages'
-import { roleLabel } from '../../../features/permissions/roles'
 import { assignableMembers, siteProgress } from '../../../features/sites/siteHelpers'
 
 describe('siteProgress', () => {
@@ -20,13 +18,5 @@ describe('assignableMembers', () => {
     const members = [{ membershipId: 'm-1' }, { membershipId: 'm-2' }, { membershipId: 'm-3' }]
     const access = [{ membershipId: 'm-2' }]
     expect(assignableMembers(members, access).map((member) => member.membershipId)).toEqual(['m-1', 'm-3'])
-  })
-})
-
-describe('roleLabel', () => {
-  it('localizes a seeded role by code and keeps a custom role name', () => {
-    expect(roleLabel({ code: 'WORKER', name: 'Trabajador' }, messages.en.roles)).toBe('Worker')
-    expect(roleLabel({ code: 'WORKER', name: 'Trabajador' }, messages.es.roles)).toBe('Trabajador')
-    expect(roleLabel({ code: 'FOREMAN', name: 'Capataz' }, messages.en.roles)).toBe('Capataz')
   })
 })

@@ -13,6 +13,7 @@ const MAIN_SCREENS = new Set([
   '/crews',
   '/equipment',
   '/members',
+  '/members/roles',
   '/account',
 ])
 

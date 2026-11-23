@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { Bubble } from '../../components/popover'
 import { intlLocales, useLocale } from '../../i18n'
+import { personRoleLabel } from './personRole'
 import { Avatar } from '../profile/Avatar'
 import '../profile/profile.css'
 import { taskDetailPath } from '../tasks/taskRules'
@@ -47,10 +48,11 @@ export function OccupantBubble({ getAnchor, occupant, zone, zones, assignments, 
     if (eq) facts.push([t.type, eq.type], [t.identifier, eq.identifier])
   } else {
     title = worker ? (worker.fullName ?? t.noName) : occupant.label || occupant.crewName || t.unknown
-    subtitle = worker?.roleName ?? t.personTitle
+    const role = worker ? personRoleLabel(worker, locale) : null
+    subtitle = role ?? t.personTitle
     if (worker) {
       facts.push([t.name, worker.fullName ?? t.noName])
-      if (worker.roleName) facts.push([t.role, worker.roleName])
+      if (role) facts.push([t.role, role])
     }
     if (membershipId) {
       const crews = crewsOf(membershipId, assignments)

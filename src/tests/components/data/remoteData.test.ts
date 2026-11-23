@@ -4,6 +4,7 @@ import {
   clearFirstLoadWindows,
   firstLoadDelay,
   firstLoadWindow,
+  failedLoad,
 } from '../../../components/data/useRemoteData'
 
 describe('first-load minimum', () => {
@@ -36,5 +37,24 @@ describe('first-load minimum', () => {
     expect(firstLoadDelay(firstLoadWindow(nav, 1600), 1600)).toBe(0)
     // The next navigation starts its own window.
     expect(firstLoadWindow('navigation-2', 9000)).toBe(9000)
+  })
+})
+
+describe('a failed load', () => {
+  const notFound = new Error('404')
+  const offline = new Error('network')
+  const gone = (error: unknown) => error === notFound
+
+  test('keeps the rows a revalidation already showed', () => {
+    expect(failedLoad(offline, ['row'], gone)).toEqual({ ok: true, data: ['row'] })
+    expect(failedLoad(offline, ['row'])).toEqual({ ok: true, data: ['row'] })
+  })
+
+  test('is final when the answer says the thing is gone, even with rows on screen', () => {
+    expect(failedLoad(notFound, ['row'], gone)).toEqual({ ok: false, error: notFound })
+  })
+
+  test('is an error when nothing was shown before', () => {
+    expect(failedLoad(offline, undefined, gone)).toEqual({ ok: false, error: offline })
   })
 })

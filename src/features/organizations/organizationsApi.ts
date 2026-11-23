@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { deleteJson, getJson, sendJson } from '../../lib/http'
+import { roleSchema } from '../permissions/can'
 
 /**
  * `OrganizationResponse` from the v1 contract. `myRole` is in the contract but
@@ -9,8 +10,7 @@ export const organizationSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
   status: z.string(),
-  myRole: z
-    .object({ code: z.string(), name: z.string() })
+  myRole: roleSchema
     .nullable()
     .optional()
     .transform((role) => role ?? null),

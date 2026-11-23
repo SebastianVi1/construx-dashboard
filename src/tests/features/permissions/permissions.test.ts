@@ -6,7 +6,7 @@ import { getMyAccess } from '../../../features/permissions/permissionsApi'
 
 const worker: MyAccess = {
   membershipId: 'm-1',
-  role: { code: 'WORKER', name: 'Trabajador' },
+  role: { code: 'WORKER', name: 'Trabajador', names: { en: 'Worker', es: 'Trabajador' } },
   permissions: [
     { action: 'VIEW_PROJECT', scope: 'PROJECT' },
     { action: 'VIEW_ACTIVITY', scope: 'PROJECT' },
