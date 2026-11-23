@@ -2,7 +2,7 @@ import { defineMessages } from '../../i18n/defineMessages'
 
 export const membersMessages = defineMessages({
   en: {
-    title: 'Team',
+    title: 'Members',
     description: 'Invite people to this company and see who already belongs to it.',
     loadError: 'We could not load the team.',
     retry: 'Try again',
@@ -86,7 +86,7 @@ export const membersMessages = defineMessages({
     },
   },
   es: {
-    title: 'Equipo',
+    title: 'Miembros',
     description: 'Invita personas a esta empresa y mira quiénes ya forman parte.',
     loadError: 'No pudimos cargar el equipo.',
     retry: 'Intentar de nuevo',

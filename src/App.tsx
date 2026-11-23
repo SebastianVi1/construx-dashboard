@@ -10,6 +10,7 @@ import { NotFoundPage } from './features/auth/NotFoundPage'
 import { GuestOnly, RequireAuth } from './features/auth/RouteGuards'
 import { RequireWorkbooks } from './features/excel/RequireWorkbooks'
 import { CreateOrganizationPage, OrganizationGate, WorkspaceHome, WorkspaceLayout } from './features/organizations'
+import { RequirePeopleAccess } from './features/roles/RequirePeopleAccess'
 
 // Workspace screens load on first visit; WorkspaceLayout holds their Suspense boundary.
 const SitesPage = lazy(() => import('./features/sites/SitesPage').then((module) => ({ default: module.SitesPage })))
@@ -18,6 +19,8 @@ const SiteDetailPage = lazy(() =>
 )
 const PhasesPage = lazy(() => import('./features/goals/PhasesPage').then((module) => ({ default: module.PhasesPage })))
 const MembersPage = lazy(() => import('./features/members/MembersPage').then((module) => ({ default: module.MembersPage })))
+const RolesPage = lazy(() => import('./features/roles/RolesPage').then((module) => ({ default: module.RolesPage })))
+const RolePage = lazy(() => import('./features/roles/RolePage').then((module) => ({ default: module.RolePage })))
 const TaskDetailPage = lazy(() => import('./features/tasks/TaskDetailPage').then((module) => ({ default: module.TaskDetailPage })))
 const MyTasksPage = lazy(() => import('./features/tasks/MyTasksPage').then((module) => ({ default: module.MyTasksPage })))
 const PricesPage = lazy(() => import('./features/prices/PricesPage').then((module) => ({ default: module.PricesPage })))
@@ -105,7 +108,9 @@ function App() {
         <Route path="/sites/:siteId/attendance" element={<AttendancePage />} />
         <Route path="/crews" element={<CrewsPage />} />
         <Route path="/equipment" element={<EquipmentPage />} />
-        <Route path="/members" element={<MembersPage />} />
+        <Route path="/members" element={<RequirePeopleAccess page="members"><MembersPage /></RequirePeopleAccess>} />
+        <Route path="/members/roles" element={<RequirePeopleAccess page="roles"><RolesPage /></RequirePeopleAccess>} />
+        <Route path="/members/roles/:code" element={<RequirePeopleAccess page="roles"><RolePage /></RequirePeopleAccess>} />
         <Route path="/account" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

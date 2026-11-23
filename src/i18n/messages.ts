@@ -15,6 +15,7 @@ import { financeMessages } from '../features/finance/messages'
 import { excelMessages } from '../features/excel/messages'
 import { pricesMessages } from '../features/prices/messages'
 import { membersMessages } from '../features/members/messages'
+import { rolesMessages } from '../features/roles/messages'
 import { goalsMessages, phasesPageMessages } from '../features/goals/messages'
 import { ganttMessages } from '../features/gantt/messages'
 import { tasksMessages } from '../features/tasks/messages'
@@ -44,6 +45,7 @@ const en = {
   excel: excelMessages.en,
   prices: pricesMessages.en,
   members: membersMessages.en,
+  roles: rolesMessages.en,
   goals: goalsMessages.en,
   phasesPage: phasesPageMessages.en,
   gantt: ganttMessages.en,
@@ -76,6 +78,7 @@ const es: Messages = {
   excel: excelMessages.es,
   prices: pricesMessages.es,
   members: membersMessages.es,
+  roles: rolesMessages.es,
   goals: goalsMessages.es,
   phasesPage: phasesPageMessages.es,
   gantt: ganttMessages.es,

@@ -11,6 +11,7 @@ import '../profile/profile.css'
 import { CrewsSection } from '../crews/CrewsSection'
 import { listSites, type Site } from '../sites/sitesApi'
 import { listRoles } from '../roles/rolesApi'
+import { PeopleTabs } from '../roles/PeopleTabs'
 import { InviteForm } from './InviteForm'
 import {
   createInvitation,
@@ -113,6 +114,7 @@ function MembersContent() {
 
   return (
     <div className="page">
+      <PeopleTabs />
       <header className="page-header">
         <div className="page-header__text">
           <h1>{t.title}</h1>
