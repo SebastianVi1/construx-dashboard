@@ -21,7 +21,13 @@ export const permissionActions = [
 
 export type PermissionAction = (typeof permissionActions)[number]
 
-export const roleSchema = z.object({ code: z.string(), name: z.string() })
+/** A role's display name in each language (roles contract §5.11). */
+export const roleNamesSchema = z.object({ en: z.string(), es: z.string() })
+
+export type RoleNames = z.infer<typeof roleNamesSchema>
+
+/** Role summary `{ code, name, names }`; `names` is optional so an older backend still parses. */
+export const roleSchema = z.object({ code: z.string(), name: z.string(), names: roleNamesSchema.optional() })
 
 export type RoleRef = z.infer<typeof roleSchema>
 

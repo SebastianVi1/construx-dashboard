@@ -2,7 +2,6 @@ import type { DeepStringify } from './defineMessages'
 import type { Locale } from './locale'
 import { commonMessages } from './slices/common'
 import { validationMessages } from './slices/validation'
-import { rolesMessages } from '../features/permissions/messages'
 import { authMessages } from '../features/auth/messages'
 import { onboardingMessages } from '../features/onboarding/messages'
 import { organizationsMessages, workspaceMessages } from '../features/organizations/messages'
@@ -37,7 +36,6 @@ const en = {
   workspace: workspaceMessages.en,
   documents: documentsMessages.en,
   profile: profileMessages.en,
-  roles: rolesMessages.en,
   sites: sitesMessages.en,
   reports: reportsMessages.en,
   plans: plansMessages.en,
@@ -70,7 +68,6 @@ const es: Messages = {
   workspace: workspaceMessages.es,
   documents: documentsMessages.es,
   profile: profileMessages.es,
-  roles: rolesMessages.es,
   sites: sitesMessages.es,
   reports: reportsMessages.es,
   plans: plansMessages.es,

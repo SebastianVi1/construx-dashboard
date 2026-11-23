@@ -167,6 +167,7 @@ function MembersContent() {
           <MemberList
             members={members}
             m={m}
+            locale={locale}
             organizationId={orgId}
             canManage={can('MANAGE_MEMBERS')}
             myMembershipId={myMembershipId}
@@ -224,7 +225,7 @@ function PendingInvitations({ invitations, sites, busyId, onResend, onRevoke, m,
                 {invitations.data.map((invitation) => (
                   <tr key={invitation.id}>
                     <td className="members-email">{invitation.email}</td>
-                    <td>{roleLabel(invitation.role, m.roles)}</td>
+                    <td>{roleLabel(invitation.role, locale)}</td>
                     <td className={invitation.projectId ? undefined : 'cell-muted'}>
                       {invitation.projectId ? (siteNames.get(invitation.projectId) ?? t.unknownSite) : t.noSite}
                     </td>
@@ -276,6 +277,7 @@ function PendingInvitations({ invitations, sites, busyId, onResend, onRevoke, m,
 type MemberListProps = {
   members: RemoteData<Member[]>
   m: Messages
+  locale: Locale
   organizationId: string
   canManage: boolean
   myMembershipId: string | null
@@ -286,6 +288,7 @@ type MemberListProps = {
 function MemberList({
   members,
   m,
+  locale,
   organizationId,
   canManage,
   myMembershipId,
@@ -368,7 +371,7 @@ function MemberList({
                         <span className="member-email">{member.email}</span>
                       </div>
                       <div className="member-row__end">
-                        <span className="member-role">{roleLabel(member.role, m.roles)}</span>
+                        <span className="member-role">{roleLabel(member.role, locale)}</span>
                         {canAct ? (
                           <div className="button-row">
                             <button

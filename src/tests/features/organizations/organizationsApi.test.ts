@@ -37,8 +37,8 @@ describe('organizations API', () => {
     expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof')
   })
 
-  it('createOrganization: keeps myRole when the backend sends it', async () => {
-    const withRole = { ...acme, myRole: { code: 'OWNER', name: 'Owner' } }
+  it('createOrganization: keeps myRole and its names in both languages when the backend sends it', async () => {
+    const withRole = { ...acme, myRole: { code: 'OWNER', name: 'Propietario', names: { en: 'Owner', es: 'Propietario' } } }
     stubApi(() => csrfOk, () => ({ status: 201, data: withRole }))
 
     expect(await createOrganization('Acme Builders')).toEqual(withRole)

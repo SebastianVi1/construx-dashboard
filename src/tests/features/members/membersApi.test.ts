@@ -20,7 +20,7 @@ const csrfOk = { data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
 const invitation = {
   id: 'i-1',
   email: 'bob@example.com',
-  role: { code: 'WORKER', name: 'Trabajador' },
+  role: { code: 'WORKER', name: 'Trabajador', names: { en: 'Worker', es: 'Trabajador' } },
   projectId: null,
   status: 'PENDING',
   expiresAt: '2026-11-02T10:00:00Z',
@@ -31,13 +31,13 @@ const member = {
   email: 'ana@acme.com',
   fullName: null,
   avatarUrl: null,
-  role: { code: 'MEMBER', name: 'Miembro' },
+  role: { code: 'MEMBER', name: 'Miembro', names: { en: 'Member', es: 'Miembro' } },
   status: 'ACTIVE',
 }
 const roles = [
-  { id: 'r-0', code: 'OWNER', name: 'Propietario', system: true },
-  { id: 'r-1', code: 'ADMINISTRATOR', name: 'Administrador', system: false },
-  { id: 'r-2', code: 'WORKER', name: 'Trabajador', system: false },
+  { id: 'r-0', code: 'OWNER', name: 'Propietario', names: { en: 'Owner', es: 'Propietario' }, system: true },
+  { id: 'r-1', code: 'ADMINISTRATOR', name: 'Administrador', names: { en: 'Administrator', es: 'Administrador' }, system: true },
+  { id: 'r-2', code: 'WORKER', name: 'Trabajador', names: { en: 'Worker', es: 'Trabajador' }, system: true },
 ]
 
 function stubApi(responses: { get?: (url: string) => unknown; send?: () => unknown } = {}) {
@@ -50,14 +50,14 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
 describe('members API', () => {
   afterEach(() => mock.restore())
 
-  it('listMembers: gets the active members, allowing a null full name', async () => {
+  it('listMembers: gets the active members with role names, allowing a null full name', async () => {
     const { get } = stubApi({ get: () => ({ status: 200, data: [member] }) })
 
     expect(await listMembers('org-1')).toEqual([member])
     expect(get.mock.calls[0][0]).toBe('/api/organizations/org-1/members')
   })
 
-  it('listRoles: gets the organization roles', async () => {
+  it('listRoles: gets the organization roles with their names in both languages', async () => {
     const { get } = stubApi({ get: () => ({ status: 200, data: roles }) })
 
     expect(await listRoles('org-1')).toEqual(roles)

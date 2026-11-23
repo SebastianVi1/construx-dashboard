@@ -35,7 +35,7 @@ const access = {
   userId: 'u-1',
   fullName: null,
   avatarUrl: null,
-  role: { code: 'WORKER', name: 'Trabajador' },
+  role: { code: 'WORKER', name: 'Trabajador', names: { en: 'Worker', es: 'Trabajador' } },
 }
 
 function stubApi(responses: { get?: (url: string) => unknown; send?: () => unknown } = {}) {

@@ -20,7 +20,7 @@ import './profile.css'
 
 /** The signed-in person: identity, role in the selected company, their sites, and sign-out. */
 export function ProfilePage() {
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.profile
   const { user, signOut } = useAuth()
   const organization = useCurrentOrganization()
@@ -40,7 +40,7 @@ export function ProfilePage() {
   if (!user) return null
 
   const fullName = profile.data?.fullName ?? null
-  const role = access ? roleLabel(access.role, m.roles) : null
+  const role = access ? roleLabel(access.role, locale) : null
 
   return (
     <div className="page">

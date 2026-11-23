@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { TEXT_LIMITS } from '../../components/form'
 import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
-import { roleSchema } from '../permissions/can'
+import { roleNamesSchema, roleSchema } from '../permissions/can'
 import { personSchema } from '../people/personSchema'
 import { organizationPath } from '../../lib/apiPaths'
 
@@ -19,6 +19,7 @@ export const organizationRoleSchema = z.object({
   id: z.string().min(1),
   code: z.string(),
   name: z.string(),
+  names: roleNamesSchema.optional(),
   system: z.boolean(),
 })
 

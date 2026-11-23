@@ -9,7 +9,7 @@ const csrfOk = { data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
 const accepted = {
   organization: { id: 'org-9', name: 'Acme Builders' },
   membershipId: 'm-9',
-  role: { code: 'WORKER', name: 'Trabajador' },
+  role: { code: 'WORKER', name: 'Trabajador', names: { en: 'Worker', es: 'Trabajador' } },
   projectId: 'p-3',
 }
 

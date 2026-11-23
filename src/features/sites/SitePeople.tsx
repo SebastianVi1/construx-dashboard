@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { useRemoteData, type RemoteData } from '../../components/data/useRemoteData'
 import { SkeletonTable, SkeletonForm, Notice } from '../../components/page'
-import { formatMessage, useLocale } from '../../i18n'
+import { formatMessage, useLocale, type Locale } from '../../i18n'
 import { listMembers, type Member } from '../members/membersApi'
 import { roleLabel } from '../permissions'
 import { ApiError } from '../../lib/http'
@@ -24,7 +24,7 @@ type SitePeopleProps = {
 
 /** People on a site: list for everyone who can view it; add and remove with MANAGE_PROJECT. */
 export function SitePeople({ organizationId, siteId, people, canManage, canSeeRates, myMembershipId }: SitePeopleProps) {
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.sites.people
   const headingId = useId()
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -81,7 +81,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, canSeeRa
                     <option value="">{t.filterAll}</option>
                     {Array.from(new Map(people.data.map((p) => [p.role.code, p.role])).values()).map((role) => (
                       <option key={role.code} value={role.code}>
-                        {roleLabel(role, m.roles)}
+                        {roleLabel(role, locale)}
                       </option>
                     ))}
                   </select>
@@ -112,7 +112,7 @@ export function SitePeople({ organizationId, siteId, people, canManage, canSeeRa
                         {person.membershipId === myMembershipId ? <span className="person-you">{t.you}</span> : null}
                       </span>
                     </td>
-                    <td>{roleLabel(person.role, m.roles)}</td>
+                    <td>{roleLabel(person.role, locale)}</td>
                     {canSeeRates ? (
                       <td>
                         <button
@@ -195,7 +195,7 @@ type AssignPersonProps = {
 
 /** Member picker fed by `GET /members` (needs MANAGE_MEMBERS on the server). */
 function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: AssignPersonProps) {
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const t = m.sites.people
   const selectId = useId()
   const members = useRemoteData(`${organizationId}:members`, () => listMembers(organizationId))
@@ -243,7 +243,7 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
             <option value="">{t.assignPlaceholder}</option>
             {candidates.map((member) => (
               <option key={member.membershipId} value={member.membershipId}>
-                {memberOptionLabel(member, t.unnamed, m.roles)}
+                {memberOptionLabel(member, t.unnamed, locale)}
               </option>
             ))}
           </select>
@@ -256,6 +256,6 @@ function AssignPerson({ organizationId, siteId, people, onAdded, onFailed }: Ass
   )
 }
 
-function memberOptionLabel(member: Member, unnamed: string, roles: Record<string, string>): string {
-  return `${member.fullName || unnamed} (${member.email}), ${roleLabel(member.role, roles)}`
+function memberOptionLabel(member: Member, unnamed: string, locale: Locale): string {
+  return `${member.fullName || unnamed} (${member.email}), ${roleLabel(member.role, locale)}`
 }
