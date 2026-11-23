@@ -153,3 +153,13 @@ export function scopeOptions(action: CatalogAction, caller: GrantMap | null): Sc
   const reach = caller ? rank(caller[action.action]) : Infinity
   return [{ scope: null, withinCaller: true }, ...scopes.map((scope) => ({ scope, withinCaller: rank(scope) <= reach }))]
 }
+
+/**
+ * Whether one option of a scope control is out of use: all of them while a
+ * save or restore is in flight (its answer replaces the draft, so an edit made
+ * meanwhile would be lost), otherwise a scope wider than the caller unless the
+ * role already holds it.
+ */
+export function optionLocked(option: ScopeOption, current: Scope | null, busy: boolean): boolean {
+  return busy || (!option.withinCaller && option.scope !== current)
+}

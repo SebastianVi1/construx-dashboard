@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { diffGrants, fromGrants, isEmpty, scopeOptions, setScope, toGrants } from '../../../features/roles/permissionEditor'
+import { diffGrants, fromGrants, isEmpty, optionLocked, scopeOptions, setScope, toGrants } from '../../../features/roles/permissionEditor'
 import { permissionCatalog as catalog } from '../../support/permissionCatalog'
 
 describe('setScope: switching on or raising', () => {
@@ -190,5 +190,18 @@ describe('scopeOptions', () => {
       { scope: 'PROJECT', withinCaller: true },
       { scope: 'ORGANIZATION', withinCaller: false },
     ])
+  })
+})
+
+describe('optionLocked', () => {
+  it('locks every option while a save or restore is in flight, so no edit is made that the answer would wipe', () => {
+    expect(optionLocked({ scope: 'PROJECT', withinCaller: true }, null, true)).toBe(true)
+    expect(optionLocked({ scope: null, withinCaller: true }, 'PROJECT', true)).toBe(true)
+  })
+
+  it('otherwise locks only a scope wider than the caller, unless the role already holds it', () => {
+    expect(optionLocked({ scope: 'PROJECT', withinCaller: true }, null, false)).toBe(false)
+    expect(optionLocked({ scope: 'ORGANIZATION', withinCaller: false }, 'PROJECT', false)).toBe(true)
+    expect(optionLocked({ scope: 'ORGANIZATION', withinCaller: false }, 'ORGANIZATION', false)).toBe(false)
   })
 })

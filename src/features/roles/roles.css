@@ -286,9 +286,14 @@
   color: var(--cx-ink);
 }
 
-.scope-control__option:has(input:disabled) {
+.scope-control__option:has(input:disabled:not(:checked)) {
   color: color-mix(in srgb, var(--cx-muted) 45%, transparent);
   cursor: not-allowed;
+}
+
+/* A save or restore is in flight: the choices wait for its answer. */
+.scope-control[aria-disabled='true'] .scope-control__option {
+  cursor: progress;
 }
 
 .scope-control__option:has(input:focus-visible) {

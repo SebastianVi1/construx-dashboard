@@ -13,6 +13,7 @@ import {
   diffGrants,
   fromGrants,
   isEmpty,
+  optionLocked,
   scopeOptions,
   setScope,
   toGrants,
@@ -117,6 +118,7 @@ function PermissionsEditor({
   const [restoring, setRestoring] = useState(false)
   const [restoreError, setRestoreError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [restorePending, setRestorePending] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [flash, setFlash] = useState<Flash>(null)
   const [conflict, setConflict] = useState<Conflict>(null)
@@ -128,6 +130,8 @@ function PermissionsEditor({
   const changes = diffGrants(saved, draft, catalog)
   const custom = base.kind === 'CUSTOM'
   const dirty = changes.length > 0 || (custom && detailsChanged(base, details))
+  // While a write is in flight nothing can be edited: its answer replaces the draft.
+  const busy = saving || restorePending
 
   // Our own save or restore, or any role while nothing is being edited, replaces the draft.
   // Someone else's newer version never does while there are unsaved changes: the user decides (story 16).
@@ -214,6 +218,7 @@ function PermissionsEditor({
   async function restore() {
     if (writing.current) return
     writing.current = true
+    setRestorePending(true)
     setRestoreError(null)
     try {
       written(await restoreRole(orgId, role.code, role.version))
@@ -224,6 +229,7 @@ function PermissionsEditor({
       failed(error, setRestoreError)
     } finally {
       writing.current = false
+      setRestorePending(false)
     }
   }
 
@@ -251,7 +257,7 @@ function PermissionsEditor({
               config={{ name: 'roleName', label: t.details.name, autoComplete: 'off', maxLength: TEXT_LIMITS.roleName }}
               value={details.name}
               error={detailErrors.name ? (detailErrors.name === 'required' ? t.details.required : t.details.nameTooLong) : undefined}
-              disabled={saving}
+              disabled={busy}
               onChange={(name) => editDetails({ name })}
             />
             <Field
@@ -265,7 +271,7 @@ function PermissionsEditor({
               }}
               value={details.description}
               error={detailErrors.description ? t.details.descriptionTooLong : undefined}
-              disabled={saving}
+              disabled={busy}
               onChange={(description) => editDetails({ description })}
             />
           </div>
@@ -313,7 +319,7 @@ function PermissionsEditor({
                     ) : null}
                   </span>
                   {editable ? (
-                    <ScopeControl action={action} scope={scope} caller={caller} onChange={(next) => choose(action, next)} m={m} />
+                    <ScopeControl action={action} scope={scope} caller={caller} busy={busy} onChange={(next) => choose(action, next)} m={m} />
                   ) : (
                     <span className="permission-scope" data-scope={scope ?? 'NONE'}>
                       {scope ? t.scope[scope] : t.scope.none}
@@ -343,7 +349,7 @@ function PermissionsEditor({
             <div className="button-row">
               {dirty ? (
                 <>
-                  <button type="button" className="button" onClick={discard} disabled={saving}>
+                  <button type="button" className="button" onClick={discard} disabled={busy}>
                     {e.discard}
                   </button>
                   <button type="button" className="button button--primary" onClick={() => void save()} disabled={saving || invalid} aria-busy={saving}>
@@ -408,18 +414,21 @@ function ScopeControl({
   action,
   scope,
   caller,
+  busy,
   onChange,
   m,
 }: {
   action: CatalogAction
   scope: Scope | null
   caller: GrantMap | null
+  /** A save or restore is in flight: every option waits for its answer. */
+  busy: boolean
   onChange: (scope: Scope | null) => void
   m: Messages
 }) {
   const t = m.roles
   return (
-    <div className="scope-control" role="radiogroup" aria-labelledby={`permission-${action.action}`}>
+    <div className="scope-control" role="radiogroup" aria-labelledby={`permission-${action.action}`} aria-disabled={busy || undefined}>
       {scopeOptions(action, caller).map((option) => {
         const value = option.scope ?? 'NONE'
         const blocked = !option.withinCaller && option.scope !== scope
@@ -431,7 +440,7 @@ function ScopeControl({
               name={`scope-${action.action}`}
               value={value}
               checked={option.scope === scope}
-              disabled={blocked}
+              disabled={optionLocked(option, scope, busy)}
               onChange={() => onChange(option.scope)}
             />
             <span>{option.scope ? t.scope[option.scope] : t.scope.none}</span>
