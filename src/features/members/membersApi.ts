@@ -29,9 +29,34 @@ export type Invitation = z.infer<typeof invitationSchema>
 /** Invite form values; an empty `projectId` means "no site". */
 export type InvitationDraft = { email: string; roleCode: string; projectId: string }
 
-/** Active members, with emails (needs `MANAGE_MEMBERS`). */
-export function listMembers(organizationId: string): Promise<Member[]> {
-  return getJson(`${organizationPath(organizationId)}/members`, z.array(memberSchema))
+/** Membership statuses `GET /members` can list; the server's default is `ACTIVE`. */
+export type MemberStatus = 'ACTIVE' | 'SUSPENDED' | 'LEFT'
+
+/** Optional `GET /members` filters: a status other than active, and one role's holders (roles contract §5.7). */
+export type MemberFilter = { status?: MemberStatus; role?: string }
+
+/** Members with emails (needs `MANAGE_MEMBERS`): active ones unless a filter says otherwise. */
+export function listMembers(organizationId: string, filter: MemberFilter = {}): Promise<Member[]> {
+  const query = new URLSearchParams()
+  if (filter.status) query.set('status', filter.status)
+  if (filter.role) query.set('role', filter.role)
+  const search = query.size > 0 ? `?${query}` : ''
+  return getJson(`${organizationPath(organizationId)}/members${search}`, z.array(memberSchema))
+}
+
+/**
+ * Moves a member to another role (roles contract §5.8). The server refuses your
+ * own row (`ROLE_OWN`), the Owner role either way (`ROLE_OWNER_LOCKED`) and a
+ * current or target role above yours (`ROLE_ABOVE_CALLER`).
+ */
+export function changeMemberRole(organizationId: string, membershipId: string, roleCode: string): Promise<Member> {
+  return sendJson(
+    'patch',
+    `${organizationPath(organizationId)}/members/${encodeURIComponent(membershipId)}`,
+    { roleCode },
+    200,
+    memberSchema,
+  )
 }
 
 /** Roles an invitation may grant: those the server marks assignable for the caller (never Owner; roles contract §3). */
@@ -107,10 +132,19 @@ export function makeInviteSchema(messages: InviteValidationMessages) {
   })
 }
 
-export type InviteErrorKind = 'alreadyMember' | 'invalidEmail' | 'invalid' | 'session' | 'forbidden' | 'notFound' | 'generic'
+export type InviteErrorKind =
+  | 'alreadyMember'
+  | 'invalidEmail'
+  | 'invalid'
+  | 'roleAboveCaller'
+  | 'session'
+  | 'forbidden'
+  | 'notFound'
+  | 'generic'
 
 export function inviteErrorKind(error: unknown): InviteErrorKind {
   if (!(error instanceof ApiError)) return 'generic'
+  if (error.code === 'ROLE_ABOVE_CALLER') return 'roleAboveCaller'
   if (error.status === 409) return 'alreadyMember'
   if (error.status === 400) return error.code === 'VALIDATION_FAILED' ? 'invalidEmail' : 'invalid'
   if (error.status === 401) return 'session'
