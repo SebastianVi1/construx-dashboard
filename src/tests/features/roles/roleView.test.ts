@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 import type { PermissionCatalog } from '../../../features/roles/rolesApi'
 import { messages } from '../../../i18n/messages'
-import { invitationCountLabel, memberCountLabel, permissionGroups, readOnlyReason } from '../../../features/roles/roleView'
+import { invitationCountLabel, memberCountLabel, permissionGroups, readOnlyReason, roleErrorMessage } from '../../../features/roles/roleView'
+import { ApiError } from '../../../lib/http'
+import { permissionCatalog } from '../../support/permissionCatalog'
 
 describe('readOnlyReason', () => {
   const role = (code: string, kind: 'OWNER' | 'BUILT_IN' | 'CUSTOM', editable: boolean) => ({ code, kind, editable })
@@ -90,5 +92,31 @@ describe('count labels', () => {
     expect(invitationCountLabel(0, messages.en)).toBeNull()
     expect(invitationCountLabel(1, messages.en)).toBe('1 pending invitation')
     expect(invitationCountLabel(3, messages.es)).toBe('3 invitaciones pendientes')
+  })
+})
+
+describe('roleErrorMessage', () => {
+  const en = messages.en
+  const es = messages.es
+
+  it('names the missing requirement from the catalog, in the current language', () => {
+    const error = new ApiError(400, undefined, 'ROLE_DEPENDENCY_MISSING', { action: 'MANAGE_PLAN', requires: 'VIEW_PLAN' })
+
+    expect(roleErrorMessage(error, en, permissionCatalog, 'en')).toBe('“Edit plans” needs “View plans”. Turn it on and save again.')
+    expect(roleErrorMessage(error, es, permissionCatalog, 'es')).toBe('“Editar planos” necesita “Ver planos”. Actívalo y guarda de nuevo.')
+  })
+
+  it('falls back to a general sentence when the actions are not named or not in the catalog', () => {
+    const bare = new ApiError(400, undefined, 'ROLE_DEPENDENCY_MISSING')
+    const unknown = new ApiError(400, undefined, 'ROLE_DEPENDENCY_MISSING', { action: 'NEW_THING', requires: 'VIEW_PLAN' })
+
+    expect(roleErrorMessage(bare, en, permissionCatalog, 'en')).toBe(en.roles.errors.roleDependencyMissingGeneral)
+    expect(roleErrorMessage(unknown, en, null, 'en')).toBe(en.roles.errors.roleDependencyMissingGeneral)
+  })
+
+  it('uses the rule message for other role codes and the status otherwise', () => {
+    expect(roleErrorMessage(new ApiError(403, undefined, 'ROLE_ABOVE_CALLER'), en, null, 'en')).toBe(en.roles.errors.roleAboveCaller)
+    expect(roleErrorMessage(new ApiError(403), en, null, 'en')).toBe(en.roles.errors.forbidden)
+    expect(roleErrorMessage(new Error('boom'), en, null, 'en')).toBe(en.roles.errors.generic)
   })
 })

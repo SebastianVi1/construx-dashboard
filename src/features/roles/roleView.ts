@@ -1,7 +1,9 @@
 import { formatMessage } from '../../i18n/format'
+import type { Locale } from '../../i18n/locale'
 import type { Messages } from '../../i18n/messages'
+import { ApiError } from '../../lib/http'
 import type { Scope } from '../permissions/can'
-import type { CatalogAction, Grant, PermissionCatalog, RoleKind } from './rolesApi'
+import { roleErrorKind, type CatalogAction, type Grant, type PermissionCatalog, type RoleKind } from './rolesApi'
 
 /** Why the caller may not edit a role (roles contract §8.3); the order mirrors the server's checks (§3). */
 export type ReadOnlyReason = 'ownerLocked' | 'ownRole' | 'aboveCaller'
@@ -50,4 +52,24 @@ export function invitationCountLabel(count: number, m: Messages): string | null 
   const t = m.roles.invitations
   if (count === 0) return null
   return count === 1 ? t.one : formatMessage(t.many, { count })
+}
+
+/** A catalog action's name in the current language; null when the catalog does not know it. */
+export function actionName(catalog: PermissionCatalog | null, action: string, locale: Locale): string | null {
+  return catalog?.actions.find((entry) => entry.action === action)?.names[locale] ?? null
+}
+
+/**
+ * What to tell someone whose role write failed (§5.12). A missing requirement
+ * names both permissions from the problem's `action` and `requires`.
+ */
+export function roleErrorMessage(error: unknown, m: Messages, catalog: PermissionCatalog | null, locale: Locale): string {
+  const t = m.roles.errors
+  const kind = roleErrorKind(error)
+  if (kind === 'roleDependencyMissing' && error instanceof ApiError) {
+    const action = actionName(catalog, error.problemString('action') ?? '', locale)
+    const requires = actionName(catalog, error.problemString('requires') ?? '', locale)
+    return action && requires ? formatMessage(t.roleDependencyMissing, { action, requires }) : t.roleDependencyMissingGeneral
+  }
+  return t[kind]
 }

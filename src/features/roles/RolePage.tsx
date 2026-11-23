@@ -5,14 +5,15 @@ import { BackLink, Notice, SkeletonList } from '../../components/page'
 import { useLocale, type Locale, type Messages } from '../../i18n'
 import { ApiError } from '../../lib/http'
 import { useCurrentOrganization } from '../organizations/organizations-context'
-import { roleLabel, usePermissions } from '../permissions'
+import { roleLabel } from '../permissions'
 import { PeopleTabs } from './PeopleTabs'
 import { RoleBadges } from './RoleBits'
-import { getCatalog, getRole, type RoleDetail } from './rolesApi'
-import { invitationCountLabel, memberCountLabel, permissionGroups, readOnlyReason } from './roleView'
+import { PermissionsTab } from './PermissionsTab'
+import { getRole, type RoleDetail } from './rolesApi'
+import { invitationCountLabel, memberCountLabel } from './roleView'
 import './roles.css'
 
-/** People › Roles & permissions › one role (roles contract §8.3): its Permissions, read-only for now. */
+/** People › Roles & permissions › one role (roles contract §8.3): header and its Permissions. */
 export function RolePage() {
   const { messages: m, locale } = useLocale()
   const t = m.roles
@@ -31,7 +32,13 @@ export function RolePage() {
       <PeopleTabs />
       <BackLink to="/members/roles">{t.role.back}</BackLink>
       {role.data ? (
-        <RoleContent role={role.data} m={m} locale={locale} />
+        <RoleContent
+          role={role.data}
+          onSaved={(saved) => role.update(() => saved)}
+          onReload={role.reload}
+          m={m}
+          locale={locale}
+        />
       ) : role.status === 'error' ? (
         role.error instanceof ApiError && role.error.status === 404 ? (
           <Notice>{t.role.notFound}</Notice>
@@ -47,11 +54,15 @@ export function RolePage() {
   )
 }
 
-function RoleContent({ role, m, locale }: { role: RoleDetail; m: Messages; locale: Locale }) {
-  const t = m.roles
-  const { access } = usePermissions()
-  const catalog = useRemoteData('permissions:catalog', getCatalog)
-  const reason = readOnlyReason(role, access?.role.code ?? null)
+type RoleContentProps = {
+  role: RoleDetail
+  onSaved: (role: RoleDetail) => void
+  onReload: () => void
+  m: Messages
+  locale: Locale
+}
+
+function RoleContent({ role, onSaved, onReload, m, locale }: RoleContentProps) {
   const description = role.description?.[locale] ?? null
   const invitations = invitationCountLabel(role.pendingInvitationCount, m)
 
@@ -71,42 +82,7 @@ function RoleContent({ role, m, locale }: { role: RoleDetail; m: Messages; local
         </div>
       </header>
 
-      {reason ? <Notice>{t.readOnly[reason]}</Notice> : null}
-      {role.permissions.length === 0 ? <Notice>{t.role.empty}</Notice> : null}
-
-      <section className="page-section" aria-labelledby="role-permissions-heading">
-        <div className="page-section__header">
-          <h2 id="role-permissions-heading">{t.role.permissions}</h2>
-        </div>
-        {catalog.data ? (
-          <div className="permission-groups">
-            {permissionGroups(catalog.data, role.permissions).map((group) => (
-              <section key={group.key} className="permission-group" aria-labelledby={`permission-group-${group.key}`}>
-                <h3 id={`permission-group-${group.key}`}>{group.names[locale]}</h3>
-                <ul className="permission-rows">
-                  {group.rows.map(({ action, scope }) => (
-                    <li key={action.action} className="permission-row">
-                      <span className="permission-row__text">
-                        <span className="permission-row__name">{action.names[locale]}</span>
-                        <span className="permission-row__description">{action.descriptions[locale]}</span>
-                      </span>
-                      <span className="permission-scope" data-scope={scope ?? 'NONE'}>
-                        {scope ? t.scope[scope] : t.scope.none}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
-        ) : catalog.status === 'error' ? (
-          <Notice tone="error" action={{ label: t.retry, onClick: catalog.reload }}>
-            {t.role.catalogError}
-          </Notice>
-        ) : (
-          <SkeletonList rows={8} />
-        )}
-      </section>
+      <PermissionsTab role={role} onSaved={onSaved} onReload={onReload} />
     </>
   )
 }
