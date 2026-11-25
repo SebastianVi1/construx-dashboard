@@ -593,3 +593,86 @@
   padding: 10px;
   color: var(--cx-muted);
 }
+
+/* WhatsApp card */
+.whatsapp-card__number {
+  margin: 0;
+  font-family: var(--cx-font-data);
+  font-size: 16px;
+  color: var(--cx-ink);
+}
+
+.whatsapp-card__language {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--cx-muted);
+  justify-self: start;
+}
+
+.whatsapp-card__actions {
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.whatsapp-card__confirm p,
+.whatsapp-card__hint {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--cx-muted);
+  max-width: 52ch;
+}
+
+.whatsapp-card__code {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.whatsapp-card__code-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.whatsapp-card__value {
+  margin: 4px 0 0;
+  font-family: var(--cx-font-data);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--cx-ink);
+}
+
+.whatsapp-card__countdown {
+  margin: 0;
+  font-size: 14px;
+  color: var(--cx-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.whatsapp-card__qr {
+  flex: none;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  margin: 0;
+  font-size: 12px;
+  color: var(--cx-muted);
+}
+
+.whatsapp-card__qr svg {
+  width: 148px;
+  height: 148px;
+  border-radius: var(--cx-radius-md);
+}
+
+/* A QR must stay dark on light in both themes. */
+.whatsapp-card__qr-light { fill: var(--cx-paper); }
+.whatsapp-card__qr-dark { fill: var(--cx-concrete-950); }
+
+/* Phones open WhatsApp with the button; the QR is for desktop. */
+@media (max-width: 720px), (pointer: coarse) {
+  .whatsapp-card__qr { display: none; }
+}

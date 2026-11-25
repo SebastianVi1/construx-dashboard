@@ -80,6 +80,10 @@ export const guideMessages = defineMessages({
         title: 'Review company finance',
         body: 'See the budget, spending and balance of every site in one place.',
       },
+      linkWhatsApp: {
+        title: 'Link your WhatsApp (optional)',
+        body: 'Link your number in your profile to start, finish and note tasks from WhatsApp, without signing in.',
+      },
     },
     /**
      * Guided tour step texts, keyed by the `textKey` of their entries in `tourCatalog.ts`.
@@ -256,6 +260,10 @@ export const guideMessages = defineMessages({
       viewFinance: {
         title: 'Revisa las finanzas de la empresa',
         body: 'Consulta el presupuesto, el gasto y el saldo de cada obra en un solo lugar.',
+      },
+      linkWhatsApp: {
+        title: 'Vincula tu WhatsApp (opcional)',
+        body: 'Vincula tu número en tu perfil para iniciar, terminar y anotar tareas desde WhatsApp, sin iniciar sesión.',
       },
     },
     tourSteps: {
