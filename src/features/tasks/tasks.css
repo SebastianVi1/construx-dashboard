@@ -639,10 +639,6 @@
   align-items: start;
 }
 
-.task-detail__body--single {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 .task-detail__main,
 .task-detail__aside {
   display: grid;
@@ -660,11 +656,6 @@
   padding: 0;
   border-top: 1px solid var(--cx-border);
   list-style: none;
-}
-
-.task-detail__body--single .task-crew__list {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  column-gap: 24px;
 }
 
 .task-crew__person {
@@ -690,6 +681,61 @@
 
 .task-crew__name .person-you {
   margin-left: 8px;
+}
+
+/* Progress notes: a dated log, newest first; text keeps the writer's line breaks. */
+.task-progress__form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.task-progress__status {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.task-progress__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--cx-border);
+  list-style: none;
+}
+
+.task-progress__note {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.task-progress__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.task-progress__author {
+  color: var(--cx-ink);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.task-progress__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Money leads with three figures, then one measured bar; never a fabricated zero. */
