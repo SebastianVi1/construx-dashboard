@@ -115,12 +115,12 @@ describe('selectGuide over the built-in roles', () => {
 })
 
 /** "Manage your sites" for a role that may edit its Sites' details, in the order ticket #89 sets. */
-const manageSites = ['open-site', 'site-details', 'create-phase', 'assign-task']
+const manageSites = ['open-site', 'site-details', 'create-phase', 'assign-task', 'link-whatsapp']
 /** The same without "Complete the site's details": no MANAGE_PROJECT. */
-const manageSitesNoDetails = ['open-site', 'create-phase', 'assign-task']
+const manageSitesNoDetails = ['open-site', 'create-phase', 'assign-task', 'link-whatsapp']
 
 describe('selectGuide: "Manage your sites"', () => {
-  it('gives the Site Manager its four steps, opening its site first', () => {
+  it('gives the Site Manager its five steps, opening its site first and linking WhatsApp last', () => {
     expect(shape(selectGuide(seededRoles.SITE_MANAGER))).toEqual([['siteManager', manageSites]])
   })
 

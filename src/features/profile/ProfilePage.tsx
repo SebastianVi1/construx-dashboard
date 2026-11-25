@@ -16,6 +16,7 @@ import { formatPhone } from './phone'
 import type { AvatarErrorKind } from './profileApi'
 import { displayName } from './profileDisplay'
 import { publishProfile, useMyProfile } from './useMyProfile'
+import { WhatsAppCard } from './WhatsAppCard'
 import './profile.css'
 
 /** The signed-in person: identity, role in the selected company, their sites, and sign-out. */
@@ -148,6 +149,8 @@ export function ProfilePage() {
           </SkeletonRegion>
         )}
       </section>
+
+      <WhatsAppCard organizationId={orgId} />
 
       <section className="page-section" aria-labelledby="profile-security">
         <div className="page-section__header">
