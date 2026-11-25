@@ -13,6 +13,7 @@ import '../profile/profile.css'
 import { listSiteAccess } from '../sites/sitesApi'
 import { TaskMoveButtons, TaskRoleBadge } from './TaskBits'
 import { TaskDialog } from './TaskDialog'
+import { TaskProgress } from './TaskProgress'
 import { TaskSpending } from './TaskSpending'
 import { taskMoneyActions } from './taskMoney'
 import { taskActions } from './taskRules'
@@ -91,10 +92,11 @@ function TaskDetail({ at, taskId }: { at: PhaseRef; taskId: string }) {
         </dl>
       </header>
       {moves.outcome?.kind === 'error' ? <Notice tone="error">{t.error[moves.outcome.error]}</Notice> : saved ? <Notice tone="success">{t.saved}</Notice> : null}
-      <div className={`task-detail__body${canViewMoney ? '' : ' task-detail__body--single'}`}>
-        {canViewMoney ? <div className="task-detail__main">
-          <TaskSpending key={`${task.id}:${access?.membershipId}:${JSON.stringify(task.assignees)}`} at={at} task={task} access={access} />
-        </div> : null}
+      <div className="task-detail__body">
+        <div className="task-detail__main">
+          <TaskProgress key={`${task.id}:${access?.membershipId}`} at={at} taskId={task.id} canWrite={actions.note} viewer={access?.membershipId} />
+          {canViewMoney ? <TaskSpending key={`${task.id}:${access?.membershipId}:${JSON.stringify(task.assignees)}`} at={at} task={task} access={access} /> : null}
+        </div>
         <aside className="task-detail__aside" aria-labelledby="task-team-title">
           <section className="page-section">
             <div className="page-section__header">
