@@ -16,11 +16,13 @@ export class PinPhotoTooLargeError extends Error {
   }
 }
 
-/** The shrunk JPEG, unless the original is already an accepted image and no bigger. */
-export function pickPinPhoto(original: File, shrunk: Blob | null): File {
+/**
+ * The shrunk JPEG, unless the original is already an image of a type the API takes (`accepted`, by default
+ * every type a pin takes) and no bigger.
+ */
+export function pickPinPhoto(original: File, shrunk: Blob | null, accepted: readonly string[] = imageContentTypes): File {
   if (!shrunk) return original
-  const accepted = (imageContentTypes as readonly string[]).includes(original.type)
-  if (accepted && shrunk.size >= original.size) return original
+  if (accepted.includes(original.type) && shrunk.size >= original.size) return original
   return new File([shrunk], compressedFileName(original.name, 'image/jpeg'), { type: 'image/jpeg' })
 }
 
@@ -29,7 +31,7 @@ export function pickPinPhoto(original: File, shrunk: Blob | null): File {
  * write WebP and would hand back a PNG bigger than the photo). An image the browser cannot decode comes
  * back as it is and the API decides.
  */
-export async function shrinkPinPhoto(file: File): Promise<File> {
+export async function shrinkPinPhoto(file: File, accepted: readonly string[] = imageContentTypes): Promise<File> {
   let bitmap: ImageBitmap
   try {
     bitmap = await createImageBitmap(file)
@@ -46,7 +48,7 @@ export async function shrinkPinPhoto(file: File): Promise<File> {
     context.imageSmoothingQuality = 'high'
     context.drawImage(bitmap, 0, 0, width, height)
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8))
-    return pickPinPhoto(file, blob)
+    return pickPinPhoto(file, blob, accepted)
   } finally {
     bitmap.close()
   }

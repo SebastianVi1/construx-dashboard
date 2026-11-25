@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PinPhotoTooLargeError, uploadPinPhoto } from './pinPhoto'
+import { PinPhotoTooLargeError } from './pinPhoto'
 
 export type PhotoUpload = {
   id: number
@@ -12,10 +12,12 @@ export type PhotoUpload = {
 }
 
 /**
- * Photos picked for a pin that does not exist yet. Each starts uploading when picked, so saving the pin
- * only has to name the keys; a failed one stays in the list to be retried or removed.
+ * Photos picked for something not saved yet (a pin, a progress note). Each starts uploading when picked
+ * through `upload`, which resolves with the storage key, so saving only has to name the keys; a failed one
+ * stays in the list to be retried or removed. `upload` rejects with `PinPhotoTooLargeError` for a file
+ * over the limit.
  */
-export function usePhotoUploads(organizationId: string, siteId: string, floorPlanId: string) {
+export function usePhotoUploads(upload: (file: File) => Promise<string>) {
   const [items, setItems] = useState<PhotoUpload[]>([])
   const nextId = useRef(1)
   const urls = useRef(new Set<string>())
@@ -32,7 +34,7 @@ export function usePhotoUploads(organizationId: string, siteId: string, floorPla
   }
 
   function start(id: number, file: File) {
-    uploadPinPhoto(organizationId, siteId, floorPlanId, file).then(
+    upload(file).then(
       (key) => patch(id, { state: 'done', key }),
       (error: unknown) => patch(id, { state: error instanceof PinPhotoTooLargeError ? 'tooLarge' : 'failed' }),
     )
@@ -57,6 +59,10 @@ export function usePhotoUploads(organizationId: string, siteId: string, floorPla
     },
     remove(id: number) {
       setItems((current) => current.filter((item) => item.id !== id))
+    },
+    /** Empties the list once what it held was saved. */
+    clear() {
+      setItems([])
     },
     /** True when every picked photo is in storage. */
     allDone: items.every((item) => item.state === 'done'),

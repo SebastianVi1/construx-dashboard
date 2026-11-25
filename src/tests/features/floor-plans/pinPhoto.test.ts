@@ -83,3 +83,12 @@ describe('pickPinPhoto', () => {
     expect(pickPinPhoto(original, null)).toBe(original)
   })
 })
+
+describe('pickPinPhoto with fewer accepted types', () => {
+  it('takes the shrunk JPEG over a smaller original the API would refuse', () => {
+    const webp = new File([new Uint8Array(1000)], 'site.webp', { type: 'image/webp' })
+    const shrunk = new Blob([new Uint8Array(1500)], { type: 'image/jpeg' })
+    expect(pickPinPhoto(webp, shrunk).type).toBe('image/webp')
+    expect(pickPinPhoto(webp, shrunk, ['image/jpeg', 'image/png']).type).toBe('image/jpeg')
+  })
+})
