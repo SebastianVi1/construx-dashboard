@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { MAX_NOTE_PHOTOS, uploadNotePhoto } from '../../../features/tasks/notePhoto'
-import { PinPhotoTooLargeError, MAX_PHOTO_BYTES } from '../../../features/floor-plans/pinPhoto'
+import { uploadNotePhoto } from '../../../features/tasks/notePhoto'
+import { progressNoteMaxPhotos } from '../../../features/tasks/progressNotesApi'
+import { PhotoTooLargeError, MAX_PHOTO_BYTES } from '../../../features/floor-plans/pinPhoto'
 
 const at = { organizationId: 'o1', siteId: 's1', goalId: 'g1' }
 const file = (size: number, type = 'image/jpeg') => new File([new Uint8Array(size)], 'site.jpg', { type })
@@ -8,7 +9,7 @@ const ticket = { key: 'orgs/k1', uploadUrl: 'https://s3/put', headers: { 'Conten
 
 describe('uploadNotePhoto', () => {
   it('allows the five photos a note holds', () => {
-    expect(MAX_NOTE_PHOTOS).toBe(5)
+    expect(progressNoteMaxPhotos).toBe(5)
   })
 
   it('shrinks to a JPEG or PNG, asks the task for a ticket, sends it and returns the key', async () => {
@@ -43,7 +44,7 @@ describe('uploadNotePhoto', () => {
       },
       send: async () => {},
     })
-    await expect(upload).rejects.toBeInstanceOf(PinPhotoTooLargeError)
+    await expect(upload).rejects.toBeInstanceOf(PhotoTooLargeError)
     expect(asked).toBe(false)
   })
 })

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PinPhotoTooLargeError } from './pinPhoto'
+import { PhotoTooLargeError } from './pinPhoto'
 
 export type PhotoUpload = {
   id: number
@@ -14,7 +14,7 @@ export type PhotoUpload = {
 /**
  * Photos picked for something not saved yet (a pin, a progress note). Each starts uploading when picked
  * through `upload`, which resolves with the storage key, so saving only has to name the keys; a failed one
- * stays in the list to be retried or removed. `upload` rejects with `PinPhotoTooLargeError` for a file
+ * stays in the list to be retried or removed. `upload` rejects with `PhotoTooLargeError` for a file
  * over the limit.
  */
 export function usePhotoUploads(upload: (file: File) => Promise<string>) {
@@ -36,7 +36,7 @@ export function usePhotoUploads(upload: (file: File) => Promise<string>) {
   function start(id: number, file: File) {
     upload(file).then(
       (key) => patch(id, { state: 'done', key }),
-      (error: unknown) => patch(id, { state: error instanceof PinPhotoTooLargeError ? 'tooLarge' : 'failed' }),
+      (error: unknown) => patch(id, { state: error instanceof PhotoTooLargeError ? 'tooLarge' : 'failed' }),
     )
   }
 

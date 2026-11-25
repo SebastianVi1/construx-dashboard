@@ -8,11 +8,11 @@ export const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 /** Long edge of a pin photo: enough to read a defect, small enough for a site connection. */
 const PHOTO_EDGE = 2000
 
-/** The photo is over 5 MB even after shrinking. */
-export class PinPhotoTooLargeError extends Error {
+/** The photo (of a pin or a progress note) is over 5 MB even after shrinking. */
+export class PhotoTooLargeError extends Error {
   constructor() {
-    super('Pin photo is too large')
-    this.name = 'PinPhotoTooLargeError'
+    super('Photo is too large')
+    this.name = 'PhotoTooLargeError'
   }
 }
 
@@ -70,7 +70,7 @@ export async function uploadPinPhoto(
   }: { compress?: typeof shrinkPinPhoto; request?: typeof requestPinPhotoUpload; send?: typeof sendToStorage } = {},
 ): Promise<string> {
   const file = await compress(original)
-  if (file.size > MAX_PHOTO_BYTES) throw new PinPhotoTooLargeError()
+  if (file.size > MAX_PHOTO_BYTES) throw new PhotoTooLargeError()
   const ticket = await request(organizationId, siteId, floorPlanId, file.type, file.size)
   await send(ticket, file, () => {})
   return ticket.key
