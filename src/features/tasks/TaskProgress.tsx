@@ -2,15 +2,17 @@ import { useRef, useState, type FormEvent } from 'react'
 import { useRemoteData } from '../../components/data/useRemoteData'
 import { Notice } from '../../components/page'
 import { formatDateTime, formatMessage, useLocale } from '../../i18n'
+import { Field } from '../../components/form'
 import '../../components/form/form.css'
 import { usePhotoUploads } from '../floor-plans/usePhotoUploads'
-import { MAX_NOTE_PHOTOS, uploadNotePhoto } from './notePhoto'
+import { uploadNotePhoto } from './notePhoto'
 import {
   addProgressNote,
   listProgressNotes,
   noteDraftError,
   progressNoteErrorKind,
   progressNoteMaxLength,
+  progressNoteMaxPhotos,
   type ProgressNote,
   type ProgressNoteErrorKind,
 } from './progressNotesApi'
@@ -67,26 +69,18 @@ export function TaskProgress({ at, taskId, canWrite, viewer }: {
   const photoError = outcome?.kind === 'photosPending'
     ? uploads.items.some((item) => item.state === 'uploading') ? t.photosWaiting : t.photosFailed
     : outcome?.kind === 'error' && (outcome.error === 'tooManyPhotos' || outcome.error === 'photoInvalid') ? t.error[outcome.error] : null
-  const room = MAX_NOTE_PHOTOS - uploads.items.length
+  const room = progressNoteMaxPhotos - uploads.items.length
 
   return <section className="page-section task-progress" aria-labelledby="task-progress-title">
     <div className="page-section__header">
       <div><h2 id="task-progress-title">{t.title}</h2><p>{t.description}</p></div>
     </div>
     {canWrite ? <form className="task-progress__form" onSubmit={(event) => void submit(event)} noValidate>
-      <div className="form-field" data-state={fieldError ? 'invalid' : undefined}>
-        <label className="form-field__label" htmlFor="task-progress-text">{t.label}</label>
-        <textarea id="task-progress-text" className="form-field__control" rows={3} value={text}
-          maxLength={progressNoteMaxLength} placeholder={t.placeholder} disabled={busy}
-          aria-invalid={fieldError ? true : undefined} aria-describedby="task-progress-footer"
-          onChange={(event) => setText(event.target.value)} />
-        <div className="form-field__footer" id="task-progress-footer">
-          {fieldError ? <p className="form-field__error">{t.error[fieldError]}</p> : null}
-          <span className="form-field__counter">{formatMessage(t.counter, { count: text.length, max: progressNoteMaxLength })}</span>
-        </div>
-      </div>
+      <Field config={{ name: 'task-progress-text', label: t.label, type: 'textarea', rows: 3,
+        maxLength: progressNoteMaxLength, placeholder: t.placeholder }}
+        value={text} error={fieldError ? t.error[fieldError] : undefined} disabled={busy} onChange={setText} />
       <div className="form-field" data-state={photoError ? 'invalid' : undefined}>
-        <span className="form-field__label">{formatMessage(t.photosLabel, { count: uploads.items.length, max: MAX_NOTE_PHOTOS })}</span>
+        <span className="form-field__label">{formatMessage(t.photosLabel, { count: uploads.items.length, max: progressNoteMaxPhotos })}</span>
         {uploads.items.length > 0 ? <ul className="task-progress__photos">
           {uploads.items.map((item) => <li key={item.id} className="task-progress__photo" data-state={item.state}>
             <img src={item.previewUrl} alt="" />

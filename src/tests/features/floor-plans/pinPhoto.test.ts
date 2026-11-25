@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { MAX_PHOTO_BYTES, MAX_PIN_PHOTOS, PinPhotoTooLargeError, pickPinPhoto, uploadPinPhoto } from '../../../features/floor-plans/pinPhoto'
+import { MAX_PHOTO_BYTES, MAX_PIN_PHOTOS, PhotoTooLargeError, pickPinPhoto, uploadPinPhoto } from '../../../features/floor-plans/pinPhoto'
 import { StorageUploadError } from '../../../features/plans/plansApi'
 
 const file = (size: number, type = 'image/jpeg') => new File([new Uint8Array(size)], 'site.jpg', { type })
@@ -40,7 +40,7 @@ describe('uploadPinPhoto', () => {
       },
       send: async () => {},
     })
-    await expect(upload).rejects.toBeInstanceOf(PinPhotoTooLargeError)
+    await expect(upload).rejects.toBeInstanceOf(PhotoTooLargeError)
     expect(asked).toBe(false)
   })
 

@@ -25,6 +25,7 @@ The lists are `as const`, so their ids are types (`GuideStepId`, `GuidePageId`, 
    - `page`: an id in `guidePages`. `chapter`: the landing guide anchor behind "Learn more" (`GuideChapter`).
    - `tourTargets`: `data-tour` values on that page, highlighted in order.
    - `textKey`: a key of `messages.guide.steps`. Optional `noSiteHint`: a key of `messages.guide.hints`, shown under the open step when the member is on no Site.
+   - `optional: true` (rare): the step is listed and can be done or skipped, but the progress count, "next step" and completion leave it out (`link-whatsapp`). Say so in its title too.
 3. **Page** (only if the step's page is new): an entry in `guidePages`. A route inside a Site uses `:siteId` and then `needsSite: true` (and only then). A query such as `?tab=details` is allowed.
 4. **Text** in `messages.ts`, under both `en` and `es` (`defineMessages` fails the build on a missing Spanish key):
    - `sections.<titleKey>`: the heading.

@@ -305,6 +305,23 @@ describe('guideProgressOf', () => {
     })
   })
 
+  it('lists an optional step but leaves it out of the count, so the guide completes without it', () => {
+    const optional: GuideStepEntry = { ...guideCatalog.steps[0], id: 'link-whatsapp', optional: true }
+    const sections: GuideSection[] = [{ id: 'owner', titleKey: 'runCompany', steps: [guideCatalog.steps[0], optional] }]
+    expect(guideProgressOf(sections, progress({}))).toMatchObject({ done: 0, total: 1, next: guideCatalog.steps[0] })
+    expect(guideProgressOf(sections, progress({ 'create-site': 'COMPLETED' }))).toEqual({
+      done: 1,
+      total: 1,
+      complete: true,
+      next: null,
+    })
+  })
+
+  it('makes linking WhatsApp the optional step of the built-in catalog', () => {
+    const optional = guideCatalog.steps.filter((step: GuideStepEntry) => step.optional).map((step) => step.id)
+    expect(optional).toEqual(['link-whatsapp'])
+  })
+
   it('ignores stored ids that are unknown or hidden from the member', () => {
     const stored = progress({ 'old-step': 'COMPLETED', 'create-site': 'COMPLETED' })
     expect(guideProgressOf([], stored)).toEqual({ done: 0, total: 0, complete: false, next: null })
