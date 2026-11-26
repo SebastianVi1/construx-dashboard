@@ -1,10 +1,15 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { z } from 'zod'
+import { fakeStorage } from '../support/fakeStorage'
 import {
   ApiError,
   configureHttp,
+  deleteJson,
   downloadPresigned,
   getJson,
+  REQUEST_TIMEOUT_MS,
+  StorageUploadError,
   uploadPresigned,
   type HttpRequest,
   type HttpResponse,
@@ -73,17 +78,94 @@ describe('getJson', () => {
   })
 })
 
-/** Fake presigned storage: answers every transfer with `status` and records it. */
-function fakeStorage(status: number, body = 'file-bytes') {
-  const transfers: { url: string; init?: RequestInit }[] = []
-  configureHttp({
-    storageFetch: async (url, init) => {
-      transfers.push({ url, init })
-      return new Response(body, { status })
-    },
+describe('API URL guard', () => {
+  it('refuses paths that could leave the API base, before any request is sent', async () => {
+    const requests = fakeFetcher(() => ({ status: 200, data: { ok: true } }))
+
+    for (const path of ['//evil.test/x', '/../admin', '/sites/../../x', '/a\\b', '/a\nb', 'https://evil.test/x', 'sites']) {
+      const error = await getJson(path, okSchema).catch((e: unknown) => e)
+      expect(error).toBeInstanceOf(ApiError)
+      expect((error as ApiError).status).toBeUndefined()
+    }
+    expect(requests).toHaveLength(0)
   })
-  return transfers
-}
+
+  it('refuses an unsafe path on an unsafe call before fetching the CSRF proof', async () => {
+    const requests = fakeFetcher(() => ({ status: 204, data: undefined }))
+
+    await expect(deleteJson('//evil.test/sites/1')).rejects.toBeInstanceOf(ApiError)
+    expect(requests).toHaveLength(0)
+  })
+
+  it('resolves dot segments that stay under the base', async () => {
+    const requests = fakeFetcher(() => ({ status: 200, data: { ok: true } }))
+
+    await getJson('/sites/./x', okSchema)
+    expect(requests.map((r) => r.url)).toEqual(['/api/sites/x'])
+  })
+
+  it('accepts a normal path with a query string', async () => {
+    const requests = fakeFetcher(() => ({ status: 200, data: { ok: true } }))
+
+    await getJson('/sites?folderId=f-1&fresh=5', okSchema)
+    expect(requests.map((r) => r.url)).toEqual(['/api/sites?folderId=f-1&fresh=5'])
+  })
+})
+
+describe('request timeout', () => {
+  it('gives every API request the shared timeout', async () => {
+    const configs: unknown[] = []
+    configureHttp({
+      baseUrl: '/api',
+      client: {
+        get: async (_url: string, config: unknown) => {
+          configs.push(config)
+          return { status: 200, data: { ok: true } }
+        },
+      } as unknown as AxiosInstance,
+    })
+
+    await getJson('/sites', okSchema)
+    expect(configs[0]).toMatchObject({ withCredentials: true, timeout: REQUEST_TIMEOUT_MS })
+  })
+
+  it('turns a timed-out request into a network ApiError without a status', async () => {
+    configureHttp({
+      baseUrl: '/api',
+      client: {
+        get: async () => {
+          throw Object.assign(new Error('timeout of 30000ms exceeded'), { code: 'ECONNABORTED' })
+        },
+      } as unknown as AxiosInstance,
+    })
+
+    const error = await getJson('/sites', okSchema).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBeUndefined()
+  })
+})
+
+describe('CSRF retry', () => {
+  const csrfAnswer: HttpResponse = { status: 200, data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
+
+  it('retries once after a CSRF_INVALID 403, then gives up', async () => {
+    const requests = fakeFetcher((request) =>
+      request.method === 'get' ? csrfAnswer : { status: 403, data: { code: 'CSRF_INVALID' } },
+    )
+
+    await expect(deleteJson('/sites/1')).rejects.toMatchObject({ status: 403, code: 'CSRF_INVALID' })
+    expect(requests.filter((r) => r.method === 'delete')).toHaveLength(2)
+  })
+
+  it('does not retry a permission FORBIDDEN', async () => {
+    const requests = fakeFetcher((request) =>
+      request.method === 'get' ? csrfAnswer : { status: 403, data: { code: 'FORBIDDEN' } },
+    )
+
+    await expect(deleteJson('/sites/1')).rejects.toMatchObject({ status: 403, code: 'FORBIDDEN' })
+    expect(requests.filter((r) => r.method === 'delete')).toHaveLength(1)
+  })
+})
 
 describe('downloadPresigned', () => {
   it('resolves with the stored file', async () => {
@@ -93,7 +175,7 @@ describe('downloadPresigned', () => {
     expect(await blob.text()).toBe('file-bytes')
   })
 
-  it('throws ApiError instead of returning the error page of an expired link', async () => {
+  it('throws ApiError with the storage status instead of returning the error page of an expired link', async () => {
     fakeStorage(403, '<Error>AccessDenied</Error>')
 
     const error = await downloadPresigned('https://s3.example/doc?sig=1').catch((e: unknown) => e)
@@ -102,21 +184,88 @@ describe('downloadPresigned', () => {
   })
 })
 
+describe('presigned URL guard', () => {
+  it('refuses unsafe storage URLs before any transfer', async () => {
+    const transfers = fakeStorage(200)
+
+    for (const url of ['javascript:alert(1)', 'http://s3.example/doc', 'https://user:pass@s3.example/doc', 'not a url']) {
+      expect(await downloadPresigned(url).catch((e: unknown) => e)).toBeInstanceOf(ApiError)
+    }
+    expect(transfers).toHaveLength(0)
+  })
+
+  it('refuses a storage URL on the API origin, so API cookies never reach it', async () => {
+    configureHttp({ baseUrl: 'https://api.example' })
+    const transfers = fakeStorage(200)
+
+    try {
+      expect(await downloadPresigned('https://api.example/x').catch((e: unknown) => e)).toBeInstanceOf(ApiError)
+      expect(transfers).toHaveLength(0)
+    } finally {
+      configureHttp({ baseUrl: '/api' })
+    }
+  })
+
+  it('allows a local HTTP stand-in for storage', async () => {
+    fakeStorage(200)
+
+    await expect(downloadPresigned('http://localhost:9000/doc')).resolves.toBeInstanceOf(Blob)
+  })
+})
+
 describe('uploadPresigned', () => {
-  it('PUTs the file with the signed headers', async () => {
+  it('PUTs the file with the signed headers and no credentials', async () => {
     const transfers = fakeStorage(200)
     const file = new Blob(['hello'], { type: 'text/plain' })
 
     await uploadPresigned('https://s3.example/put?sig=1', file, { 'Content-Type': 'text/plain' })
     expect(transfers).toHaveLength(1)
-    expect(transfers[0].init).toMatchObject({ method: 'PUT', headers: { 'Content-Type': 'text/plain' }, body: file })
+    expect(transfers[0]).toMatchObject({
+      method: 'put',
+      url: 'https://s3.example/put?sig=1',
+      headers: { 'Content-Type': 'text/plain' },
+      withCredentials: false,
+      data: file,
+    })
   })
 
-  it('throws ApiError when storage rejects the upload', async () => {
+  it('throws StorageUploadError with the storage status when storage rejects the upload', async () => {
     fakeStorage(500)
 
     const error = await uploadPresigned('https://s3.example/put?sig=1', new Blob(['x'])).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StorageUploadError)
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ status: 500 })
+  })
+
+  it('refuses an unsafe URL before any request is sent', async () => {
+    const transfers = fakeStorage(200)
+
+    const error = await uploadPresigned('http://s3.example/put', new Blob(['x'])).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StorageUploadError)
+    expect(error).toMatchObject({ status: 0 })
+    expect(transfers).toHaveLength(0)
+  })
+
+  it('reports progress from 0 to 1 and 1 once stored', async () => {
+    fakeStorage(200)
+    const progress: number[] = []
+
+    await uploadPresigned('https://s3.example/put', new Blob(['x']), {}, (fraction) => progress.push(fraction))
+    expect(progress).toEqual([0.5, 1])
+  })
+
+  it('throws StorageUploadError with no status on a network failure', async () => {
+    configureHttp({
+      storageClient: axios.create({
+        adapter: async (config) => {
+          throw new AxiosError('Network Error', AxiosError.ERR_NETWORK, config)
+        },
+      }),
+    })
+
+    const error = await uploadPresigned('https://s3.example/put', new Blob(['x'])).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StorageUploadError)
+    expect(error).toMatchObject({ status: 0 })
   })
 })

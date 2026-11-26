@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
 import { ApiError, configureHttp } from '../../../lib/http'
+import { fakeStorage } from '../../support/fakeStorage'
 import {
   completePlanUpload,
   deletePlan,
@@ -10,7 +11,6 @@ import {
   sendToStorage,
   StorageUploadError,
   type Plan,
-  type StorageRequest,
 } from '../../../features/plans/plansApi'
 
 const csrfOk = { data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
@@ -35,39 +35,6 @@ function stubApi(responses: { get?: (url: string) => unknown; send?: () => unkno
   const client = { get, post: send, patch: send, put: send, delete: send }
   configureHttp({ client: client as unknown as AxiosInstance, baseUrl: '/api' })
   return { get, send }
-}
-
-/** A fake XMLHttpRequest that answers with `status` after reporting progress. */
-function fakeRequest(status: number, fail = false) {
-  const calls: { method?: string; url?: string; headers: Record<string, string>; body?: unknown; credentials?: boolean } = {
-    headers: {},
-  }
-  const request = {
-    status: 0,
-    withCredentials: false,
-    upload: { onprogress: null as ((event: { lengthComputable: boolean; loaded: number; total: number }) => void) | null },
-    onload: null as (() => void) | null,
-    onerror: null as (() => void) | null,
-    open(method: string, url: string) {
-      calls.method = method
-      calls.url = url
-    },
-    setRequestHeader(name: string, value: string) {
-      calls.headers[name] = value
-    },
-    send(body: unknown) {
-      calls.body = body
-      calls.credentials = request.withCredentials
-      request.upload.onprogress?.({ lengthComputable: true, loaded: 5, total: 10 })
-      if (fail) {
-        request.onerror?.()
-        return
-      }
-      request.status = status
-      request.onload?.()
-    },
-  }
-  return { request: request as unknown as StorageRequest, calls }
 }
 
 describe('plans API', () => {
@@ -100,24 +67,38 @@ describe('plans API', () => {
   })
 
   it('sendToStorage: PUTs the file with only the signed headers, no cookies, and reports progress', async () => {
-    const { request, calls } = fakeRequest(200)
+    const transfers = fakeStorage(200)
     const progress: number[] = []
     const body = new Blob(['x'], { type: 'image/webp' })
-    await sendToStorage({ uploadUrl: 'https://bucket.test/put', headers: { 'Content-Type': 'image/webp' } }, body, (p) => progress.push(p), () => request)
-    expect(calls).toEqual({
-      method: 'PUT',
+
+    await sendToStorage({ uploadUrl: 'https://bucket.test/put', headers: { 'Content-Type': 'image/webp' } }, body, (p) => progress.push(p))
+    expect(transfers).toHaveLength(1)
+    expect(transfers[0]).toMatchObject({
+      method: 'put',
       url: 'https://bucket.test/put',
       headers: { 'Content-Type': 'image/webp' },
-      body,
-      credentials: false,
+      withCredentials: false,
+      data: body,
     })
+    expect(transfers[0].headers).not.toHaveProperty('X-XSRF-TOKEN')
     expect(progress).toEqual([0.5, 1])
   })
 
-  it('sendToStorage: rejects on a storage error status or a network error', async () => {
+  it('sendToStorage: rejects with StorageUploadError on a storage error status', async () => {
+    fakeStorage(403)
     const ticket = { uploadUrl: 'https://bucket.test/put', headers: {} }
-    await expect(sendToStorage(ticket, new Blob(['x']), () => {}, () => fakeRequest(403).request)).rejects.toBeInstanceOf(StorageUploadError)
-    await expect(sendToStorage(ticket, new Blob(['x']), () => {}, () => fakeRequest(0, true).request)).rejects.toBeInstanceOf(StorageUploadError)
+
+    const error = await sendToStorage(ticket, new Blob(['x']), () => {}).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StorageUploadError)
+    expect(error).toMatchObject({ status: 403 })
+  })
+
+  it('sendToStorage: refuses an unsafe upload URL before sending anything', async () => {
+    const transfers = fakeStorage(200)
+
+    const error = await sendToStorage({ uploadUrl: 'http://bucket.test/put', headers: {} }, new Blob(['x']), () => {}).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StorageUploadError)
+    expect(transfers).toHaveLength(0)
   })
 
   it('getSitePlans: GETs plans filtered by folderId, never from a cache', async () => {

@@ -3,10 +3,12 @@ import { z, type ZodType } from 'zod'
 import { getApiBaseUrl } from '../config/env'
 
 /**
- * The dashboard's one HTTP client for the backend API: JSON transport, CSRF
- * proof (with one retry after a 403), session refresh after a 401 (with one
- * retry), and `ApiError` for every failure. Also the presigned storage
- * transfers (S3 GET/PUT), which skip cookies and CSRF.
+ * The dashboard's one HTTP client, built on axios. API calls: JSON transport,
+ * a CSRF proof (one retry, only for a `CSRF_INVALID` 403), one session refresh
+ * after a 401, and `ApiError` for every failure. Every API URL is resolved by
+ * the URL parser and must stay on the API origin, and requests time out after
+ * `REQUEST_TIMEOUT_MS`. Presigned S3 transfers use a second axios instance with
+ * no cookies and no CSRF, and only HTTPS storage URLs are accepted.
  */
 
 /**
@@ -72,10 +74,17 @@ export type HttpResponse = {
  */
 export type HttpFetcher = (request: HttpRequest) => Promise<HttpResponse>
 
+/**
+ * Upper bound for one API request, so a hung connection cannot hold a shared
+ * refresh or a button's busy state forever. Presigned storage transfers are
+ * not bound by it: a large plan upload may legitimately take longer.
+ */
+export const REQUEST_TIMEOUT_MS = 30_000
+
 /** The real fetcher: an axios instance with `withCredentials`. */
 export function axiosFetcher(client: AxiosInstance): HttpFetcher {
   return async ({ method, url, body, headers }) => {
-    const config = { withCredentials: true, headers }
+    const config = { withCredentials: true, headers, timeout: REQUEST_TIMEOUT_MS }
     try {
       const response =
         method === 'get' || method === 'delete'
@@ -92,26 +101,66 @@ export function axiosFetcher(client: AxiosInstance): HttpFetcher {
   }
 }
 
-/** Plain `fetch` used for presigned storage URLs (no cookies, no CSRF). */
-export type StorageFetch = (url: string, init?: RequestInit) => Promise<Response>
-
+/** Presigned S3 transfers: their own axios instance, so no session cookies and no CSRF header. */
+let storageClient: AxiosInstance = axios.create({ withCredentials: false })
 let fetcher: HttpFetcher = axiosFetcher(axios.create())
-let storageFetch: StorageFetch = (url, init) => fetch(url, init)
 let baseUrl = getApiBaseUrl()
+
+/** The page's origin, which a relative API base resolves against (absent outside the browser). */
+const documentOrigin = () => globalThis.location?.origin ?? 'http://localhost'
+
+const apiBase = () => new URL(baseUrl, documentOrigin())
+
+/**
+ * The only way an API request URL is built. The URL parser resolves the path
+ * under the base, and the result is kept only if it stays on the API origin
+ * and under the base path. Cookies and the CSRF header go only to URLs that
+ * pass here. Whitespace and backslashes are refused outright, because the
+ * parser would silently rewrite them. Throws an ApiError without a status.
+ */
+export function buildApiUrl(path: string): string {
+  if (/[\\\s]/.test(path)) throw new ApiError()
+  const base = apiBase()
+  const target = new URL(`${baseUrl}${path}`, base)
+  const basePath = base.pathname.replace(/\/$/, '')
+  const inside =
+    target.origin === base.origin && target.pathname.startsWith(`${basePath}/`) && !target.pathname.includes('//')
+  if (!inside) throw new ApiError()
+  return `${baseUrl}${target.pathname.slice(basePath.length)}${target.search}${target.hash}`
+}
+
+const LOCAL_STORAGE_HOSTS = new Set(['localhost', '127.0.0.1'])
+
+/**
+ * True for a presigned storage URL from the backend: HTTPS (or plain HTTP to a
+ * local S3 stand-in), no embedded credentials, and never the API's own origin,
+ * so the API's cookies can not be sent to storage.
+ */
+export function isPresignedUrl(url: string): boolean {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return false
+  }
+  const secure =
+    parsed.protocol === 'https:' || (parsed.protocol === 'http:' && LOCAL_STORAGE_HOSTS.has(parsed.hostname))
+  return secure && !parsed.username && !parsed.password && parsed.origin !== apiBase().origin
+}
 
 /**
  * Replace the transport. Tests pass an in-memory `fetcher` (or an axios-shaped
- * `client`, adapted with `axiosFetcher`) and a fake `storageFetch`.
+ * `client`, adapted with `axiosFetcher`) and a fake `storageClient`.
  */
 export function configureHttp(options: {
   fetcher?: HttpFetcher
   client?: AxiosInstance
-  storageFetch?: StorageFetch
+  storageClient?: AxiosInstance
   baseUrl?: string
 }): void {
   if (options.client) fetcher = axiosFetcher(options.client)
   if (options.fetcher) fetcher = options.fetcher
-  if (options.storageFetch) storageFetch = options.storageFetch
+  if (options.storageClient) storageClient = options.storageClient
   if (options.baseUrl) baseUrl = options.baseUrl
 }
 
@@ -163,7 +212,7 @@ type CsrfProof = z.infer<typeof csrfSchema>
 async function getCsrfProof(): Promise<CsrfProof> {
   const response = await exchange({
     method: 'get',
-    url: `${baseUrl}/auth/csrf`,
+    url: buildApiUrl('/auth/csrf'),
     headers: { Accept: 'application/json' },
   })
   if (response.status >= 400) throw errorFromResponse(response)
@@ -237,13 +286,14 @@ export async function sendWithCsrf(
   body: unknown,
   expectedStatus: number,
 ): Promise<unknown> {
+  const url = buildApiUrl(path)
   let csrfRetried = false
   let refreshed = !refreshesOnUnauthorized(path)
   for (;;) {
     const proof = await getCsrfProof()
     const response = await exchange({
       method,
-      url: `${baseUrl}${path}`,
+      url,
       body,
       headers: {
         Accept: 'application/problem+json, application/json',
@@ -252,7 +302,9 @@ export async function sendWithCsrf(
     })
     if (response.status === expectedStatus) return response.data
     const error = errorFromResponse(response)
-    if (error.status === 403 && !csrfRetried) {
+    // Only a rejected CSRF proof is worth a retry. A plain FORBIDDEN is a
+    // permission decision and would fail the same way again.
+    if (error.status === 403 && error.code === 'CSRF_INVALID' && !csrfRetried) {
       csrfRetried = true
       continue
     }
@@ -271,11 +323,12 @@ export async function sendWithCsrf(
  * exactly once.
  */
 export async function getJson<T>(path: string, schema: ZodType<T>): Promise<T> {
+  const url = buildApiUrl(path)
   let refreshed = !refreshesOnUnauthorized(path)
   for (;;) {
     const response = await exchange({
       method: 'get',
-      url: `${baseUrl}${path}`,
+      url,
       headers: { Accept: 'application/json' },
     })
     if (response.status === 200) return parseBody(schema, response.data, response.status)
@@ -306,16 +359,20 @@ export async function deleteJson(path: string, expectedStatus = 204): Promise<vo
   await sendWithCsrf('delete', path, undefined, expectedStatus)
 }
 
-/** Run a presigned transfer; a network failure or a non-2xx answer becomes an ApiError. */
-async function storageTransfer(url: string, init?: RequestInit): Promise<Response> {
-  let response: Response
-  try {
-    response = await storageFetch(url, init)
-  } catch {
-    throw new ApiError()
+/**
+ * A presigned upload that did not reach storage, or was refused by storage or by
+ * the URL guard. `status` is the storage answer, or 0 when none arrived.
+ */
+export class StorageUploadError extends ApiError {
+  constructor(status: number) {
+    super(status)
+    this.name = 'StorageUploadError'
   }
-  if (!response.ok) throw new ApiError(response.status)
-  return response
+}
+
+/** The HTTP status of a failed axios call, or undefined when no answer arrived. */
+function statusOf(error: unknown): number | undefined {
+  return axios.isAxiosError(error) ? error.response?.status : undefined
 }
 
 /**
@@ -323,19 +380,35 @@ async function storageTransfer(url: string, init?: RequestInit): Promise<Respons
  * answer, e.g. an expired link, instead of returning the error page as a file.
  */
 export async function downloadPresigned(url: string): Promise<Blob> {
-  const response = await storageTransfer(url)
-  return response.blob()
+  if (!isPresignedUrl(url)) throw new ApiError()
+  try {
+    const response = await storageClient.get<Blob>(url, { responseType: 'blob' })
+    return response.data
+  } catch (error) {
+    throw new ApiError(statusOf(error))
+  }
 }
 
 /**
- * Upload a file to a presigned storage URL (S3 PUT) with the headers the
- * backend signed. Throws ApiError on a non-2xx answer, so callers never
- * confirm an upload that was not stored.
+ * PUT a file to a presigned storage URL with the headers the backend signed.
+ * `onProgress` reports 0 to 1 while uploading and 1 once stored. Throws
+ * StorageUploadError on any failure, so callers never confirm an upload that
+ * was not stored.
  */
 export async function uploadPresigned(
   url: string,
-  file: Blob,
+  body: Blob,
   headers: Record<string, string> = {},
+  onProgress?: (fraction: number) => void,
 ): Promise<void> {
-  await storageTransfer(url, { method: 'PUT', headers, body: file })
+  if (!isPresignedUrl(url)) throw new StorageUploadError(0)
+  try {
+    await storageClient.put(url, body, {
+      headers,
+      onUploadProgress: onProgress && ((event) => event.total && onProgress(event.loaded / event.total)),
+    })
+  } catch (error) {
+    throw new StorageUploadError(statusOf(error) ?? 0)
+  }
+  onProgress?.(1)
 }

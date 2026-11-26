@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
+import { ApiError, deleteJson, getJson, sendJson, StorageUploadError, uploadPresigned } from '../../lib/http'
 import { sitePath, floorPlanPath } from '../../lib/apiPaths'
-import type { StorageRequest } from '../plans/plansApi'
 
 export const floorPlanStatusSchema = z.enum(['PENDING', 'PROCESSING', 'READY', 'ERROR'])
 export type FloorPlanStatus = z.infer<typeof floorPlanStatusSchema>
@@ -100,42 +99,15 @@ export function deleteFloorPlan(organizationId: string, siteId: string, floorPla
   return deleteJson(floorPlanPath(organizationId, siteId, floorPlanId))
 }
 
-/** Step 2: PUT the file straight to storage (no session cookies, no CSRF). Reports progress 0–1. */
-export class StorageUploadError extends Error {
-  readonly status: number
+export { StorageUploadError } from '../../lib/http'
 
-  constructor(status: number) {
-    super('Floor plan upload to storage failed')
-    this.name = 'StorageUploadError'
-    this.status = status
-  }
-}
-
+/** Step 2: PUT the file straight to storage, with progress (0 to 1). No session cookies, no CSRF header. */
 export function sendFloorPlanToStorage(
   ticket: Pick<FloorPlanUploadTicket, 'uploadUrl' | 'headers'>,
   body: Blob,
   onProgress: (fraction: number) => void,
-  createRequest: () => StorageRequest = () => new XMLHttpRequest(),
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = createRequest()
-    request.open('PUT', ticket.uploadUrl)
-    request.withCredentials = false
-    for (const [name, value] of Object.entries(ticket.headers)) request.setRequestHeader(name, value)
-    request.upload.onprogress = (event) => {
-      if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total)
-    }
-    request.onload = () => {
-      if (request.status >= 200 && request.status < 300) {
-        onProgress(1)
-        resolve()
-      } else {
-        reject(new StorageUploadError(request.status))
-      }
-    }
-    request.onerror = () => reject(new StorageUploadError(0))
-    request.send(body)
-  })
+  return uploadPresigned(ticket.uploadUrl, body, ticket.headers, onProgress)
 }
 
 export type FloorPlanErrorKind =

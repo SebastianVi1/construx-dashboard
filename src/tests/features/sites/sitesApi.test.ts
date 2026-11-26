@@ -164,10 +164,10 @@ describe('sites API', () => {
     expect(config.headers?.['X-XSRF-TOKEN']).toBe('proof')
   })
 
-  it('removeFromSite: refetches CSRF and retries once after a 403, then reports it', async () => {
+  it('removeFromSite: refetches CSRF and retries once after a CSRF_INVALID 403, then reports it', async () => {
     const { get, send } = stubApi({
       send: () => {
-        throw failure(403, 'FORBIDDEN')
+        throw failure(403, 'CSRF_INVALID')
       },
     })
 

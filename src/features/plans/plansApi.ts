@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
+import { ApiError, deleteJson, getJson, sendJson, StorageUploadError, uploadPresigned } from '../../lib/http'
 import { sitePath } from '../../lib/apiPaths'
 
 /** `PlanResponse`. `viewUrl` is a short-lived link to the image; reload the list for a fresh one. */
@@ -80,52 +80,15 @@ export function deletePlan(organizationId: string, siteId: string, planId: strin
   return deleteJson(planPath(organizationId, siteId, planId))
 }
 
-/** Storage answered with an error status, or the request never reached it (status 0). */
-export class StorageUploadError extends Error {
-  readonly status: number
+export { StorageUploadError } from '../../lib/http'
 
-  constructor(status: number) {
-    super('Plan upload to storage failed')
-    this.name = 'StorageUploadError'
-    this.status = status
-  }
-}
-
-/** The part of `XMLHttpRequest` the upload uses, so tests can fake it. */
-export type StorageRequest = Pick<
-  XMLHttpRequest,
-  'status' | 'withCredentials' | 'upload' | 'onload' | 'onerror' | 'open' | 'setRequestHeader' | 'send'
->
-
-/**
- * Step 2: PUT the file straight to storage. Not through the API client: storage must not receive the
- * session cookies or CSRF header, and XHR reports real upload progress (0 to 1).
- */
+/** Step 2: PUT the file straight to storage, with progress (0 to 1). No session cookies, no CSRF header. */
 export function sendToStorage(
   ticket: Pick<UploadTicket, 'uploadUrl' | 'headers'>,
   body: Blob,
   onProgress: (fraction: number) => void,
-  createRequest: () => StorageRequest = () => new XMLHttpRequest(),
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = createRequest()
-    request.open('PUT', ticket.uploadUrl)
-    request.withCredentials = false
-    for (const [name, value] of Object.entries(ticket.headers)) request.setRequestHeader(name, value)
-    request.upload.onprogress = (event) => {
-      if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total)
-    }
-    request.onload = () => {
-      if (request.status >= 200 && request.status < 300) {
-        onProgress(1)
-        resolve()
-      } else {
-        reject(new StorageUploadError(request.status))
-      }
-    }
-    request.onerror = () => reject(new StorageUploadError(0))
-    request.send(body)
-  })
+  return uploadPresigned(ticket.uploadUrl, body, ticket.headers, onProgress)
 }
 
 export type PlanErrorKind =
