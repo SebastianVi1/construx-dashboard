@@ -325,13 +325,13 @@ describe('auth API', () => {
     expect(post).toHaveBeenCalledTimes(1)
   })
 
-  it('refetches the CSRF token and retries once after a 403', async () => {
+  it('refetches the CSRF token and retries once after a CSRF_INVALID 403', async () => {
     let tokens = 0
     const get = mock(async () => ({ data: { headerName: 'X-XSRF-TOKEN', token: `proof-${++tokens}` } }))
     let attempts = 0
     const post = mock(async () => {
       if (++attempts === 1) {
-        throw Object.assign(new Error('Forbidden'), { isAxiosError: true, response: { status: 403 } })
+        throw Object.assign(new Error('Forbidden'), { isAxiosError: true, response: { status: 403, data: { code: 'CSRF_INVALID' } } })
       }
       return { status: 204 }
     })
@@ -345,8 +345,8 @@ describe('auth API', () => {
     expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof-2')
   })
 
-  it('does not retry a second 403', async () => {
-    const forbidden = Object.assign(new Error('Forbidden'), { isAxiosError: true, response: { status: 403 } })
+  it('does not retry a second CSRF_INVALID 403', async () => {
+    const forbidden = Object.assign(new Error('Forbidden'), { isAxiosError: true, response: { status: 403, data: { code: 'CSRF_INVALID' } } })
     const post = mock(async () => {
       throw forbidden
     })
@@ -357,5 +357,19 @@ describe('auth API', () => {
 
     await expect(logout()).rejects.toMatchObject({ status: 403 })
     expect(post).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not retry a permission 403 (FORBIDDEN): the same request would be denied again', async () => {
+    const forbidden = Object.assign(new Error('Forbidden'), { isAxiosError: true, response: { status: 403, data: { code: 'FORBIDDEN' } } })
+    const post = mock(async () => {
+      throw forbidden
+    })
+    configureAuthApi({
+      client: { get: mock(async () => csrfOk()), post } as unknown as AxiosInstance,
+      baseUrl: '/api',
+    })
+
+    await expect(logout()).rejects.toMatchObject({ status: 403, code: 'FORBIDDEN' })
+    expect(post).toHaveBeenCalledTimes(1)
   })
 })

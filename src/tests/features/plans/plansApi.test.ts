@@ -120,6 +120,17 @@ describe('plans API', () => {
     await expect(sendToStorage(ticket, new Blob(['x']), () => {}, () => fakeRequest(0, true).request)).rejects.toBeInstanceOf(StorageUploadError)
   })
 
+  it('sendToStorage: refuses an unsafe upload URL before opening any request', async () => {
+    let created = false
+    const error = await sendToStorage({ uploadUrl: 'http://bucket.test/put', headers: {} }, new Blob(['x']), () => {}, () => {
+      created = true
+      return fakeRequest(200).request
+    }).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(StorageUploadError)
+    expect(created).toBe(false)
+  })
+
   it('getSitePlans: GETs plans filtered by folderId, never from a cache', async () => {
     const { get } = stubApi({ get: () => ({ status: 200, data: [plan] }) })
     const result = await getSitePlans('o-1', 'p-1', 'f-1')

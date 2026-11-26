@@ -1,6 +1,6 @@
 import { afterEach, expect, it, mock } from 'bun:test'
 import type { AxiosInstance } from 'axios'
-import { configureHttp } from '../../../lib/http'
+import { configureHttp, REQUEST_TIMEOUT_MS } from '../../../lib/http'
 import { createTaskExpense, getTaskBudget, listTaskExpenses } from '../../../features/tasks/taskExpensesApi'
 
 const at = { organizationId: 'org/1', siteId: 'site', goalId: 'phase' }
@@ -29,6 +29,6 @@ it('records against the task with CSRF and credentials rather than the site coll
   configureHttp({ baseUrl: '/api', client: { get, post } as unknown as AxiosInstance })
   expect(await createTaskExpense(at, 'task/1', draft)).toEqual(expense)
   expect((post.mock.calls[0] as unknown as unknown[])).toEqual([`${path}/expenses`, draft, {
-    withCredentials: true, headers: { 'X-XSRF-TOKEN': 'proof', Accept: 'application/problem+json, application/json' },
+    withCredentials: true, timeout: REQUEST_TIMEOUT_MS, headers: { 'X-XSRF-TOKEN': 'proof', Accept: 'application/problem+json, application/json' },
   }])
 })

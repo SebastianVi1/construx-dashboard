@@ -47,13 +47,13 @@ describe('onboarding API', () => {
     expect(config?.headers?.['X-XSRF-TOKEN']).toBe('proof')
   })
 
-  it('putOnboarding: refetches CSRF proof and retries once after a 403', async () => {
+  it('putOnboarding: refetches CSRF proof and retries once after a CSRF_INVALID 403', async () => {
     let calls = 0
     const { get, put } = stubApi(
       () => csrfOk,
       () => {
         calls += 1
-        if (calls === 1) throw Object.assign(new Error('Forbidden'), { isAxiosError: true, response: { status: 403 } })
+        if (calls === 1) throw Object.assign(new Error('Forbidden'), { isAxiosError: true, response: { status: 403, data: { code: 'CSRF_INVALID' } } })
         return { status: 200, data: saved }
       },
     )

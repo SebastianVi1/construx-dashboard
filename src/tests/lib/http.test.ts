@@ -1,13 +1,18 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import type { AxiosInstance } from 'axios'
 import { z } from 'zod'
 import {
   ApiError,
   configureHttp,
+  deleteJson,
   downloadPresigned,
   getJson,
+  REQUEST_TIMEOUT_MS,
   uploadPresigned,
+  uploadPresignedWithProgress,
   type HttpRequest,
   type HttpResponse,
+  type StorageRequest,
 } from '../../lib/http'
 
 const okSchema = z.object({ ok: z.boolean() })
@@ -73,6 +78,88 @@ describe('getJson', () => {
   })
 })
 
+describe('API URL guard', () => {
+  it('refuses paths that could leave the API base, before any request is sent', async () => {
+    const requests = fakeFetcher(() => ({ status: 200, data: { ok: true } }))
+
+    for (const path of ['//evil.test/x', '/../admin', '/sites/../../x', '/sites/./x', '/a\\b', '/a\nb', 'https://evil.test/x', 'sites']) {
+      const error = await getJson(path, okSchema).catch((e: unknown) => e)
+      expect(error).toBeInstanceOf(ApiError)
+      expect((error as ApiError).status).toBeUndefined()
+    }
+    expect(requests).toHaveLength(0)
+  })
+
+  it('refuses an unsafe path on an unsafe call before fetching the CSRF proof', async () => {
+    const requests = fakeFetcher(() => ({ status: 204, data: undefined }))
+
+    await expect(deleteJson('//evil.test/sites/1')).rejects.toBeInstanceOf(ApiError)
+    expect(requests).toHaveLength(0)
+  })
+
+  it('accepts a normal path with a query string', async () => {
+    const requests = fakeFetcher(() => ({ status: 200, data: { ok: true } }))
+
+    await getJson('/sites?folderId=f-1&fresh=5', okSchema)
+    expect(requests.map((r) => r.url)).toEqual(['/api/sites?folderId=f-1&fresh=5'])
+  })
+})
+
+describe('request timeout', () => {
+  it('gives every API request the shared timeout', async () => {
+    const configs: unknown[] = []
+    configureHttp({
+      baseUrl: '/api',
+      client: {
+        get: async (_url: string, config: unknown) => {
+          configs.push(config)
+          return { status: 200, data: { ok: true } }
+        },
+      } as unknown as AxiosInstance,
+    })
+
+    await getJson('/sites', okSchema)
+    expect(configs[0]).toMatchObject({ withCredentials: true, timeout: REQUEST_TIMEOUT_MS })
+  })
+
+  it('turns a timed-out request into a network ApiError without a status', async () => {
+    configureHttp({
+      baseUrl: '/api',
+      client: {
+        get: async () => {
+          throw Object.assign(new Error('timeout of 30000ms exceeded'), { code: 'ECONNABORTED' })
+        },
+      } as unknown as AxiosInstance,
+    })
+
+    const error = await getJson('/sites', okSchema).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBeUndefined()
+  })
+})
+
+describe('CSRF retry', () => {
+  const csrfAnswer: HttpResponse = { status: 200, data: { headerName: 'X-XSRF-TOKEN', token: 'proof' } }
+
+  it('retries once after a CSRF_INVALID 403, then gives up', async () => {
+    const requests = fakeFetcher((request) =>
+      request.method === 'get' ? csrfAnswer : { status: 403, data: { code: 'CSRF_INVALID' } },
+    )
+
+    await expect(deleteJson('/sites/1')).rejects.toMatchObject({ status: 403, code: 'CSRF_INVALID' })
+    expect(requests.filter((r) => r.method === 'delete')).toHaveLength(2)
+  })
+
+  it('does not retry a permission FORBIDDEN', async () => {
+    const requests = fakeFetcher((request) =>
+      request.method === 'get' ? csrfAnswer : { status: 403, data: { code: 'FORBIDDEN' } },
+    )
+
+    await expect(deleteJson('/sites/1')).rejects.toMatchObject({ status: 403, code: 'FORBIDDEN' })
+    expect(requests.filter((r) => r.method === 'delete')).toHaveLength(1)
+  })
+})
+
 /** Fake presigned storage: answers every transfer with `status` and records it. */
 function fakeStorage(status: number, body = 'file-bytes') {
   const transfers: { url: string; init?: RequestInit }[] = []
@@ -102,6 +189,35 @@ describe('downloadPresigned', () => {
   })
 })
 
+describe('presigned URL guard', () => {
+  it('refuses unsafe storage URLs before any transfer', async () => {
+    const transfers = fakeStorage(200)
+
+    for (const url of ['javascript:alert(1)', 'http://s3.example/doc', 'https://user:pass@s3.example/doc', 'not a url']) {
+      expect(await downloadPresigned(url).catch((e: unknown) => e)).toBeInstanceOf(ApiError)
+    }
+    expect(transfers).toHaveLength(0)
+  })
+
+  it('refuses a storage URL on the API origin, so API cookies never reach it', async () => {
+    configureHttp({ baseUrl: 'https://api.example' })
+    const transfers = fakeStorage(200)
+
+    try {
+      expect(await downloadPresigned('https://api.example/x').catch((e: unknown) => e)).toBeInstanceOf(ApiError)
+      expect(transfers).toHaveLength(0)
+    } finally {
+      configureHttp({ baseUrl: '/api' })
+    }
+  })
+
+  it('allows a local HTTP stand-in for storage', async () => {
+    fakeStorage(200)
+
+    await expect(downloadPresigned('http://localhost:9000/doc')).resolves.toBeInstanceOf(Blob)
+  })
+})
+
 describe('uploadPresigned', () => {
   it('PUTs the file with the signed headers', async () => {
     const transfers = fakeStorage(200)
@@ -118,5 +234,74 @@ describe('uploadPresigned', () => {
     const error = await uploadPresigned('https://s3.example/put?sig=1', new Blob(['x'])).catch((e: unknown) => e)
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ status: 500 })
+  })
+})
+
+/** Fake XHR: answers the PUT with `status`, or fails the network when `networkError` is set. */
+function fakeXhr(status: number, networkError = false) {
+  const calls: { open?: string[]; headers: Record<string, string>; withCredentials?: boolean; body?: unknown } = { headers: {} }
+  const request = {
+    status,
+    withCredentials: true,
+    upload: { onprogress: null as null | ((event: { lengthComputable: boolean; loaded: number; total: number }) => void) },
+    onload: null as null | (() => void),
+    onerror: null as null | (() => void),
+    open(method: string, url: string) {
+      calls.open = [method, url]
+    },
+    setRequestHeader(name: string, value: string) {
+      calls.headers[name] = value
+    },
+    send(body: unknown) {
+      calls.body = body
+      calls.withCredentials = request.withCredentials
+      if (networkError) {
+        request.onerror?.()
+        return
+      }
+      request.upload.onprogress?.({ lengthComputable: true, loaded: 1, total: 2 })
+      request.onload?.()
+    },
+  }
+  return { request: request as unknown as StorageRequest, calls }
+}
+
+describe('uploadPresignedWithProgress', () => {
+  it('refuses an unsafe URL before creating a request', async () => {
+    let created = false
+    const error = await uploadPresignedWithProgress('http://s3.example/put', new Blob(['x']), {}, () => {}, () => {
+      created = true
+      return fakeXhr(200).request
+    }).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(created).toBe(false)
+  })
+
+  it('PUTs with the signed headers and no credentials, and reports progress', async () => {
+    const xhr = fakeXhr(200)
+    const progress: number[] = []
+    const body = new Blob(['x'])
+
+    await uploadPresignedWithProgress('https://s3.example/put?sig=1', body, { 'Content-Type': 'image/webp' }, (p) => progress.push(p), () => xhr.request)
+    expect(xhr.calls).toEqual({
+      open: ['PUT', 'https://s3.example/put?sig=1'],
+      headers: { 'Content-Type': 'image/webp' },
+      withCredentials: false,
+      body,
+    })
+    expect(progress).toEqual([0.5, 1])
+  })
+
+  it('rejects with the storage status', async () => {
+    const error = await uploadPresignedWithProgress('https://s3.example/put', new Blob(['x']), {}, () => {}, () => fakeXhr(403).request).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 403 })
+  })
+
+  it('rejects without a status on a network error', async () => {
+    const error = await uploadPresignedWithProgress('https://s3.example/put', new Blob(['x']), {}, () => {}, () => fakeXhr(0, true).request).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBeUndefined()
   })
 })

@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import { ApiError, deleteJson, getJson, sendJson } from '../../lib/http'
+import { ApiError, deleteJson, getJson, sendJson, uploadPresignedWithProgress, type StorageRequest } from '../../lib/http'
 import { sitePath, floorPlanPath } from '../../lib/apiPaths'
-import type { StorageRequest } from '../plans/plansApi'
 
 export const floorPlanStatusSchema = z.enum(['PENDING', 'PROCESSING', 'READY', 'ERROR'])
 export type FloorPlanStatus = z.infer<typeof floorPlanStatusSchema>
@@ -111,31 +110,18 @@ export class StorageUploadError extends Error {
   }
 }
 
-export function sendFloorPlanToStorage(
+/** Same guarded upload as plans (`lib/http`); failures are mapped to this module's StorageUploadError. */
+export async function sendFloorPlanToStorage(
   ticket: Pick<FloorPlanUploadTicket, 'uploadUrl' | 'headers'>,
   body: Blob,
   onProgress: (fraction: number) => void,
-  createRequest: () => StorageRequest = () => new XMLHttpRequest(),
+  createRequest?: () => StorageRequest,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = createRequest()
-    request.open('PUT', ticket.uploadUrl)
-    request.withCredentials = false
-    for (const [name, value] of Object.entries(ticket.headers)) request.setRequestHeader(name, value)
-    request.upload.onprogress = (event) => {
-      if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total)
-    }
-    request.onload = () => {
-      if (request.status >= 200 && request.status < 300) {
-        onProgress(1)
-        resolve()
-      } else {
-        reject(new StorageUploadError(request.status))
-      }
-    }
-    request.onerror = () => reject(new StorageUploadError(0))
-    request.send(body)
-  })
+  try {
+    await uploadPresignedWithProgress(ticket.uploadUrl, body, ticket.headers, onProgress, createRequest)
+  } catch (error) {
+    throw new StorageUploadError(error instanceof ApiError ? (error.status ?? 0) : 0)
+  }
 }
 
 export type FloorPlanErrorKind =

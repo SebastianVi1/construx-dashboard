@@ -8,8 +8,8 @@ type Config = { headers?: Record<string, string> }
 
 const okSchema = z.object({ ok: z.boolean() })
 
-const httpError = (status: number) =>
-  Object.assign(new Error(`HTTP ${status}`), { isAxiosError: true, response: { status } })
+const httpError = (status: number, code?: string) =>
+  Object.assign(new Error(`HTTP ${status}`), { isAxiosError: true, response: { status, data: code ? { code } : undefined } })
 
 /**
  * Fake backend: `/auth/csrf` hands out numbered proofs, `/auth/refresh` is
@@ -161,10 +161,10 @@ describe('silent refresh on 401', () => {
     expect(expired).toHaveBeenCalledTimes(0)
   })
 
-  it('still retries once with a new CSRF proof after a 403, without refreshing', async () => {
+  it('still retries once with a new CSRF proof after a CSRF_INVALID 403, without refreshing', async () => {
     const backend = fakeBackend({
       business: (call) => {
-        if (call === 1) throw httpError(403)
+        if (call === 1) throw httpError(403, 'CSRF_INVALID')
         return { status: 201, data: { ok: true } }
       },
     })
@@ -177,7 +177,7 @@ describe('silent refresh on 401', () => {
     const backend = fakeBackend({
       business: (call) => {
         if (call === 1) throw httpError(401)
-        if (call === 2) throw httpError(403)
+        if (call === 2) throw httpError(403, 'CSRF_INVALID')
         if (call === 3) return { status: 201, data: { ok: true } }
         throw new Error('unexpected extra request')
       },
@@ -188,12 +188,12 @@ describe('silent refresh on 401', () => {
     expect(backend.count('POST /auth/refresh')).toBe(1)
   })
 
-  it('does not retry a second 403 after a refresh', async () => {
+  it('does not retry a second CSRF_INVALID 403 after a refresh', async () => {
     const backend = fakeBackend({
       business: (call) => {
-        if (call === 1) throw httpError(403)
+        if (call === 1) throw httpError(403, 'CSRF_INVALID')
         if (call === 2) throw httpError(401)
-        throw httpError(403)
+        throw httpError(403, 'CSRF_INVALID')
       },
     })
 
