@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { MAX_PHOTO_BYTES, MAX_PIN_PHOTOS, PinPhotoTooLargeError, pickPinPhoto, uploadPinPhoto } from '../../../features/floor-plans/pinPhoto'
+import { MAX_PHOTO_BYTES, MAX_PIN_PHOTOS, PhotoTooLargeError, pickPinPhoto, uploadPinPhoto } from '../../../features/floor-plans/pinPhoto'
 import { StorageUploadError } from '../../../features/plans/plansApi'
 
 const file = (size: number, type = 'image/jpeg') => new File([new Uint8Array(size)], 'site.jpg', { type })
@@ -40,7 +40,7 @@ describe('uploadPinPhoto', () => {
       },
       send: async () => {},
     })
-    await expect(upload).rejects.toBeInstanceOf(PinPhotoTooLargeError)
+    await expect(upload).rejects.toBeInstanceOf(PhotoTooLargeError)
     expect(asked).toBe(false)
   })
 
@@ -81,5 +81,14 @@ describe('pickPinPhoto', () => {
   it('keeps the original when the browser could not encode it', () => {
     const original = file(1000)
     expect(pickPinPhoto(original, null)).toBe(original)
+  })
+})
+
+describe('pickPinPhoto with fewer accepted types', () => {
+  it('takes the shrunk JPEG over a smaller original the API would refuse', () => {
+    const webp = new File([new Uint8Array(1000)], 'site.webp', { type: 'image/webp' })
+    const shrunk = new Blob([new Uint8Array(1500)], { type: 'image/jpeg' })
+    expect(pickPinPhoto(webp, shrunk).type).toBe('image/webp')
+    expect(pickPinPhoto(webp, shrunk, ['image/jpeg', 'image/png']).type).toBe('image/jpeg')
   })
 })

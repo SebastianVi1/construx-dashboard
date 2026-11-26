@@ -8,19 +8,21 @@ export const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 /** Long edge of a pin photo: enough to read a defect, small enough for a site connection. */
 const PHOTO_EDGE = 2000
 
-/** The photo is over 5 MB even after shrinking. */
-export class PinPhotoTooLargeError extends Error {
+/** The photo (of a pin or a progress note) is over 5 MB even after shrinking. */
+export class PhotoTooLargeError extends Error {
   constructor() {
-    super('Pin photo is too large')
-    this.name = 'PinPhotoTooLargeError'
+    super('Photo is too large')
+    this.name = 'PhotoTooLargeError'
   }
 }
 
-/** The shrunk JPEG, unless the original is already an accepted image and no bigger. */
-export function pickPinPhoto(original: File, shrunk: Blob | null): File {
+/**
+ * The shrunk JPEG, unless the original is already an image of a type the API takes (`accepted`, by default
+ * every type a pin takes) and no bigger.
+ */
+export function pickPinPhoto(original: File, shrunk: Blob | null, accepted: readonly string[] = imageContentTypes): File {
   if (!shrunk) return original
-  const accepted = (imageContentTypes as readonly string[]).includes(original.type)
-  if (accepted && shrunk.size >= original.size) return original
+  if (accepted.includes(original.type) && shrunk.size >= original.size) return original
   return new File([shrunk], compressedFileName(original.name, 'image/jpeg'), { type: 'image/jpeg' })
 }
 
@@ -29,7 +31,7 @@ export function pickPinPhoto(original: File, shrunk: Blob | null): File {
  * write WebP and would hand back a PNG bigger than the photo). An image the browser cannot decode comes
  * back as it is and the API decides.
  */
-export async function shrinkPinPhoto(file: File): Promise<File> {
+export async function shrinkPinPhoto(file: File, accepted: readonly string[] = imageContentTypes): Promise<File> {
   let bitmap: ImageBitmap
   try {
     bitmap = await createImageBitmap(file)
@@ -46,7 +48,7 @@ export async function shrinkPinPhoto(file: File): Promise<File> {
     context.imageSmoothingQuality = 'high'
     context.drawImage(bitmap, 0, 0, width, height)
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8))
-    return pickPinPhoto(file, blob)
+    return pickPinPhoto(file, blob, accepted)
   } finally {
     bitmap.close()
   }
@@ -68,7 +70,7 @@ export async function uploadPinPhoto(
   }: { compress?: typeof shrinkPinPhoto; request?: typeof requestPinPhotoUpload; send?: typeof sendToStorage } = {},
 ): Promise<string> {
   const file = await compress(original)
-  if (file.size > MAX_PHOTO_BYTES) throw new PinPhotoTooLargeError()
+  if (file.size > MAX_PHOTO_BYTES) throw new PhotoTooLargeError()
   const ticket = await request(organizationId, siteId, floorPlanId, file.type, file.size)
   await send(ticket, file, () => {})
   return ticket.key

@@ -115,12 +115,12 @@ describe('selectGuide over the built-in roles', () => {
 })
 
 /** "Manage your sites" for a role that may edit its Sites' details, in the order ticket #89 sets. */
-const manageSites = ['open-site', 'site-details', 'create-phase', 'assign-task']
+const manageSites = ['open-site', 'site-details', 'create-phase', 'assign-task', 'link-whatsapp']
 /** The same without "Complete the site's details": no MANAGE_PROJECT. */
-const manageSitesNoDetails = ['open-site', 'create-phase', 'assign-task']
+const manageSitesNoDetails = ['open-site', 'create-phase', 'assign-task', 'link-whatsapp']
 
 describe('selectGuide: "Manage your sites"', () => {
-  it('gives the Site Manager its four steps, opening its site first', () => {
+  it('gives the Site Manager its five steps, opening its site first and linking WhatsApp last', () => {
     expect(shape(selectGuide(seededRoles.SITE_MANAGER))).toEqual([['siteManager', manageSites]])
   })
 
@@ -303,6 +303,23 @@ describe('guideProgressOf', () => {
       complete: true,
       next: null,
     })
+  })
+
+  it('lists an optional step but leaves it out of the count, so the guide completes without it', () => {
+    const optional: GuideStepEntry = { ...guideCatalog.steps[0], id: 'link-whatsapp', optional: true }
+    const sections: GuideSection[] = [{ id: 'owner', titleKey: 'runCompany', steps: [guideCatalog.steps[0], optional] }]
+    expect(guideProgressOf(sections, progress({}))).toMatchObject({ done: 0, total: 1, next: guideCatalog.steps[0] })
+    expect(guideProgressOf(sections, progress({ 'create-site': 'COMPLETED' }))).toEqual({
+      done: 1,
+      total: 1,
+      complete: true,
+      next: null,
+    })
+  })
+
+  it('makes linking WhatsApp the optional step of the built-in catalog', () => {
+    const optional = guideCatalog.steps.filter((step: GuideStepEntry) => step.optional).map((step) => step.id)
+    expect(optional).toEqual(['link-whatsapp'])
   })
 
   it('ignores stored ids that are unknown or hidden from the member', () => {

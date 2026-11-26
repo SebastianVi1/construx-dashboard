@@ -98,7 +98,7 @@ function PinCreateForm({ x, y, canManagePlan, onSaved, onClose, ...target }: Cre
   const [submitted, setSubmitted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(false)
-  const uploads = usePhotoUploads(organizationId, siteId, floorPlanId)
+  const uploads = usePhotoUploads((file) => uploadPinPhoto(organizationId, siteId, floorPlanId, file))
   const assignees = useAssignees(target, canManagePlan)
 
   const values: PinValues = { kind, title, description, assigneeMembershipId, photoCount: uploads.items.length }

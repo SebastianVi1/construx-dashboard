@@ -6,6 +6,8 @@ import { isOnTeam } from './teamRules'
 export type TaskActions = {
   start: boolean
   complete: boolean
+  /** Write a Progress note; same reach as start and complete, whatever the status. */
+  note: boolean
   edit: boolean
   reassign: boolean
   remove: boolean
@@ -14,7 +16,7 @@ export type TaskActions = {
 /**
  * Which task actions the UI offers. Start and complete pass `OWN` scope for
  * any team member (compared by membership id), and only for the moves the status
- * allows; edit and delete need `MANAGE_ACTIVITY` beyond `OWN`, reassign needs
+ * allows (Progress notes: any status); edit and delete need `MANAGE_ACTIVITY` beyond `OWN`, reassign needs
  * `ASSIGN_ACTIVITY`. `onSite` is the caller's own access to the task's site
  * when known. The server still checks every request.
  */
@@ -25,6 +27,7 @@ export function taskActions(access: MyAccess | null, task: Task, context: { onSi
   return {
     start: move && task.status === 'TODO',
     complete: move && task.status !== 'DONE',
+    note: move,
     edit: manage,
     reassign: canPerform(access, 'ASSIGN_ACTIVITY', task.projectId, { onSite: context.onSite }),
     remove: manage,

@@ -46,6 +46,7 @@ describe('taskActions', () => {
     expect(taskActions(member, task, { onSite: false })).toEqual({
       start: true,
       complete: true,
+      note: true,
       edit: true,
       reassign: true,
       remove: true,
@@ -61,11 +62,12 @@ describe('taskActions', () => {
     expect(taskActions(worker, task, { onSite: true })).toEqual({
       start: true,
       complete: true,
+      note: true,
       edit: false,
       reassign: false,
       remove: false,
     })
-    expect(taskActions(otherWorker, task, { onSite: true })).toMatchObject({ start: false, complete: false })
+    expect(taskActions(otherWorker, task, { onSite: true })).toMatchObject({ start: false, complete: false, note: false })
   })
 
   it('OWN scope moves a task for every team member, whatever their task role', () => {
@@ -76,6 +78,13 @@ describe('taskActions', () => {
   it('offers only the moves the status allows', () => {
     expect(taskActions(member, { ...task, status: 'IN_PROGRESS' }, {})).toMatchObject({ start: false, complete: true })
     expect(taskActions(member, { ...task, status: 'DONE' }, {})).toMatchObject({ start: false, complete: false })
+  })
+
+  it('lets whoever may move the task write Progress notes, even once it is done', () => {
+    expect(taskActions(worker, { ...task, status: 'DONE' }, { onSite: true })).toMatchObject({ complete: false, note: true })
+    expect(taskActions(siteLead, task, { onSite: false })).toMatchObject({ note: false })
+    const viewer = role('m-viewer', [['VIEW_ACTIVITY', 'ORGANIZATION']])
+    expect(taskActions(viewer, task, {})).toMatchObject({ note: false })
   })
 
   it('offers nothing while permissions are unknown', () => {

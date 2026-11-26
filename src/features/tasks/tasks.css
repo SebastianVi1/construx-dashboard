@@ -639,10 +639,6 @@
   align-items: start;
 }
 
-.task-detail__body--single {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 .task-detail__main,
 .task-detail__aside {
   display: grid;
@@ -660,11 +656,6 @@
   padding: 0;
   border-top: 1px solid var(--cx-border);
   list-style: none;
-}
-
-.task-detail__body--single .task-crew__list {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  column-gap: 24px;
 }
 
 .task-crew__person {
@@ -690,6 +681,152 @@
 
 .task-crew__name .person-you {
   margin-left: 8px;
+}
+
+/* Progress notes: a dated log, newest first; text keeps the writer's line breaks. */
+.task-progress__form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.task-progress__status {
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.task-progress__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--cx-border);
+  list-style: none;
+}
+
+.task-progress__note {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.task-progress__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+  color: var(--cx-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.task-progress__author {
+  color: var(--cx-ink);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.task-progress__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Note photos: square thumbnails; a picked photo dims until it is in storage. */
+.task-progress__photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  max-width: 480px;
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.task-progress__photo {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-md);
+  background: var(--cx-surface-raised);
+}
+
+.task-progress__photo a {
+  display: block;
+  height: 100%;
+}
+
+.task-progress__photo a:focus-visible {
+  outline: 2px solid var(--cx-focus);
+  outline-offset: -2px;
+}
+
+.task-progress__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.task-progress__photo[data-state='uploading'] img,
+.task-progress__photo[data-state='failed'] img,
+.task-progress__photo[data-state='tooLarge'] img {
+  opacity: 0.45;
+}
+
+.task-progress__photo[data-state='failed'],
+.task-progress__photo[data-state='tooLarge'] {
+  border-color: var(--cx-danger);
+}
+
+.task-progress__photo-state {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 3px 4px;
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.task-progress__photo-retry {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -70%);
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--cx-border-strong);
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font: 600 12px/16px var(--cx-font-display);
+  cursor: pointer;
+}
+
+.task-progress__photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--cx-surface);
+  color: var(--cx-ink);
+  font-size: 16px;
+  line-height: 1;
+  box-shadow: 0 1px 3px var(--cx-shadow-color);
+  cursor: pointer;
 }
 
 /* Money leads with three figures, then one measured bar; never a fabricated zero. */

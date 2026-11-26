@@ -62,6 +62,8 @@ export type GuideStepEntry<I extends GuideIds = GuideCatalogIds> = {
   textKey: keyof typeof guideMessages.en.steps
   /** Hint (from `messages.guide.hints`) shown under the open step when the member is on no Site. */
   noSiteHint?: keyof typeof guideMessages.en.hints
+  /** Listed like any step, but left out of the progress count: the guide completes without it. */
+  optional?: boolean
 }
 
 export type GuidePageEntry<I extends GuideIds = GuideCatalogIds> = {
@@ -120,6 +122,7 @@ export const guidePages = [
   { id: 'phases', route: '/sites/:siteId/phases', needsSite: true },
   { id: 'site-budget', route: '/sites/:siteId?tab=details', needsSite: true },
   { id: 'finance', route: '/finance', needsSite: false },
+  { id: 'profile', route: '/account', needsSite: false },
 ] as const satisfies readonly GuidePageEntry<GuideIds>[]
 
 export type GuidePageId = (typeof guidePages)[number]['id']
@@ -223,6 +226,17 @@ export const guideSteps = [
     chapter: 'finance',
     tourTargets: ['finance-totals', 'finance-sites'],
     textKey: 'viewFinance',
+  },
+  {
+    // Field staff send Field updates from WhatsApp once their number is linked; not everyone will.
+    id: 'link-whatsapp',
+    sections: ['siteManager'],
+    requires: [{ action: 'MANAGE_ACTIVITY', scope: 'any' }],
+    page: 'profile',
+    chapter: 'tasks',
+    tourTargets: ['whatsapp-link'],
+    textKey: 'linkWhatsApp',
+    optional: true,
   },
   // Sections and pages must exist; step ids and targets are free (their format is checked at run time).
 ] as const satisfies readonly GuideStepEntry<{ section: GuideSectionId; step: string; page: GuidePageId; target: string }>[]

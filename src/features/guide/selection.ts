@@ -63,13 +63,13 @@ function firstVisibleSection(
 }
 
 export type GuideCount<I extends GuideIds = GuideCatalogIds> = {
-  /** Visible steps completed or skipped. */
+  /** Visible steps completed or skipped, optional ones left out. */
   done: number
-  /** Visible steps. */
+  /** Visible steps, optional ones left out. */
   total: number
-  /** Every visible step is done (false when there are none). */
+  /** Every visible step that is not optional is done (false when there are none). */
   complete: boolean
-  /** First visible step still open, in display order. */
+  /** First visible step still open and not optional, in display order. */
   next: GuideStepEntry<I> | null
 }
 
@@ -91,12 +91,12 @@ export function stepHint(
   return step.noSiteHint && status === null && hasSites === false ? step.noSiteHint : null
 }
 
-/** Progress over the steps the member sees; stored ids of hidden or retired steps don't count. */
+/** Progress over the steps the member sees; optional steps and stored ids of hidden or retired steps don't count. */
 export function guideProgressOf<I extends GuideIds>(
   sections: readonly GuideSection<I>[],
   progress: GuideProgress | null,
 ): GuideCount<I> {
-  const steps = sections.flatMap((section) => section.steps)
+  const steps = sections.flatMap((section) => section.steps).filter((step) => !step.optional)
   const open = steps.filter((step) => stepStatus(progress, step.id) === null)
   const done = steps.length - open.length
   return { done, total: steps.length, complete: steps.length > 0 && open.length === 0, next: open[0] ?? null }
