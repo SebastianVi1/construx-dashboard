@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ApiError, deleteJson, getJson, sendJson, uploadPresignedWithProgress, type StorageRequest } from '../../lib/http'
+import { ApiError, deleteJson, getJson, sendJson, StorageUploadError, uploadPresigned } from '../../lib/http'
 import { sitePath, floorPlanPath } from '../../lib/apiPaths'
 
 export const floorPlanStatusSchema = z.enum(['PENDING', 'PROCESSING', 'READY', 'ERROR'])
@@ -99,29 +99,15 @@ export function deleteFloorPlan(organizationId: string, siteId: string, floorPla
   return deleteJson(floorPlanPath(organizationId, siteId, floorPlanId))
 }
 
-/** Step 2: PUT the file straight to storage (no session cookies, no CSRF). Reports progress 0–1. */
-export class StorageUploadError extends Error {
-  readonly status: number
+export { StorageUploadError } from '../../lib/http'
 
-  constructor(status: number) {
-    super('Floor plan upload to storage failed')
-    this.name = 'StorageUploadError'
-    this.status = status
-  }
-}
-
-/** Same guarded upload as plans (`lib/http`); failures are mapped to this module's StorageUploadError. */
-export async function sendFloorPlanToStorage(
+/** Step 2: PUT the file straight to storage, with progress (0 to 1). No session cookies, no CSRF header. */
+export function sendFloorPlanToStorage(
   ticket: Pick<FloorPlanUploadTicket, 'uploadUrl' | 'headers'>,
   body: Blob,
   onProgress: (fraction: number) => void,
-  createRequest?: () => StorageRequest,
 ): Promise<void> {
-  try {
-    await uploadPresignedWithProgress(ticket.uploadUrl, body, ticket.headers, onProgress, createRequest)
-  } catch (error) {
-    throw new StorageUploadError(error instanceof ApiError ? (error.status ?? 0) : 0)
-  }
+  return uploadPresigned(ticket.uploadUrl, body, ticket.headers, onProgress)
 }
 
 export type FloorPlanErrorKind =

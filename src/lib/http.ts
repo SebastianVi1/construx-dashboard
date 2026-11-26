@@ -3,13 +3,12 @@ import { z, type ZodType } from 'zod'
 import { getApiBaseUrl } from '../config/env'
 
 /**
- * The dashboard's one HTTP client for the backend API: JSON transport, CSRF
- * proof (one retry, only for a `CSRF_INVALID` 403), session refresh after a 401
- * (one retry), and `ApiError` for every failure. Security guards: every API URL
- * goes through `buildApiUrl` (only safe paths get cookies), requests time out
- * after `REQUEST_TIMEOUT_MS`, and presigned storage URLs go through
- * `assertPresignedUrl` (HTTPS, never the API origin). Presigned storage
- * transfers (S3 GET/PUT) skip cookies and CSRF.
+ * The dashboard's one HTTP client, built on axios. API calls: JSON transport,
+ * a CSRF proof (one retry, only for a `CSRF_INVALID` 403), one session refresh
+ * after a 401, and `ApiError` for every failure. Every API URL is resolved by
+ * the URL parser and must stay on the API origin, and requests time out after
+ * `REQUEST_TIMEOUT_MS`. Presigned S3 transfers use a second axios instance with
+ * no cookies and no CSRF, and only HTTPS storage URLs are accepted.
  */
 
 /**
@@ -102,78 +101,66 @@ export function axiosFetcher(client: AxiosInstance): HttpFetcher {
   }
 }
 
-/** Plain `fetch` used for presigned storage URLs (no cookies, no CSRF). */
-export type StorageFetch = (url: string, init?: RequestInit) => Promise<Response>
-
+/** Presigned S3 transfers: their own axios instance, so no session cookies and no CSRF header. */
+let storageClient: AxiosInstance = axios.create({ withCredentials: false })
 let fetcher: HttpFetcher = axiosFetcher(axios.create())
-let storageFetch: StorageFetch = (url, init) => fetch(url, init)
 let baseUrl = getApiBaseUrl()
 
-/** True when the text holds a C0 control character or DEL (such as a line break). */
-function hasControlCharacter(text: string): boolean {
-  for (let index = 0; index < text.length; index++) {
-    const code = text.charCodeAt(index)
-    if (code < 0x20 || code === 0x7f) return true
-  }
-  return false
-}
+/** The page's origin, which a relative API base resolves against (absent outside the browser). */
+const documentOrigin = () => globalThis.location?.origin ?? 'http://localhost'
+
+const apiBase = () => new URL(baseUrl, documentOrigin())
 
 /**
- * True for a path that can only name a resource under the API base: a single
- * leading `/`, no protocol-relative `//`, no `.`/`..` segments, no backslash
- * or control character. The query string and fragment are not inspected.
- */
-function isSafeApiPath(path: string): boolean {
-  if (!path.startsWith('/') || path.includes('\\') || hasControlCharacter(path)) return false
-  const [pathOnly] = path.split(/[?#]/)
-  if (pathOnly.includes('//')) return false
-  return !pathOnly.split('/').some((segment) => segment === '.' || segment === '..')
-}
-
-/**
- * The only way a request URL is built. Credentials (cookies and the CSRF
- * header) go only to URLs that pass here, so a malformed path never reaches the
- * fetcher. Throws an ApiError without a status, like any other network failure.
+ * The only way an API request URL is built. The URL parser resolves the path
+ * under the base, and the result is kept only if it stays on the API origin
+ * and under the base path. Cookies and the CSRF header go only to URLs that
+ * pass here. Whitespace and backslashes are refused outright, because the
+ * parser would silently rewrite them. Throws an ApiError without a status.
  */
 export function buildApiUrl(path: string): string {
-  if (!isSafeApiPath(path)) throw new ApiError()
-  return `${baseUrl}${path}`
+  if (/[\\\s]/.test(path)) throw new ApiError()
+  const base = apiBase()
+  const target = new URL(`${baseUrl}${path}`, base)
+  const basePath = base.pathname.replace(/\/$/, '')
+  const inside =
+    target.origin === base.origin && target.pathname.startsWith(`${basePath}/`) && !target.pathname.includes('//')
+  if (!inside) throw new ApiError()
+  return `${baseUrl}${target.pathname.slice(basePath.length)}${target.search}${target.hash}`
 }
 
 const LOCAL_STORAGE_HOSTS = new Set(['localhost', '127.0.0.1'])
 
 /**
- * Guard for presigned storage URLs, which come from the backend. Only HTTPS
- * (or plain HTTP to a local stand-in for S3), no embedded credentials, and
- * never the API's own origin: the API's cookies must not be sent to storage.
+ * True for a presigned storage URL from the backend: HTTPS (or plain HTTP to a
+ * local S3 stand-in), no embedded credentials, and never the API's own origin,
+ * so the API's cookies can not be sent to storage.
  */
-export function assertPresignedUrl(url: string): void {
+export function isPresignedUrl(url: string): boolean {
   let parsed: URL
   try {
     parsed = new URL(url)
   } catch {
-    throw new ApiError()
+    return false
   }
-  const schemeAllowed =
+  const secure =
     parsed.protocol === 'https:' || (parsed.protocol === 'http:' && LOCAL_STORAGE_HOSTS.has(parsed.hostname))
-  if (!schemeAllowed || parsed.username || parsed.password) throw new ApiError()
-  const apiOrigin = new URL(baseUrl, globalThis.location?.href ?? 'http://localhost').origin
-  if (parsed.origin === apiOrigin) throw new ApiError()
+  return secure && !parsed.username && !parsed.password && parsed.origin !== apiBase().origin
 }
 
 /**
  * Replace the transport. Tests pass an in-memory `fetcher` (or an axios-shaped
- * `client`, adapted with `axiosFetcher`) and a fake `storageFetch`.
+ * `client`, adapted with `axiosFetcher`) and a fake `storageClient`.
  */
 export function configureHttp(options: {
   fetcher?: HttpFetcher
   client?: AxiosInstance
-  storageFetch?: StorageFetch
+  storageClient?: AxiosInstance
   baseUrl?: string
 }): void {
   if (options.client) fetcher = axiosFetcher(options.client)
   if (options.fetcher) fetcher = options.fetcher
-  if (options.storageFetch) storageFetch = options.storageFetch
+  if (options.storageClient) storageClient = options.storageClient
   if (options.baseUrl) baseUrl = options.baseUrl
 }
 
@@ -372,17 +359,20 @@ export async function deleteJson(path: string, expectedStatus = 204): Promise<vo
   await sendWithCsrf('delete', path, undefined, expectedStatus)
 }
 
-/** Run a presigned transfer; a network failure or a non-2xx answer becomes an ApiError. */
-async function storageTransfer(url: string, init?: RequestInit): Promise<Response> {
-  assertPresignedUrl(url)
-  let response: Response
-  try {
-    response = await storageFetch(url, init)
-  } catch {
-    throw new ApiError()
+/**
+ * A presigned upload that did not reach storage, or was refused by storage or by
+ * the URL guard. `status` is the storage answer, or 0 when none arrived.
+ */
+export class StorageUploadError extends ApiError {
+  constructor(status: number) {
+    super(status)
+    this.name = 'StorageUploadError'
   }
-  if (!response.ok) throw new ApiError(response.status)
-  return response
+}
+
+/** The HTTP status of a failed axios call, or undefined when no answer arrived. */
+function statusOf(error: unknown): number | undefined {
+  return axios.isAxiosError(error) ? error.response?.status : undefined
 }
 
 /**
@@ -390,60 +380,35 @@ async function storageTransfer(url: string, init?: RequestInit): Promise<Respons
  * answer, e.g. an expired link, instead of returning the error page as a file.
  */
 export async function downloadPresigned(url: string): Promise<Blob> {
-  const response = await storageTransfer(url)
-  return response.blob()
+  if (!isPresignedUrl(url)) throw new ApiError()
+  try {
+    const response = await storageClient.get<Blob>(url, { responseType: 'blob' })
+    return response.data
+  } catch (error) {
+    throw new ApiError(statusOf(error))
+  }
 }
 
 /**
- * Upload a file to a presigned storage URL (S3 PUT) with the headers the
- * backend signed. Throws ApiError on a non-2xx answer, so callers never
- * confirm an upload that was not stored.
+ * PUT a file to a presigned storage URL with the headers the backend signed.
+ * `onProgress` reports 0 to 1 while uploading and 1 once stored. Throws
+ * StorageUploadError on any failure, so callers never confirm an upload that
+ * was not stored.
  */
 export async function uploadPresigned(
   url: string,
-  file: Blob,
-  headers: Record<string, string> = {},
-): Promise<void> {
-  await storageTransfer(url, { method: 'PUT', headers, body: file })
-}
-
-/** The part of `XMLHttpRequest` an upload uses, so tests can fake it. */
-export type StorageRequest = Pick<
-  XMLHttpRequest,
-  'status' | 'withCredentials' | 'upload' | 'onload' | 'onerror' | 'open' | 'setRequestHeader' | 'send'
->
-
-/**
- * PUT a file to a presigned storage URL with progress (0 to 1). XHR is used
- * because `fetch` cannot report upload progress. Sent with no cookies and no
- * CSRF header. The URL is checked before a request object exists. Rejects with
- * ApiError: its status for a storage answer, none for a network failure.
- */
-export async function uploadPresignedWithProgress(
-  url: string,
   body: Blob,
-  headers: Record<string, string>,
-  onProgress: (fraction: number) => void,
-  createRequest: () => StorageRequest = () => new XMLHttpRequest(),
+  headers: Record<string, string> = {},
+  onProgress?: (fraction: number) => void,
 ): Promise<void> {
-  assertPresignedUrl(url)
-  return new Promise((resolve, reject) => {
-    const request = createRequest()
-    request.open('PUT', url)
-    request.withCredentials = false
-    for (const [name, value] of Object.entries(headers)) request.setRequestHeader(name, value)
-    request.upload.onprogress = (event) => {
-      if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total)
-    }
-    request.onload = () => {
-      if (request.status >= 200 && request.status < 300) {
-        onProgress(1)
-        resolve()
-      } else {
-        reject(new ApiError(request.status))
-      }
-    }
-    request.onerror = () => reject(new ApiError())
-    request.send(body)
-  })
+  if (!isPresignedUrl(url)) throw new StorageUploadError(0)
+  try {
+    await storageClient.put(url, body, {
+      headers,
+      onUploadProgress: onProgress && ((event) => event.total && onProgress(event.loaded / event.total)),
+    })
+  } catch (error) {
+    throw new StorageUploadError(statusOf(error) ?? 0)
+  }
+  onProgress?.(1)
 }

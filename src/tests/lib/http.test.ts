@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import type { AxiosInstance } from 'axios'
+import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { z } from 'zod'
+import { fakeStorage } from '../support/fakeStorage'
 import {
   ApiError,
   configureHttp,
@@ -8,11 +9,10 @@ import {
   downloadPresigned,
   getJson,
   REQUEST_TIMEOUT_MS,
+  StorageUploadError,
   uploadPresigned,
-  uploadPresignedWithProgress,
   type HttpRequest,
   type HttpResponse,
-  type StorageRequest,
 } from '../../lib/http'
 
 const okSchema = z.object({ ok: z.boolean() })
@@ -82,7 +82,7 @@ describe('API URL guard', () => {
   it('refuses paths that could leave the API base, before any request is sent', async () => {
     const requests = fakeFetcher(() => ({ status: 200, data: { ok: true } }))
 
-    for (const path of ['//evil.test/x', '/../admin', '/sites/../../x', '/sites/./x', '/a\\b', '/a\nb', 'https://evil.test/x', 'sites']) {
+    for (const path of ['//evil.test/x', '/../admin', '/sites/../../x', '/a\\b', '/a\nb', 'https://evil.test/x', 'sites']) {
       const error = await getJson(path, okSchema).catch((e: unknown) => e)
       expect(error).toBeInstanceOf(ApiError)
       expect((error as ApiError).status).toBeUndefined()
@@ -95,6 +95,13 @@ describe('API URL guard', () => {
 
     await expect(deleteJson('//evil.test/sites/1')).rejects.toBeInstanceOf(ApiError)
     expect(requests).toHaveLength(0)
+  })
+
+  it('resolves dot segments that stay under the base', async () => {
+    const requests = fakeFetcher(() => ({ status: 200, data: { ok: true } }))
+
+    await getJson('/sites/./x', okSchema)
+    expect(requests.map((r) => r.url)).toEqual(['/api/sites/x'])
   })
 
   it('accepts a normal path with a query string', async () => {
@@ -160,18 +167,6 @@ describe('CSRF retry', () => {
   })
 })
 
-/** Fake presigned storage: answers every transfer with `status` and records it. */
-function fakeStorage(status: number, body = 'file-bytes') {
-  const transfers: { url: string; init?: RequestInit }[] = []
-  configureHttp({
-    storageFetch: async (url, init) => {
-      transfers.push({ url, init })
-      return new Response(body, { status })
-    },
-  })
-  return transfers
-}
-
 describe('downloadPresigned', () => {
   it('resolves with the stored file', async () => {
     fakeStorage(200)
@@ -180,7 +175,7 @@ describe('downloadPresigned', () => {
     expect(await blob.text()).toBe('file-bytes')
   })
 
-  it('throws ApiError instead of returning the error page of an expired link', async () => {
+  it('throws ApiError with the storage status instead of returning the error page of an expired link', async () => {
     fakeStorage(403, '<Error>AccessDenied</Error>')
 
     const error = await downloadPresigned('https://s3.example/doc?sig=1').catch((e: unknown) => e)
@@ -219,89 +214,58 @@ describe('presigned URL guard', () => {
 })
 
 describe('uploadPresigned', () => {
-  it('PUTs the file with the signed headers', async () => {
+  it('PUTs the file with the signed headers and no credentials', async () => {
     const transfers = fakeStorage(200)
     const file = new Blob(['hello'], { type: 'text/plain' })
 
     await uploadPresigned('https://s3.example/put?sig=1', file, { 'Content-Type': 'text/plain' })
     expect(transfers).toHaveLength(1)
-    expect(transfers[0].init).toMatchObject({ method: 'PUT', headers: { 'Content-Type': 'text/plain' }, body: file })
+    expect(transfers[0]).toMatchObject({
+      method: 'put',
+      url: 'https://s3.example/put?sig=1',
+      headers: { 'Content-Type': 'text/plain' },
+      withCredentials: false,
+      data: file,
+    })
   })
 
-  it('throws ApiError when storage rejects the upload', async () => {
+  it('throws StorageUploadError with the storage status when storage rejects the upload', async () => {
     fakeStorage(500)
 
     const error = await uploadPresigned('https://s3.example/put?sig=1', new Blob(['x'])).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StorageUploadError)
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ status: 500 })
   })
-})
 
-/** Fake XHR: answers the PUT with `status`, or fails the network when `networkError` is set. */
-function fakeXhr(status: number, networkError = false) {
-  const calls: { open?: string[]; headers: Record<string, string>; withCredentials?: boolean; body?: unknown } = { headers: {} }
-  const request = {
-    status,
-    withCredentials: true,
-    upload: { onprogress: null as null | ((event: { lengthComputable: boolean; loaded: number; total: number }) => void) },
-    onload: null as null | (() => void),
-    onerror: null as null | (() => void),
-    open(method: string, url: string) {
-      calls.open = [method, url]
-    },
-    setRequestHeader(name: string, value: string) {
-      calls.headers[name] = value
-    },
-    send(body: unknown) {
-      calls.body = body
-      calls.withCredentials = request.withCredentials
-      if (networkError) {
-        request.onerror?.()
-        return
-      }
-      request.upload.onprogress?.({ lengthComputable: true, loaded: 1, total: 2 })
-      request.onload?.()
-    },
-  }
-  return { request: request as unknown as StorageRequest, calls }
-}
+  it('refuses an unsafe URL before any request is sent', async () => {
+    const transfers = fakeStorage(200)
 
-describe('uploadPresignedWithProgress', () => {
-  it('refuses an unsafe URL before creating a request', async () => {
-    let created = false
-    const error = await uploadPresignedWithProgress('http://s3.example/put', new Blob(['x']), {}, () => {}, () => {
-      created = true
-      return fakeXhr(200).request
-    }).catch((e: unknown) => e)
-
-    expect(error).toBeInstanceOf(ApiError)
-    expect(created).toBe(false)
+    const error = await uploadPresigned('http://s3.example/put', new Blob(['x'])).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StorageUploadError)
+    expect(error).toMatchObject({ status: 0 })
+    expect(transfers).toHaveLength(0)
   })
 
-  it('PUTs with the signed headers and no credentials, and reports progress', async () => {
-    const xhr = fakeXhr(200)
+  it('reports progress from 0 to 1 and 1 once stored', async () => {
+    fakeStorage(200)
     const progress: number[] = []
-    const body = new Blob(['x'])
 
-    await uploadPresignedWithProgress('https://s3.example/put?sig=1', body, { 'Content-Type': 'image/webp' }, (p) => progress.push(p), () => xhr.request)
-    expect(xhr.calls).toEqual({
-      open: ['PUT', 'https://s3.example/put?sig=1'],
-      headers: { 'Content-Type': 'image/webp' },
-      withCredentials: false,
-      body,
-    })
+    await uploadPresigned('https://s3.example/put', new Blob(['x']), {}, (fraction) => progress.push(fraction))
     expect(progress).toEqual([0.5, 1])
   })
 
-  it('rejects with the storage status', async () => {
-    const error = await uploadPresignedWithProgress('https://s3.example/put', new Blob(['x']), {}, () => {}, () => fakeXhr(403).request).catch((e: unknown) => e)
-    expect(error).toBeInstanceOf(ApiError)
-    expect(error).toMatchObject({ status: 403 })
-  })
+  it('throws StorageUploadError with no status on a network failure', async () => {
+    configureHttp({
+      storageClient: axios.create({
+        adapter: async (config) => {
+          throw new AxiosError('Network Error', AxiosError.ERR_NETWORK, config)
+        },
+      }),
+    })
 
-  it('rejects without a status on a network error', async () => {
-    const error = await uploadPresignedWithProgress('https://s3.example/put', new Blob(['x']), {}, () => {}, () => fakeXhr(0, true).request).catch((e: unknown) => e)
-    expect(error).toBeInstanceOf(ApiError)
-    expect((error as ApiError).status).toBeUndefined()
+    const error = await uploadPresigned('https://s3.example/put', new Blob(['x'])).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StorageUploadError)
+    expect(error).toMatchObject({ status: 0 })
   })
 })

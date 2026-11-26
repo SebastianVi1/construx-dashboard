@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ApiError, deleteJson, getJson, sendJson, uploadPresignedWithProgress, type StorageRequest } from '../../lib/http'
+import { ApiError, deleteJson, getJson, sendJson, StorageUploadError, uploadPresigned } from '../../lib/http'
 import { sitePath } from '../../lib/apiPaths'
 
 /** `PlanResponse`. `viewUrl` is a short-lived link to the image; reload the list for a fresh one. */
@@ -80,35 +80,15 @@ export function deletePlan(organizationId: string, siteId: string, planId: strin
   return deleteJson(planPath(organizationId, siteId, planId))
 }
 
-/** Storage answered with an error status, or the request never reached it (status 0). */
-export class StorageUploadError extends Error {
-  readonly status: number
+export { StorageUploadError } from '../../lib/http'
 
-  constructor(status: number) {
-    super('Plan upload to storage failed')
-    this.name = 'StorageUploadError'
-    this.status = status
-  }
-}
-
-export type { StorageRequest } from '../../lib/http'
-
-/**
- * Step 2: PUT the file straight to storage, through the shared guarded upload in `lib/http`
- * (no session cookies, no CSRF header, progress 0 to 1). Any failure, including a URL the
- * guard refuses, becomes a StorageUploadError.
- */
-export async function sendToStorage(
+/** Step 2: PUT the file straight to storage, with progress (0 to 1). No session cookies, no CSRF header. */
+export function sendToStorage(
   ticket: Pick<UploadTicket, 'uploadUrl' | 'headers'>,
   body: Blob,
   onProgress: (fraction: number) => void,
-  createRequest?: () => StorageRequest,
 ): Promise<void> {
-  try {
-    await uploadPresignedWithProgress(ticket.uploadUrl, body, ticket.headers, onProgress, createRequest)
-  } catch (error) {
-    throw new StorageUploadError(error instanceof ApiError ? (error.status ?? 0) : 0)
-  }
+  return uploadPresigned(ticket.uploadUrl, body, ticket.headers, onProgress)
 }
 
 export type PlanErrorKind =

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { uploadDocumentFile } from '../../../features/documents/documentFoldersApi'
 import { ApiError, configureHttp, type HttpRequest } from '../../../lib/http'
+import { fakeStorage } from '../../support/fakeStorage'
 
 const ticket = {
   entryId: 'entry-1',
@@ -25,7 +26,6 @@ const entry = {
 /** Fake API (upload ticket + confirm) and fake storage answering the PUT with `storageStatus`. */
 function fakeBackend(storageStatus: number) {
   const api: string[] = []
-  const storage: { url: string; init?: RequestInit }[] = []
   configureHttp({
     baseUrl: '/api',
     fetcher: async (request: HttpRequest) => {
@@ -35,12 +35,8 @@ function fakeBackend(storageStatus: number) {
       if (path.endsWith('/upload-url')) return { status: 200, data: ticket }
       return { status: 201, data: entry }
     },
-    storageFetch: async (url, init) => {
-      storage.push({ url, init })
-      return new Response(null, { status: storageStatus })
-    },
   })
-  return { api, storage }
+  return { api, storage: fakeStorage(storageStatus) }
 }
 
 const base = '/organizations/org-1/projects/site-2/document-folders/folder-3/entries'
@@ -55,7 +51,7 @@ describe('uploadDocumentFile', () => {
     await expect(uploadDocumentFile('org-1', 'site-2', 'folder-3', file)).resolves.toEqual(entry)
     expect(backend.storage).toHaveLength(1)
     expect(backend.storage[0].url).toBe(ticket.uploadUrl)
-    expect(backend.storage[0].init?.headers).toEqual({
+    expect(backend.storage[0].headers).toMatchObject({
       'Content-Type': 'application/pdf',
       'x-amz-meta-org': 'org-1',
     })
